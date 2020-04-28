@@ -1,0 +1,9 @@
+{
+  "Author": "your name here",
+  "Name": "Sample Plugin",
+  "Description": "A simple description that shows up in /xlplugins.  List any major slash-command(s).",
+  "InternalName": "samplePlugin",
+  "AssemblyVersion": "1.0.0.0",
+  "RepoUrl": "https://github.com/yourName/yourRepo",
+  "ApplicableVersion": "any"
+}
