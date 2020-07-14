@@ -6,5 +6,6 @@
   "AssemblyVersion": "1.0.0.0",
   "RepoUrl": "https://github.com/yourName/yourRepo",
   "ApplicableVersion": "any",
-  "Tags": ["sample", "plugin", "goats"]
+  "Tags": ["sample", "plugin", "goats"],
+  "DalamudApiLevel": 1
 }
