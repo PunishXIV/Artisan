@@ -7,5 +7,5 @@
   "RepoUrl": "https://github.com/yourName/yourRepo",
   "ApplicableVersion": "any",
   "Tags": ["sample", "plugin", "goats"],
-  "DalamudApiLevel": 1
+  "DalamudApiLevel": 2
 }
