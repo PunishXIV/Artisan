@@ -15,6 +15,12 @@ namespace SamplePlugin
         private DalamudPluginInterface pi;
         private Configuration configuration;
         private PluginUI ui;
+        
+        // When loaded by LivePluginLoader, the executing assembly will be wrong.
+        // Supplying this property allows LivePluginLoader to supply the correct location, so that
+        // you have full compatibility when loaded normally and through LPL.
+        public string AssemblyLocation { get => assemblyLocation; set => assemblyLocation = value; }
+        private string assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
 
         public void Initialize(DalamudPluginInterface pluginInterface)
         {
@@ -24,7 +30,7 @@ namespace SamplePlugin
             this.configuration.Initialize(this.pi);
 
             // you might normally want to embed resources and load them from the manifest stream
-            var imagePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"goat.png");
+            var imagePath = Path.Combine(Path.GetDirectoryName(AssemblyLocation), @"goat.png");
             var goatImage = this.pi.UiBuilder.LoadImage(imagePath);
             this.ui = new PluginUI(this.configuration, goatImage);
 
