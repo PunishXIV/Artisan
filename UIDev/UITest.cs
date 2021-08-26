@@ -1,6 +1,5 @@
 ﻿using ImGuiNET;
 using ImGuiScene;
-using System;
 using System.Numerics;
 
 namespace UIDev
@@ -12,8 +11,8 @@ namespace UIDev
             UIBootstrap.Inititalize(new UITest());
         }
 
-        private TextureWrap goatImage;
-        private SimpleImGuiScene scene;
+        private TextureWrap? goatImage;
+        private SimpleImGuiScene? scene;
 
         public void Initialize(SimpleImGuiScene scene)
         {
@@ -21,7 +20,7 @@ namespace UIDev
             // but it can accomplish the same things, and is really only used for initial setup here
 
             // eg, to load an image resource for use with ImGui 
-            this.goatImage = scene.LoadImage(@"goat.png");
+            this.goatImage = scene.LoadImage("goat.png");
 
             scene.OnBuildUI += Draw;
 
@@ -34,7 +33,7 @@ namespace UIDev
 
         public void Dispose()
         {
-            this.goatImage.Dispose();
+            this.goatImage?.Dispose();
         }
 
         // You COULD go all out here and make your UI generic and work on interfaces etc, and then
@@ -48,7 +47,7 @@ namespace UIDev
 
             if (!Visible)
             {
-                this.scene.ShouldQuit = true;
+                this.scene!.ShouldQuit = true;
             }
         }
 
@@ -93,7 +92,7 @@ namespace UIDev
 
                 ImGui.Text("Have a goat:");
                 ImGui.Indent(55);
-                ImGui.Image(this.goatImage.ImGuiHandle, new Vector2(this.goatImage.Width, this.goatImage.Height));
+                ImGui.Image(this.goatImage!.ImGuiHandle, new Vector2(this.goatImage.Width, this.goatImage.Height));
                 ImGui.Unindent(55);
             }
             ImGui.End();

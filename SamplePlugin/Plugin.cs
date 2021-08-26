@@ -1,70 +1,67 @@
 ﻿using Dalamud.Game.Command;
+using Dalamud.IoC;
 using Dalamud.Plugin;
-using System;
 using System.IO;
 using System.Reflection;
 
 namespace SamplePlugin
 {
-    public class Plugin : IDalamudPlugin
+    public sealed class Plugin : IDalamudPlugin
     {
         public string Name => "Sample Plugin";
 
         private const string commandName = "/pmycommand";
 
-        private DalamudPluginInterface pi;
-        private Configuration configuration;
-        private PluginUI ui;
-        
-        // When loaded by LivePluginLoader, the executing assembly will be wrong.
-        // Supplying this property allows LivePluginLoader to supply the correct location, so that
-        // you have full compatibility when loaded normally and through LPL.
-        public string AssemblyLocation { get => assemblyLocation; set => assemblyLocation = value; }
-        private string assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        private DalamudPluginInterface PluginInterface { get; init; }
+        private CommandManager CommandManager { get; init; }
+        private Configuration Configuration { get; init; }
+        private PluginUI PluginUi { get; init; }
 
-        public void Initialize(DalamudPluginInterface pluginInterface)
+        public Plugin(
+            [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
+            [RequiredVersion("1.0")] CommandManager commandManager)
         {
-            this.pi = pluginInterface;
-            
-            this.configuration = this.pi.GetPluginConfig() as Configuration ?? new Configuration();
-            this.configuration.Initialize(this.pi);
+            this.PluginInterface = pluginInterface;
+            this.CommandManager = commandManager;
+
+            this.Configuration = this.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+            this.Configuration.Initialize(this.PluginInterface);
 
             // you might normally want to embed resources and load them from the manifest stream
-            var imagePath = Path.Combine(Path.GetDirectoryName(AssemblyLocation), @"goat.png");
-            var goatImage = this.pi.UiBuilder.LoadImage(imagePath);
-            this.ui = new PluginUI(this.configuration, goatImage);
+            var assemblyLocation = Assembly.GetExecutingAssembly().Location;
+            var imagePath = Path.Combine(Path.GetDirectoryName(assemblyLocation)!, "goat.png");
+            var goatImage = this.PluginInterface.UiBuilder.LoadImage(imagePath);
+            this.PluginUi = new PluginUI(this.Configuration, goatImage);
 
-            this.pi.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
+            this.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
                 HelpMessage = "A useful message to display in /xlhelp"
             });
 
-            this.pi.UiBuilder.OnBuildUi += DrawUI;
-            this.pi.UiBuilder.OnOpenConfigUi += (sender, args) => DrawConfigUI();
+            this.PluginInterface.UiBuilder.Draw += DrawUI;
+            this.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
         }
 
         public void Dispose()
         {
-            this.ui.Dispose();
-
-            this.pi.CommandManager.RemoveHandler(commandName);
-            this.pi.Dispose();
+            this.PluginUi.Dispose();
+            this.CommandManager.RemoveHandler(commandName);
         }
 
         private void OnCommand(string command, string args)
         {
             // in response to the slash command, just display our main ui
-            this.ui.Visible = true;
+            this.PluginUi.Visible = true;
         }
 
         private void DrawUI()
         {
-            this.ui.Draw();
+            this.PluginUi.Draw();
         }
 
         private void DrawConfigUI()
         {
-            this.ui.SettingsVisible = true;
+            this.PluginUi.SettingsVisible = true;
         }
     }
 }
