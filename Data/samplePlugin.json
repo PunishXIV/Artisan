@@ -1,11 +1,13 @@
 {
   "Author": "your name here",
   "Name": "Sample Plugin",
-  "Description": "A simple description that shows up in /xlplugins.  List any major slash-command(s).",
+  "Punchline": "A short one-liner that shows up in /xlplugins.",
+  "Description": "A description that shows up in /xlplugins. List any major slash-command(s).",
   "InternalName": "samplePlugin",
-  "AssemblyVersion": "1.0.0.0",
-  "RepoUrl": "https://github.com/yourName/yourRepo",
   "ApplicableVersion": "any",
-  "Tags": ["sample", "plugin", "goats"],
-  "DalamudApiLevel": 3
+  "Tags": [
+    "sample",
+    "plugin",
+    "goats"
+  ]
 }

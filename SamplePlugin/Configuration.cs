@@ -14,7 +14,7 @@ namespace SamplePlugin
         // the below exist just to make saving less cumbersome
 
         [NonSerialized]
-        private DalamudPluginInterface pluginInterface;
+        private DalamudPluginInterface? pluginInterface;
 
         public void Initialize(DalamudPluginInterface pluginInterface)
         {
@@ -23,7 +23,7 @@ namespace SamplePlugin
 
         public void Save()
         {
-            this.pluginInterface.SavePluginConfig(this);
+            this.pluginInterface!.SavePluginConfig(this);
         }
     }
 }
