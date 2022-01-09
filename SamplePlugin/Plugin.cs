@@ -28,8 +28,7 @@ namespace SamplePlugin
             this.Configuration.Initialize(this.PluginInterface);
 
             // you might normally want to embed resources and load them from the manifest stream
-            var assemblyLocation = Assembly.GetExecutingAssembly().Location;
-            var imagePath = Path.Combine(Path.GetDirectoryName(assemblyLocation)!, "goat.png");
+            var imagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
             var goatImage = this.PluginInterface.UiBuilder.LoadImage(imagePath);
             this.PluginUi = new PluginUI(this.Configuration, goatImage);
 

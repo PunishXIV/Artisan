@@ -1,12 +1,11 @@
 # SamplePlugin
-Simple example plugin for XivLauncher/Dalamud, that shows both a working plugin and an associated UI test project, to allow for building and tweaking the UI without having to run the game.
 
-This is not designed to be the simplest possible example, but neither is it designed to cover everything you might want to do.
+Simple example plugin for Dalamud.
 
-I'm mostly hoping this helps some people to build out their UIs without having to constantly jump in and out of game.
+This is not designed to be the simplest possible example, but it is also not designed to cover everything you might want to do. For more detailed questions, come ask in [the Discord](https://discord.gg/3NMcUV5).
 
+## Main Points
 
-### Main Points
 * Simple functional plugin
   * Slash command
   * Main UI
@@ -14,27 +13,35 @@ I'm mostly hoping this helps some people to build out their UIs without having t
   * Image loading
   * Plugin json
 * Simple, slightly-improved plugin configuration handling
-* Basic ImGui testbed application project
-  * Allows testing UI changes without needing to run the game
-  * UI environment provided should match what is seen in game
-  * Defaults to an invisible fullscreen overlay; can easily be changed to use an opaque window etc
-  * Currently relies more on copy/paste of your UI code than fully generic objects (though this could be done)
 * Project organization
   * Copies all necessary plugin files to the output directory
     * Does not copy dependencies that are provided by dalamud
     * Output directory can be zipped directly and have exactly what is required
   * Hides data files from visual studio to reduce clutter
     * Also allows having data files in different paths than VS would usually allow if done in the IDE directly
-    
-  
-  The intention is less that any of this is used directly in other projects, and more to show how similar things can be done.
-  
-  The UIDev project could be used as-is, with just the UITest.cs file needing to be redone for your specific project UI.
-  
-  ### To Use
-  You'll need to fixup the library dependencies (for both projects), to point at your local dalamud binary directory.
-  
-  This will either be a custom dalamud build, or `%APPDATA%\XivLauncher\addon\Hooks\` for the current live release.
-  
-  After that, clear out what you don't need in UITest.cs, and implement your own local UI under Draw()
-  
+
+
+The intention is less that any of this is used directly in other projects, and more to show how similar things can be done.
+
+## To Use
+### Building
+
+1. Open up `SamplePlugin.sln` in your C# editor of choice (likely [Visual Studio 2022](https://visualstudio.microsoft.com) or [JetBrains Rider](https://www.jetbrains.com/rider/)).
+2. Build the solution. By default, this will build a `Debug` build, but you can switch to `Release` in your IDE.
+3. The resulting plugin can be found at `SamplePlugin/obj/x64/Debug/SamplePlugin.dll` (or `Release` if appropriate.)
+
+### Activating in-game
+
+1. Launch the game and use `/xlsettings` in chat or `xlsettings` in the Dalamud Console to open up the Dalamud settings.
+    * In here, go to `Experimental`, and add the full path to the `SamplePlugin.dll` to the list of Dev Plugin Locations.
+2. Next, use `/xlplugins` (chat) or `xlplugins` (console) to open up the Plugin Installer.
+    * In here, go to `Dev Tools > Installed Dev Plugins`, and the `SamplePlugin` should be visible. Enable it.
+3. You should now be able to use `/pmycommand` (chat) or `pmycommand` (console)!
+
+Note that you only need to add it to the Dev Plugin Locations once (Step 1); it is preserved afterwards. You can disable, enable, or load your plugin on startup through the Plugin Installer.
+
+### Reconfiguring for your own uses
+
+Basically, just replace all references to `SamplePlugin` in all of the files and filenames with your desired name. You'll figure it out 😁
+
+Dalamud will load the JSON file (by default, `Data/SamplePlugin.json`) next to your DLL and use it for metadata, including the description for your plugin in the Plugin Installer. Make sure to update this with information relevant to _your_ plugin!
