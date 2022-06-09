@@ -1,8 +1,11 @@
-﻿using ImGuiNET;
+﻿using CraftIt.RawInformation;
+using ImGuiNET;
 using System;
+using System.Linq;
 using System.Numerics;
+using static CraftIt.CraftingLogic.CurrentCraft;
 
-namespace SamplePlugin
+namespace CraftIt
 {
     // It is good to have this be disposable in general, in case you ever need it
     // to do any cleanup
@@ -11,6 +14,7 @@ namespace SamplePlugin
         private Configuration configuration;
 
         private ImGuiScene.TextureWrap goatImage;
+        public event EventHandler<bool>? CraftingWindowStateChanged;
 
         // this extra bool exists for ImGui, since you can't ref a property
         private bool visible = false;
@@ -27,6 +31,13 @@ namespace SamplePlugin
             set { this.settingsVisible = value; }
         }
 
+        private bool craftingVisible = false;
+        public bool CraftingVisible
+        {
+            get { return this.craftingVisible; }
+            set { if (this.craftingVisible != value) CraftingWindowStateChanged?.Invoke(this, value); this.craftingVisible = value; }
+        }
+
         // passing in the image here just for simplicity
         public PluginUI(Configuration configuration, ImGuiScene.TextureWrap goatImage)
         {
@@ -41,15 +52,51 @@ namespace SamplePlugin
 
         public void Draw()
         {
-            // This is our only draw handler attached to UIBuilder, so it needs to be
-            // able to draw any windows we might have open.
-            // Each method checks its own visibility/state to ensure it only draws when
-            // it actually makes sense.
-            // There are other ways to do this, but it is generally best to keep the number of
-            // draw delegates as low as possible.
-
             DrawMainWindow();
-            DrawSettingsWindow();
+            DrawCraftingWindow();
+        }
+
+        private void DrawCraftingWindow()
+        {
+            if (!CraftingVisible)
+            {
+                return;
+            }
+
+            CraftingVisible = craftingVisible;
+
+            ImGui.SetNextWindowSize(new Vector2(375, 330), ImGuiCond.FirstUseEver);
+            ImGui.SetNextWindowSizeConstraints(new Vector2(375, 330), new Vector2(float.MaxValue, float.MaxValue));
+            if (ImGui.Begin("Craft-It Crafting Window", ref this.craftingVisible, ImGuiWindowFlags.AlwaysAutoResize))
+            {
+                GetCraft();
+                
+                Hotbars.MakeButtonsGlow(CurrentRecommendation);
+
+                if (ImGui.Button("Execute recommended action"))
+                {
+                    Hotbars.ExecuteRecommended(CurrentRecommendation);
+                }
+
+                bool enableAutoRepeat = Service.Configuration.AutoCraft;
+
+                if (ImGui.Checkbox("Repeat last", ref enableAutoRepeat))
+                {
+                    Service.Configuration.AutoCraft = enableAutoRepeat;
+                    Service.Configuration.Save();
+                }
+
+                bool autoMode = Service.Configuration.AutoMode;
+
+                if (ImGui.Checkbox("Auto Mode", ref autoMode))
+                {
+                    Service.Configuration.AutoMode = autoMode;
+                    Service.Configuration.Save();
+                }
+                if (enableAutoRepeat)
+                    RepeatActualCraft();
+            }
+            ImGui.End();
         }
 
         public void DrawMainWindow()
@@ -63,44 +110,14 @@ namespace SamplePlugin
             ImGui.SetNextWindowSizeConstraints(new Vector2(375, 330), new Vector2(float.MaxValue, float.MaxValue));
             if (ImGui.Begin("My Amazing Window", ref this.visible, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
             {
-                ImGui.Text($"The random config bool is {this.configuration.SomePropertyToBeSavedAndWithADefault}");
+                ImGui.Text(GetCraft().ToString());
 
-                if (ImGui.Button("Show Settings"))
-                {
-                    SettingsVisible = true;
-                }
-
-                ImGui.Spacing();
-
-                ImGui.Text("Have a goat:");
-                ImGui.Indent(55);
-                ImGui.Image(this.goatImage.ImGuiHandle, new Vector2(this.goatImage.Width, this.goatImage.Height));
-                ImGui.Unindent(55);
+                ImGui.Text($"Current Craftsmanship: {CharacterInfo.Craftsmanship()}");
+                ImGui.Text($"Current Control: {CharacterInfo.Control()}");
             }
             ImGui.End();
         }
 
-        public void DrawSettingsWindow()
-        {
-            if (!SettingsVisible)
-            {
-                return;
-            }
-
-            ImGui.SetNextWindowSize(new Vector2(232, 75), ImGuiCond.Always);
-            if (ImGui.Begin("A Wonderful Configuration Window", ref this.settingsVisible,
-                ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
-            {
-                // can't ref a property, so use a local copy
-                var configValue = this.configuration.SomePropertyToBeSavedAndWithADefault;
-                if (ImGui.Checkbox("Random Config Bool", ref configValue))
-                {
-                    this.configuration.SomePropertyToBeSavedAndWithADefault = configValue;
-                    // can save immediately on change, if you don't want to provide a "Save and Close" button
-                    this.configuration.Save();
-                }
-            }
-            ImGui.End();
-        }
+        
     }
 }
