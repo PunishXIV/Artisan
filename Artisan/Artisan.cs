@@ -77,15 +77,6 @@ namespace Artisan
                 RepeatActualCraft();
         }
 
-        private void PluginUi_CraftingWindowStateChanged(object? sender, bool e)
-        {
-            Dalamud.Logging.PluginLog.Debug(e.ToString());
-            if (!e)
-                StopMp3();
-            else
-                PlayMp3();
-        }
-
         public static async void FetchRecommendation(object? sender, int e)
         {
             try

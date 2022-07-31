@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan.RawInformation
 {
@@ -31,9 +32,35 @@ namespace Artisan.RawInformation
             return CharacterStats.Control;
         }
 
+        public static bool LevelChecked(this uint id)
+        {
+            if (LuminaSheets.ActionSheet.TryGetValue(id, out var act1))
+            {
+                return CharacterLevel() >= act1.ClassJobLevel;
+            }
+            if (LuminaSheets.CraftActions.TryGetValue(id, out var act2))
+            {
+                return CharacterLevel() >= act2.ClassJobLevel;
+            }
+
+            return false;
+        }
         public static bool CanUseTrainedEye
-            => Service.ClientState?.LocalPlayer?.Level >= CraftingLogic.CurrentCraft.Recipe?.RecipeLevelTable.Value?.ClassJobLevel + 10 && CraftingLogic.CurrentCraft.CurrentStep == 1 && Service.ClientState?.LocalPlayer?.Level >= 80;
+            => Service.ClientState?.LocalPlayer?.Level >= Recipe?.RecipeLevelTable.Value?.ClassJobLevel + 10 && CraftingLogic.CurrentCraft.CurrentStep == 1 && Service.ClientState?.LocalPlayer?.Level >= 80;
         
+        public static uint HighestLevelTouch()
+        {
+            if (CanUse(Skills.TrainedFinesse) && GetStatus(Buffs.InnerQuiet)?.StackCount == 10) return Skills.TrainedFinesse;
+            if (CanUse(Skills.PreparatoryTouch) && CurrentDurability > 20) return Skills.PreparatoryTouch;
+            if (CanUse(Skills.AdvancedTouch) && GetResourceCost(Skills.AdvancedTouch) == 18) return Skills.AdvancedTouch;
+            if (CanUse(Skills.FocusedTouch) && JustUsedObserve) return Skills.FocusedTouch;
+            if (CanUse(Skills.PrudentTouch) && GetStatus(Buffs.WasteNot2) == null && GetStatus(Buffs.WasteNot) == null) return Skills.PrudentTouch;
+            if (CanUse(Skills.PreciseTouch)) return Skills.PreciseTouch;
+            if (CanUse(Skills.StandardTouch)) return Skills.StandardTouch;
+            if (CanUse(Skills.BasicSynth)) return Skills.BasicTouch;
+
+            return 0;
+        }
     }
 
     public static class CharacterStats
@@ -43,8 +70,8 @@ namespace Artisan.RawInformation
         private delegate ulong GetBaseParam(IntPtr playerAddress, uint baseParamId);
         private static GetBaseParam getBaseParam;
 
-        public static ulong Craftsmanship;
-        public static ulong Control;
+        public static ulong Craftsmanship { get; set; }
+        public static ulong Control { get; set; }
 
         private static void FetchMemory()
         {

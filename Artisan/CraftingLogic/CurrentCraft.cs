@@ -57,6 +57,7 @@ namespace Artisan.CraftingLogic
                 Veneration = 2226,
                 GreatStrides = 254,
                 Manipulation = 1164,
+                WasteNot = 252,
                 WasteNot2 = 257,
                 FinalAppraisal = 2190,
                 MuscleMemory = 2191;
@@ -91,14 +92,15 @@ namespace Artisan.CraftingLogic
         }
         public static event EventHandler<int>? StepChanged;
 
-        public static int CurrentDurability = 0;
-        public static int MaxDurability = 0;
-        public static int CurrentProgress = 0;
-        public static int MaxProgress = 0;
-        public static int CurrentQuality = 0;
-        public static int MaxQuality = 0;
-        public static int HighQualityPercentage = 0;
-        public static Condition CurrentCondition;
+        public static int CurrentDurability { get; set; } = 0;
+        public static int MaxDurability { get; set; } = 0;
+        public static int CurrentProgress { get; set; } = 0;
+        public static int MaxProgress { get; set; } = 0;
+        public static int CurrentQuality { get; set; } = 0;
+        public static int MaxQuality { get; set; } = 0;
+        public static int HighQualityPercentage { get; set; } = 0;
+
+        public static Condition CurrentCondition { get; set; }
         private static int currentStep = 0;
         public static int CurrentStep
         {
@@ -113,26 +115,26 @@ namespace Artisan.CraftingLogic
 
             }
         }
-        public static string? HQLiteral;
-        public static bool CanHQ;
-        public static string? CollectabilityLow;
-        public static string? CollectabilityMid;
-        public static string? CollectabilityHigh;
+        public static string? HQLiteral { get; set; }
+        public static bool CanHQ { get; set; }
+        public static string? CollectabilityLow { get; set; }
+        public static string? CollectabilityMid { get; set; }
+        public static string? CollectabilityHigh { get; set; }
 
-        public static string? ItemName;
+        public static string? ItemName { get; set; }
 
-        public static Recipe? Recipe;
+        public static Recipe? Recipe { get; set; }
 
-        public static uint CurrentRecommendation;
+        public static uint CurrentRecommendation { get; set; }
 
-        public static bool CraftingWindowOpen = false;
+        public static bool CraftingWindowOpen { get; set; } = false;
 
-        public static bool JustUsedFinalAppraisal = false;
-        public static bool JustUsedObserve = false;
-        public static bool ManipulationUsed = false;
-        public static bool WasteNotUsed = false;
-        public static bool InnovationUsed = false;
-        public static bool VenerationUsed = false;
+        public static bool JustUsedFinalAppraisal { get; set; } = false;
+        public static bool JustUsedObserve { get; set; } = false;
+        public static bool ManipulationUsed { get; set; } = false;
+        public static bool WasteNotUsed { get; set; } = false;
+        public static bool InnovationUsed { get; set; } = false;
+        public static bool VenerationUsed { get; set; } = false;
 
         public unsafe static bool GetCraft()
         {
@@ -174,9 +176,9 @@ namespace Artisan.CraftingLogic
                 MaxProgress = Convert.ToInt32(mp.NodeText.ToString());
                 CurrentQuality = Convert.ToInt32(cq.NodeText.ToString());
                 MaxQuality = Convert.ToInt32(mq.NodeText.ToString());
-                ItemName = item.NodeText.ToString().Substring(14);
+                ItemName = item.NodeText.ToString()[14..];
                 ItemName = ItemName.Remove(ItemName.Length - 10, 10);
-                if (ItemName[ItemName.Length -1] == '')
+                if (ItemName[^1] == '')
                 {
                     ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
                 }
@@ -380,8 +382,7 @@ namespace Artisan.CraftingLogic
                     if (CurrentCondition == Condition.Poor) return Skills.Observe;
                     if (GetStatus(Buffs.InnerQuiet)?.StackCount == 8 && GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                     if (CanUse(Skills.PreparatoryTouch)) return Skills.PreparatoryTouch;
-
-                    return Skills.BasicTouch;
+                    if (CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
                 }
 
                 if (CanUse(Skills.Groundwork) && CalculateNewProgress(Skills.Groundwork) >= MaxProgress) return Skills.Groundwork;
@@ -493,6 +494,14 @@ namespace Artisan.CraftingLogic
 
         internal static bool CanUse(uint id)
         {
+            if (LuminaSheets.ActionSheet.TryGetValue(id, out var act))
+            {
+                if (CharacterInfo.CharacterLevel() < act.ClassJobLevel) return false;
+            }
+            if (LuminaSheets.CraftActions.TryGetValue(id, out var act2))
+            {
+                if (CharacterInfo.CharacterLevel() < act2.ClassJobLevel) return false;
+            }
             if (GetResourceCost(id) > CharacterInfo.CurrentCP) return false;
 
             return true;
