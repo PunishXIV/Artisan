@@ -1,5 +1,5 @@
-﻿using CraftIt.CraftingLogic;
-using CraftIt.RawInformation;
+﻿using Artisan.CraftingLogic;
+using Artisan.RawInformation;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
@@ -10,20 +10,22 @@ using System.IO;
 using System.Threading.Tasks;
 using ClickLib;
 using NAudio.Wave;
+using static Artisan.CraftingLogic.CurrentCraft;
+using Dalamud.Game;
 
-namespace CraftIt
+namespace Artisan
 {
-    public sealed class CraftIt : IDalamudPlugin
+    public sealed class Artisan : IDalamudPlugin
     {
-        public string Name => "Craft-It";
+        public string Name => "Artisan";
 
-        private const string commandName = "/craftit";
+        private const string commandName = "/artisan";
         private PluginUI PluginUi { get; init; }
 
         private IWavePlayer waveOut;
         private Mp3FileReader mp3FileReader;
 
-        public CraftIt(
+        public Artisan(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
             [RequiredVersion("1.0")] CommandManager commandManager)
         {
@@ -41,23 +43,38 @@ namespace CraftIt
             var imagePath = Path.Combine(Service.Interface.AssemblyLocation.Directory?.FullName!, "Icon.png");
             var slothImg = Service.Interface.UiBuilder.LoadImage(imagePath);
             this.PluginUi = new PluginUI(Service.Configuration, slothImg);
-            this.PluginUi.CraftingWindowStateChanged += PluginUi_CraftingWindowStateChanged;
+            //this.PluginUi.CraftingWindowStateChanged += PluginUi_CraftingWindowStateChanged;
 
             Service.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
-                HelpMessage = "Opens the Craft-It menu."
+                HelpMessage = "Opens the Artisan menu."
             });
 
             Service.Interface.UiBuilder.Draw += DrawUI;
             Service.Interface.UiBuilder.OpenConfigUi += DrawConfigUI;
-            Service.ToastGui.Enable();
             Service.Condition.ConditionChange += CheckForCraftedState;
-            CurrentCraft.StepChanged += FetchRecommendation;
+            Service.Framework.Update += FireBot;
+            StepChanged += FetchRecommendation;
 
-            this.waveOut = new WaveOutEvent(); // or new WaveOutEvent() if you are not using WinForms/WPF
-            this.mp3FileReader = new Mp3FileReader(@"C:\Users\thero\Desktop\b!tches I'm back!.mp3");
-            this.waveOut.Init(mp3FileReader);
+            //this.waveOut = new WaveOutEvent(); // or new WaveOutEvent() if you are not using WinForms/WPF
+            //this.mp3FileReader = new Mp3FileReader(@"C:\Users\thero\Desktop\b!tches I'm back!.mp3");
+            //this.waveOut.Init(mp3FileReader);
 
+        }
+
+        private void FireBot(Framework framework)
+        {
+            GetCraft();
+            Hotbars.MakeButtonsGlow(CurrentRecommendation);
+            
+            if (GetStatus(Buffs.FinalAppraisal)?.StackCount == 5 && CurrentRecommendation == Skills.FinalAppraisal)
+            {
+                FetchRecommendation(CurrentStep, CurrentStep);
+            }
+
+            bool enableAutoRepeat = Service.Configuration.AutoCraft;
+            if (enableAutoRepeat)
+                RepeatActualCraft();
         }
 
         private void PluginUi_CraftingWindowStateChanged(object? sender, bool e)
@@ -69,7 +86,7 @@ namespace CraftIt
                 PlayMp3();
         }
 
-        private async void FetchRecommendation(object? sender, int e)
+        public static async void FetchRecommendation(object? sender, int e)
         {
             try
             {
@@ -81,12 +98,18 @@ namespace CraftIt
                     CurrentCraft.VenerationUsed = false;
                     CurrentCraft.InnovationUsed = false;
                     CurrentCraft.WasteNotUsed = false;
+                    CurrentCraft.JustUsedFinalAppraisal = false;
 
                     return;
                 }
 
                 var rec = CurrentCraft.GetRecommendation();
                 CurrentCraft.CurrentRecommendation = rec;
+
+                if (GetStatus(Buffs.FinalAppraisal)?.StackCount == 5)
+                {
+                    await Task.Delay(300);
+                }
 
                 if (rec != 0)
                 {
@@ -101,7 +124,6 @@ namespace CraftIt
                         Service.ToastGui.ShowQuest($"Use {craftAct.Name}", options);
                     }
 
-                    await Task.Delay(1000);
                     if (Service.Configuration.AutoMode)
                     {
                         Hotbars.ExecuteRecommended(rec);
@@ -110,7 +132,7 @@ namespace CraftIt
             }
             catch (Exception ex)
             {
-                Dalamud.Logging.PluginLog.Error(ex, ex.StackTrace);
+                Dalamud.Logging.PluginLog.Error(ex, "Crafting Step Change");
             }
 
         }

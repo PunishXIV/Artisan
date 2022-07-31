@@ -1,4 +1,4 @@
-﻿using CraftIt.RawInformation;
+﻿using Artisan.RawInformation;
 using Dalamud.Data;
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
@@ -11,7 +11,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using NAudio.Wave;
 
-namespace CraftIt
+namespace Artisan
 {
     /// <summary>
     /// Dalamud and plugin services.

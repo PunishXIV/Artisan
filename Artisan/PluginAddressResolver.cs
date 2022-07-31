@@ -3,7 +3,7 @@ using System;
 using Dalamud.Game;
 using Dalamud.Logging;
 
-namespace CraftIt
+namespace Artisan
 {
     /// <summary>
     /// Plugin address resolver.

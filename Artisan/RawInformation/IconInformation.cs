@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CraftIt.RawInformation
+namespace Artisan.RawInformation
 {
     internal class IconInformation : IDisposable
     {

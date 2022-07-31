@@ -1,5 +1,6 @@
 ﻿using ClickLib.Clicks;
-using CraftIt.RawInformation;
+using Artisan.RawInformation;
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -8,7 +9,7 @@ using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace CraftIt.CraftingLogic
+namespace Artisan.CraftingLogic
 {
     public unsafe static class CurrentCraft
     {
@@ -57,6 +58,7 @@ namespace CraftIt.CraftingLogic
                 GreatStrides = 254,
                 Manipulation = 1164,
                 WasteNot2 = 257,
+                FinalAppraisal = 2190,
                 MuscleMemory = 2191;
 
 
@@ -125,6 +127,7 @@ namespace CraftIt.CraftingLogic
 
         public static bool CraftingWindowOpen = false;
 
+        public static bool JustUsedFinalAppraisal = false;
         public static bool JustUsedObserve = false;
         public static bool ManipulationUsed = false;
         public static bool WasteNotUsed = false;
@@ -249,7 +252,6 @@ namespace CraftIt.CraftingLogic
             {
                 if (CraftingWindowOpen)
                 {
-                    Dalamud.Logging.PluginLog.Debug(Recipe.RecipeLevelTable.Value.ProgressDivider.ToString());
                     var baseValue = CharacterInfo.Craftsmanship() * 10 / Recipe.RecipeLevelTable.Value.ProgressDivider + 2;
 
                     return baseValue;
@@ -348,8 +350,10 @@ namespace CraftIt.CraftingLogic
             {
                 if (CurrentQuality < MaxQuality)
                 {
+
                     if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
-                    if (GetStatus(Buffs.MuscleMemory) != null && CalculateNewProgress(Skills.Groundwork) < MaxProgress) return Skills.Groundwork;
+                    if (CurrentStep == 2 && CanUse(Skills.FinalAppraisal) && !JustUsedFinalAppraisal) { JustUsedFinalAppraisal = true; return Skills.FinalAppraisal; }
+                    if (GetStatus(Buffs.MuscleMemory) != null) return Skills.Groundwork;
                     if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) { JustUsedObserve = true; return Skills.Observe; }
                     if (JustUsedObserve) { JustUsedObserve = false; return Skills.FocusedTouch; }
                     if (GetStatus(Buffs.InnerQuiet)?.StackCount == 8 && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
@@ -461,7 +465,9 @@ namespace CraftIt.CraftingLogic
         }
         internal static Dalamud.Game.ClientState.Statuses.Status? GetStatus(uint statusID)
         {
-            foreach (var status in Service.ClientState.LocalPlayer.StatusList)
+            if (Service.ClientState.LocalPlayer is null) return null;
+
+            foreach (var status in Service.ClientState.LocalPlayer?.StatusList)
             {
                 if (status.StatusId == statusID)
                     return status;

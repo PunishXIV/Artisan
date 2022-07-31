@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace CraftIt.RawInformation
+namespace Artisan.RawInformation
 {
     public static class CharacterInfo
     {

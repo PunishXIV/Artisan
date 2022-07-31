@@ -1,11 +1,12 @@
-﻿using CraftIt.RawInformation;
+﻿using Artisan.CraftingLogic;
+using Artisan.RawInformation;
 using ImGuiNET;
 using System;
 using System.Linq;
 using System.Numerics;
-using static CraftIt.CraftingLogic.CurrentCraft;
+using static Artisan.CraftingLogic.CurrentCraft;
 
-namespace CraftIt
+namespace Artisan
 {
     // It is good to have this be disposable in general, in case you ever need it
     // to do any cleanup
@@ -66,26 +67,8 @@ namespace CraftIt
             CraftingVisible = craftingVisible;
 
             ImGui.SetNextWindowSize(new Vector2(375, 330), ImGuiCond.FirstUseEver);
-            ImGui.SetNextWindowSizeConstraints(new Vector2(375, 330), new Vector2(float.MaxValue, float.MaxValue));
-            if (ImGui.Begin("Craft-It Crafting Window", ref this.craftingVisible, ImGuiWindowFlags.AlwaysAutoResize))
+            if (ImGui.Begin("Artisan Crafting Window", ref this.craftingVisible, ImGuiWindowFlags.AlwaysAutoResize))
             {
-                GetCraft();
-                
-                Hotbars.MakeButtonsGlow(CurrentRecommendation);
-
-                if (ImGui.Button("Execute recommended action"))
-                {
-                    Hotbars.ExecuteRecommended(CurrentRecommendation);
-                }
-
-                bool enableAutoRepeat = Service.Configuration.AutoCraft;
-
-                if (ImGui.Checkbox("Repeat last", ref enableAutoRepeat))
-                {
-                    Service.Configuration.AutoCraft = enableAutoRepeat;
-                    Service.Configuration.Save();
-                }
-
                 bool autoMode = Service.Configuration.AutoMode;
 
                 if (ImGui.Checkbox("Auto Mode", ref autoMode))
@@ -93,8 +76,22 @@ namespace CraftIt
                     Service.Configuration.AutoMode = autoMode;
                     Service.Configuration.Save();
                 }
-                if (enableAutoRepeat)
-                    RepeatActualCraft();
+
+                bool enableAutoRepeat = Service.Configuration.AutoCraft;
+
+                if (ImGui.Checkbox("Automatically Repeat Last Craft", ref enableAutoRepeat))
+                {
+                    Service.Configuration.AutoCraft = enableAutoRepeat;
+                    Service.Configuration.Save();
+                }
+
+                ImGui.Text("Semi-Manual Mode");
+
+                if (ImGui.Button("Execute recommended action"))
+                {
+                    Hotbars.ExecuteRecommended(CurrentRecommendation);
+                }
+
             }
             ImGui.End();
         }
@@ -107,13 +104,22 @@ namespace CraftIt
             }
 
             ImGui.SetNextWindowSize(new Vector2(375, 330), ImGuiCond.FirstUseEver);
-            ImGui.SetNextWindowSizeConstraints(new Vector2(375, 330), new Vector2(float.MaxValue, float.MaxValue));
-            if (ImGui.Begin("My Amazing Window", ref this.visible, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
+            if (ImGui.Begin("Artisan Config", ref this.visible, ImGuiWindowFlags.AlwaysAutoResize))
             {
-                ImGui.Text(GetCraft().ToString());
+                ImGui.TextWrapped($"Here you can change some settings Artisan will use. Some of these can also be toggled during a craft.");
+                bool autoEnabled = Service.Configuration.AutoMode;
+                bool autoCraft = Service.Configuration.AutoCraft;
 
-                ImGui.Text($"Current Craftsmanship: {CharacterInfo.Craftsmanship()}");
-                ImGui.Text($"Current Control: {CharacterInfo.Control()}");
+                if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
+                {
+                    Service.Configuration.AutoMode = autoEnabled;
+                    Service.Configuration.Save();
+                }
+                if (ImGui.Checkbox($"Automatically Repeat Last Craft", ref autoCraft))
+                {
+                    Service.Configuration.AutoCraft = autoCraft;
+                    Service.Configuration.Save();
+                }
             }
             ImGui.End();
         }

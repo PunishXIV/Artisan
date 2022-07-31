@@ -1,9 +1,9 @@
 {
   "Author": "Taurenkey",
-  "Name": "Craft-It",
+  "Name": "Artisan",
   "Punchline": "A 'simple' crafting plugin.",
   "Description": "The all-in-one crafting plugin",
-  "InternalName": "Craft-It",
+  "InternalName": "Artisan",
   "ApplicableVersion": "any",
   "IconUrl": "https://imgur.com/M1hormb.png",
   "Tags": [

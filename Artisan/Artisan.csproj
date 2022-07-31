@@ -11,12 +11,12 @@
 
 	<PropertyGroup>
 		<DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
-		<DalamudPluginPath>$(appdata)\XIVLauncher\installedPlugins\CraftIt\$(version)</DalamudPluginPath>
-		<DalamudDevPlugins>$(appdata)\XIVLauncher\devPlugins\CraftIt\</DalamudDevPlugins>
-		<AssemblyName>CraftIt</AssemblyName>
-		<RootNamespace>CraftIt</RootNamespace>
-		<PackageId>CraftIt</PackageId>
-		<Product>CraftIt</Product>
+		<DalamudPluginPath>$(appdata)\XIVLauncher\installedPlugins\Artisan\$(version)</DalamudPluginPath>
+		<DalamudDevPlugins>$(appdata)\XIVLauncher\devPlugins\Artisan\</DalamudDevPlugins>
+		<AssemblyName>Artisan</AssemblyName>
+		<RootNamespace>Artisan</RootNamespace>
+		<PackageId>Artisan</PackageId>
+		<Product>Artisan</Product>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -46,7 +46,7 @@
 	</PropertyGroup>
 	
   <ItemGroup>
-    <Content Include="..\Data\Craftit.json">
+    <Content Include="..\Data\Artisan.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="..\Data\Icon.png">

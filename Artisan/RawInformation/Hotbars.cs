@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-namespace CraftIt.RawInformation
+namespace Artisan.RawInformation
 {
     internal class Hotbars : IDisposable
     {
@@ -107,7 +107,6 @@ namespace CraftIt.RawInformation
                     {
                         if (action.Name.RawString.Contains(sheet.Name.RawString, StringComparison.CurrentCultureIgnoreCase))
                         {
-                            Dalamud.Logging.PluginLog.Debug($"{slot.Key}");
                             MakeButtonGlow(slot.Value, slot.Key);
                         }
                             

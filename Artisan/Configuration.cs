@@ -2,7 +2,7 @@
 using Dalamud.Plugin;
 using System;
 
-namespace CraftIt
+namespace Artisan
 {
     [Serializable]
     public class Configuration : IPluginConfiguration
