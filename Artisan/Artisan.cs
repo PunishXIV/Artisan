@@ -8,10 +8,10 @@ using Dalamud.Plugin;
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using ClickLib;
 using NAudio.Wave;
 using static Artisan.CraftingLogic.CurrentCraft;
 using Dalamud.Game;
+using System.Diagnostics;
 
 namespace Artisan
 {
@@ -24,6 +24,8 @@ namespace Artisan
 
         private IWavePlayer waveOut;
         private Mp3FileReader mp3FileReader;
+
+        private Stopwatch timer = new();
 
         public Artisan(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
@@ -65,7 +67,7 @@ namespace Artisan
         private void FireBot(Framework framework)
         {
             GetCraft();
-            
+
             if (GetStatus(Buffs.FinalAppraisal)?.StackCount == 5 && CurrentRecommendation == Skills.FinalAppraisal)
             {
                 FetchRecommendation(CurrentStep, CurrentStep);
@@ -80,6 +82,7 @@ namespace Artisan
         {
             try
             {
+               
                 if (e == 0)
                 {
                     CurrentCraft.CurrentRecommendation = 0;

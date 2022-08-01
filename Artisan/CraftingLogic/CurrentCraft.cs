@@ -8,6 +8,7 @@ using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
+using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace Artisan.CraftingLogic
 {
@@ -488,8 +489,31 @@ namespace Artisan.CraftingLogic
             }  
         }
 
+        internal unsafe static uint CanUse2(uint id)
+        {
+            ActionManager* actionManager = ActionManager.Instance();
+            if (actionManager == null)
+                return 0;
+
+            if (LuminaSheets.ActionSheet.TryGetValue(id, out var act1))
+            {
+                var canUse = actionManager->GetActionStatus(ActionType.Spell, id);
+                return canUse;
+            }
+            if (LuminaSheets.CraftActions.TryGetValue(id, out var act2))
+            {
+                var canUse = actionManager->GetActionStatus(ActionType.CraftAction, id);
+                return canUse;
+            }
+
+            return 0;
+        }
+
         internal static bool CanUse(uint id)
         {
+            Dalamud.Logging.PluginLog.Debug($"{CanUse2(Skills.TrainedEye)}");
+            return CanUse2(id) == 0;
+
             if (LuminaSheets.ActionSheet.TryGetValue(id, out var act))
             {
                 if (CharacterInfo.CharacterLevel() < act.ClassJobLevel) return false;
