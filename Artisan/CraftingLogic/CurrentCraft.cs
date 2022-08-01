@@ -357,15 +357,12 @@ namespace Artisan.CraftingLogic
                     if (CurrentStep == 2 && CanUse(Skills.FinalAppraisal) && !JustUsedFinalAppraisal) { JustUsedFinalAppraisal = true; return Skills.FinalAppraisal; }
                     if (GetStatus(Buffs.MuscleMemory) != null) return Skills.Groundwork;
                     if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) { JustUsedObserve = true; return Skills.Observe; }
-                    if (JustUsedObserve) { JustUsedObserve = false; return Skills.FocusedTouch; }
-                    if (GetStatus(Buffs.InnerQuiet)?.StackCount == 8 && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
-                    if (GetStatus(Buffs.InnerQuiet)?.StackCount == 8 && GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
+                    if (GetStatus(Buffs.InnerQuiet)?.StackCount == 10 && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
+                    if (GetStatus(Buffs.InnerQuiet)?.StackCount == 10 && GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                     if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) { ManipulationUsed = true; return Skills.Manipulation; }
                     if (!WasteNotUsed && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) { WasteNotUsed = true; return Skills.WasteNot2; }
                     if (!InnovationUsed && GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation)) { InnovationUsed = true; return Skills.Innovation; }
-                    if (CanUse(Skills.PreparatoryTouch)) return Skills.PreparatoryTouch;
-
-                    return Skills.BasicTouch;
+                    return CharacterInfo.HighestLevelTouch();
 
                 }
             }
@@ -381,8 +378,7 @@ namespace Artisan.CraftingLogic
                     if (GetStatus(Buffs.InnerQuiet)?.StackCount == 8 && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
                     if (CurrentCondition == Condition.Poor) return Skills.Observe;
                     if (GetStatus(Buffs.InnerQuiet)?.StackCount == 8 && GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
-                    if (CanUse(Skills.PreparatoryTouch)) return Skills.PreparatoryTouch;
-                    if (CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
+                    return CharacterInfo.HighestLevelTouch();
                 }
 
                 if (CanUse(Skills.Groundwork) && CalculateNewProgress(Skills.Groundwork) >= MaxProgress) return Skills.Groundwork;

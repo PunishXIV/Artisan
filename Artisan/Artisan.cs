@@ -65,7 +65,6 @@ namespace Artisan
         private void FireBot(Framework framework)
         {
             GetCraft();
-            Hotbars.MakeButtonsGlow(CurrentRecommendation);
             
             if (GetStatus(Buffs.FinalAppraisal)?.StackCount == 5 && CurrentRecommendation == Skills.FinalAppraisal)
             {

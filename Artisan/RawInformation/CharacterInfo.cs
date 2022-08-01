@@ -51,13 +51,13 @@ namespace Artisan.RawInformation
         public static uint HighestLevelTouch()
         {
             if (CanUse(Skills.TrainedFinesse) && GetStatus(Buffs.InnerQuiet)?.StackCount == 10) return Skills.TrainedFinesse;
+            if (CanUse(Skills.PreciseTouch) && (CurrentCondition is Condition.Good or Condition.Excellent)) return Skills.PreciseTouch;
             if (CanUse(Skills.PreparatoryTouch) && CurrentDurability > 20) return Skills.PreparatoryTouch;
             if (CanUse(Skills.AdvancedTouch) && GetResourceCost(Skills.AdvancedTouch) == 18) return Skills.AdvancedTouch;
             if (CanUse(Skills.FocusedTouch) && JustUsedObserve) return Skills.FocusedTouch;
             if (CanUse(Skills.PrudentTouch) && GetStatus(Buffs.WasteNot2) == null && GetStatus(Buffs.WasteNot) == null) return Skills.PrudentTouch;
-            if (CanUse(Skills.PreciseTouch)) return Skills.PreciseTouch;
-            if (CanUse(Skills.StandardTouch)) return Skills.StandardTouch;
-            if (CanUse(Skills.BasicSynth)) return Skills.BasicTouch;
+            if (CanUse(Skills.StandardTouch) && GetResourceCost(Skills.StandardTouch) == 18) return Skills.StandardTouch;
+            if (CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
 
             return 0;
         }

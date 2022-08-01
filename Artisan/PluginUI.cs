@@ -69,6 +69,8 @@ namespace Artisan
             ImGui.SetNextWindowSize(new Vector2(375, 330), ImGuiCond.FirstUseEver);
             if (ImGui.Begin("Artisan Crafting Window", ref this.craftingVisible, ImGuiWindowFlags.AlwaysAutoResize))
             {
+                Hotbars.MakeButtonsGlow(CurrentRecommendation);
+
                 bool autoMode = Service.Configuration.AutoMode;
 
                 if (ImGui.Checkbox("Auto Mode", ref autoMode))
