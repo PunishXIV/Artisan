@@ -93,6 +93,10 @@ namespace Artisan
                 {
                     Hotbars.ExecuteRecommended(CurrentRecommendation);
                 }
+                if (ImGui.Button("Fetch Recommendation"))
+                {
+                    Artisan.FetchRecommendation(null, 0);
+                }
 
             }
             ImGui.End();

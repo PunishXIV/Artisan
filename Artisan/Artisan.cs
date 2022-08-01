@@ -1,31 +1,24 @@
 ﻿using Artisan.CraftingLogic;
 using Artisan.RawInformation;
+using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using NAudio.Wave;
 using static Artisan.CraftingLogic.CurrentCraft;
-using Dalamud.Game;
-using System.Diagnostics;
 
 namespace Artisan
 {
     public sealed class Artisan : IDalamudPlugin
     {
         public string Name => "Artisan";
-
         private const string commandName = "/artisan";
         private PluginUI PluginUi { get; init; }
-
-        private IWavePlayer waveOut;
-        private Mp3FileReader mp3FileReader;
-
-        private Stopwatch timer = new();
 
         public Artisan(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
@@ -56,7 +49,7 @@ namespace Artisan
             Service.Interface.UiBuilder.OpenConfigUi += DrawConfigUI;
             Service.Condition.ConditionChange += CheckForCraftedState;
             Service.Framework.Update += FireBot;
-            StepChanged += FetchRecommendation;
+            StepChanged += ResetRecommendation;
 
             //this.waveOut = new WaveOutEvent(); // or new WaveOutEvent() if you are not using WinForms/WPF
             //this.mp3FileReader = new Mp3FileReader(@"C:\Users\thero\Desktop\b!tches I'm back!.mp3");
@@ -64,11 +57,19 @@ namespace Artisan
 
         }
 
-        private void FireBot(Framework framework)
+        private void ResetRecommendation(object? sender, int e)
+        {
+            CurrentRecommendation = 0;
+        }
+
+        private async void FireBot(Framework framework)
         {
             GetCraft();
-
             if (GetStatus(Buffs.FinalAppraisal)?.StackCount == 5 && CurrentRecommendation == Skills.FinalAppraisal)
+            {
+                FetchRecommendation(CurrentStep, CurrentStep);
+            }
+            if (CanUse(GetCraftersBasicSynth()) && CurrentRecommendation == 0)
             {
                 FetchRecommendation(CurrentStep, CurrentStep);
             }
@@ -82,7 +83,6 @@ namespace Artisan
         {
             try
             {
-               
                 if (e == 0)
                 {
                     CurrentCraft.CurrentRecommendation = 0;
@@ -121,7 +121,11 @@ namespace Artisan
                     {
                         Hotbars.ExecuteRecommended(rec);
                     }
+
+                    return;
                 }
+
+                await Task.Delay(1000).ContinueWith(task => FetchRecommendation(null, 0));
             }
             catch (Exception ex)
             {
@@ -130,16 +134,9 @@ namespace Artisan
 
         }
 
-        private void PlayMp3()
+        public static uint GetCraftersBasicSynth()
         {
-            StopMp3();
-            this.mp3FileReader.Position = 0;
-            this.waveOut.Play();
-        }
-
-        private void StopMp3()
-        {
-            this.waveOut.Stop();
+            return 100060;
         }
 
         private void CheckForCraftedState(ConditionFlag flag, bool value)
@@ -159,6 +156,7 @@ namespace Artisan
             Service.Interface.UiBuilder.OpenConfigUi -= DrawConfigUI;
             Service.Interface.UiBuilder.Draw -= DrawUI;
             CurrentCraft.StepChanged -= FetchRecommendation;
+            Service.Framework.Update -= FireBot;
 
 
         }

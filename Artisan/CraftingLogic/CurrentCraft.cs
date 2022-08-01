@@ -335,9 +335,8 @@ namespace Artisan.CraftingLogic
         }
         public static uint GetRecommendation()
         {
-            if (CharacterInfo.CanUseTrainedEye) return Skills.TrainedEye;
-            //if (CurrentCondition is Condition.Good or Condition.Excellent && CanUse(Skills.Reflect)) return Skills.Tricks;
-
+            if (CanUse(Skills.TrainedEye)) return Skills.TrainedEye;
+           
             if (MaxQuality == 0)
             {
                 if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
@@ -511,20 +510,29 @@ namespace Artisan.CraftingLogic
 
         internal static bool CanUse(uint id)
         {
-            Dalamud.Logging.PluginLog.Debug($"{CanUse2(Skills.TrainedEye)}");
-            return CanUse2(id) == 0;
-
-            if (LuminaSheets.ActionSheet.TryGetValue(id, out var act))
+            if (LuminaSheets.ActionSheet.TryGetValue(id, out var act1))
             {
-                if (CharacterInfo.CharacterLevel() < act.ClassJobLevel) return false;
+                string skillName = act1.Name;
+                var allOfSameName = LuminaSheets.ActionSheet.Where(x => x.Value.Name == skillName).Select(x => x.Key);
+                foreach (var dupe in allOfSameName)
+                {
+                    if (CanUse2(dupe) == 0) return true;
+                }
+                return false;
             }
+
             if (LuminaSheets.CraftActions.TryGetValue(id, out var act2))
             {
-                if (CharacterInfo.CharacterLevel() < act2.ClassJobLevel) return false;
+                string skillName = act2.Name;
+                var allOfSameName = LuminaSheets.CraftActions.Where(x => x.Value.Name == skillName).Select(x => x.Key);
+                foreach (var dupe in allOfSameName)
+                {
+                    if (CanUse2(dupe) == 0) return true;
+                }
+                return false;
             }
-            if (GetResourceCost(id) > CharacterInfo.CurrentCP) return false;
 
-            return true;
+            return false;
         }
 
         public enum Condition
