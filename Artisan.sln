@@ -8,7 +8,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{16B18EC1-C0BF-44CB-AC04-67E740E2580F}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		ClickLib\ClickLib.sln = ClickLib\ClickLib.sln
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClickLib", "ClickLib\ClickLib\ClickLib.csproj", "{91B0F1B0-35DF-4969-85A3-1AAA6704D5F1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,6 +23,10 @@ Global
 		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Debug|x64.Build.0 = Debug|x64
 		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Release|x64.ActiveCfg = Release|x64
 		{13C812E9-0D42-4B95-8646-40EEBF30636F}.Release|x64.Build.0 = Release|x64
+		{91B0F1B0-35DF-4969-85A3-1AAA6704D5F1}.Debug|x64.ActiveCfg = Debug|x64
+		{91B0F1B0-35DF-4969-85A3-1AAA6704D5F1}.Debug|x64.Build.0 = Debug|x64
+		{91B0F1B0-35DF-4969-85A3-1AAA6704D5F1}.Release|x64.ActiveCfg = Release|x64
+		{91B0F1B0-35DF-4969-85A3-1AAA6704D5F1}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
