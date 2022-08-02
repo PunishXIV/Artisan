@@ -1,14 +1,11 @@
-﻿using ClickLib.Clicks;
-using Artisan.RawInformation;
-using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Hooking;
+﻿using Artisan.RawInformation;
+using ClickLib.Clicks;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
-using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace Artisan.CraftingLogic
 {
@@ -328,6 +325,15 @@ namespace Artisan.CraftingLogic
 
         }
 
+        public static uint GreatStridesByregotCombo()
+        {
+            var multiplier = ByregotMultiplier() * 2;
+            int IQStacks = Convert.ToInt32(GetStatus(251)?.StackCount);
+            double innovation = GetStatus(Buffs.Innovation) != null ? 1.5 : 1;
+            double IQMultiplier = 1 + (IQStacks * 0.1);
+            return (uint)Math.Floor(CurrentQuality + (BaseQuality() * multiplier) * IQMultiplier * innovation);
+        }
+
         public static double ByregotMultiplier()
         {
             int IQStacks = Convert.ToInt32(GetStatus(251)?.StackCount);
@@ -336,7 +342,7 @@ namespace Artisan.CraftingLogic
         public static uint GetRecommendation()
         {
             if (CanUse(Skills.TrainedEye)) return Skills.TrainedEye;
-           
+
             if (MaxQuality == 0)
             {
                 if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
@@ -347,21 +353,20 @@ namespace Artisan.CraftingLogic
 
             if (CurrentDurability <= 10 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
 
-
             if (MaxDurability >= 60)
             {
                 if (CurrentQuality < MaxQuality)
                 {
-
                     if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
                     if (CurrentStep == 2 && CanUse(Skills.FinalAppraisal) && !JustUsedFinalAppraisal) { JustUsedFinalAppraisal = true; return Skills.FinalAppraisal; }
                     if (GetStatus(Buffs.MuscleMemory) != null) return Skills.Groundwork;
                     if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) { JustUsedObserve = true; return Skills.Observe; }
-                    if (GetStatus(Buffs.InnerQuiet)?.StackCount == 10 && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
-                    if (GetStatus(Buffs.InnerQuiet)?.StackCount == 10 && GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
+                    if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
+                    if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                     if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) { ManipulationUsed = true; return Skills.Manipulation; }
                     if (!WasteNotUsed && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) { WasteNotUsed = true; return Skills.WasteNot2; }
                     if (!InnovationUsed && GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation)) { InnovationUsed = true; return Skills.Innovation; }
+                    if (PredictFailure(CharacterInfo.HighestLevelSynth())) return CharacterInfo.HighestLevelSynth();
                     return CharacterInfo.HighestLevelTouch();
 
                 }
@@ -372,27 +377,48 @@ namespace Artisan.CraftingLogic
                 if (CurrentQuality < MaxQuality)
                 {
                     if (CurrentStep == 1 && CanUse(Skills.Reflect)) return Skills.Reflect;
+                    if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) { JustUsedObserve = true; return Skills.Observe; }
                     if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) { ManipulationUsed = true; return Skills.Manipulation; }
                     if (!WasteNotUsed && CanUse(Skills.WasteNot2)) { WasteNotUsed = true; return Skills.WasteNot2; }
                     if (!InnovationUsed && CanUse(Skills.Innovation)) { InnovationUsed = true; return Skills.Innovation; }
-                    if (GetStatus(Buffs.InnerQuiet)?.StackCount == 8 && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
-                    if (CurrentCondition == Condition.Poor) return Skills.Observe;
-                    if (GetStatus(Buffs.InnerQuiet)?.StackCount == 8 && GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
+                    if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
+                    if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
+                    if (PredictFailure(CharacterInfo.HighestLevelSynth())) return CharacterInfo.HighestLevelSynth();
                     return CharacterInfo.HighestLevelTouch();
                 }
-
-                if (CanUse(Skills.Groundwork) && CalculateNewProgress(Skills.Groundwork) >= MaxProgress) return Skills.Groundwork;
-                if (CanUse(Skills.CarefulSynthesis) && CalculateNewProgress(Skills.CarefulSynthesis) >= MaxProgress) return Skills.CarefulSynthesis;
-                if (!VenerationUsed && CanUse(Skills.Veneration)) { VenerationUsed = true; return Skills.Veneration; }
-                if (CanUse(Skills.Groundwork)) return Skills.Groundwork;
             }
 
-            if (CurrentDurability > MaxDurability / 2 && CanUse(Skills.Groundwork)) return Skills.Groundwork;
-            if (CanUse(Skills.CarefulSynthesis)) return Skills.CarefulSynthesis;
+            return CharacterInfo.HighestLevelSynth();
+        }
 
+        private static bool PredictFailure(uint highestLevelSynth)
+        {
+            if (Service.Configuration.DisableFailurePrediction) return false;
 
-            return Skills.BasicSynth;
+            int durabilityDegrade = 10;
 
+            if (highestLevelSynth == Skills.Groundwork) durabilityDegrade *= 2;
+            if (GetStatus(Buffs.WasteNot) != null || GetStatus(Buffs.WasteNot2) != null) durabilityDegrade /= 2;
+            if (GetStatus(Buffs.Manipulation) != null) durabilityDegrade += 5;
+
+            int estimatedSynths = EstimateSynths(highestLevelSynth);
+            int estimatedDegrade = estimatedSynths * durabilityDegrade;
+
+            return (CurrentDurability - estimatedDegrade) <= 0;
+        }
+
+        private static int EstimateSynths(uint highestLevelSynth)
+        {
+            var baseProg = (int)Math.Floor(BaseProgression() * GetMultiplier(highestLevelSynth));
+            int counter = 0;
+            var currentProg = CurrentProgress;
+            while (currentProg < MaxProgress)
+            {
+                currentProg += baseProg;
+                counter++;
+            }
+
+            return counter;
         }
 
         public static void RepeatTrialCraft()
@@ -485,7 +511,7 @@ namespace Artisan.CraftingLogic
                 var cost = LuminaSheets.CraftActions[actionID].Cost;
                 return cost;
 
-            }  
+            }
         }
 
         internal unsafe static uint CanUse2(uint id)

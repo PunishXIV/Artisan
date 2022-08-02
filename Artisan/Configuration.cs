@@ -12,6 +12,8 @@ namespace Artisan
         public bool AutoCraft { get; set; } = false;
         public bool AutoMode { get; set; } = false;
 
+        public bool DisableFailurePrediction { get; set; } = false;
+
         // the below exist just to make saving less cumbersome
 
         [NonSerialized]

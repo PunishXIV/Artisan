@@ -47,7 +47,7 @@ namespace Artisan.RawInformation
         }
         public static bool CanUseTrainedEye
             => Service.ClientState?.LocalPlayer?.Level >= Recipe?.RecipeLevelTable.Value?.ClassJobLevel + 10 && CraftingLogic.CurrentCraft.CurrentStep == 1 && Service.ClientState?.LocalPlayer?.Level >= 80;
-        
+
         public static uint HighestLevelTouch()
         {
             if (CanUse(Skills.TrainedFinesse) && GetStatus(Buffs.InnerQuiet)?.StackCount == 10) return Skills.TrainedFinesse;
@@ -58,6 +58,18 @@ namespace Artisan.RawInformation
             if (CanUse(Skills.PrudentTouch) && GetStatus(Buffs.WasteNot2) == null && GetStatus(Buffs.WasteNot) == null) return Skills.PrudentTouch;
             if (CanUse(Skills.StandardTouch) && GetResourceCost(Skills.StandardTouch) == 18) return Skills.StandardTouch;
             if (CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
+
+            return 0;
+        }
+
+        public static uint HighestLevelSynth()
+        {
+            if (CanUse(Skills.IntensiveSynthesis)) return Skills.IntensiveSynthesis;
+            if (CanUse(Skills.FocusedSynthesis) && JustUsedObserve) return Skills.FocusedSynthesis;
+            if (CanUse(Skills.Groundwork) && CurrentDurability > 20) return Skills.Groundwork;
+            if (CanUse(Skills.PrudentSynthesis)) return Skills.PrudentSynthesis;
+            if (CanUse(Skills.CarefulSynthesis)) return Skills.CarefulSynthesis;
+            if (CanUse(Skills.BasicSynth)) return Skills.BasicSynth;
 
             return 0;
         }

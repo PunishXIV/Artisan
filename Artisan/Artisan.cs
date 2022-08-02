@@ -64,12 +64,14 @@ namespace Artisan
 
         private async void FireBot(Framework framework)
         {
+            if (!Service.Condition[ConditionFlag.Crafting]) PluginUi.CraftingVisible = false;
+
             GetCraft();
             if (GetStatus(Buffs.FinalAppraisal)?.StackCount == 5 && CurrentRecommendation == Skills.FinalAppraisal)
             {
                 FetchRecommendation(CurrentStep, CurrentStep);
             }
-            if (CanUse(GetCraftersBasicSynth()) && CurrentRecommendation == 0)
+            if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0)
             {
                 FetchRecommendation(CurrentStep, CurrentStep);
             }
@@ -124,19 +126,12 @@ namespace Artisan
 
                     return;
                 }
-
-                await Task.Delay(1000).ContinueWith(task => FetchRecommendation(null, 0));
             }
             catch (Exception ex)
             {
                 Dalamud.Logging.PluginLog.Error(ex, "Crafting Step Change");
             }
 
-        }
-
-        public static uint GetCraftersBasicSynth()
-        {
-            return 100060;
         }
 
         private void CheckForCraftedState(ConditionFlag flag, bool value)

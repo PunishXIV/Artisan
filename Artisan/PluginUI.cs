@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLogic;
 using Artisan.RawInformation;
+using Dalamud.Interface.Components;
 using ImGuiNET;
 using System;
 using System.Linq;
@@ -67,7 +68,7 @@ namespace Artisan
             CraftingVisible = craftingVisible;
 
             ImGui.SetNextWindowSize(new Vector2(375, 330), ImGuiCond.FirstUseEver);
-            if (ImGui.Begin("Artisan Crafting Window", ref this.craftingVisible, ImGuiWindowFlags.AlwaysAutoResize))
+            if (ImGui.Begin("Artisan Crafting Window", ref this.craftingVisible, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar))
             {
                 Hotbars.MakeButtonsGlow(CurrentRecommendation);
 
@@ -86,6 +87,15 @@ namespace Artisan
                     Service.Configuration.AutoCraft = enableAutoRepeat;
                     Service.Configuration.Save();
                 }
+
+                bool failureCheck = Service.Configuration.DisableFailurePrediction;
+
+                if (ImGui.Checkbox($"Disable Failure Prediction", ref failureCheck))
+                {
+                    Service.Configuration.DisableFailurePrediction = failureCheck;
+                    Service.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker($"Disabling failure prediction may result in items failing to be crafted.\nUse at your own discretion.");
 
                 ImGui.Text("Semi-Manual Mode");
 
@@ -115,6 +125,7 @@ namespace Artisan
                 ImGui.TextWrapped($"Here you can change some settings Artisan will use. Some of these can also be toggled during a craft.");
                 bool autoEnabled = Service.Configuration.AutoMode;
                 bool autoCraft = Service.Configuration.AutoCraft;
+                bool failureCheck = Service.Configuration.DisableFailurePrediction;
 
                 if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
                 {
@@ -126,6 +137,12 @@ namespace Artisan
                     Service.Configuration.AutoCraft = autoCraft;
                     Service.Configuration.Save();
                 }
+                if (ImGui.Checkbox($"Disable Failure Prediction", ref failureCheck))
+                {
+                    Service.Configuration.DisableFailurePrediction = failureCheck;
+                    Service.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker($"Disabling failure prediction may result in items failing to be crafted.\nUse at your own discretion.");
             }
             ImGui.End();
         }
