@@ -402,7 +402,7 @@ namespace Artisan.CraftingLogic
             if (GetStatus(Buffs.Manipulation) != null) durabilityDegrade += 5;
 
             int estimatedSynths = EstimateSynths(highestLevelSynth);
-            int estimatedDegrade = estimatedSynths * durabilityDegrade;
+            int estimatedDegrade = (estimatedSynths + 1) * durabilityDegrade;
 
             return (CurrentDurability - estimatedDegrade) <= 0;
         }
