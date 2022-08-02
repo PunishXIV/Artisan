@@ -376,12 +376,12 @@ namespace Artisan.CraftingLogic
                     if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
                     if (CurrentStep == 2 && CanUse(Skills.FinalAppraisal) && !JustUsedFinalAppraisal) { JustUsedFinalAppraisal = true; return Skills.FinalAppraisal; }
                     if (GetStatus(Buffs.MuscleMemory) != null) return Skills.Groundwork;
-                    if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) { JustUsedObserve = true; return Skills.Observe; }
+                    if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe;
                     if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
                     if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
-                    if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) { ManipulationUsed = true; return Skills.Manipulation; }
-                    if (!WasteNotUsed && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) { WasteNotUsed = true; return Skills.WasteNot2; }
-                    if (!InnovationUsed && GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation)) { InnovationUsed = true; return Skills.Innovation; }
+                    if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation))  return Skills.Manipulation;
+                    if (!WasteNotUsed && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2))  return Skills.WasteNot2; 
+                    if (!InnovationUsed && GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation))  return Skills.Innovation; 
                     if (PredictFailure(CharacterInfo.HighestLevelSynth())) return CharacterInfo.HighestLevelSynth();
                     return CharacterInfo.HighestLevelTouch();
 

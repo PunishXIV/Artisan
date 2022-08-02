@@ -47,6 +47,7 @@ namespace Artisan
             Service.Interface.UiBuilder.OpenConfigUi += DrawConfigUI;
             Service.Condition.ConditionChange += CheckForCraftedState;
             Service.Framework.Update += FireBot;
+            ActionWatching.Enable();
             StepChanged += ResetRecommendation;
 
 
@@ -56,7 +57,6 @@ namespace Artisan
         private void ResetRecommendation(object? sender, int e)
         {
             CurrentRecommendation = 0;
-            if (JustUsedObserve) ObserveCounter++;
         }
 
         private void FireBot(Framework framework)
@@ -64,10 +64,6 @@ namespace Artisan
             if (!Service.Condition[ConditionFlag.Crafting]) PluginUi.CraftingVisible = false;
 
             GetCraft();
-            if (GetStatus(Buffs.FinalAppraisal)?.StackCount == 5 && CurrentRecommendation == Skills.FinalAppraisal)
-            {
-                FetchRecommendation(CurrentStep, CurrentStep);
-            }
             if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0)
             {
                 FetchRecommendation(CurrentStep, CurrentStep);
@@ -97,11 +93,6 @@ namespace Artisan
 
                 var rec = CurrentCraft.GetRecommendation();
                 CurrentCraft.CurrentRecommendation = rec;
-
-                if (GetStatus(Buffs.FinalAppraisal)?.StackCount == 5)
-                {
-                    await Task.Delay(300);
-                }
 
                 if (rec != 0)
                 {
@@ -150,7 +141,7 @@ namespace Artisan
             CurrentCraft.StepChanged -= FetchRecommendation;
             Service.Framework.Update -= FireBot;
 
-
+            ActionWatching.Dispose();
         }
 
         private void OnCommand(string command, string args)
