@@ -13,6 +13,7 @@ namespace Artisan
         public bool AutoMode { get; set; } = false;
 
         public bool DisableFailurePrediction { get; set; } = false;
+        public int MaxPercentage { get; internal set; } = 100;
 
         // the below exist just to make saving less cumbersome
 

@@ -355,7 +355,7 @@ namespace Artisan.CraftingLogic
 
             if (MaxDurability >= 60)
             {
-                if (CurrentQuality < MaxQuality)
+                if (CurrentQuality < MaxQuality && HighQualityPercentage < Service.Configuration.MaxPercentage)
                 {
                     if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
                     if (CurrentStep == 2 && CanUse(Skills.FinalAppraisal) && !JustUsedFinalAppraisal) { JustUsedFinalAppraisal = true; return Skills.FinalAppraisal; }
@@ -374,7 +374,7 @@ namespace Artisan.CraftingLogic
 
             if (MaxDurability == 40)
             {
-                if (CurrentQuality < MaxQuality)
+                if (CurrentQuality < MaxQuality && HighQualityPercentage < Service.Configuration.MaxPercentage)
                 {
                     if (CurrentStep == 1 && CanUse(Skills.Reflect)) return Skills.Reflect;
                     if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) { JustUsedObserve = true; return Skills.Observe; }

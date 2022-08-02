@@ -13,9 +13,6 @@ namespace Artisan
     // to do any cleanup
     class PluginUI : IDisposable
     {
-        private Configuration configuration;
-
-        private ImGuiScene.TextureWrap goatImage;
         public event EventHandler<bool>? CraftingWindowStateChanged;
 
         // this extra bool exists for ImGui, since you can't ref a property
@@ -40,16 +37,14 @@ namespace Artisan
             set { if (this.craftingVisible != value) CraftingWindowStateChanged?.Invoke(this, value); this.craftingVisible = value; }
         }
 
-        // passing in the image here just for simplicity
-        public PluginUI(Configuration configuration, ImGuiScene.TextureWrap goatImage)
+        public PluginUI()
         {
-            this.configuration = configuration;
-            this.goatImage = goatImage;
+
         }
 
         public void Dispose()
         {
-            this.goatImage.Dispose();
+            
         }
 
         public void Draw()
@@ -126,6 +121,8 @@ namespace Artisan
                 bool autoEnabled = Service.Configuration.AutoMode;
                 bool autoCraft = Service.Configuration.AutoCraft;
                 bool failureCheck = Service.Configuration.DisableFailurePrediction;
+                int maxQuality = Service.Configuration.MaxPercentage;
+
 
                 if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
                 {
@@ -143,6 +140,14 @@ namespace Artisan
                     Service.Configuration.Save();
                 }
                 ImGuiComponents.HelpMarker($"Disabling failure prediction may result in items failing to be crafted.\nUse at your own discretion.");
+
+                ImGui.TextWrapped("Max Quality%%");
+                ImGui.TextWrapped("Once quality has reached the below percentage, Artisan will focus on progress only.");
+                if (ImGui.SliderInt("###SliderMaxQuality", ref maxQuality, 0, 100, $"{maxQuality}%%"))
+                {
+                    Service.Configuration.MaxPercentage = maxQuality;
+                    Service.Configuration.Save();
+                }
             }
             ImGui.End();
         }

@@ -34,11 +34,9 @@ namespace Artisan
             Service.Address = new PluginAddressResolver();
             Service.Address.Setup();
 
-            // you might normally want to embed resources and load them from the manifest stream
             var imagePath = Path.Combine(Service.Interface.AssemblyLocation.Directory?.FullName!, "Icon.png");
-            var slothImg = Service.Interface.UiBuilder.LoadImage(imagePath);
-            this.PluginUi = new PluginUI(Service.Configuration, slothImg);
-            //this.PluginUi.CraftingWindowStateChanged += PluginUi_CraftingWindowStateChanged;
+            var artisanImg = Service.Interface.UiBuilder.LoadImage(imagePath);
+            this.PluginUi = new PluginUI();
 
             Service.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
@@ -51,9 +49,7 @@ namespace Artisan
             Service.Framework.Update += FireBot;
             StepChanged += ResetRecommendation;
 
-            //this.waveOut = new WaveOutEvent(); // or new WaveOutEvent() if you are not using WinForms/WPF
-            //this.mp3FileReader = new Mp3FileReader(@"C:\Users\thero\Desktop\b!tches I'm back!.mp3");
-            //this.waveOut.Init(mp3FileReader);
+
 
         }
 
@@ -62,7 +58,7 @@ namespace Artisan
             CurrentRecommendation = 0;
         }
 
-        private async void FireBot(Framework framework)
+        private void FireBot(Framework framework)
         {
             if (!Service.Condition[ConditionFlag.Crafting]) PluginUi.CraftingVisible = false;
 
