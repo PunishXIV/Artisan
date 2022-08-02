@@ -122,18 +122,21 @@ namespace Artisan
                 bool autoCraft = Service.Configuration.AutoCraft;
                 bool failureCheck = Service.Configuration.DisableFailurePrediction;
                 int maxQuality = Service.Configuration.MaxPercentage;
-
+                bool useTricksGood = Service.Configuration.UseTricksGood;
+                bool useTricksExcellent = Service.Configuration.UseTricksExcellent;
 
                 if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
                 {
                     Service.Configuration.AutoMode = autoEnabled;
                     Service.Configuration.Save();
                 }
+                ImGuiComponents.HelpMarker($"Automatically use each recommended action.\nRequires the action to be on a visible hotbar.");
                 if (ImGui.Checkbox($"Automatically Repeat Last Craft", ref autoCraft))
                 {
                     Service.Configuration.AutoCraft = autoCraft;
                     Service.Configuration.Save();
                 }
+                ImGuiComponents.HelpMarker($"Repeats the currently selected craft in your recipe list.\nWill only work whilst you have the items.\nThis will repeat using your set item quality settings.");
                 if (ImGui.Checkbox($"Disable Failure Prediction", ref failureCheck))
                 {
                     Service.Configuration.DisableFailurePrediction = failureCheck;
@@ -141,8 +144,20 @@ namespace Artisan
                 }
                 ImGuiComponents.HelpMarker($"Disabling failure prediction may result in items failing to be crafted.\nUse at your own discretion.");
 
+                if (ImGui.Checkbox("Use Tricks of the Trade - Good", ref useTricksGood))
+                {
+                    Service.Configuration.UseTricksGood = useTricksGood;
+                    Service.Configuration.Save();
+                }
+                ImGui.SameLine();
+                if (ImGui.Checkbox("Use Tricks of the Trade - Excellent", ref useTricksExcellent))
+                {
+                    Service.Configuration.UseTricksExcellent = useTricksExcellent;
+                    Service.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker($"These 2 options allow you to make Tricks of the Trade a priority when condition is Good or Excellent.\nOther skills that rely on these conditions will not be used.");
                 ImGui.TextWrapped("Max Quality%%");
-                ImGui.TextWrapped("Once quality has reached the below percentage, Artisan will focus on progress only.");
+                ImGuiComponents.HelpMarker($"Once quality has reached the below percentage, Artisan will focus on progress only.");
                 if (ImGui.SliderInt("###SliderMaxQuality", ref maxQuality, 0, 100, $"{maxQuality}%%"))
                 {
                     Service.Configuration.MaxPercentage = maxQuality;

@@ -100,6 +100,8 @@ namespace Artisan.CraftingLogic
 
         public static Condition CurrentCondition { get; set; }
         private static int currentStep = 0;
+        private static int observeCounter;
+
         public static int CurrentStep
         {
             get { return currentStep; }
@@ -133,6 +135,20 @@ namespace Artisan.CraftingLogic
         public static bool WasteNotUsed { get; set; } = false;
         public static bool InnovationUsed { get; set; } = false;
         public static bool VenerationUsed { get; set; } = false;
+
+        public static int ObserveCounter
+        {
+            get => observeCounter; 
+            set
+            {
+                observeCounter = value;
+                if (value == 2)
+                {
+                    observeCounter = 0;
+                    JustUsedObserve = false;
+                }
+            }
+        }
 
         public unsafe static bool GetCraft()
         {
@@ -341,14 +357,14 @@ namespace Artisan.CraftingLogic
         }
         public static uint GetRecommendation()
         {
-            if (CanUse(Skills.TrainedEye)) return Skills.TrainedEye;
+            if (CanUse(Skills.TrainedEye) && HighQualityPercentage < Service.Configuration.MaxPercentage) return Skills.TrainedEye;
+            if (CanUse(Skills.Tricks) && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent))) return Skills.Tricks;
 
-            if (MaxQuality == 0)
+            if (MaxQuality == 0 || Service.Configuration.MaxPercentage == 0)
             {
                 if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
+                if (CalculateNewProgress(CharacterInfo.HighestLevelSynth()) >= MaxProgress) return CharacterInfo.HighestLevelSynth();
                 if (GetStatus(Buffs.Veneration) == null && CanUse(Skills.Veneration)) return Skills.Veneration;
-
-                return Skills.Groundwork;
             }
 
             if (CurrentDurability <= 10 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
@@ -402,7 +418,7 @@ namespace Artisan.CraftingLogic
             if (GetStatus(Buffs.Manipulation) != null) durabilityDegrade += 5;
 
             int estimatedSynths = EstimateSynths(highestLevelSynth);
-            int estimatedDegrade = (estimatedSynths + 1) * durabilityDegrade;
+            int estimatedDegrade = estimatedSynths * durabilityDegrade;
 
             return (CurrentDurability - estimatedDegrade) <= 0;
         }

@@ -56,6 +56,7 @@ namespace Artisan
         private void ResetRecommendation(object? sender, int e)
         {
             CurrentRecommendation = 0;
+            if (JustUsedObserve) ObserveCounter++;
         }
 
         private void FireBot(Framework framework)

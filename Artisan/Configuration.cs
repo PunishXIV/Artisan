@@ -24,9 +24,11 @@ namespace Artisan
             }
         }
         public bool DisableFailurePrediction { get; set; } = false;
-        public int MaxPercentage { get; internal set; } = 100;
+        public int MaxPercentage { get; set; } = 100;
 
-        // the below exist just to make saving less cumbersome
+        public bool UseTricksGood { get; set; } = false;
+
+        public bool UseTricksExcellent { get; set; } = false;
 
         [NonSerialized]
         private DalamudPluginInterface? pluginInterface;
