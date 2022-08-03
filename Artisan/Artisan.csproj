@@ -67,6 +67,9 @@
     <PackageReference Include="DalamudPackager" Version="2.1.6" />
     <PackageReference Include="NAudio" Version="2.1.0" />
     <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
+    <Reference Include="ECommons">
+      <HintPath>..\..\..\..\Downloads\PunishLib\PunishLib\PunishLib\bin\Debug\ECommons.dll</HintPath>
+    </Reference>
     <Reference Include="FFXIVClientStructs">
       <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
       <Private>false</Private>
@@ -94,6 +97,9 @@
     <Reference Include="Lumina.Excel">
       <HintPath>$(DalamudLibPath)Lumina.Excel.dll</HintPath>
       <Private>false</Private>
+    </Reference>
+    <Reference Include="PunishLib">
+      <HintPath>..\..\..\..\Downloads\PunishLib\PunishLib\PunishLib\bin\Debug\PunishLib.dll</HintPath>
     </Reference>
   </ItemGroup>
 

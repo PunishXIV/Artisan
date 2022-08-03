@@ -29,6 +29,7 @@ namespace Artisan
         public bool UseTricksGood { get; set; } = false;
 
         public bool UseTricksExcellent { get; set; } = false;
+        public bool UseSpecialist { get; set; } = false;
 
         [NonSerialized]
         private DalamudPluginInterface? pluginInterface;

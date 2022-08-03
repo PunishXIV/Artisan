@@ -49,9 +49,10 @@ namespace Artisan
             Service.Framework.Update += FireBot;
             ActionWatching.Enable();
             StepChanged += ResetRecommendation;
+        }
 
-
-
+        public Artisan()
+        {
         }
 
         private void ResetRecommendation(object? sender, int e)
@@ -62,7 +63,7 @@ namespace Artisan
         private void FireBot(Framework framework)
         {
             if (!Service.Condition[ConditionFlag.Crafting]) PluginUi.CraftingVisible = false;
-
+            PluginUI.MarkChanceOfSuccess();
             GetCraft();
             if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0)
             {

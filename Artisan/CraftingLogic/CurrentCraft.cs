@@ -2,6 +2,7 @@
 using ClickLib.Clicks;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Linq;
@@ -44,7 +45,9 @@ namespace Artisan.CraftingLogic
                 TrainedEye = 100283,
                 AdvancedTouch = 100411,
                 PrudentSynthesis = 100427,
-                TrainedFinesse = 100435;
+                TrainedFinesse = 100435,
+                CarefulObservation = 100395,
+                HeartAndSoul = 100419;
         }
 
         public static class Buffs
@@ -374,8 +377,9 @@ namespace Artisan.CraftingLogic
                 if (CurrentQuality < MaxQuality && HighQualityPercentage < Service.Configuration.MaxPercentage)
                 {
                     if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
-                    if (CurrentStep == 2 && CanUse(Skills.FinalAppraisal) && !JustUsedFinalAppraisal) { JustUsedFinalAppraisal = true; return Skills.FinalAppraisal; }
+                    if (CurrentStep == 2 && CanUse(Skills.FinalAppraisal) && !JustUsedFinalAppraisal) return Skills.FinalAppraisal;
                     if (GetStatus(Buffs.MuscleMemory) != null) return Skills.Groundwork;
+                    if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
                     if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe;
                     if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
                     if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
@@ -393,10 +397,11 @@ namespace Artisan.CraftingLogic
                 if (CurrentQuality < MaxQuality && HighQualityPercentage < Service.Configuration.MaxPercentage)
                 {
                     if (CurrentStep == 1 && CanUse(Skills.Reflect)) return Skills.Reflect;
-                    if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) { JustUsedObserve = true; return Skills.Observe; }
-                    if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) { ManipulationUsed = true; return Skills.Manipulation; }
-                    if (!WasteNotUsed && CanUse(Skills.WasteNot2)) { WasteNotUsed = true; return Skills.WasteNot2; }
-                    if (!InnovationUsed && CanUse(Skills.Innovation)) { InnovationUsed = true; return Skills.Innovation; }
+                    if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
+                    if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe; 
+                    if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) return Skills.Manipulation; 
+                    if (!WasteNotUsed && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
+                    if (!InnovationUsed && CanUse(Skills.Innovation)) return Skills.Innovation;
                     if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
                     if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                     if (PredictFailure(CharacterInfo.HighestLevelSynth())) return CharacterInfo.HighestLevelSynth();
@@ -436,6 +441,7 @@ namespace Artisan.CraftingLogic
 
             return counter;
         }
+
 
         public static void RepeatTrialCraft()
         {
