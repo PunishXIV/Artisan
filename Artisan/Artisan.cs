@@ -7,6 +7,7 @@ using Dalamud.Game.Gui.Toast;
 using Dalamud.Interface;
 using Dalamud.IoC;
 using Dalamud.Plugin;
+using ECommons;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using System;
@@ -38,6 +39,7 @@ namespace Artisan
             Service.Address = new PluginAddressResolver();
             Service.Address.Setup();
 
+            ECommons.ECommons.Init(pluginInterface);
             this.PluginUi = new PluginUI(this);
 
             Service.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
@@ -136,6 +138,7 @@ namespace Artisan
         public void Dispose()
         {
             this.PluginUi.Dispose();
+            ECommons.ECommons.Dispose();
 
             Service.CommandManager.RemoveHandler(commandName);
 
