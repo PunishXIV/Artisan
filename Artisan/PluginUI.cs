@@ -3,6 +3,7 @@ using Dalamud.Interface.Components;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using System;
+using System.Linq;
 using System.Numerics;
 using static Artisan.CraftingLogic.CurrentCraft;
 
@@ -49,6 +50,8 @@ namespace Artisan
         public void Draw()
         {
             DrawCraftingWindow();
+
+            if (Service.Configuration.ShowEHQ)
             MarkChanceOfSuccess();
             Hotbars.MakeButtonsGlow(CurrentRecommendation);
 
@@ -105,7 +108,7 @@ namespace Artisan
                 if (crafts->AtkResNode.IsVisible)
                 {
                     var currentShownNodes = 0;
-                    
+
                     for (int i = 1; i <= 13; i++)
                     {
                         var craft = (AtkComponentNode*)crafts->Component->UldManager.NodeList[i];
@@ -120,7 +123,9 @@ namespace Artisan
                                 ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
                             }
 
-                            AtkResNodeFunctions.DrawSuccessRate(&craft->AtkResNode, $"{ItemName}");
+                            string calculatedPercentage = CalculateEstimate(ItemName);
+
+                            AtkResNodeFunctions.DrawSuccessRate(&craft->AtkResNode, $"{calculatedPercentage}");
                         }
                     }
                 }
@@ -131,9 +136,27 @@ namespace Artisan
             }
         }
 
+        private static string CalculateEstimate(string itemName)
+        {
+            var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Contains(itemName)).FirstOrDefault();
+            if (sheetItem == null)
+                return "Unknown Item - Please Report Bug";
+
+            if (!sheetItem.CanHq)
+                return "Item cannot be HQ.";
+
+            if (CharacterInfo.Craftsmanship() < sheetItem.RequiredCraftsmanship || CharacterInfo.Control() < sheetItem.RequiredControl)
+                return "Unable to craft with current stats.";
+
+            if (CharacterInfo.CharacterLevel() >= 80 && CharacterInfo.CharacterLevel() >= sheetItem.RecipeLevelTable.Value.ClassJobLevel + 10)
+                return "EHQ: 100%";
+
+            return "DEBUG";
+        }
+
         private void DrawAboutUs()
         {
-            
+
         }
 
         private void DrawCraftingWindow()
@@ -198,6 +221,8 @@ namespace Artisan
             bool useTricksGood = Service.Configuration.UseTricksGood;
             bool useTricksExcellent = Service.Configuration.UseTricksExcellent;
             bool useSpecialist = Service.Configuration.UseSpecialist;
+            bool showEHQ = Service.Configuration.ShowEHQ;
+
 
             if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
             {
@@ -217,6 +242,13 @@ namespace Artisan
                 Service.Configuration.Save();
             }
             ImGuiComponents.HelpMarker($"Disabling failure prediction may result in items failing to be crafted.\nUse at your own discretion.");
+
+            if (ImGui.Checkbox("Show Estimated HQ on Recipe (EHQ)", ref showEHQ))
+            {
+                Service.Configuration.ShowEHQ = showEHQ;
+                Service.Configuration.Save();
+            }
+            ImGuiComponents.HelpMarker($"This will mark in the crafting list an estimated HQ chance based on your current stats.");
 
             if (ImGui.Checkbox("Use Tricks of the Trade - Good", ref useTricksGood))
             {

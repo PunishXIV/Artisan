@@ -30,7 +30,7 @@ namespace Artisan.RawInformation
 
             ImGuiHelpers.ForceNextWindowMainViewport();
             var textSize = ImGui.CalcTextSize(str);
-            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y));
+            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y + (node->Height - textSize.Y)));
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(2f, 0f));
             ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
             ImGui.Begin("##enmityhp" + position.Y, ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoScrollbar
