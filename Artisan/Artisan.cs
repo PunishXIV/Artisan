@@ -4,11 +4,15 @@ using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
+using Dalamud.Interface;
 using Dalamud.IoC;
 using Dalamud.Plugin;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiNET;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Numerics;
 using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
 
@@ -63,8 +67,8 @@ namespace Artisan
         private void FireBot(Framework framework)
         {
             if (!Service.Condition[ConditionFlag.Crafting]) PluginUi.CraftingVisible = false;
-            PluginUI.MarkChanceOfSuccess();
             GetCraft();
+
             if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0)
             {
                 FetchRecommendation(CurrentStep, CurrentStep);

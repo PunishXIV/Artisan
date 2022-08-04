@@ -10,6 +10,7 @@ using ImGuiNET;
 using System;
 using System.IO;
 using System.Numerics;
+using System.Text;
 using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan
@@ -55,6 +56,8 @@ namespace Artisan
         public void Draw()
         {
             DrawCraftingWindow();
+            MarkChanceOfSuccess();
+            Hotbars.MakeButtonsGlow(CurrentRecommendation);
 
             if (!Visible)
             {
@@ -82,6 +85,50 @@ namespace Artisan
             }
         }
 
+        public unsafe static void MarkChanceOfSuccess()
+        {
+            try
+            {
+                var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+                if (recipeWindow == IntPtr.Zero)
+                    return;
+
+                var addonPtr = (AtkUnitBase*)recipeWindow;
+                if (addonPtr == null)
+                    return;
+
+                var baseX = addonPtr->X;
+                var baseY = addonPtr->Y;
+
+                var crafts = (AtkComponentNode*)addonPtr->UldManager.NodeList[67];
+                if (crafts->AtkResNode.IsVisible)
+                {
+                    var currentShownNodes = 0;
+                    for (int i = 1; i <= 13; i++)
+                    {
+                        var craft = (AtkComponentNode*)crafts->Component->UldManager.NodeList[i];
+                        if (craft->AtkResNode.IsVisible && craft->AtkResNode.Y >= 0 && currentShownNodes < 10)
+                        {
+                            currentShownNodes++;
+                            var craftNameNode = (AtkTextNode*)craft->Component->UldManager.NodeList[14];
+                            var ItemName = craftNameNode->NodeText.ToString()[14..];
+                            ItemName = ItemName.Remove(ItemName.Length - 10, 10);
+                            if (ItemName[^1] == '')
+                            {
+                                ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
+                            }
+
+                            AtkResNodeFunctions.DrawSuccessRate(&craft->AtkResNode, $"{ItemName}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+
         private void DrawAboutUs()
         {
             
@@ -99,8 +146,6 @@ namespace Artisan
             ImGui.SetNextWindowSize(new Vector2(375, 330), ImGuiCond.FirstUseEver);
             if (ImGui.Begin("Artisan Crafting Window", ref this.craftingVisible, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar))
             {
-                Hotbars.MakeButtonsGlow(CurrentRecommendation);
-
                 bool autoMode = Service.Configuration.AutoMode;
 
                 if (ImGui.Checkbox("Auto Mode", ref autoMode))
@@ -139,49 +184,6 @@ namespace Artisan
 
             }
             ImGui.End();
-        }
-
-        public unsafe static void MarkChanceOfSuccess()
-        {
-            try
-            {
-                var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
-                if (recipeWindow == IntPtr.Zero)
-                    return;
-
-                var addonPtr = (AtkUnitBase*)recipeWindow;
-                if (addonPtr == null)
-                    return;
-
-                var baseX = addonPtr->X;
-                var baseY = addonPtr->Y;
-
-                var crafts = (AtkComponentNode*)addonPtr->UldManager.NodeList[67];
-                if (crafts->AtkResNode.IsVisible)
-                {
-                    DrawSuccessRate(baseX, baseY, "LOOK AT ME");
-
-                }
-            }
-            catch (Exception ex)
-            {
-
-            }
-        }
-
-        public static void DrawSuccessRate(float x, float y, string str)
-        {
-            ImGuiHelpers.ForceNextWindowMainViewport();
-            var textSize = ImGui.CalcTextSize(str);
-            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(x -  textSize.X, y - textSize.Y / 2f));
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(2f, 0f));
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
-            ImGui.Begin("##enmityhp" + y, ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoScrollbar
-                | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoMouseInputs | ImGuiWindowFlags.NoNavFocus
-                | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
-            ImGui.TextUnformatted(str);
-            ImGui.End();
-            ImGui.PopStyleVar(2);
         }
 
         public void DrawMainWindow()
