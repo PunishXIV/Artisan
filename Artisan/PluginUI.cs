@@ -1,5 +1,6 @@
 ﻿using Artisan.RawInformation;
 using Dalamud.Interface.Components;
+using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using System;
@@ -37,9 +38,10 @@ namespace Artisan
             set { if (this.craftingVisible != value) CraftingWindowStateChanged?.Invoke(this, value); this.craftingVisible = value; }
         }
 
-        public PluginUI()
+        private IDalamudPlugin Plugin;
+        public PluginUI(Artisan plugin)
         {
-
+            Plugin = plugin;
         }
 
         public void Dispose()
@@ -61,7 +63,7 @@ namespace Artisan
             }
 
             ImGui.SetWindowSize(new Vector2(500, 500), ImGuiCond.FirstUseEver);
-            if (ImGui.Begin("Artisan", ref visible, ImGuiWindowFlags.AlwaysAutoResize))
+            if (ImGui.Begin("Artisan", ref visible, ImGuiWindowFlags.AlwaysUseWindowPadding))
             {
                 if (ImGui.BeginTabBar("TabBar"))
                 {
@@ -72,7 +74,7 @@ namespace Artisan
                     }
                     if (ImGui.BeginTabItem("About"))
                     {
-                        DrawAboutUs();
+                        PunishLib.ImGuiMethods.AboutTab.Draw(Plugin);
                         ImGui.EndTabItem();
                     }
 
@@ -112,7 +114,7 @@ namespace Artisan
                     for (int i = 1; i <= 13; i++)
                     {
                         var craft = (AtkComponentNode*)crafts->Component->UldManager.NodeList[i];
-                        if (craft->AtkResNode.IsVisible && craft->AtkResNode.Y >= 0 && craft->AtkResNode.Y < 340 && currentShownNodes < maxCrafts)
+                        if (craft->AtkResNode.IsVisible && craft->AtkResNode.Y >= 0 && craft->AtkResNode.Y < 340 && currentShownNodes < 10 && currentShownNodes < maxCrafts  )
                         {
                             currentShownNodes++;
                             var craftNameNode = (AtkTextNode*)craft->Component->UldManager.NodeList[14];
@@ -141,6 +143,7 @@ namespace Artisan
             var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Contains(itemName)).FirstOrDefault();
             if (sheetItem == null)
                 return "Unknown Item - Please Report Bug";
+            var recipeTable = sheetItem.RecipeLevelTable.Value;
 
             if (!sheetItem.CanHq)
                 return "Item cannot be HQ.";
@@ -149,9 +152,41 @@ namespace Artisan
                 return "Unable to craft with current stats.";
 
             if (CharacterInfo.CharacterLevel() >= 80 && CharacterInfo.CharacterLevel() >= sheetItem.RecipeLevelTable.Value.ClassJobLevel + 10)
-                return "EHQ: 100%";
+                return "EHQ: Guaranteed.";
 
-            return "DEBUG";
+            var difficulty = recipeTable.Difficulty;
+            var baseQual = BaseQuality(sheetItem);
+            var dur = recipeTable.Durability;
+            var baseSteps = baseQual * (dur / 10);
+            var maxQual = (double)recipeTable.Quality;
+            bool meetsRecCon = CharacterInfo.Control() >= recipeTable.SuggestedControl;
+            bool meetsRecCraft = CharacterInfo.Craftsmanship() >= recipeTable.SuggestedCraftsmanship;
+            var q1 = baseSteps / maxQual;
+            var q2 = CharacterInfo.MaxCP / sheetItem.QualityFactor / 1.5;
+            var q3 = CharacterInfo.IsManipulationUnlocked() ? 2 : 1;
+            var q4 = recipeTable.Stars > 0 ? 7 * (recipeTable.Stars * recipeTable.Stars) : 0;
+            var q5 = meetsRecCon && meetsRecCraft ? 3 : 1;
+            var q6 = Math.Floor((q1 * 100) + (q2 * 3 * q3 * q5) - q4);
+            var chance = q6 > 100 ? 100 : q6;
+            chance = chance < 0 ? 0 : chance;
+
+            switch (chance)
+            {
+                case < 20:
+                    return "EHQ: Do not attempt.";
+                case < 40:
+                    return "EHQ: Very low chance.";
+                case < 60:
+                    return "EHQ: Average chance.";
+                case < 80:
+                    return "EHQ: Good chance.";
+                case < 90:
+                    return "EHQ: High chance.";
+                case < 100:
+                    return "EHQ: Very high chance.";
+                default:
+                    return "EHQ: Guaranteed.";
+            }
         }
 
         private void DrawAboutUs()

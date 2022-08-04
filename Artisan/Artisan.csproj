@@ -28,7 +28,7 @@
 		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-		<OutputPath>bin\Release</OutputPath>
+		<OutputPath>$(DalamudDevPlugins)</OutputPath>
 		<NoWarn>CS1591</NoWarn>
 	</PropertyGroup>
 
@@ -45,16 +45,6 @@
 		<NoWarn>CS1591</NoWarn>
 	</PropertyGroup>
 	
-  <ItemGroup>
-    <Content Include="..\Data\Artisan.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\Data\Icon.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Visible>true</Visible>
-    </Content>
-  </ItemGroup>
-
   <PropertyGroup>
     <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
   </PropertyGroup>
@@ -67,6 +57,7 @@
     <PackageReference Include="DalamudPackager" Version="2.1.6" />
     <PackageReference Include="NAudio" Version="2.1.0" />
     <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
+    <ProjectReference Include="..\PunishLib\PunishLib\PunishLib.csproj" />
     <Reference Include="ECommons">
       <HintPath>..\..\..\..\Downloads\PunishLib\PunishLib\PunishLib\bin\Debug\ECommons.dll</HintPath>
     </Reference>
@@ -97,9 +88,6 @@
     <Reference Include="Lumina.Excel">
       <HintPath>$(DalamudLibPath)Lumina.Excel.dll</HintPath>
       <Private>false</Private>
-    </Reference>
-    <Reference Include="PunishLib">
-      <HintPath>..\..\..\..\Downloads\PunishLib\PunishLib\PunishLib\bin\Debug\PunishLib.dll</HintPath>
     </Reference>
   </ItemGroup>
 

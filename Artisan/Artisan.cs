@@ -38,9 +38,7 @@ namespace Artisan
             Service.Address = new PluginAddressResolver();
             Service.Address.Setup();
 
-            var imagePath = Path.Combine(Service.Interface.AssemblyLocation.Directory?.FullName!, "Icon.png");
-            var artisanImg = Service.Interface.UiBuilder.LoadImage(imagePath);
-            this.PluginUi = new PluginUI();
+            this.PluginUi = new PluginUI(this);
 
             Service.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
@@ -161,7 +159,7 @@ namespace Artisan
 
         private void DrawConfigUI()
         {
-            this.PluginUi.SettingsVisible = true;
+            this.PluginUi.Visible = true;
         }
     }
 }
