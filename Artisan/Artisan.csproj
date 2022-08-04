@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Authors></Authors>
     <Company></Company>
-    <Version>0.0.0.2</Version>
+    <Version>1.0.0.0</Version>
     <Description>A sample plugin.</Description>
     <Copyright></Copyright>
     <PackageProjectUrl>https://github.com/goatcorp/SamplePlugin</PackageProjectUrl>
@@ -28,7 +28,7 @@
 		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-		<OutputPath>bin\Release</OutputPath>
+		<OutputPath>bin/Release</OutputPath>
 		<NoWarn>CS1591</NoWarn>
 	</PropertyGroup>
 
@@ -45,28 +45,25 @@
 		<NoWarn>CS1591</NoWarn>
 	</PropertyGroup>
 	
-  <ItemGroup>
-    <Content Include="..\Data\Artisan.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\Data\Icon.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Visible>true</Visible>
-    </Content>
-  </ItemGroup>
-
   <PropertyGroup>
     <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
+    <None Update="Artisan.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="2.1.6" />
     <PackageReference Include="NAudio" Version="2.1.0" />
     <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
+    <ProjectReference Include="..\PunishLib\PunishLib\PunishLib.csproj" />
+    <Reference Include="ECommons">
+      <HintPath>..\..\..\..\Downloads\PunishLib\PunishLib\PunishLib\bin\Debug\ECommons.dll</HintPath>
+    </Reference>
     <Reference Include="FFXIVClientStructs">
       <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
       <Private>false</Private>

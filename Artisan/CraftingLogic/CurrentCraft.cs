@@ -44,7 +44,9 @@ namespace Artisan.CraftingLogic
                 TrainedEye = 100283,
                 AdvancedTouch = 100411,
                 PrudentSynthesis = 100427,
-                TrainedFinesse = 100435;
+                TrainedFinesse = 100435,
+                CarefulObservation = 100395,
+                HeartAndSoul = 100419;
         }
 
         public static class Buffs
@@ -138,7 +140,7 @@ namespace Artisan.CraftingLogic
 
         public static int ObserveCounter
         {
-            get => observeCounter; 
+            get => observeCounter;
             set
             {
                 observeCounter = value;
@@ -239,21 +241,25 @@ namespace Artisan.CraftingLogic
             }
         }
 
-        public static double BaseQuality()
+        public static double BaseQuality(Recipe recipe = null)
         {
             try
             {
-                if (CraftingWindowOpen)
+                if (recipe == null)
                 {
-                    var baseValue = CharacterInfo.Control() * 10 / Recipe.RecipeLevelTable.Value.QualityDivider + 35;
-                    if (CharacterInfo.CharacterLevel() <= Recipe.RecipeLevelTable.Value.ClassJobLevel)
-                    {
-                        return baseValue * Recipe.RecipeLevelTable.Value.QualityModifier * 0.01;
-                    }
-
-                    return baseValue;
+                    if (Recipe != null)
+                        recipe = Recipe;
+                    else
+                    return 0;
                 }
-                return 0;
+
+                var baseValue = CharacterInfo.Control() * 10 / recipe.RecipeLevelTable.Value.QualityDivider + 35;
+                if (CharacterInfo.CharacterLevel() <= recipe.RecipeLevelTable.Value.ClassJobLevel)
+                {
+                    return baseValue * recipe.RecipeLevelTable.Value.QualityModifier * 0.01;
+                }
+
+                return baseValue;
             }
             catch (Exception ex)
             {
@@ -357,10 +363,10 @@ namespace Artisan.CraftingLogic
         }
         public static uint GetRecommendation()
         {
-            if (CanUse(Skills.TrainedEye) && HighQualityPercentage < Service.Configuration.MaxPercentage) return Skills.TrainedEye;
+            if (CanUse(Skills.TrainedEye) && HighQualityPercentage < Service.Configuration.MaxPercentage && Recipe.CanHq) return Skills.TrainedEye;
             if (CanUse(Skills.Tricks) && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent))) return Skills.Tricks;
 
-            if (MaxQuality == 0 || Service.Configuration.MaxPercentage == 0)
+            if (MaxQuality == 0 || Service.Configuration.MaxPercentage == 0 || !Recipe.CanHq)
             {
                 if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
                 if (CalculateNewProgress(CharacterInfo.HighestLevelSynth()) >= MaxProgress) return CharacterInfo.HighestLevelSynth();
@@ -374,29 +380,31 @@ namespace Artisan.CraftingLogic
                 if (CurrentQuality < MaxQuality && HighQualityPercentage < Service.Configuration.MaxPercentage)
                 {
                     if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
-                    if (CurrentStep == 2 && CanUse(Skills.FinalAppraisal) && !JustUsedFinalAppraisal) { JustUsedFinalAppraisal = true; return Skills.FinalAppraisal; }
+                    if (CurrentStep == 2 && CanUse(Skills.FinalAppraisal) && !JustUsedFinalAppraisal) return Skills.FinalAppraisal;
                     if (GetStatus(Buffs.MuscleMemory) != null) return Skills.Groundwork;
+                    if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
                     if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe;
                     if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
                     if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
-                    if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation))  return Skills.Manipulation;
-                    if (!WasteNotUsed && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2))  return Skills.WasteNot2; 
-                    if (!InnovationUsed && GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation))  return Skills.Innovation; 
+                    if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) return Skills.Manipulation;
+                    if (!WasteNotUsed && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
+                    if (!InnovationUsed && GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation)) return Skills.Innovation;
                     if (PredictFailure(CharacterInfo.HighestLevelSynth())) return CharacterInfo.HighestLevelSynth();
                     return CharacterInfo.HighestLevelTouch();
 
                 }
             }
 
-            if (MaxDurability == 40)
+            if (MaxDurability >= 35 && MaxDurability < 60)
             {
                 if (CurrentQuality < MaxQuality && HighQualityPercentage < Service.Configuration.MaxPercentage)
                 {
                     if (CurrentStep == 1 && CanUse(Skills.Reflect)) return Skills.Reflect;
-                    if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) { JustUsedObserve = true; return Skills.Observe; }
-                    if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) { ManipulationUsed = true; return Skills.Manipulation; }
-                    if (!WasteNotUsed && CanUse(Skills.WasteNot2)) { WasteNotUsed = true; return Skills.WasteNot2; }
-                    if (!InnovationUsed && CanUse(Skills.Innovation)) { InnovationUsed = true; return Skills.Innovation; }
+                    if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
+                    if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe;
+                    if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) return Skills.Manipulation;
+                    if (!WasteNotUsed && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
+                    if (!InnovationUsed && CanUse(Skills.Innovation)) return Skills.Innovation;
                     if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
                     if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                     if (PredictFailure(CharacterInfo.HighestLevelSynth())) return CharacterInfo.HighestLevelSynth();
@@ -436,6 +444,7 @@ namespace Artisan.CraftingLogic
 
             return counter;
         }
+
 
         public static void RepeatTrialCraft()
         {

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FFXIVClientStructs.FFXIV.Client.Game;
+using System;
 using System.Runtime.InteropServices;
 using static Artisan.CraftingLogic.CurrentCraft;
 
@@ -72,6 +73,27 @@ namespace Artisan.RawInformation
             if (CanUse(Skills.BasicSynth)) return Skills.BasicSynth;
 
             return 0;
+        }
+
+        internal static bool IsManipulationUnlocked()
+        {
+            return JobID() switch
+            {
+                8 => QuestUnlocked(67979),
+                9 => QuestUnlocked(68153),
+                10 => QuestUnlocked(68132),
+                11 => QuestUnlocked(67974),
+                12 => QuestUnlocked(68147),
+                13 => QuestUnlocked(67969),
+                14 => QuestUnlocked(67974),
+                15 => QuestUnlocked(68142),
+                _ => false,
+            };
+        }
+
+        private unsafe static bool QuestUnlocked(int v)
+        {
+            return QuestManager.IsQuestComplete((uint)v);
         }
     }
 

@@ -4,11 +4,16 @@ using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
+using Dalamud.Interface;
 using Dalamud.IoC;
 using Dalamud.Plugin;
+using ECommons;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiNET;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Numerics;
 using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
 
@@ -34,9 +39,8 @@ namespace Artisan
             Service.Address = new PluginAddressResolver();
             Service.Address.Setup();
 
-            var imagePath = Path.Combine(Service.Interface.AssemblyLocation.Directory?.FullName!, "Icon.png");
-            var artisanImg = Service.Interface.UiBuilder.LoadImage(imagePath);
-            this.PluginUi = new PluginUI();
+            ECommons.ECommons.Init(pluginInterface);
+            this.PluginUi = new PluginUI(this);
 
             Service.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
@@ -49,9 +53,10 @@ namespace Artisan
             Service.Framework.Update += FireBot;
             ActionWatching.Enable();
             StepChanged += ResetRecommendation;
+        }
 
-
-
+        public Artisan()
+        {
         }
 
         private void ResetRecommendation(object? sender, int e)
@@ -62,8 +67,8 @@ namespace Artisan
         private void FireBot(Framework framework)
         {
             if (!Service.Condition[ConditionFlag.Crafting]) PluginUi.CraftingVisible = false;
-
             GetCraft();
+
             if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0)
             {
                 FetchRecommendation(CurrentStep, CurrentStep);
@@ -133,6 +138,7 @@ namespace Artisan
         public void Dispose()
         {
             this.PluginUi.Dispose();
+            ECommons.ECommons.Dispose();
 
             Service.CommandManager.RemoveHandler(commandName);
 
@@ -156,7 +162,7 @@ namespace Artisan
 
         private void DrawConfigUI()
         {
-            this.PluginUi.SettingsVisible = true;
+            this.PluginUi.Visible = true;
         }
     }
 }
