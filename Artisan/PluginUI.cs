@@ -189,11 +189,6 @@ namespace Artisan
             }
         }
 
-        private void DrawAboutUs()
-        {
-
-        }
-
         private void DrawCraftingWindow()
         {
             if (!CraftingVisible)
@@ -249,6 +244,7 @@ namespace Artisan
         public void DrawMainWindow()
         {
             ImGui.TextWrapped($"Here you can change some settings Artisan will use. Some of these can also be toggled during a craft.");
+            ImGui.TextWrapped($"In order to use Artisan, please slot every crafting action you have unlocked to a visible hotbar.");
             bool autoEnabled = Service.Configuration.AutoMode;
             bool autoCraft = Service.Configuration.AutoCraft;
             bool failureCheck = Service.Configuration.DisableFailurePrediction;
@@ -258,7 +254,7 @@ namespace Artisan
             bool useSpecialist = Service.Configuration.UseSpecialist;
             bool showEHQ = Service.Configuration.ShowEHQ;
 
-
+            ImGui.Separator();
             if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
             {
                 Service.Configuration.AutoMode = autoEnabled;
@@ -283,7 +279,7 @@ namespace Artisan
                 Service.Configuration.ShowEHQ = showEHQ;
                 Service.Configuration.Save();
             }
-            ImGuiComponents.HelpMarker($"This will mark in the crafting list an estimated HQ chance based on your current stats.");
+            ImGuiComponents.HelpMarker($"This will mark in the crafting list an estimated HQ chance based on your current stats.\nThis does not factor in any HQ items used as materials.\nIt is also only a rough estimate due to the nature of crafting.");
 
             if (ImGui.Checkbox("Use Tricks of the Trade - Good", ref useTricksGood))
             {

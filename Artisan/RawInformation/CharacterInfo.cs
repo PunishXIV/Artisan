@@ -77,18 +77,18 @@ namespace Artisan.RawInformation
 
         internal static bool IsManipulationUnlocked()
         {
-            switch (JobID())
+            return JobID() switch
             {
-                case 8:
-                    return QuestUnlocked(67979);
-                case 9:
-                    return QuestUnlocked(68153);
-                case 13:
-                    return QuestUnlocked(67969);
-                case 14:
-                    return QuestUnlocked(67974);
-            }
-            return true;
+                8 => QuestUnlocked(67979),
+                9 => QuestUnlocked(68153),
+                10 => QuestUnlocked(68132),
+                11 => QuestUnlocked(67974),
+                12 => QuestUnlocked(68147),
+                13 => QuestUnlocked(67969),
+                14 => QuestUnlocked(67974),
+                15 => QuestUnlocked(68142),
+                _ => false,
+            };
         }
 
         private unsafe static bool QuestUnlocked(int v)

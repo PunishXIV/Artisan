@@ -36,7 +36,7 @@ namespace Artisan.RawInformation
             for (int i = 0; i <= 9; i++)
             {
                 var hotbar = raptureHotbarModule->HotBar[i];
-
+                
                 for (int j = 0; j <= 11; j++)
                 {
                     var slot = hotbar->Slot[j];
@@ -73,7 +73,7 @@ namespace Artisan.RawInformation
                 }
             }
 
-            if (HotBarSlotRef != null)
+            if (HotBarSlotRef != null && HotBarRef->IsVisible)
             {
                 DrawOutline(HotBarSlotRef);
             }
