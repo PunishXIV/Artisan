@@ -1,16 +1,9 @@
 ﻿using Artisan.RawInformation;
-using Dalamud.Interface;
-using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
-using ECommons;
-using ECommons.ImGuiMethods;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using System;
-using System.IO;
 using System.Numerics;
-using System.Text;
 using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan
@@ -100,14 +93,23 @@ namespace Artisan
                 var baseX = addonPtr->X;
                 var baseY = addonPtr->Y;
 
+                var visCheck = (AtkComponentNode*)addonPtr->UldManager.NodeList[6];
+                if (!visCheck->AtkResNode.IsVisible)
+                    return;
+
+                var craftCount = (AtkTextNode*)addonPtr->UldManager.NodeList[63];
+                string count = craftCount->NodeText.ToString();
+                int maxCrafts = Convert.ToInt32(count.Split("-")[^1]);
+
                 var crafts = (AtkComponentNode*)addonPtr->UldManager.NodeList[67];
                 if (crafts->AtkResNode.IsVisible)
                 {
                     var currentShownNodes = 0;
+                    
                     for (int i = 1; i <= 13; i++)
                     {
                         var craft = (AtkComponentNode*)crafts->Component->UldManager.NodeList[i];
-                        if (craft->AtkResNode.IsVisible && craft->AtkResNode.Y >= 0 && currentShownNodes < 10)
+                        if (craft->AtkResNode.IsVisible && craft->AtkResNode.Y >= 0 && craft->AtkResNode.Y < 340 && currentShownNodes < maxCrafts)
                         {
                             currentShownNodes++;
                             var craftNameNode = (AtkTextNode*)craft->Component->UldManager.NodeList[14];
