@@ -90,7 +90,7 @@ namespace Artisan.RawInformation
 
             var currentSimulated = Service.Configuration.CurrentSimulated;
             if (sheetItem.MaterialQualityFactor == 0) return;
-            var maxFactor = sheetItem.MaterialQualityFactor == 0 ? 0 : Math.Floor((double)sheetItem.RecipeLevelTable.Value.Quality * ((double)sheetItem.MaterialQualityFactor / 100));
+            var maxFactor = sheetItem.MaterialQualityFactor == 0 ? 0 : Math.Floor((double)sheetItem.RecipeLevelTable.Value.Quality * ((double)sheetItem.MaterialQualityFactor / 100) * ((double)sheetItem.QualityFactor / 100));
             if (currentSimulated > (int)maxFactor)
                 currentSimulated = (int)maxFactor;
 
@@ -103,7 +103,7 @@ namespace Artisan.RawInformation
                 | ImGuiWindowFlags.AlwaysAutoResize  | ImGuiWindowFlags.NoNavFocus
                 | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar);
             var textSize = ImGui.CalcTextSize("Simulated Starting Quality");
-            ImGui.TextUnformatted("Simulated Starting Quality");
+            ImGui.TextUnformatted($"Simulated Starting Quality");
             ImGui.PushItemWidth(textSize.Length());
             if (ImGui.SliderInt("", ref currentSimulated, 0, (int)maxFactor))
             {
