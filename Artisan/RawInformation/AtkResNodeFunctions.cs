@@ -21,7 +21,7 @@ namespace Artisan.RawInformation
             ImGui.GetForegroundDrawList(ImGuiHelpers.MainViewport).AddRect(position, position + size, 0xFFFFFF00, 0, ImDrawFlags.RoundCornersAll, 8);
         }
 
-        public unsafe static void DrawSuccessRate(AtkResNode* node, string str, string itemName)
+        public unsafe static void DrawSuccessRate(AtkResNode* node, string str, string itemName, bool isMainWindow = false)
         {
             var position = GetNodePosition(node);
             var scale = GetNodeScale(node);
@@ -32,6 +32,9 @@ namespace Artisan.RawInformation
 
             ImGuiHelpers.ForceNextWindowMainViewport();
             var textSize = ImGui.CalcTextSize(str);
+            if (isMainWindow)
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + 5f, position.Y));
+            else
             ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y + (node->Height - textSize.Y)));
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(2f, 0f));
             ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
@@ -93,13 +96,15 @@ namespace Artisan.RawInformation
 
 
             ImGuiHelpers.ForceNextWindowMainViewport();
-            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y + node->Height));
+            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X - 50f, position.Y + node->Height));
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(2f, 0f));
             ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
             ImGui.Begin($"###SliderQuality", ImGuiWindowFlags.NoScrollbar
                 | ImGuiWindowFlags.AlwaysAutoResize  | ImGuiWindowFlags.NoNavFocus
                 | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar);
+            var textSize = ImGui.CalcTextSize("Simulated Starting Quality");
             ImGui.TextUnformatted("Simulated Starting Quality");
+            ImGui.PushItemWidth(textSize.Length());
             if (ImGui.SliderInt("", ref currentSimulated, 0, (int)maxFactor))
             {
                 Service.Configuration.CurrentSimulated = currentSimulated;

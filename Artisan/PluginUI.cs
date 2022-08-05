@@ -105,6 +105,7 @@ namespace Artisan
                     return;
 
                 var selectedCraftNameNode = (AtkTextNode*)addonPtr->UldManager.NodeList[49];
+                var selectedCraftWindowBox = (AtkTextNode*)addonPtr->UldManager.NodeList[31];
                 var selectedCraftName = selectedCraftNameNode->NodeText.ToString()[14..];
                 selectedCraftName = selectedCraftName.Remove(selectedCraftName.Length - 10, 10);
                 if (!char.IsLetterOrDigit(selectedCraftName[^1]))
@@ -113,7 +114,7 @@ namespace Artisan
                 }
                 CurrentSelectedCraft = selectedCraftName;
                 string selectedCalculated = CalculateEstimate(selectedCraftName);
-                AtkResNodeFunctions.DrawSuccessRate(&selectedCraftNameNode->AtkResNode, selectedCalculated, selectedCraftName);
+                AtkResNodeFunctions.DrawSuccessRate(&selectedCraftWindowBox->AtkResNode, selectedCalculated, selectedCraftName, true);
                 AtkResNodeFunctions.DrawQualitySlider(&selectedCraftNameNode->AtkResNode, selectedCraftName);
 
                 var craftCount = (AtkTextNode*)addonPtr->UldManager.NodeList[63];
