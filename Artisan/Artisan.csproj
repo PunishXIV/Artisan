@@ -60,6 +60,7 @@
     <PackageReference Include="DalamudPackager" Version="2.1.6" />
     <PackageReference Include="NAudio" Version="2.1.0" />
     <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
+    <ProjectReference Include="..\PunishLib\ECommons\ECommons\ECommons.csproj" />
     <ProjectReference Include="..\PunishLib\PunishLib\PunishLib.csproj" />
     <Reference Include="ECommons">
       <HintPath>..\..\..\..\Downloads\PunishLib\PunishLib\PunishLib\bin\Debug\ECommons.dll</HintPath>

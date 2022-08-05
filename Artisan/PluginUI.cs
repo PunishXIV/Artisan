@@ -111,7 +111,8 @@ namespace Artisan
                 }
 
                 string selectedCalculated = CalculateEstimate(selectedCraftName);
-                AtkResNodeFunctions.DrawSuccessRate(&selectedCraftNameNode->AtkResNode, selectedCalculated);
+                AtkResNodeFunctions.DrawSuccessRate(&selectedCraftNameNode->AtkResNode, selectedCalculated, selectedCraftName);
+                AtkResNodeFunctions.DrawQualitySlider(&selectedCraftNameNode->AtkResNode, selectedCraftName);
 
                 var craftCount = (AtkTextNode*)addonPtr->UldManager.NodeList[63];
                 string count = craftCount->NodeText.ToString();
@@ -138,7 +139,7 @@ namespace Artisan
 
                             string calculatedPercentage = CalculateEstimate(ItemName);
 
-                            AtkResNodeFunctions.DrawSuccessRate(&craft->AtkResNode, $"{calculatedPercentage}");
+                            AtkResNodeFunctions.DrawSuccessRate(&craft->AtkResNode, $"{calculatedPercentage}", ItemName);
                         }
                     }
                 }
@@ -151,7 +152,6 @@ namespace Artisan
 
         private static string CalculateEstimate(string itemName)
         {
-
             var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Equals(itemName)).FirstOrDefault();
             if (sheetItem == null)
                 return "Unknown Item - Check Selected Recipe Window";
@@ -166,6 +166,7 @@ namespace Artisan
             if (CharacterInfo.CharacterLevel() >= 80 && CharacterInfo.CharacterLevel() >= sheetItem.RecipeLevelTable.Value.ClassJobLevel + 10 && !sheetItem.IsExpert)
                 return "EHQ: Guaranteed.";
 
+            var simulatedPercent = Math.Floor(((double)Service.Configuration.CurrentSimulated / (double)sheetItem.RecipeLevelTable.Value.Quality) * 100);
             var difficulty = recipeTable.Difficulty;
             var baseQual = BaseQuality(sheetItem);
             var dur = recipeTable.Durability;
@@ -178,7 +179,7 @@ namespace Artisan
             var q3 = CharacterInfo.IsManipulationUnlocked() ? 2 : 1;
             var q4 = recipeTable.Stars > 0 ? 7 * (recipeTable.Stars * recipeTable.Stars) : 0;
             var q5 = meetsRecCon && meetsRecCraft ? 3 : 1;
-            var q6 = Math.Floor((q1 * 100) + (q2 * 3 * q3 * q5) - q4);
+            var q6 = Math.Floor((q1 * 100) + (q2 * 3 * q3 * q5) - q4 + simulatedPercent);
             var chance = q6 > 100 ? 100 : q6;
             chance = chance < 0 ? 0 : chance;
 

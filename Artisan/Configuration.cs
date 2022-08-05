@@ -33,6 +33,8 @@ namespace Artisan
 
         public bool ShowEHQ { get; set; } = true;
 
+        public int CurrentSimulated { get; set; } = 0;
+
         [NonSerialized]
         private DalamudPluginInterface? pluginInterface;
         private bool autoMode = false;
