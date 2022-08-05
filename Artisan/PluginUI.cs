@@ -54,7 +54,7 @@ namespace Artisan
             DrawCraftingWindow();
 
             if (Service.Configuration.ShowEHQ)
-            MarkChanceOfSuccess();
+                MarkChanceOfSuccess();
             Hotbars.MakeButtonsGlow(CurrentRecommendation);
 
             if (!Visible)
@@ -102,6 +102,17 @@ namespace Artisan
                 if (!visCheck->AtkResNode.IsVisible)
                     return;
 
+                var selectedCraftNameNode = (AtkTextNode*)addonPtr->UldManager.NodeList[49];
+                var selectedCraftName = selectedCraftNameNode->NodeText.ToString()[14..];
+                selectedCraftName = selectedCraftName.Remove(selectedCraftName.Length - 10, 10);
+                if (!char.IsLetterOrDigit(selectedCraftName[^1]))
+                {
+                    selectedCraftName = selectedCraftName.Remove(selectedCraftName.Length - 1, 1).Trim();
+                }
+
+                string selectedCalculated = CalculateEstimate(selectedCraftName);
+                AtkResNodeFunctions.DrawSuccessRate(&selectedCraftNameNode->AtkResNode, selectedCalculated);
+
                 var craftCount = (AtkTextNode*)addonPtr->UldManager.NodeList[63];
                 string count = craftCount->NodeText.ToString();
                 int maxCrafts = Convert.ToInt32(count.Split("-")[^1]);
@@ -114,13 +125,13 @@ namespace Artisan
                     for (int i = 1; i <= 13; i++)
                     {
                         var craft = (AtkComponentNode*)crafts->Component->UldManager.NodeList[i];
-                        if (craft->AtkResNode.IsVisible && craft->AtkResNode.Y >= 0 && craft->AtkResNode.Y < 340 && currentShownNodes < 10 && currentShownNodes < maxCrafts  )
+                        if (craft->AtkResNode.IsVisible && craft->AtkResNode.Y >= 0 && craft->AtkResNode.Y < 340 && currentShownNodes < 10 && currentShownNodes < maxCrafts)
                         {
                             currentShownNodes++;
                             var craftNameNode = (AtkTextNode*)craft->Component->UldManager.NodeList[14];
                             var ItemName = craftNameNode->NodeText.ToString()[14..];
                             ItemName = ItemName.Remove(ItemName.Length - 10, 10);
-                            if (ItemName[^1] == '')
+                            if (!char.IsLetterOrDigit(ItemName[^1]))
                             {
                                 ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
                             }
@@ -134,24 +145,25 @@ namespace Artisan
             }
             catch (Exception ex)
             {
-
+                //Dalamud.Logging.PluginLog.Error(ex, "DrawRecipeChance");
             }
         }
 
         private static string CalculateEstimate(string itemName)
         {
-            var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Contains(itemName)).FirstOrDefault();
+
+            var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Equals(itemName)).FirstOrDefault();
             if (sheetItem == null)
-                return "Unknown Item - Please Report Bug";
+                return "Unknown Item - Check Selected Recipe Window";
             var recipeTable = sheetItem.RecipeLevelTable.Value;
 
-            if (!sheetItem.CanHq)
-                return "Item cannot be HQ.";
+            if (!sheetItem.ItemResult.Value.CanBeHq && !sheetItem.IsExpert && !sheetItem.ItemResult.Value.IsCollectable)
+                return $"Item cannot be HQ.";
 
             if (CharacterInfo.Craftsmanship() < sheetItem.RequiredCraftsmanship || CharacterInfo.Control() < sheetItem.RequiredControl)
                 return "Unable to craft with current stats.";
 
-            if (CharacterInfo.CharacterLevel() >= 80 && CharacterInfo.CharacterLevel() >= sheetItem.RecipeLevelTable.Value.ClassJobLevel + 10)
+            if (CharacterInfo.CharacterLevel() >= 80 && CharacterInfo.CharacterLevel() >= sheetItem.RecipeLevelTable.Value.ClassJobLevel + 10 && !sheetItem.IsExpert)
                 return "EHQ: Guaranteed.";
 
             var difficulty = recipeTable.Difficulty;
