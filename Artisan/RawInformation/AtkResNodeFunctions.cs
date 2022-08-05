@@ -72,6 +72,8 @@ namespace Artisan.RawInformation
 
         internal static unsafe void DrawQualitySlider(AtkResNode* node, string selectedCraftName)
         {
+            if (!Service.Configuration.UseSimulatedStartingQuality) return;
+
             var position = GetNodePosition(node);
             var scale = GetNodeScale(node);
             var size = new Vector2(node->Width, node->Height) * scale;
@@ -84,7 +86,7 @@ namespace Artisan.RawInformation
                 return;
 
             var currentSimulated = Service.Configuration.CurrentSimulated;
-
+            if (sheetItem.MaterialQualityFactor == 0) return;
             var maxFactor = sheetItem.MaterialQualityFactor == 0 ? 0 : Math.Floor((double)sheetItem.RecipeLevelTable.Value.Quality * ((double)sheetItem.MaterialQualityFactor / 100));
             if (currentSimulated > (int)maxFactor)
                 currentSimulated = (int)maxFactor;
