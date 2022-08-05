@@ -38,6 +38,8 @@ namespace Artisan
             set { if (this.craftingVisible != value) CraftingWindowStateChanged?.Invoke(this, value); this.craftingVisible = value; }
         }
 
+        private static string? CurrentSelectedCraft;
+
         private IDalamudPlugin Plugin;
         public PluginUI(Artisan plugin)
         {
@@ -54,7 +56,7 @@ namespace Artisan
             DrawCraftingWindow();
 
             if (Service.Configuration.ShowEHQ)
-            MarkChanceOfSuccess();
+                MarkChanceOfSuccess();
             Hotbars.MakeButtonsGlow(CurrentRecommendation);
 
             if (!Visible)
@@ -102,6 +104,19 @@ namespace Artisan
                 if (!visCheck->AtkResNode.IsVisible)
                     return;
 
+                var selectedCraftNameNode = (AtkTextNode*)addonPtr->UldManager.NodeList[49];
+                var selectedCraftWindowBox = (AtkTextNode*)addonPtr->UldManager.NodeList[31];
+                var selectedCraftName = selectedCraftNameNode->NodeText.ToString()[14..];
+                selectedCraftName = selectedCraftName.Remove(selectedCraftName.Length - 10, 10);
+                if (!char.IsLetterOrDigit(selectedCraftName[^1]))
+                {
+                    selectedCraftName = selectedCraftName.Remove(selectedCraftName.Length - 1, 1).Trim();
+                }
+                CurrentSelectedCraft = selectedCraftName;
+                string selectedCalculated = CalculateEstimate(selectedCraftName);
+                AtkResNodeFunctions.DrawSuccessRate(&selectedCraftWindowBox->AtkResNode, selectedCalculated, selectedCraftName, true);
+                AtkResNodeFunctions.DrawQualitySlider(&selectedCraftNameNode->AtkResNode, selectedCraftName);
+
                 var craftCount = (AtkTextNode*)addonPtr->UldManager.NodeList[63];
                 string count = craftCount->NodeText.ToString();
                 int maxCrafts = Convert.ToInt32(count.Split("-")[^1]);
@@ -114,46 +129,48 @@ namespace Artisan
                     for (int i = 1; i <= 13; i++)
                     {
                         var craft = (AtkComponentNode*)crafts->Component->UldManager.NodeList[i];
-                        if (craft->AtkResNode.IsVisible && craft->AtkResNode.Y >= 0 && craft->AtkResNode.Y < 340 && currentShownNodes < 10 && currentShownNodes < maxCrafts  )
+                        if (craft->AtkResNode.IsVisible && craft->AtkResNode.Y >= 0 && craft->AtkResNode.Y < 340 && currentShownNodes < 10 && currentShownNodes < maxCrafts)
                         {
                             currentShownNodes++;
                             var craftNameNode = (AtkTextNode*)craft->Component->UldManager.NodeList[14];
                             var ItemName = craftNameNode->NodeText.ToString()[14..];
                             ItemName = ItemName.Remove(ItemName.Length - 10, 10);
-                            if (ItemName[^1] == '')
+                            if (!char.IsLetterOrDigit(ItemName[^1]))
                             {
                                 ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
                             }
 
                             string calculatedPercentage = CalculateEstimate(ItemName);
 
-                            AtkResNodeFunctions.DrawSuccessRate(&craft->AtkResNode, $"{calculatedPercentage}");
+                            AtkResNodeFunctions.DrawSuccessRate(&craft->AtkResNode, $"{calculatedPercentage}", ItemName);
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-
+                //Dalamud.Logging.PluginLog.Error(ex, "DrawRecipeChance");
             }
         }
 
         private static string CalculateEstimate(string itemName)
         {
-            var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Contains(itemName)).FirstOrDefault();
+            var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Equals(itemName)).FirstOrDefault();
             if (sheetItem == null)
-                return "Unknown Item - Please Report Bug";
+                return "Unknown Item - Check Selected Recipe Window";
             var recipeTable = sheetItem.RecipeLevelTable.Value;
 
-            if (!sheetItem.CanHq)
-                return "Item cannot be HQ.";
+            if (!sheetItem.ItemResult.Value.CanBeHq && !sheetItem.IsExpert && !sheetItem.ItemResult.Value.IsCollectable)
+                return $"Item cannot be HQ.";
 
             if (CharacterInfo.Craftsmanship() < sheetItem.RequiredCraftsmanship || CharacterInfo.Control() < sheetItem.RequiredControl)
                 return "Unable to craft with current stats.";
 
-            if (CharacterInfo.CharacterLevel() >= 80 && CharacterInfo.CharacterLevel() >= sheetItem.RecipeLevelTable.Value.ClassJobLevel + 10)
+            if (CharacterInfo.CharacterLevel() >= 80 && CharacterInfo.CharacterLevel() >= sheetItem.RecipeLevelTable.Value.ClassJobLevel + 10 && !sheetItem.IsExpert)
                 return "EHQ: Guaranteed.";
 
+            var simulatedPercent = Service.Configuration.UseSimulatedStartingQuality && sheetItem.MaterialQualityFactor != 0 ? Math.Floor(((double)Service.Configuration.CurrentSimulated / (double)sheetItem.RecipeLevelTable.Value.Quality) * 100) : 0;
+            simulatedPercent = CurrentSelectedCraft is null || CurrentSelectedCraft != sheetItem.ItemResult.Value.Name!.RawString ? 0 : simulatedPercent;
             var difficulty = recipeTable.Difficulty;
             var baseQual = BaseQuality(sheetItem);
             var dur = recipeTable.Durability;
@@ -166,7 +183,7 @@ namespace Artisan
             var q3 = CharacterInfo.IsManipulationUnlocked() ? 2 : 1;
             var q4 = recipeTable.Stars > 0 ? 7 * (recipeTable.Stars * recipeTable.Stars) : 0;
             var q5 = meetsRecCon && meetsRecCraft ? 3 : 1;
-            var q6 = Math.Floor((q1 * 100) + (q2 * 3 * q3 * q5) - q4);
+            var q6 = Math.Floor((q1 * 100) + (q2 * 3 * q3 * q5) - q4 + simulatedPercent);
             var chance = q6 > 100 ? 100 : q6;
             chance = chance < 0 ? 0 : chance;
 
@@ -253,6 +270,7 @@ namespace Artisan
             bool useTricksExcellent = Service.Configuration.UseTricksExcellent;
             bool useSpecialist = Service.Configuration.UseSpecialist;
             bool showEHQ = Service.Configuration.ShowEHQ;
+            bool useSimulated = Service.Configuration.UseSimulatedStartingQuality;
 
             ImGui.Separator();
             if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
@@ -278,8 +296,21 @@ namespace Artisan
             {
                 Service.Configuration.ShowEHQ = showEHQ;
                 Service.Configuration.Save();
+
             }
             ImGuiComponents.HelpMarker($"This will mark in the crafting list an estimated HQ chance based on your current stats.\nThis does not factor in any HQ items used as materials.\nIt is also only a rough estimate due to the nature of crafting.");
+
+            if (showEHQ)
+            {
+                ImGui.Indent();
+                if (ImGui.Checkbox("Use Simulated Starting Quality in Estimates", ref useSimulated))
+                {
+                    Service.Configuration.UseSimulatedStartingQuality = useSimulated;
+                    Service.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker($"Set a starting quality as if you were using HQ items for calculating EHQ.");
+                ImGui.Unindent();
+            }
 
             if (ImGui.Checkbox("Use Tricks of the Trade - Good", ref useTricksGood))
             {

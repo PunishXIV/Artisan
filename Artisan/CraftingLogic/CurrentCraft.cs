@@ -198,7 +198,7 @@ namespace Artisan.CraftingLogic
                 {
                     ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
                 }
-                var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Contains(ItemName)).FirstOrDefault();
+                var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Equals(ItemName)).FirstOrDefault();
 
                 if (sheetItem != null)
                 {
@@ -363,7 +363,7 @@ namespace Artisan.CraftingLogic
         }
         public static uint GetRecommendation()
         {
-            if (CanUse(Skills.TrainedEye) && HighQualityPercentage < Service.Configuration.MaxPercentage && Recipe.CanHq) return Skills.TrainedEye;
+            if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || Recipe.ItemResult.Value.IsCollectable) && Recipe.CanHq) return Skills.TrainedEye;
             if (CanUse(Skills.Tricks) && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent))) return Skills.Tricks;
 
             if (MaxQuality == 0 || Service.Configuration.MaxPercentage == 0 || !Recipe.CanHq)
@@ -377,7 +377,7 @@ namespace Artisan.CraftingLogic
 
             if (MaxDurability >= 60)
             {
-                if (CurrentQuality < MaxQuality && HighQualityPercentage < Service.Configuration.MaxPercentage)
+                if (CurrentQuality < MaxQuality && (HighQualityPercentage < Service.Configuration.MaxPercentage || Recipe.ItemResult.Value.IsCollectable || Recipe.IsExpert))
                 {
                     if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
                     if (CurrentStep == 2 && CanUse(Skills.FinalAppraisal) && !JustUsedFinalAppraisal) return Skills.FinalAppraisal;
@@ -397,7 +397,7 @@ namespace Artisan.CraftingLogic
 
             if (MaxDurability >= 35 && MaxDurability < 60)
             {
-                if (CurrentQuality < MaxQuality && HighQualityPercentage < Service.Configuration.MaxPercentage)
+                if (CurrentQuality < MaxQuality && (HighQualityPercentage < Service.Configuration.MaxPercentage ||  Recipe.ItemResult.Value.IsCollectable || Recipe.IsExpert))
                 {
                     if (CurrentStep == 1 && CanUse(Skills.Reflect)) return Skills.Reflect;
                     if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
