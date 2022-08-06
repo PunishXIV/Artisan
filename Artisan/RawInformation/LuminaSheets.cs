@@ -20,5 +20,8 @@ namespace Artisan.RawInformation
 
         public static Dictionary<uint, Lumina.Excel.GeneratedSheets.CraftLevelDifference>? CraftLevelDifference = Service.DataManager?.GetExcelSheet<Lumina.Excel.GeneratedSheets.CraftLevelDifference>()?
             .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, Lumina.Excel.GeneratedSheets.RecipeLevelTable>? RecipeLevelTableSheet = Service.DataManager?.GetExcelSheet<Lumina.Excel.GeneratedSheets.RecipeLevelTable>()?
+    .ToDictionary(i => i.RowId, i => i);
     }
 }

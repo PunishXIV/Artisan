@@ -51,13 +51,12 @@ namespace Artisan.RawInformation
 
         public static uint HighestLevelTouch()
         {
-            if (CanUse(Skills.TrainedFinesse) && GetStatus(Buffs.InnerQuiet)?.StackCount == 10) return Skills.TrainedFinesse;
             if (CanUse(Skills.FocusedTouch) && JustUsedObserve) return Skills.FocusedTouch;
             if (CanUse(Skills.PreciseTouch) && (CurrentCondition is Condition.Good or Condition.Excellent)) return Skills.PreciseTouch;
             if (CanUse(Skills.PreparatoryTouch) && CurrentDurability > 20) return Skills.PreparatoryTouch;
-            if (CanUse(Skills.AdvancedTouch) && GetResourceCost(Skills.AdvancedTouch) == 18) return Skills.AdvancedTouch;
             if (CanUse(Skills.PrudentTouch) && GetStatus(Buffs.WasteNot2) == null && GetStatus(Buffs.WasteNot) == null) return Skills.PrudentTouch;
-            if (CanUse(Skills.StandardTouch) && GetResourceCost(Skills.StandardTouch) == 18) return Skills.StandardTouch;
+            if (CanUse(Skills.AdvancedTouch) && StandardTouchUsed) return Skills.AdvancedTouch;
+            if (CanUse(Skills.StandardTouch) && BasicTouchUsed) return Skills.StandardTouch;
             if (CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
 
             return 0;
@@ -67,7 +66,7 @@ namespace Artisan.RawInformation
         {
             if (CanUse(Skills.IntensiveSynthesis)) return Skills.IntensiveSynthesis;
             if (CanUse(Skills.FocusedSynthesis) && JustUsedObserve) return Skills.FocusedSynthesis;
-            if (CanUse(Skills.Groundwork) && CurrentDurability > 20) return Skills.Groundwork;
+            if (CanUse(Skills.Groundwork) && CurrentDurability > 20 && MaxDurability > 35) return Skills.Groundwork;
             if (CanUse(Skills.PrudentSynthesis)) return Skills.PrudentSynthesis;
             if (CanUse(Skills.CarefulSynthesis)) return Skills.CarefulSynthesis;
             if (CanUse(Skills.BasicSynth)) return Skills.BasicSynth;

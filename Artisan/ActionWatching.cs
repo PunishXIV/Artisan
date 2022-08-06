@@ -53,6 +53,21 @@ namespace Artisan
                         JustUsedObserve = true;
                     else
                         JustUsedObserve = false;
+
+                    if (allOfSameName.Any(x => x == Skills.BasicTouch))
+                        BasicTouchUsed = true;
+                    else
+                        BasicTouchUsed = false;
+
+                    if (allOfSameName.Any(x => x == Skills.StandardTouch))
+                        StandardTouchUsed = true;
+                    else
+                        StandardTouchUsed = false;
+
+                    if (allOfSameName.Any(x => x == Skills.AdvancedTouch))
+                        AdvancedTouchUsed = true;
+                    else
+                        AdvancedTouchUsed = false;
                 }
                 return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
             }

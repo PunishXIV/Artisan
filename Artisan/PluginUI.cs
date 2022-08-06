@@ -55,8 +55,9 @@ namespace Artisan
         {
             DrawCraftingWindow();
 
-            if (Service.Configuration.ShowEHQ)
-                MarkChanceOfSuccess();
+            //if (Service.Configuration.ShowEHQ)
+            //    MarkChanceOfSuccess();
+
             Hotbars.MakeButtonsGlow(CurrentRecommendation);
 
             if (!Visible)
@@ -171,7 +172,6 @@ namespace Artisan
 
             var simulatedPercent = Service.Configuration.UseSimulatedStartingQuality && sheetItem.MaterialQualityFactor != 0 ? Math.Floor(((double)Service.Configuration.CurrentSimulated / ((double)sheetItem.RecipeLevelTable.Value.Quality * ((double)sheetItem.QualityFactor / 100))) * 100) : 0;
             simulatedPercent = CurrentSelectedCraft is null || CurrentSelectedCraft != sheetItem.ItemResult.Value.Name!.RawString ? 0 : simulatedPercent;
-            var difficulty = recipeTable.Difficulty;
             var baseQual = BaseQuality(sheetItem);
             var dur = recipeTable.Durability;
             var baseSteps = baseQual * (dur / 10);
@@ -181,7 +181,7 @@ namespace Artisan
             var q1 = baseSteps / maxQual;
             var q2 = CharacterInfo.MaxCP / sheetItem.QualityFactor / 1.5;
             var q3 = CharacterInfo.IsManipulationUnlocked() ? 2 : 1;
-            var q4 = recipeTable.Stars > 0 ? 7 * (recipeTable.Stars * recipeTable.Stars) : 0;
+            var q4 = sheetItem.RecipeLevelTable.Value.Stars * 6;
             var q5 = meetsRecCon && meetsRecCraft ? 3 : 1;
             var q6 = Math.Floor((q1 * 100) + (q2 * 3 * q3 * q5) - q4 + simulatedPercent);
             var chance = q6 > 100 ? 100 : q6;
@@ -269,8 +269,8 @@ namespace Artisan
             bool useTricksGood = Service.Configuration.UseTricksGood;
             bool useTricksExcellent = Service.Configuration.UseTricksExcellent;
             bool useSpecialist = Service.Configuration.UseSpecialist;
-            bool showEHQ = Service.Configuration.ShowEHQ;
-            bool useSimulated = Service.Configuration.UseSimulatedStartingQuality;
+            //bool showEHQ = Service.Configuration.ShowEHQ;
+            //bool useSimulated = Service.Configuration.UseSimulatedStartingQuality;
 
             ImGui.Separator();
             if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
@@ -292,25 +292,25 @@ namespace Artisan
             }
             ImGuiComponents.HelpMarker($"Disabling failure prediction may result in items failing to be crafted.\nUse at your own discretion.");
 
-            if (ImGui.Checkbox("Show Estimated HQ on Recipe (EHQ)", ref showEHQ))
-            {
-                Service.Configuration.ShowEHQ = showEHQ;
-                Service.Configuration.Save();
+            //if (ImGui.Checkbox("Show Estimated HQ on Recipe (EHQ)", ref showEHQ))
+            //{
+            //    Service.Configuration.ShowEHQ = showEHQ;
+            //    Service.Configuration.Save();
 
-            }
-            ImGuiComponents.HelpMarker($"This will mark in the crafting list an estimated HQ chance based on your current stats.\nThis does not factor in any HQ items used as materials.\nIt is also only a rough estimate due to the nature of crafting.");
+            //}
+            //ImGuiComponents.HelpMarker($"This will mark in the crafting list an estimated HQ chance based on your current stats.\nThis does not factor in any HQ items used as materials.\nIt is also only a rough estimate due to the nature of crafting.");
 
-            if (showEHQ)
-            {
-                ImGui.Indent();
-                if (ImGui.Checkbox("Use Simulated Starting Quality in Estimates", ref useSimulated))
-                {
-                    Service.Configuration.UseSimulatedStartingQuality = useSimulated;
-                    Service.Configuration.Save();
-                }
-                ImGuiComponents.HelpMarker($"Set a starting quality as if you were using HQ items for calculating EHQ.");
-                ImGui.Unindent();
-            }
+            //if (showEHQ)
+            //{
+            //    ImGui.Indent();
+            //    if (ImGui.Checkbox("Use Simulated Starting Quality in Estimates", ref useSimulated))
+            //    {
+            //        Service.Configuration.UseSimulatedStartingQuality = useSimulated;
+            //        Service.Configuration.Save();
+            //    }
+            //    ImGuiComponents.HelpMarker($"Set a starting quality as if you were using HQ items for calculating EHQ.");
+            //    ImGui.Unindent();
+            //}
 
             if (ImGui.Checkbox("Use Tricks of the Trade - Good", ref useTricksGood))
             {

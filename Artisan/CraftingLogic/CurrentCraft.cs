@@ -138,6 +138,12 @@ namespace Artisan.CraftingLogic
         public static bool InnovationUsed { get; set; } = false;
         public static bool VenerationUsed { get; set; } = false;
 
+        public static bool BasicTouchUsed { get; set; } = false;
+
+        public static bool StandardTouchUsed { get; set; } = false;
+
+        public static bool AdvancedTouchUsed { get; set; } = false;
+
         public static int ObserveCounter
         {
             get => observeCounter;
@@ -363,6 +369,8 @@ namespace Artisan.CraftingLogic
         }
         public static uint GetRecommendation()
         {
+            if (CanFinishCraft()) return CharacterInfo.HighestLevelSynth();
+
             if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || Recipe.ItemResult.Value.IsCollectable) && Recipe.CanHq) return Skills.TrainedEye;
             if (CanUse(Skills.Tricks) && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent))) return Skills.Tricks;
 
@@ -406,13 +414,21 @@ namespace Artisan.CraftingLogic
                     if (!WasteNotUsed && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
                     if (!InnovationUsed && CanUse(Skills.Innovation)) return Skills.Innovation;
                     if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
-                    if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
+                    if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                     if (PredictFailure(CharacterInfo.HighestLevelSynth())) return CharacterInfo.HighestLevelSynth();
                     return CharacterInfo.HighestLevelTouch();
                 }
             }
 
+            if (GetStatus(Buffs.Veneration) == null && CanUse(Skills.Veneration)) return Skills.Veneration;
             return CharacterInfo.HighestLevelSynth();
+        }
+
+        private static bool CanFinishCraft()
+        {
+            var metMaxProg = CurrentQuality >= MaxQuality;
+            var usingPercentage = HighQualityPercentage >= Service.Configuration.MaxPercentage && !Recipe.ItemResult.Value.IsCollectable && !Recipe.IsExpert;
+            return CalculateNewProgress(CharacterInfo.HighestLevelSynth()) >= MaxProgress && (metMaxProg || usingPercentage);
         }
 
         private static bool PredictFailure(uint highestLevelSynth)

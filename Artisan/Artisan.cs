@@ -85,19 +85,22 @@ namespace Artisan
             {
                 if (e == 0)
                 {
-                    CurrentCraft.CurrentRecommendation = 0;
-                    CurrentCraft.ManipulationUsed = false;
-                    CurrentCraft.JustUsedObserve = false;
-                    CurrentCraft.VenerationUsed = false;
-                    CurrentCraft.InnovationUsed = false;
-                    CurrentCraft.WasteNotUsed = false;
-                    CurrentCraft.JustUsedFinalAppraisal = false;
+                    CurrentRecommendation = 0;
+                    ManipulationUsed = false;
+                    JustUsedObserve = false;
+                    VenerationUsed = false;
+                    InnovationUsed = false;
+                    WasteNotUsed = false;
+                    JustUsedFinalAppraisal = false;
+                    BasicTouchUsed = false;
+                    StandardTouchUsed = false;
+                    AdvancedTouchUsed = false;
 
                     return;
                 }
 
-                var rec = CurrentCraft.GetRecommendation();
-                CurrentCraft.CurrentRecommendation = rec;
+                var rec = GetRecommendation();
+                CurrentRecommendation = rec;
 
                 if (rec != 0)
                 {
@@ -144,7 +147,7 @@ namespace Artisan
 
             Service.Interface.UiBuilder.OpenConfigUi -= DrawConfigUI;
             Service.Interface.UiBuilder.Draw -= DrawUI;
-            CurrentCraft.StepChanged -= FetchRecommendation;
+            StepChanged -= FetchRecommendation;
             Service.Framework.Update -= FireBot;
 
             ActionWatching.Dispose();
