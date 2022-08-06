@@ -234,14 +234,14 @@ namespace Artisan
                     Service.Configuration.Save();
                 }
 
-                bool failureCheck = Service.Configuration.DisableFailurePrediction;
+                //bool failureCheck = Service.Configuration.DisableFailurePrediction;
 
-                if (ImGui.Checkbox($"Disable Failure Prediction", ref failureCheck))
-                {
-                    Service.Configuration.DisableFailurePrediction = failureCheck;
-                    Service.Configuration.Save();
-                }
-                ImGuiComponents.HelpMarker($"Disabling failure prediction may result in items failing to be crafted.\nUse at your own discretion.");
+                //if (ImGui.Checkbox($"Disable Failure Prediction", ref failureCheck))
+                //{
+                //    Service.Configuration.DisableFailurePrediction = failureCheck;
+                //    Service.Configuration.Save();
+                //}
+                //ImGuiComponents.HelpMarker($"Disabling failure prediction may result in items failing to be crafted.\nUse at your own discretion.");
 
                 ImGui.Text("Semi-Manual Mode");
 
@@ -285,12 +285,12 @@ namespace Artisan
                 Service.Configuration.Save();
             }
             ImGuiComponents.HelpMarker($"Repeats the currently selected craft in your recipe list.\nWill only work whilst you have the items.\nThis will repeat using your set item quality settings.");
-            if (ImGui.Checkbox($"Disable Failure Prediction", ref failureCheck))
-            {
-                Service.Configuration.DisableFailurePrediction = failureCheck;
-                Service.Configuration.Save();
-            }
-            ImGuiComponents.HelpMarker($"Disabling failure prediction may result in items failing to be crafted.\nUse at your own discretion.");
+            //if (ImGui.Checkbox($"Disable Failure Prediction", ref failureCheck))
+            //{
+            //    Service.Configuration.DisableFailurePrediction = failureCheck;
+            //    Service.Configuration.Save();
+            //}
+            //ImGuiComponents.HelpMarker($"Disabling failure prediction may result in items failing to be crafted.\nUse at your own discretion.");
 
             //if (ImGui.Checkbox("Show Estimated HQ on Recipe (EHQ)", ref showEHQ))
             //{

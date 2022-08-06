@@ -397,7 +397,7 @@ namespace Artisan.CraftingLogic
                     if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) return Skills.Manipulation;
                     if (!WasteNotUsed && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
                     if (!InnovationUsed && GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation)) return Skills.Innovation;
-                    if (PredictFailure(CharacterInfo.HighestLevelSynth())) return CharacterInfo.HighestLevelSynth();
+                    //if (PredictFailureTouch(CharacterInfo.HighestLevelTouch())) return CharacterInfo.HighestLevelSynth();
                     return CharacterInfo.HighestLevelTouch();
 
                 }
@@ -415,7 +415,7 @@ namespace Artisan.CraftingLogic
                     if (!InnovationUsed && CanUse(Skills.Innovation)) return Skills.Innovation;
                     if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
                     if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
-                    if (PredictFailure(CharacterInfo.HighestLevelSynth())) return CharacterInfo.HighestLevelSynth();
+                    //if (PredictFailureTouch(CharacterInfo.HighestLevelTouch())) return CharacterInfo.HighestLevelSynth();
                     return CharacterInfo.HighestLevelTouch();
                 }
             }
@@ -431,7 +431,7 @@ namespace Artisan.CraftingLogic
             return CalculateNewProgress(CharacterInfo.HighestLevelSynth()) >= MaxProgress && (metMaxProg || usingPercentage);
         }
 
-        private static bool PredictFailure(uint highestLevelSynth)
+        private static bool PredictFailureSynth(uint highestLevelSynth)
         {
             if (Service.Configuration.DisableFailurePrediction) return false;
 
@@ -442,6 +442,22 @@ namespace Artisan.CraftingLogic
             if (GetStatus(Buffs.Manipulation) != null) durabilityDegrade += 5;
 
             int estimatedSynths = EstimateSynths(highestLevelSynth);
+            int estimatedDegrade = estimatedSynths * durabilityDegrade;
+
+            return (CurrentDurability - estimatedDegrade) <= 0;
+        }
+
+        private static bool PredictFailureTouch(uint highestLevelTouch)
+        {
+            if (Service.Configuration.DisableFailurePrediction) return false;
+
+            int durabilityDegrade = 10;
+
+            if (highestLevelTouch == Skills.PreparatoryTouch) durabilityDegrade *= 2;
+            if (GetStatus(Buffs.WasteNot) != null || GetStatus(Buffs.WasteNot2) != null) durabilityDegrade /= 2;
+            if (GetStatus(Buffs.Manipulation) != null) durabilityDegrade += 5;
+
+            int estimatedSynths = EstimateSynths(CharacterInfo.HighestLevelSynth());
             int estimatedDegrade = estimatedSynths * durabilityDegrade;
 
             return (CurrentDurability - estimatedDegrade) <= 0;
