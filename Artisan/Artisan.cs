@@ -75,7 +75,7 @@ namespace Artisan
             }
 
             bool enableAutoRepeat = Service.Configuration.AutoCraft;
-            if (enableAutoRepeat)
+            if (enableAutoRepeat && Service.Condition[ConditionFlag.PreparingToCraft])
                 RepeatActualCraft();
         }
 
