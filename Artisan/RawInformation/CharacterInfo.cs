@@ -53,7 +53,7 @@ namespace Artisan.RawInformation
         {
             if (CanUse(Skills.FocusedTouch) && JustUsedObserve) return Skills.FocusedTouch;
             if (CanUse(Skills.PreciseTouch) && (CurrentCondition is Condition.Good or Condition.Excellent)) return Skills.PreciseTouch;
-            if (CanUse(Skills.PreparatoryTouch) && CurrentDurability > 20) return Skills.PreparatoryTouch;
+            if (CanUse(Skills.PreparatoryTouch) && CurrentDurability > 20 && (GetStatus(Buffs.InnerQuiet)?.StackCount < 10 || GetStatus(Buffs.InnerQuiet) is null)) return Skills.PreparatoryTouch;
             if (CanUse(Skills.PrudentTouch) && GetStatus(Buffs.WasteNot2) == null && GetStatus(Buffs.WasteNot) == null) return Skills.PrudentTouch;
             if (CanUse(Skills.AdvancedTouch) && StandardTouchUsed) return Skills.AdvancedTouch;
             if (CanUse(Skills.StandardTouch) && BasicTouchUsed) return Skills.StandardTouch;
