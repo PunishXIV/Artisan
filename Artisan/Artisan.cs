@@ -29,9 +29,10 @@ namespace Artisan
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
             [RequiredVersion("1.0")] CommandManager commandManager)
         {
-            FFXIVClientStructs.Resolver.Initialize();
+            //FFXIVClientStructs.Resolver.Initialize(); we don't do that
 
             pluginInterface.Create<Service>();
+            Service.Plugin = this;
 
             Service.Configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             Service.Configuration.Initialize(Service.Interface);
@@ -53,10 +54,7 @@ namespace Artisan
             Service.Framework.Update += FireBot;
             ActionWatching.Enable();
             StepChanged += ResetRecommendation;
-        }
-
-        public Artisan()
-        {
+            ConsumableChecker.Init();
         }
 
         private void ResetRecommendation(object? sender, int e)
@@ -75,11 +73,13 @@ namespace Artisan
             }
 
             bool enableAutoRepeat = Service.Configuration.AutoCraft;
-            if (enableAutoRepeat)
+            if (enableAutoRepeat && ConsumableChecker.CheckConsumables())
+            {
                 RepeatActualCraft();
+            }
         }
 
-        public static async void FetchRecommendation(object? sender, int e)
+        public static void FetchRecommendation(object? sender, int e)
         {
             try
             {
@@ -151,6 +151,7 @@ namespace Artisan
             Service.Framework.Update -= FireBot;
 
             ActionWatching.Dispose();
+            Service.Plugin = null!;
         }
 
         private void OnCommand(string command, string args)

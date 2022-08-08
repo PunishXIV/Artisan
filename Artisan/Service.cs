@@ -18,6 +18,8 @@ namespace Artisan
     /// </summary>
     internal class Service
     {
+        internal static Artisan Plugin = null!;
+
         /// <summary>
         /// Gets or sets the plugin configuration.
         /// </summary>

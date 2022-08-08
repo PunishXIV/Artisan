@@ -37,6 +37,13 @@ namespace Artisan
 
         public bool UseSimulatedStartingQuality { get; set; } = false;
 
+        public bool ExtraSafeMode = false;
+        public uint Food = 0;
+        public uint Potion = 0;
+        public bool AbortIfNoFoodPot = true;
+        public bool FoodHQ = true;
+        public bool PotHQ = true;
+
         [NonSerialized]
         private DalamudPluginInterface? pluginInterface;
         private bool autoMode = false;

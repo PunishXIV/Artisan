@@ -1,6 +1,9 @@
 ﻿using Artisan.RawInformation;
 using Dalamud.Interface.Components;
+using Dalamud.Logging;
 using Dalamud.Plugin;
+using ECommons;
+using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using System;
@@ -80,8 +83,18 @@ namespace Artisan
                         PunishLib.ImGuiMethods.AboutTab.Draw(Plugin);
                         ImGui.EndTabItem();
                     }
+                    if (ImGui.BeginTabItem("Debug"))
+                    {
+                        DrawDebugTab();
+                        ImGui.EndTabItem();
+                    }
 
                     ImGui.EndTabBar();
+                }
+                if (!visible)
+                {
+                    Service.Configuration.Save();
+                    PluginLog.Information("Configuration saved");
                 }
             }
         }
@@ -285,6 +298,59 @@ namespace Artisan
                 Service.Configuration.Save();
             }
             ImGuiComponents.HelpMarker($"Repeats the currently selected craft in your recipe list.\nWill only work whilst you have the items.\nThis will repeat using your set item quality settings.");
+
+            if (Service.Configuration.AutoCraft)
+            {
+                ImGuiEx.TextV("Maintain food buff:");
+                ImGui.SameLine(150f.Scale());
+                ImGuiEx.InputWithRightButtonsArea("food", delegate
+                {
+                    if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == Service.Configuration.Food, out var item) ? $"{item.Name}" : $"{(Service.Configuration.Food == 0 ? "Disabled" : $"{Service.Configuration.Food}")}"))
+                    {
+                        if (ImGui.Selectable("Disable"))
+                        {
+                            Service.Configuration.Food = 0;
+                        }
+                        foreach (var x in ConsumableChecker.Food)
+                        {
+                            if (ImGui.Selectable($"{x.Name}"))
+                            {
+                                Service.Configuration.Food = x.Id;
+                            }
+                        }
+                        ImGui.EndCombo();
+                    }
+                }, delegate
+                {
+                    ImGui.Checkbox($"##food", ref Service.Configuration.FoodHQ);
+                });
+
+                ImGuiEx.TextV("Maintain potion buff:");
+                ImGui.SameLine(150f.Scale());
+                ImGuiEx.InputWithRightButtonsArea("pot", delegate
+                {
+                    if (ImGui.BeginCombo("##potBuff", ConsumableChecker.Pots.TryGetFirst(x => x.Id == Service.Configuration.Potion, out var item) ? $"{item.Name}" : $"{(Service.Configuration.Potion == 0 ? "Disabled" : $"{Service.Configuration.Potion}")}"))
+                    {
+                        if (ImGui.Selectable("Disable"))
+                        {
+                            Service.Configuration.Potion = 0;
+                        }
+                        foreach (var x in ConsumableChecker.Pots)
+                        {
+                            if (ImGui.Selectable($"{x.Name}"))
+                            {
+                                Service.Configuration.Potion = x.Id;
+                            }
+                        }
+                        ImGui.EndCombo();
+                    }
+                }, delegate
+                {
+                    ImGui.Checkbox($"##pot", ref Service.Configuration.PotHQ);
+                });
+                ImGui.Checkbox("Stop autocrafting if food/medicine is not found", ref Service.Configuration.AbortIfNoFoodPot);
+            }
+
             //if (ImGui.Checkbox($"Disable Failure Prediction", ref failureCheck))
             //{
             //    Service.Configuration.DisableFailurePrediction = failureCheck;
@@ -338,9 +404,65 @@ namespace Artisan
                 Service.Configuration.Save();
             }
 
-
+            ImGui.Checkbox("Safer operation", ref Service.Configuration.ExtraSafeMode);
         }
 
-
+        static void DrawDebugTab()
+        {
+            if (ImGui.CollapsingHeader("Crafter's food"))
+            {
+                foreach (var x in ConsumableChecker.GetFood())
+                {
+                    ImGuiEx.Text($"{x.Id}: {x.Name}");
+                }
+            }
+            if (ImGui.CollapsingHeader("Crafter's food in inventory"))
+            {
+                foreach (var x in ConsumableChecker.GetFood(true))
+                {
+                    if(ImGui.Selectable($"{x.Id}: {x.Name}"))
+                    {
+                        ConsumableChecker.UseItem(x.Id);
+                    }
+                }
+            }
+            if (ImGui.CollapsingHeader("Crafter's HQ food in inventory"))
+            {
+                foreach (var x in ConsumableChecker.GetFood(true, true))
+                {
+                    if (ImGui.Selectable($"{x.Id}: {x.Name}"))
+                    {
+                        ConsumableChecker.UseItem(x.Id, true);
+                    }
+                }
+            }
+            if (ImGui.CollapsingHeader("Crafter's pots"))
+            {
+                foreach (var x in ConsumableChecker.GetPots())
+                {
+                    ImGuiEx.Text($"{x.Id}: {x.Name}");
+                }
+            }
+            if (ImGui.CollapsingHeader("Crafter's pots in inventory"))
+            {
+                foreach (var x in ConsumableChecker.GetPots(true))
+                {
+                    if (ImGui.Selectable($"{x.Id}: {x.Name}"))
+                    {
+                        ConsumableChecker.UseItem(x.Id);
+                    }
+                }
+            }
+            if (ImGui.CollapsingHeader("Crafter's HQ pots in inventory"))
+            {
+                foreach (var x in ConsumableChecker.GetPots(true, true))
+                {
+                    if (ImGui.Selectable($"{x.Id}: {x.Name}"))
+                    {
+                        ConsumableChecker.UseItem(x.Id, true);
+                    }
+                }
+            }
+        }
     }
 }

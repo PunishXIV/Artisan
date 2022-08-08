@@ -494,6 +494,10 @@ namespace Artisan.CraftingLogic
 
                 if (synthButton != null && !synthButton->IsEnabled)
                 {
+                    if (Service.Configuration.ExtraSafeMode)
+                    {
+                        return;
+                    }
                     Dalamud.Logging.PluginLog.Debug("AddonRecipeNote: Enabling trial synth button");
                     synthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
                 }
@@ -527,6 +531,10 @@ namespace Artisan.CraftingLogic
 
                 if (synthButton != null && !synthButton->IsEnabled)
                 {
+                    if (Service.Configuration.ExtraSafeMode)
+                    {
+                        return;
+                    }
                     Dalamud.Logging.PluginLog.Debug("AddonRecipeNote: Enabling synth button");
                     synthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
                 }
