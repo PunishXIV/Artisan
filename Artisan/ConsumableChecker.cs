@@ -26,8 +26,8 @@ namespace Artisan
         [Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 41 B0 01 BA 13 00 00 00", Fallibility = Fallibility.Infallible)]
         static delegate* unmanaged<AgentInterface*, uint, uint, uint, short, void> useItem;
         static long NextUseAt = 0;
-        static bool ReopenLog = false;
-        static bool AwaitOperation = false;
+        internal static bool ReopenLog = false;
+        internal static bool AwaitOperation = false;
 
         internal static void Init()
         {
@@ -103,6 +103,15 @@ namespace Artisan
         {
             if (AwaitOperation && !ReopenLog)
             {
+                if(HQManager.Data.Count > 0)
+                {
+                    var r = HQManager.RestoreHQData(HQManager.Data, out var dFin);
+                    if(r && dFin)
+                    {
+                        HQManager.Data.Clear();
+                    }
+                    return false;
+                }
                 if (Svc.Condition[ConditionFlag.Crafting])
                 {
                     AwaitOperation = false;
@@ -164,7 +173,6 @@ namespace Artisan
                 if (CommandProcessor.ExecuteThrottled("/clog"))
                 {
                     ReopenLog = false;
-                    return true;
                 }
                 return false;
             }

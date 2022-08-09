@@ -6,6 +6,7 @@ using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.Interface;
 using Dalamud.IoC;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -64,6 +65,10 @@ namespace Artisan
 
         private void FireBot(Framework framework)
         {
+            if (!ConsumableChecker.AwaitOperation && HQManager.TryGetCurrent(out var d))
+            {
+                HQManager.Data = d;
+            }
             if (!Service.Condition[ConditionFlag.Crafting]) PluginUi.CraftingVisible = false;
             GetCraft();
 
@@ -73,8 +78,11 @@ namespace Artisan
             }
 
             bool enableAutoRepeat = Service.Configuration.AutoCraft;
-            if (enableAutoRepeat && ConsumableChecker.CheckConsumables())
+            var cons = ConsumableChecker.CheckConsumables();
+            PluginLog.Debug($"Consumables: {cons}");
+            if (enableAutoRepeat && cons)
             {
+                PluginLog.Debug($"Looping");
                 RepeatActualCraft();
             }
         }
