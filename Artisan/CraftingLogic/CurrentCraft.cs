@@ -144,6 +144,8 @@ namespace Artisan.CraftingLogic
 
         public static bool AdvancedTouchUsed { get; set; } = false;
 
+        public static bool ExpertCraftOpenerFinish { get; set; } = false;
+
         public static int ObserveCounter
         {
             get => observeCounter;
@@ -228,6 +230,11 @@ namespace Artisan.CraftingLogic
                     "Good" => Condition.Good,
                     "Normal" => Condition.Normal,
                     "Excellent" => Condition.Excellent,
+                    "Centered" => Condition.Centered,
+                    "Sturdy" => Condition.Sturdy,
+                    "Pliant" => Condition.Pliant,
+                    "Malleable" => Condition.Malleable,
+                    "Primed" => Condition.Primed,
                     _ => Condition.Unknown
                 };
 
@@ -256,7 +263,7 @@ namespace Artisan.CraftingLogic
                     if (Recipe != null)
                         recipe = Recipe;
                     else
-                    return 0;
+                        return 0;
                 }
 
                 var baseValue = CharacterInfo.Control() * 10 / recipe.RecipeLevelTable.Value.QualityDivider + 35;
@@ -316,6 +323,7 @@ namespace Artisan.CraftingLogic
                 Skills.PreparatoryTouch => Multipliers.PrepatoryTouch,
                 Skills.AdvancedTouch => Multipliers.AdvancedTouch,
                 Skills.TrainedFinesse => Multipliers.TrainedFinesse,
+                Skills.ByregotsBlessing => ByregotMultiplier(),
                 _ => 1
             };
 
@@ -336,7 +344,7 @@ namespace Artisan.CraftingLogic
 
         public static uint CalculateNewQuality(uint id)
         {
-            var multiplier = id == Skills.ByregotsBlessing ? ByregotMultiplier() : GetMultiplier(id);
+            var multiplier = GetMultiplier(id);
             int IQStacks = Convert.ToInt32(GetStatus(251)?.StackCount);
             double innovation = GetStatus(Buffs.Innovation) != null ? 1.5 : 1;
             double IQMultiplier = 1 + (IQStacks * 0.1);
@@ -347,15 +355,16 @@ namespace Artisan.CraftingLogic
         public static uint CalculateNewProgress(uint id)
         {
             var multiplier = GetMultiplier(id, false);
+            double malleable = CurrentCondition == Condition.Malleable ? 1.5 : 1;
             double veneration = GetStatus(Buffs.Veneration) != null ? 1.5 : 1;
             double muscleMemory = GetStatus(Buffs.MuscleMemory) != null ? 2 : 1;
-            return (uint)Math.Floor(CurrentProgress + (BaseProgression() * multiplier) * veneration * muscleMemory);
+            return (uint)Math.Floor(CurrentProgress + (BaseProgression() * multiplier) * veneration * muscleMemory * malleable);
 
         }
 
         public static uint GreatStridesByregotCombo()
         {
-            var multiplier = ByregotMultiplier() * 2;
+            var multiplier = GetMultiplier(Skills.ByregotsBlessing) * 2;
             int IQStacks = Convert.ToInt32(GetStatus(251)?.StackCount);
             double innovation = GetStatus(Buffs.Innovation) != null ? 1.5 : 1;
             double IQMultiplier = 1 + (IQStacks * 0.1);
@@ -366,6 +375,37 @@ namespace Artisan.CraftingLogic
         {
             int IQStacks = Convert.ToInt32(GetStatus(251)?.StackCount);
             return 1 + (IQStacks * 0.2);
+        }
+
+        public static uint GetExpertRecommendation()
+        {
+            if (CurrentDurability <= 10 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
+            if (CurrentProgress < MaxProgress && !ExpertCraftOpenerFinish)
+            {
+                if (CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
+                if (CurrentStep == 2 && CanUse(Skills.Veneration)) return Skills.Veneration;
+                if (GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
+                if (GetStatus(Buffs.MuscleMemory) is null) { ExpertCraftOpenerFinish = true; return Skills.Innovation; }
+                if (CurrentCondition is Condition.Good) return Skills.IntensiveSynthesis;
+                if (CurrentCondition is Condition.Centered) return Skills.RapidSynthesis;
+                if (CurrentCondition is Condition.Sturdy or Condition.Primed or Condition.Normal) return Skills.Groundwork;
+                if (CurrentCondition is Condition.Malleable && CalculateNewProgress(Skills.Groundwork) >= MaxProgress && !JustUsedFinalAppraisal) return Skills.FinalAppraisal;
+                if (CurrentCondition is Condition.Malleable && (CalculateNewProgress(Skills.Groundwork) < MaxProgress) || GetStatus(Buffs.FinalAppraisal) is not null) return Skills.Groundwork;
+                if (CurrentCondition is Condition.Pliant && GetStatus(Buffs.Manipulation) is null && GetStatus(Buffs.MuscleMemory) is null) return Skills.Manipulation;
+            }
+            if (CurrentQuality < MaxQuality)
+            {
+                if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
+                if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
+                if (GetStatus(Buffs.Manipulation) is null || GetStatus(Buffs.Manipulation)?.StackCount <= 3 && CurrentCondition == Condition.Pliant) return Skills.Manipulation;
+                if (CurrentCondition == Condition.Pliant && GetStatus(Buffs.WasteNot2) is null) return Skills.WasteNot2;
+                if (CurrentCondition == Condition.Pliant && CurrentDurability < MaxDurability - 20) return Skills.MastersMend;
+                if (GetStatus(Buffs.Innovation) is null) return Skills.Innovation;
+                return CharacterInfo.HighestLevelTouch();
+            }
+
+            if (CanUse(Skills.CarefulSynthesis)) return Skills.CarefulSynthesis;
+            return CharacterInfo.HighestLevelSynth();
         }
         public static uint GetRecommendation()
         {
@@ -405,7 +445,7 @@ namespace Artisan.CraftingLogic
 
             if (MaxDurability >= 35 && MaxDurability < 60)
             {
-                if (CurrentQuality < MaxQuality && (HighQualityPercentage < Service.Configuration.MaxPercentage ||  Recipe.ItemResult.Value.IsCollectable || Recipe.IsExpert))
+                if (CurrentQuality < MaxQuality && (HighQualityPercentage < Service.Configuration.MaxPercentage || Recipe.ItemResult.Value.IsCollectable || Recipe.IsExpert))
                 {
                     if (CurrentStep == 1 && CanUse(Skills.Reflect)) return Skills.Reflect;
                     if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
@@ -456,11 +496,9 @@ namespace Artisan.CraftingLogic
             if (highestLevelTouch == Skills.PreparatoryTouch) durabilityDegrade *= 2;
             if (GetStatus(Buffs.WasteNot) != null || GetStatus(Buffs.WasteNot2) != null) durabilityDegrade /= 2;
             if (GetStatus(Buffs.Manipulation) != null) durabilityDegrade += 5;
+            var newDegrade = CurrentDurability - durabilityDegrade;
 
-            int estimatedSynths = EstimateSynths(CharacterInfo.HighestLevelSynth());
-            int estimatedDegrade = estimatedSynths * durabilityDegrade;
-
-            return (CurrentDurability - estimatedDegrade) <= 0;
+            return newDegrade <= 0;
         }
 
         private static int EstimateSynths(uint highestLevelSynth)
@@ -624,6 +662,11 @@ namespace Artisan.CraftingLogic
             Normal,
             Good,
             Excellent,
+            Centered,
+            Sturdy,
+            Pliant,
+            Malleable,
+            Primed,
             Unknown
         }
     }
