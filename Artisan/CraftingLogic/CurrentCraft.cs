@@ -344,11 +344,14 @@ namespace Artisan.CraftingLogic
 
         public static uint CalculateNewQuality(uint id)
         {
-            var multiplier = GetMultiplier(id);
-            int IQStacks = Convert.ToInt32(GetStatus(251)?.StackCount);
-            double innovation = GetStatus(Buffs.Innovation) != null ? 1.5 : 1;
-            double IQMultiplier = 1 + (IQStacks * 0.1);
-            return (uint)Math.Floor(CurrentQuality + (BaseQuality() * multiplier) * IQMultiplier * innovation);
+            if (GetStatus(Buffs.InnerQuiet) is null) return 0;
+
+            double efficiency = GetMultiplier(id);
+            double IQStacks = 1 + (GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
+            double innovation = GetStatus(Buffs.Innovation) is not null ? 0.5 : 0;
+            double greatStrides = GetStatus(Buffs.GreatStrides) is not null ? 1 : 0;
+
+            return (uint)Math.Floor(CurrentQuality + (BaseQuality() * efficiency * IQStacks * (innovation + greatStrides + 1)));
 
         }
 
@@ -364,16 +367,19 @@ namespace Artisan.CraftingLogic
 
         public static uint GreatStridesByregotCombo()
         {
-            var multiplier = GetMultiplier(Skills.ByregotsBlessing) * 2;
-            int IQStacks = Convert.ToInt32(GetStatus(251)?.StackCount);
-            double innovation = GetStatus(Buffs.Innovation) != null ? 1.5 : 1;
-            double IQMultiplier = 1 + (IQStacks * 0.1);
-            return (uint)Math.Floor(CurrentQuality + (BaseQuality() * multiplier) * IQMultiplier * innovation);
+            if (GetStatus(Buffs.InnerQuiet) is null) return 0;
+
+            double efficiency = GetMultiplier(Skills.ByregotsBlessing);
+            double IQStacks = 1 + (GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
+            double innovation = GetStatus(Buffs.Innovation)?.StackCount >= 2 ? 0.5 : 0;
+            double greatStrides = 1;
+
+            return (uint)Math.Floor(CurrentQuality + (BaseQuality() * efficiency * IQStacks * (innovation + greatStrides + 1)));
         }
 
         public static double ByregotMultiplier()
         {
-            int IQStacks = Convert.ToInt32(GetStatus(251)?.StackCount);
+            int IQStacks = Convert.ToInt32(GetStatus(Buffs.InnerQuiet)?.StackCount);
             return 1 + (IQStacks * 0.2);
         }
 
@@ -397,8 +403,8 @@ namespace Artisan.CraftingLogic
             {
                 if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
                 if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
-                if (GetStatus(Buffs.Manipulation) is null || GetStatus(Buffs.Manipulation)?.StackCount <= 3 && CurrentCondition == Condition.Pliant) return Skills.Manipulation;
                 if (CurrentCondition == Condition.Pliant && GetStatus(Buffs.WasteNot2) is null) return Skills.WasteNot2;
+                if (GetStatus(Buffs.Manipulation) is null || GetStatus(Buffs.Manipulation)?.StackCount <= 3 && CurrentCondition == Condition.Pliant) return Skills.Manipulation;
                 if (CurrentCondition == Condition.Pliant && CurrentDurability < MaxDurability - 20) return Skills.MastersMend;
                 if (GetStatus(Buffs.Innovation) is null) return Skills.Innovation;
                 return CharacterInfo.HighestLevelTouch();
