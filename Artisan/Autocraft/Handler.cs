@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLogic;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Logging;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
@@ -33,23 +34,41 @@ namespace Artisan.Autocraft
         {
             if (Enable)
             {
+                if(!Throttler.Throttle(0))
+                {
+                    return;
+                }
+                PluginLog.Debug("Throttle success");
+                if (HQData == null)
+                {
+                    DuoLog.Error("HQ data is null");
+                    Enable = false;
+                    return;
+                }
+                PluginLog.Debug("HQ not null");
+                if (!ConsumableChecker.CheckConsumables())
+                {
+                    return;
+                }
+                PluginLog.Debug("Consumables success");
                 if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
                 {
-                    if (HQData == null)
-                    {
-                        DuoLog.Error("HQ data is null");
-                        Enable = false;
-                        return;
-                    }
-                    if (!ConsumableChecker.CheckConsumables())
+                    PluginLog.Debug("Addon visible");
+                    if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
                     {
                         return;
                     }
-                    if(!HQManager.RestoreHQData(HQData, out var fin) || !fin)
-                    {
-                        return;
-                    }
+                    PluginLog.Debug("HQ data restored");
                     CurrentCraft.RepeatActualCraft();
+                }
+                else
+                {
+                    PluginLog.Debug("Addon invisible");
+                    if (Throttler.Throttle(1000))
+                    {
+                        PluginLog.Debug("Opening crafting log");
+                        CommandProcessor.ExecuteThrottled("/clog");
+                    }
                 }
             }
         }
@@ -65,7 +84,7 @@ namespace Artisan.Autocraft
             {
                 ImGuiEx.TextV("Maintain food buff:");
                 ImGui.SameLine(150f.Scale());
-                if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == Service.Configuration.Food, out var item) ? $"{item.Name}" : $"{(Service.Configuration.Food == 0 ? "Disabled" : $"{(Service.Configuration.FoodHQ ? " " : "")}{Service.Configuration.Food}")}"))
+                if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == Service.Configuration.Food, out var item) ? $"{(Service.Configuration.FoodHQ ? " " : "")}{item.Name}" : $"{(Service.Configuration.Food == 0 ? "Disabled" : $"{(Service.Configuration.FoodHQ ? " " : "")}{Service.Configuration.Food}")}"))
                 {
                     if (ImGui.Selectable("Disable"))
                     {
@@ -81,7 +100,7 @@ namespace Artisan.Autocraft
                     }
                     foreach (var x in ConsumableChecker.GetFood(true, true))
                     {
-                        if (ImGui.Selectable($"{x.Name}"))
+                        if (ImGui.Selectable($" {x.Name}"))
                         {
                             Service.Configuration.Food = x.Id;
                             Service.Configuration.FoodHQ = true;
@@ -94,7 +113,7 @@ namespace Artisan.Autocraft
             {
                 ImGuiEx.TextV("Maintain potion buff:");
                 ImGui.SameLine(150f.Scale());
-                if (ImGui.BeginCombo("##potBuff", ConsumableChecker.Pots.TryGetFirst(x => x.Id == Service.Configuration.Potion, out var item) ? $"{item.Name}" : $"{(Service.Configuration.Potion == 0 ? "Disabled" : $"{(Service.Configuration.PotHQ ? " " : "")}{Service.Configuration.Potion}")}"))
+                if (ImGui.BeginCombo("##potBuff", ConsumableChecker.Pots.TryGetFirst(x => x.Id == Service.Configuration.Potion, out var item) ? $"{(Service.Configuration.PotHQ ? " " : "")}{item.Name}" : $"{(Service.Configuration.Potion == 0 ? "Disabled" : $"{(Service.Configuration.PotHQ ? " " : "")}{Service.Configuration.Potion}")}"))
                 {
                     if (ImGui.Selectable("Disable"))
                     {

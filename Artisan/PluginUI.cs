@@ -415,35 +415,6 @@ namespace Artisan
                     }
                 }
             }
-            if(ImGui.CollapsingHeader("HQ recipe data"))
-            {
-                if(HQManager.TryGetCurrent(out var data))
-                {
-                    ImGuiEx.Text(data.Select(x => x.ToString()).Join("  "));
-                }
-                else
-                {
-                    ImGuiEx.Text("n/a");
-                }
-                ImGui.Separator();
-                ImGuiEx.Text("Stored: " + HQManager.Data.Select(x => x.ToString()).Join("  "));
-                if (ImGui.Button("Store"))
-                {
-                    if(HQManager.TryGetCurrent(out var d))
-                    {
-                        HQManager.Data = d;
-                    }
-                }
-                if (ImGui.Button("Restore"))
-                {
-                    HQManager.RestoreHQData(HQManager.Data, out _);
-                }
-                ImGuiEx.Text($"HQManager.NextCheckAt {HQManager.NextCheckAt}");
-                ImGuiEx.Text($"ConsumableChecker.AwaitOperation {ConsumableChecker.AwaitOperation}");
-                ImGuiEx.Text($"ConsumableChecker.ReopenLog {ConsumableChecker.ReopenLog}");
-                ImGuiEx.Text($"");
-                ImGuiEx.Text($"");
-            }
         }
     }
 }
