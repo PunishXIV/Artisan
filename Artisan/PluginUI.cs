@@ -80,10 +80,23 @@ namespace Artisan
                         PunishLib.ImGuiMethods.AboutTab.Draw(Plugin);
                         ImGui.EndTabItem();
                     }
+#if DEBUG
+                    if (ImGui.BeginTabItem("DEBUG"))
+                    {
+                        DrawDebug();
+                        ImGui.EndTabItem();
+                    }
+#endif
 
                     ImGui.EndTabBar();
                 }
             }
+        }
+
+        private void DrawDebug()
+        {
+            ImGui.Text($"{BaseQuality()}");
+            ImGui.Text($"{GreatStridesByregotCombo()}");
         }
 
         public unsafe static void MarkChanceOfSuccess()

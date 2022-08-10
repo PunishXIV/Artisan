@@ -95,11 +95,12 @@ namespace Artisan
                     BasicTouchUsed = false;
                     StandardTouchUsed = false;
                     AdvancedTouchUsed = false;
+                    ExpertCraftOpenerFinish = false;
 
                     return;
                 }
 
-                var rec = GetRecommendation();
+                var rec = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
                 CurrentRecommendation = rec;
 
                 if (rec != 0)
