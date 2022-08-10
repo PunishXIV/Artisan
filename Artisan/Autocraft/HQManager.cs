@@ -9,13 +9,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Artisan
+namespace Artisan.Autocraft
 {
     internal unsafe static class HQManager
     {
-        internal static List<int> Data = new();
-
-        internal static bool TryGetCurrent([NotNullWhen(true)]out List<int>? data)
+        internal static bool TryGetCurrent([NotNullWhen(true)] out List<int>? data)
         {
             try
             {
@@ -52,12 +50,12 @@ namespace Artisan
         internal static long NextCheckAt = 0;
         internal static bool RestoreHQData(List<int> data, out bool dataFinalized)
         {
-            if(Environment.TickCount64 < NextCheckAt)
+            if (Environment.TickCount64 < NextCheckAt)
             {
                 dataFinalized = false;
                 return false;
             }
-            if(TryGetCurrent(out var currentData) && data.Count == currentData.Count && GenericHelpers.TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
+            if (TryGetCurrent(out var currentData) && data.Count == currentData.Count && GenericHelpers.TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
             {
                 if (currentData.SequenceEqual(data))
                 {
@@ -66,7 +64,7 @@ namespace Artisan
                 }
                 else
                 {
-                    for(var i = 0; i < data.Count; i++)
+                    for (var i = 0; i < data.Count; i++)
                     {
                         if (data[i] > currentData[i])
                         {

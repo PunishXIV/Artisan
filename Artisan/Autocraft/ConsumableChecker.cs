@@ -14,7 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Artisan
+namespace Artisan.Autocraft
 {
 #pragma warning disable CS8604,CS8618,CS0649
     internal unsafe class ConsumableChecker
@@ -25,9 +25,6 @@ namespace Artisan
         static AgentInterface* itemContextMenuAgent;
         [Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 41 B0 01 BA 13 00 00 00", Fallibility = Fallibility.Infallible)]
         static delegate* unmanaged<AgentInterface*, uint, uint, uint, short, void> useItem;
-        static long NextUseAt = 0;
-        internal static bool ReopenLog = false;
-        internal static bool AwaitOperation = false;
 
         internal static void Init()
         {
@@ -81,10 +78,9 @@ namespace Artisan
 
         internal static bool UseItem(uint id, bool hq = false)
         {
-            if(Environment.TickCount64 > NextUseAt)
+            if (Throttler.Throttle(5000))
             {
                 var ret = UseItemInternal(id, hq);
-                NextUseAt = Environment.TickCount64 + 5000;
                 return ret;
             }
             return false;
@@ -101,42 +97,11 @@ namespace Artisan
 
         internal static bool CheckConsumables()
         {
-            if (AwaitOperation && !ReopenLog)
-            {
-                if(HQManager.Data.Count > 0)
-                {
-                    var r = HQManager.RestoreHQData(HQManager.Data, out var dFin);
-                    if(r && dFin)
-                    {
-                        HQManager.Data.Clear();
-                    }
-                    return false;
-                }
-                if (Svc.Condition[ConditionFlag.Crafting])
-                {
-                    AwaitOperation = false;
-                    return false;
-                }
-            }
-            else
-            {
-                if (!(Svc.Condition[ConditionFlag.Crafting] || Svc.Condition[ConditionFlag.Crafting40]) && !ReopenLog) return false;
-                if (!(GenericHelpers.TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible) && !ReopenLog) return false; 
-            }
             var fooded = IsFooded() || Service.Configuration.Food == 0;
             if (!fooded)
             {
-                if(GetFood(true, Service.Configuration.FoodHQ).Any())
+                if (GetFood(true, Service.Configuration.FoodHQ).Any())
                 {
-                    if(GenericHelpers.TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
-                    {
-                        CommandProcessor.ExecuteThrottled("/clog");
-                        NextUseAt = Environment.TickCount64 + 2500;
-                        ReopenLog = true;
-                        AwaitOperation = true;
-                        return false;
-                    }
-                    if (Svc.Condition[ConditionFlag.Crafting] || Svc.Condition[ConditionFlag.Crafting40]) return false;
                     UseItem(Service.Configuration.Food, Service.Configuration.FoodHQ);
                     return false;
                 }
@@ -150,15 +115,6 @@ namespace Artisan
             {
                 if (GetPots(true, Service.Configuration.PotHQ).Any())
                 {
-                    if (GenericHelpers.TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
-                    {
-                        CommandProcessor.ExecuteThrottled("/clog");
-                        NextUseAt = Environment.TickCount64 + 2500;
-                        ReopenLog = true;
-                        AwaitOperation = true;
-                        return false;
-                    }
-                    if (Svc.Condition[ConditionFlag.Crafting] || Svc.Condition[ConditionFlag.Crafting40]) return false;
                     UseItem(Service.Configuration.Potion, Service.Configuration.PotHQ);
                     return false;
                 }
@@ -168,14 +124,6 @@ namespace Artisan
                 }
             }
             var ret = potted && fooded;
-            if(ret && ReopenLog)
-            {
-                if (CommandProcessor.ExecuteThrottled("/clog"))
-                {
-                    ReopenLog = false;
-                }
-                return false;
-            }
             return ret;
         }
 

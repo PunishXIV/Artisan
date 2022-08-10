@@ -1,4 +1,5 @@
-﻿using Artisan.CraftingLogic;
+﻿using Artisan.Autocraft;
+using Artisan.CraftingLogic;
 using Artisan.RawInformation;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
@@ -56,6 +57,7 @@ namespace Artisan
             ActionWatching.Enable();
             StepChanged += ResetRecommendation;
             ConsumableChecker.Init();
+            Autocraft.Handler.Init();
         }
 
         private void ResetRecommendation(object? sender, int e)
@@ -65,10 +67,6 @@ namespace Artisan
 
         private void FireBot(Framework framework)
         {
-            if (!ConsumableChecker.AwaitOperation && HQManager.TryGetCurrent(out var d))
-            {
-                HQManager.Data = d;
-            }
             if (!Service.Condition[ConditionFlag.Crafting]) PluginUi.CraftingVisible = false;
             GetCraft();
 
@@ -77,10 +75,13 @@ namespace Artisan
                 FetchRecommendation(CurrentStep, CurrentStep);
             }
 
+            if (Autocraft.Handler.Enable)
+            {
+                return;
+            }
+
             bool enableAutoRepeat = Service.Configuration.AutoCraft;
-            var cons = ConsumableChecker.CheckConsumables();
-            PluginLog.Debug($"Consumables: {cons}");
-            if (enableAutoRepeat && cons)
+            if (enableAutoRepeat)
             {
                 PluginLog.Debug($"Looping");
                 RepeatActualCraft();
@@ -149,6 +150,7 @@ namespace Artisan
         public void Dispose()
         {
             this.PluginUi.Dispose();
+            Autocraft.Handler.Dispose();
             ECommons.ECommons.Dispose();
 
             Service.CommandManager.RemoveHandler(commandName);

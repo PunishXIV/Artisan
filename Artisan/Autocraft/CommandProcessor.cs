@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Artisan
+namespace Artisan.Autocraft
 {
     internal static class CommandProcessor
     {
@@ -13,9 +13,9 @@ namespace Artisan
         static Chat? chat = null;
         internal static bool ExecuteThrottled(string command)
         {
-            if(Environment.TickCount64 > nextCommandAt)
+            if (Environment.TickCount64 > nextCommandAt)
             {
-                nextCommandAt = Environment.TickCount64 + 1500;
+                nextCommandAt = Environment.TickCount64 + 500;
                 chat ??= new();
                 chat.SendMessage(command);
                 return true;

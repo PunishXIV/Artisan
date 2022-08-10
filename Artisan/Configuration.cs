@@ -37,7 +37,6 @@ namespace Artisan
 
         public bool UseSimulatedStartingQuality { get; set; } = false;
 
-        public bool ExtraSafeMode = false;
         public uint Food = 0;
         public uint Potion = 0;
         public bool AbortIfNoFoodPot = true;
