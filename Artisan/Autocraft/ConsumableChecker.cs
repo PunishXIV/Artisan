@@ -68,17 +68,17 @@ namespace Artisan.Autocraft
 
         internal static bool IsFooded()
         {
-            return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.GameData.Name.ToString() == "Well Fed") == true;
+            return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.GameData.Name.ToString() == "Well Fed" && x.RemainingTime > 0f) == true;
         }
 
         internal static bool IsPotted()
         {
-            return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.GameData.Name.ToString() == "Medicated") == true;
+            return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.GameData.Name.ToString() == "Medicated" && x.RemainingTime > 0f) == true;
         }
 
         internal static bool UseItem(uint id, bool hq = false)
         {
-            if (Throttler.Throttle(5000))
+            if (Throttler.Throttle(2000))
             {
                 var ret = UseItemInternal(id, hq);
                 return ret;
@@ -95,14 +95,14 @@ namespace Artisan.Autocraft
             return true;
         }
 
-        internal static bool CheckConsumables()
+        internal static bool CheckConsumables(bool use = true)
         {
             var fooded = IsFooded() || Service.Configuration.Food == 0;
             if (!fooded)
             {
                 if (GetFood(true, Service.Configuration.FoodHQ).Any())
                 {
-                    UseItem(Service.Configuration.Food, Service.Configuration.FoodHQ);
+                    if(use) UseItem(Service.Configuration.Food, Service.Configuration.FoodHQ);
                     return false;
                 }
                 else
@@ -115,7 +115,7 @@ namespace Artisan.Autocraft
             {
                 if (GetPots(true, Service.Configuration.PotHQ).Any())
                 {
-                    UseItem(Service.Configuration.Potion, Service.Configuration.PotHQ);
+                    if (use) UseItem(Service.Configuration.Potion, Service.Configuration.PotHQ);
                     return false;
                 }
                 else

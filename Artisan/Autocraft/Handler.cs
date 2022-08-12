@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLogic;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Interface.Components;
 using Dalamud.Logging;
 using ECommons;
 using ECommons.DalamudServices;
@@ -38,36 +39,53 @@ namespace Artisan.Autocraft
                 {
                     return;
                 }
-                PluginLog.Debug("Throttle success");
+                PluginLog.Verbose("Throttle success");
                 if (HQData == null)
                 {
                     DuoLog.Error("HQ data is null");
                     Enable = false;
                     return;
                 }
-                PluginLog.Debug("HQ not null");
-                if (!ConsumableChecker.CheckConsumables())
+                PluginLog.Verbose("HQ not null");
+                if (!ConsumableChecker.CheckConsumables(false))
                 {
+                    if(TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
+                    {
+                        if (Throttler.Throttle(1000))
+                        {
+                            PluginLog.Verbose("Closing crafting log");
+                            CommandProcessor.ExecuteThrottled("/clog");
+                        }
+                    }
+                    else
+                    {
+                        if(!Svc.Condition[ConditionFlag.Crafting]) ConsumableChecker.CheckConsumables(true);
+                    }
                     return;
                 }
-                PluginLog.Debug("Consumables success");
-                if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
+                PluginLog.Verbose("Consumables success");
                 {
-                    PluginLog.Debug("Addon visible");
-                    if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
+                    if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
                     {
-                        return;
+                        PluginLog.Verbose("Addon visible");
+                        if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
+                        {
+                            return;
+                        }
+                        PluginLog.Verbose("HQ data restored");
+                        CurrentCraft.RepeatActualCraft();
                     }
-                    PluginLog.Debug("HQ data restored");
-                    CurrentCraft.RepeatActualCraft();
-                }
-                else
-                {
-                    PluginLog.Debug("Addon invisible");
-                    if (Throttler.Throttle(1000))
+                    else
                     {
-                        PluginLog.Debug("Opening crafting log");
-                        CommandProcessor.ExecuteThrottled("/clog");
+                        if (!Svc.Condition[ConditionFlag.Crafting])
+                        {
+                            PluginLog.Verbose("Addon invisible");
+                            if (Throttler.Throttle(1000))
+                            {
+                                PluginLog.Verbose("Opening crafting log");
+                                CommandProcessor.ExecuteThrottled("/clog");
+                            }
+                        }
                     }
                 }
             }
@@ -75,10 +93,14 @@ namespace Artisan.Autocraft
 
         internal static void Draw()
         {
-            ImGui.Checkbox("Enable autocraft (immediately begins crafting)", ref Enable);
+            ImGui.Checkbox("Enable Endurance Mode", ref Enable);
+            ImGuiComponents.HelpMarker("In order to begin endurance crafting you should first select the recipe and NQ/HQ material distribution in the crafting menu.");
             if (!Enable)
             {
-                HQManager.TryGetCurrent(out HQData);
+                if(HQManager.TryGetCurrent(out var d))
+                {
+                    HQData = d;
+                }
             }
             ImGuiEx.Text($"HQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}");
             {

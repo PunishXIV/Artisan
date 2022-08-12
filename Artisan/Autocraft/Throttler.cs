@@ -13,7 +13,10 @@ namespace Artisan.Autocraft
         {
             if(Environment.TickCount64 > NextCommandAt)
             {
-                NextCommandAt = Environment.TickCount64 + ms;
+                if (ms > 0)
+                {
+                    NextCommandAt = Environment.TickCount64 + ms;
+                }
                 return true;
             }
             return false;

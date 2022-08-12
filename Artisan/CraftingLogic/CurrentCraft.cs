@@ -1,5 +1,7 @@
-﻿using Artisan.RawInformation;
+﻿using Artisan.Autocraft;
+using Artisan.RawInformation;
 using ClickLib.Clicks;
+using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina.Excel.GeneratedSheets;
@@ -522,7 +524,6 @@ namespace Artisan.CraftingLogic
                 var addonPtr = (AddonRecipeNote*)recipeWindow;
                 if (addonPtr == null)
                     return;
-
                 var synthButton = addonPtr->SynthesizeButton;
 
                 if (synthButton != null && !synthButton->IsEnabled)
@@ -530,13 +531,18 @@ namespace Artisan.CraftingLogic
                     Dalamud.Logging.PluginLog.Debug("AddonRecipeNote: Enabling synth button");
                     synthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
                 }
-                else
+                if (Throttler.Throttle(500))
                 {
-                    return;
+                    try
+                    {
+                        Dalamud.Logging.PluginLog.Debug("AddonRecipeNote: Selecting synth");
+                        ClickRecipeNote.Using(recipeWindow).Synthesize();
+                    }
+                    catch(Exception e)
+                    {
+                        e.Log();
+                    }
                 }
-
-                Dalamud.Logging.PluginLog.Debug("AddonRecipeNote: Selecting synth");
-                ClickRecipeNote.Using(recipeWindow).Synthesize();
             }
             catch (Exception ex)
             {
