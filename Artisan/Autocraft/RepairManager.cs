@@ -1,4 +1,5 @@
 ﻿using ClickLib.Clicks;
+using Dalamud.Logging;
 using ECommons;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -46,33 +47,43 @@ namespace Artisan.Autocraft
         {
             if(GetMinEquippedPercent() >= Service.Configuration.RepairPercent)
             {
+                //PluginLog.Verbose("Condition good");
                 if (TryGetAddonByName<AddonRepair>("Repair", out var r) && r->AtkUnitBase.IsVisible)
                 {
+                    //PluginLog.Verbose("Repair visible");
                     if (Throttler.Throttle(500))
                     {
+                        //PluginLog.Verbose("Closing repair window");
                         CommandProcessor.ExecuteThrottled("/generalaction repair");
                     }
                     return false;
                 }
+                //PluginLog.Verbose("return true");
                 return true;
             }
             else
             {
+                //PluginLog.Verbose($"Condition bad, condition is {GetMinEquippedPercent()}, config is {Service.Configuration.RepairPercent}");
                 if (use)
                 {
+                    //PluginLog.Verbose($"Doing repair");
                     if (TryGetAddonByName<AddonRepair>("Repair", out var r) && r->AtkUnitBase.IsVisible)
                     {
+                        //PluginLog.Verbose($"Repair visible");
                         ConfirmYesNo();
                         Repair();
                     }
                     else
                     {
+                        //PluginLog.Verbose($"Repair not visible");
                         if (Throttler.Throttle(500))
                         {
+                            //PluginLog.Verbose($"Opening repair");
                             CommandProcessor.ExecuteThrottled("/generalaction repair");
                         }
                     }
                 }
+                //PluginLog.Verbose($"Returning false");
                 return false;
             }
         }

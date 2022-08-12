@@ -81,18 +81,20 @@ namespace Artisan.Autocraft
                 {
                     Throttler.Rethrottle(1000);
                 }
-                PluginLog.Verbose("Throttle success");
+                //PluginLog.Verbose("Throttle success");
                 if (HQData == null)
                 {
                     DuoLog.Error("HQ data is null");
                     Enable = false;
                     return;
                 }
-                PluginLog.Verbose("HQ not null");
-                if(Service.Configuration.Repair && RepairManager.ProcessRepair(false))
+                //PluginLog.Verbose("HQ not null");
+                if(Service.Configuration.Repair && !RepairManager.ProcessRepair(false))
                 {
+                    //PluginLog.Verbose("Entered repair check");
                     if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                     {
+                        //PluginLog.Verbose("Crafting");
                         if (Throttler.Throttle(1000))
                         {
                             //PluginLog.Verbose("Closing crafting log");
@@ -101,18 +103,19 @@ namespace Artisan.Autocraft
                     }
                     else
                     {
+                        //PluginLog.Verbose("Not crafting");
                         if (!Svc.Condition[ConditionFlag.Crafting]) RepairManager.ProcessRepair(true);
                     }
                     return;
                 }
-                PluginLog.Verbose("Repair ok");
+                //PluginLog.Verbose("Repair ok");
                 if (!ConsumableChecker.CheckConsumables(false))
                 {
                     if(TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                     {
                         if (Throttler.Throttle(1000))
                         {
-                            //PluginLog.Verbose("Closing crafting log");
+                            ////PluginLog.Verbose("Closing crafting log");
                             CommandProcessor.ExecuteThrottled("/clog");
                         }
                     }
@@ -122,19 +125,19 @@ namespace Artisan.Autocraft
                     }
                     return;
                 }
-                PluginLog.Verbose("Consumables success");
+                //PluginLog.Verbose("Consumables success");
                 {
                     if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
                     {
-                        PluginLog.Verbose("Addon visible");
+                        //PluginLog.Verbose("Addon visible");
                         if (addon->UldManager.NodeListCount >= 87 && !addon->UldManager.NodeList[87]->GetAsAtkTextNode()->AtkResNode.IsVisible)
                         {
-                            PluginLog.Verbose("Error text not visible");
+                            //PluginLog.Verbose("Error text not visible");
                             if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
                             {
                                 return;
                             }
-                            //PluginLog.Verbose("HQ data restored");
+                            ////PluginLog.Verbose("HQ data restored");
                             CurrentCraft.RepeatActualCraft();
                         }
                     }
@@ -142,10 +145,10 @@ namespace Artisan.Autocraft
                     {
                         if (!Svc.Condition[ConditionFlag.Crafting])
                         {
-                            //PluginLog.Verbose("Addon invisible");
+                            ////PluginLog.Verbose("Addon invisible");
                             if (Throttler.Throttle(1000))
                             {
-                                //PluginLog.Verbose("Opening crafting log");
+                                ////PluginLog.Verbose("Opening crafting log");
                                 if (RecipeID == 0)
                                 {
                                     CommandProcessor.ExecuteThrottled("/clog");
