@@ -91,7 +91,7 @@ namespace Artisan
                     }
                     if (ImGui.BeginTabItem("Debug"))
                     {
-                        DrawDebugTab();
+                        AutocraftDebugTab.Draw();
                         ImGui.EndTabItem();
                     }
 
@@ -356,64 +356,6 @@ namespace Artisan
             {
                 Service.Configuration.MaxPercentage = maxQuality;
                 Service.Configuration.Save();
-            }
-        }
-
-        static void DrawDebugTab()
-        {
-            if (ImGui.CollapsingHeader("Crafter's food"))
-            {
-                foreach (var x in ConsumableChecker.GetFood())
-                {
-                    ImGuiEx.Text($"{x.Id}: {x.Name}");
-                }
-            }
-            if (ImGui.CollapsingHeader("Crafter's food in inventory"))
-            {
-                foreach (var x in ConsumableChecker.GetFood(true))
-                {
-                    if(ImGui.Selectable($"{x.Id}: {x.Name}"))
-                    {
-                        ConsumableChecker.UseItem(x.Id);
-                    }
-                }
-            }
-            if (ImGui.CollapsingHeader("Crafter's HQ food in inventory"))
-            {
-                foreach (var x in ConsumableChecker.GetFood(true, true))
-                {
-                    if (ImGui.Selectable($"{x.Id}: {x.Name}"))
-                    {
-                        ConsumableChecker.UseItem(x.Id, true);
-                    }
-                }
-            }
-            if (ImGui.CollapsingHeader("Crafter's pots"))
-            {
-                foreach (var x in ConsumableChecker.GetPots())
-                {
-                    ImGuiEx.Text($"{x.Id}: {x.Name}");
-                }
-            }
-            if (ImGui.CollapsingHeader("Crafter's pots in inventory"))
-            {
-                foreach (var x in ConsumableChecker.GetPots(true))
-                {
-                    if (ImGui.Selectable($"{x.Id}: {x.Name}"))
-                    {
-                        ConsumableChecker.UseItem(x.Id);
-                    }
-                }
-            }
-            if (ImGui.CollapsingHeader("Crafter's HQ pots in inventory"))
-            {
-                foreach (var x in ConsumableChecker.GetPots(true, true))
-                {
-                    if (ImGui.Selectable($"{x.Id}: {x.Name}"))
-                    {
-                        ConsumableChecker.UseItem(x.Id, true);
-                    }
-                }
             }
         }
     }

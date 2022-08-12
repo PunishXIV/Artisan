@@ -21,5 +21,13 @@ namespace Artisan.Autocraft
             }
             return false;
         }
+
+        internal static void Rethrottle(int ms)
+        {
+            if (NextCommandAt - Environment.TickCount64 < ms)
+            {
+                NextCommandAt = Environment.TickCount64 + ms;
+            }
+        }
     }
 }
