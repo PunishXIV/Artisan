@@ -1,14 +1,20 @@
 ﻿using Artisan.CraftingLogic;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Hooking;
 using Dalamud.Interface.Components;
 using Dalamud.Logging;
+using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +32,8 @@ namespace Artisan.Autocraft
 
         internal static bool Enable = false;
         internal static List<int>? HQData = null;
+        internal static int RecipeID = 0;
+
         internal static void Init()
         {
             SignatureHelper.Initialise(new Handler());
@@ -80,14 +88,14 @@ namespace Artisan.Autocraft
                     Enable = false;
                     return;
                 }
-                //PluginLog.Verbose("HQ not null");
-                if(!(Service.Configuration.Repair && RepairManager.ProcessRepair(false)))
+                PluginLog.Verbose("HQ not null");
+                if(Service.Configuration.Repair && RepairManager.ProcessRepair(false))
                 {
                     if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                     {
                         if (Throttler.Throttle(1000))
                         {
-                            PluginLog.Verbose("Closing crafting log");
+                            //PluginLog.Verbose("Closing crafting log");
                             CommandProcessor.ExecuteThrottled("/clog");
                         }
                     }
@@ -97,13 +105,14 @@ namespace Artisan.Autocraft
                     }
                     return;
                 }
+                PluginLog.Verbose("Repair ok");
                 if (!ConsumableChecker.CheckConsumables(false))
                 {
                     if(TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                     {
                         if (Throttler.Throttle(1000))
                         {
-                            PluginLog.Verbose("Closing crafting log");
+                            //PluginLog.Verbose("Closing crafting log");
                             CommandProcessor.ExecuteThrottled("/clog");
                         }
                     }
@@ -113,17 +122,21 @@ namespace Artisan.Autocraft
                     }
                     return;
                 }
-                //PluginLog.Verbose("Consumables success");
+                PluginLog.Verbose("Consumables success");
                 {
                     if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
                     {
-                        //PluginLog.Verbose("Addon visible");
-                        if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
+                        PluginLog.Verbose("Addon visible");
+                        if (addon->UldManager.NodeListCount >= 87 && !addon->UldManager.NodeList[87]->GetAsAtkTextNode()->AtkResNode.IsVisible)
                         {
-                            return;
+                            PluginLog.Verbose("Error text not visible");
+                            if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
+                            {
+                                return;
+                            }
+                            //PluginLog.Verbose("HQ data restored");
+                            CurrentCraft.RepeatActualCraft();
                         }
-                        //PluginLog.Verbose("HQ data restored");
-                        CurrentCraft.RepeatActualCraft();
                     }
                     else
                     {
@@ -133,7 +146,14 @@ namespace Artisan.Autocraft
                             if (Throttler.Throttle(1000))
                             {
                                 //PluginLog.Verbose("Opening crafting log");
-                                CommandProcessor.ExecuteThrottled("/clog");
+                                if (RecipeID == 0)
+                                {
+                                    CommandProcessor.ExecuteThrottled("/clog");
+                                }
+                                else
+                                {
+                                    AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal((uint)RecipeID);
+                                }
                             }
                         }
                     }
@@ -151,8 +171,47 @@ namespace Artisan.Autocraft
                 {
                     HQData = d;
                 }
+                RecipeID = 0;
+                if(TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && addon->UldManager.NodeListCount >= 87
+                    && !addon->UldManager.NodeList[87]->GetAsAtkTextNode()->AtkResNode.IsVisible && addon->UldManager.NodeList[76]->GetAsAtkTextNode()->NodeText.ToString() == "History")
+                {
+                    var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
+                    var str = MemoryHelper.ReadSeString(&text);
+                    foreach (var payload in str.Payloads)
+                    {
+                        if(payload is TextPayload tp)
+                        {
+                            /*
+                             *  0	3	2	Woodworking
+                                1	1	5	Smithing
+                                2	3	1	Armorcraft
+                                3	2	4	Goldsmithing
+                                4	3	4	Leatherworking
+                                5	2	5	Clothcraft
+                                6	4	6	Alchemy
+                                7	5	6	Cooking
+
+                                8	carpenter
+                                9	blacksmith
+                                10	armorer
+                                11	goldsmith
+                                12	leatherworker
+                                13	weaver
+                                14	alchemist
+                                15	culinarian
+                                (ClassJob - 8)
+                             * 
+                             * */
+                            if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.ToString() == tp.Text && x.CraftType.Value.RowId + 8 == Svc.ClientState.LocalPlayer?.ClassJob.Id, out var id))
+                            {
+                                RecipeID = id.Number;
+                                break;
+                            }
+                        }
+                    }
+                }
             }
-            ImGuiEx.Text($"HQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}");
+            ImGuiEx.Text($"HQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}, Recipe ID: {RecipeID}");
             {
                 ImGuiEx.TextV("Maintain food buff:");
                 ImGui.SameLine(150f.Scale());
