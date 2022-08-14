@@ -1,20 +1,11 @@
-﻿using Artisan.CraftingLogic;
-using Artisan.RawInformation;
+﻿using Artisan.RawInformation;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
-using Dalamud.Interface;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-using ECommons;
-using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
 using System;
-using System.Diagnostics;
-using System.IO;
-using System.Numerics;
-using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan
@@ -74,9 +65,18 @@ namespace Artisan
                 FetchRecommendation(CurrentStep, CurrentStep);
             }
 
+#if DEBUG
+            if (PluginUi.repeatTrial)
+            {
+                RepeatTrialCraft();
+            }
+#endif
             bool enableAutoRepeat = Service.Configuration.AutoCraft;
             if (enableAutoRepeat && Service.Condition[ConditionFlag.PreparingToCraft])
+            {
                 RepeatActualCraft();
+            }
+
         }
 
         public static async void FetchRecommendation(object? sender, int e)

@@ -9,5 +9,5 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog":  "- Adds basic support for Expert Recipes."
+  "Changelog":  "- Fix progress calculations."
 }

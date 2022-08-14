@@ -288,8 +288,13 @@ namespace Artisan.CraftingLogic
                 if (CraftingWindowOpen)
                 {
                     var baseValue = CharacterInfo.Craftsmanship() * 10 / Recipe.RecipeLevelTable.Value.ProgressDivider + 2;
+                    var p2 = baseValue;
+                    if (CharacterInfo.CharacterLevel() <= Recipe.RecipeLevelTable.Value.ClassJobLevel)
+                    {
+                        p2 = baseValue * Recipe.RecipeLevelTable.Value.ProgressModifier / 100;
+                    }
 
-                    return baseValue;
+                    return p2;
                 }
                 return 0;
             }
@@ -327,7 +332,25 @@ namespace Artisan.CraftingLogic
                 _ => 1
             };
 
-            if (!isQuality) return baseMultiplier;
+            if (id == Skills.Groundwork && CharacterInfo.CharacterLevel() >= 86)
+                baseMultiplier = 3.6;
+            if (id == Skills.CarefulSynthesis && CharacterInfo.CharacterLevel() >= 82)
+                baseMultiplier = 1.8;
+            if (id == Skills.RapidSynthesis && CharacterInfo.CharacterLevel() >= 63)
+                baseMultiplier = 5;
+            if (id == Skills.BasicSynth && CharacterInfo.CharacterLevel() >= 31)
+                baseMultiplier = 1.2;
+
+            if (!isQuality)
+            {
+
+                if (CurrentCondition == Condition.Malleable)
+                    return baseMultiplier * 1.5;
+
+                return baseMultiplier;
+            }
+
+
 
             var conditionMod = CurrentCondition switch
             {
@@ -358,10 +381,9 @@ namespace Artisan.CraftingLogic
         public static uint CalculateNewProgress(uint id)
         {
             var multiplier = GetMultiplier(id, false);
-            double malleable = CurrentCondition == Condition.Malleable ? 1.5 : 1;
-            double veneration = GetStatus(Buffs.Veneration) != null ? 1.5 : 1;
-            double muscleMemory = GetStatus(Buffs.MuscleMemory) != null ? 2 : 1;
-            return (uint)Math.Floor(CurrentProgress + (BaseProgression() * multiplier) * veneration * muscleMemory * malleable);
+            double veneration = GetStatus(Buffs.Veneration) != null ? 0.5 : 0;
+            double muscleMemory = GetStatus(Buffs.MuscleMemory) != null ? 1 : 0;
+            return (uint)Math.Floor(CurrentProgress + (BaseProgression() * multiplier * (veneration + muscleMemory + 1)));
 
         }
 
@@ -403,10 +425,11 @@ namespace Artisan.CraftingLogic
             {
                 if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
                 if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
-                if (CurrentCondition == Condition.Pliant && GetStatus(Buffs.WasteNot2) is null) return Skills.WasteNot2;
-                if (GetStatus(Buffs.Manipulation) is null || GetStatus(Buffs.Manipulation)?.StackCount <= 3 && CurrentCondition == Condition.Pliant) return Skills.Manipulation;
-                if (CurrentCondition == Condition.Pliant && CurrentDurability < MaxDurability - 20) return Skills.MastersMend;
-                if (GetStatus(Buffs.Innovation) is null) return Skills.Innovation;
+                if (CurrentCondition == Condition.Pliant && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
+                if (CanUse(Skills.Manipulation) && GetStatus(Buffs.Manipulation) is null || (GetStatus(Buffs.Manipulation)?.StackCount <= 3 && CurrentCondition == Condition.Pliant)) return Skills.Manipulation;
+                if (CurrentCondition == Condition.Pliant && CurrentDurability < MaxDurability - 20 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
+                if (GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation)) return Skills.Innovation;
+                if (CharacterInfo.HighestLevelTouch() == 0) return CharacterInfo.HighestLevelSynth();
                 return CharacterInfo.HighestLevelTouch();
             }
 
