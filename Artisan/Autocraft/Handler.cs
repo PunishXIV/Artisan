@@ -33,6 +33,7 @@ namespace Artisan.Autocraft
         internal static bool Enable = false;
         internal static List<int>? HQData = null;
         internal static int RecipeID = 0;
+        internal static string RecipeName = "";
 
         internal static void Init()
         {
@@ -175,8 +176,11 @@ namespace Artisan.Autocraft
                     HQData = d;
                 }
                 RecipeID = 0;
-                if(TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && addon->UldManager.NodeListCount >= 87
-                    && !addon->UldManager.NodeList[87]->GetAsAtkTextNode()->AtkResNode.IsVisible && addon->UldManager.NodeList[76]->GetAsAtkTextNode()->NodeText.ToString() == "History")
+                RecipeName = "";
+                if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && addon->UldManager.NodeListCount >= 87
+                    && !addon->UldManager.NodeList[87]->GetAsAtkTextNode()->AtkResNode.IsVisible 
+                    //&& addon->UldManager.NodeList[76]->GetAsAtkTextNode()->NodeText.ToString() == "History"
+                    )
                 {
                     var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
                     var str = MemoryHelper.ReadSeString(&text);
@@ -184,6 +188,7 @@ namespace Artisan.Autocraft
                     {
                         if(payload is TextPayload tp)
                         {
+
                             /*
                              *  0	3	2	Woodworking
                                 1	1	5	Smithing
@@ -205,17 +210,19 @@ namespace Artisan.Autocraft
                                 (ClassJob - 8)
                              * 
                              * */
-                            if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.ToString() == tp.Text && x.CraftType.Value.RowId + 8 == Svc.ClientState.LocalPlayer?.ClassJob.Id, out var id))
+                            if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == tp.Text && x.CraftType.Value.RowId + 8 == Svc.ClientState.LocalPlayer?.ClassJob.Id, out var id))
                             {
                                 RecipeID = id.Number;
+                                RecipeName = tp.Text;
                                 break;
                             }
                         }
                     }
                 }
             }
-            ImGuiEx.Text($"HQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}, Recipe ID: {RecipeID}");
+            ImGuiEx.Text($"Recipe: {RecipeName}\nHQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}");
             {
+                
                 ImGuiEx.TextV("Maintain food buff:");
                 ImGui.SameLine(150f.Scale());
                 ImGuiEx.SetNextItemFullWidth();
@@ -278,8 +285,8 @@ namespace Artisan.Autocraft
             ImGui.Checkbox("Auto-repair gear once it falls below %", ref Service.Configuration.Repair);
             if (Service.Configuration.Repair)
             {
-                ImGui.SameLine();
-                ImGuiEx.SetNextItemFullWidth();
+                //ImGui.SameLine();
+                ImGui.PushItemWidth(200);
                 ImGui.SliderInt("##repairp", ref Service.Configuration.RepairPercent, 10, 100, $"{Service.Configuration.RepairPercent}%%");
             }
         }

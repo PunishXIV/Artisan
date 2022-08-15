@@ -93,12 +93,13 @@ namespace Artisan
                         Autocraft.Handler.Draw();
                         ImGui.EndTabItem();
                     }
+#if DEBUG
                     if (ImGui.BeginTabItem("Debug"))
                     {
                         AutocraftDebugTab.Draw();
                         ImGui.EndTabItem();
                     }
-
+#endif
                     ImGui.EndTabBar();
                 }
                 if (!visible)
