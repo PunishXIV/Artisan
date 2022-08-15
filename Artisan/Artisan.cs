@@ -6,6 +6,7 @@ using Dalamud.Game.Gui.Toast;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using System;
+using System.Linq;
 using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan
@@ -107,13 +108,33 @@ namespace Artisan
                 {
                     if (LuminaSheets.ActionSheet.TryGetValue(rec, out var normalAct))
                     {
-                        QuestToastOptions options = new QuestToastOptions() { IconId = normalAct.Icon };
-                        Service.ToastGui.ShowQuest($"Use {normalAct.Name}", options);
+                        if (normalAct.ClassJob.Value.RowId != CharacterInfo.JobID())
+                        {
+                            var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == normalAct.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
+                            QuestToastOptions options = new QuestToastOptions() { IconId = newAct.Icon };
+                            Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+
+                        }
+                        else
+                        {
+                            QuestToastOptions options = new QuestToastOptions() { IconId = normalAct.Icon };
+                            Service.ToastGui.ShowQuest($"Use {normalAct.Name}", options);
+                        }
                     }
-                    if (LuminaSheets.CraftActions.TryGetValue(rec, out var craftAct))
+
+                    if (LuminaSheets.CraftActions.TryGetValue(rec, out var craftAction))
                     {
-                        QuestToastOptions options = new QuestToastOptions() { IconId = craftAct.Icon };
-                        Service.ToastGui.ShowQuest($"Use {craftAct.Name}", options);
+                        if (craftAction.ClassJob.Row != CharacterInfo.JobID())
+                        {
+                            var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == craftAction.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
+                            QuestToastOptions options = new QuestToastOptions() { IconId = newAct.Icon };
+                            Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+                        }
+                        else
+                        {
+                            QuestToastOptions options = new QuestToastOptions() { IconId = craftAction.Icon };
+                            Service.ToastGui.ShowQuest($"Use {craftAction.Name}", options);
+                        }
                     }
 
                     if (Service.Configuration.AutoMode)
