@@ -43,6 +43,11 @@ namespace Artisan
                     if (allOfSameName.Any(x => x == Skills.Veneration))
                         VenerationUsed = true;
 
+                    JustUsedObserve = false;
+                    BasicTouchUsed = false;
+                    StandardTouchUsed = false;
+                    AdvancedTouchUsed = false;
+
                 }
                 if (LuminaSheets.CraftActions.TryGetValue(actionID, out var act2))
                 {
@@ -68,6 +73,8 @@ namespace Artisan
                         AdvancedTouchUsed = true;
                     else
                         AdvancedTouchUsed = false;
+
+                    JustUsedFinalAppraisal = false;
                 }
                 return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
             }

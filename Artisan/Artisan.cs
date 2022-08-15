@@ -5,18 +5,11 @@ using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
-using Dalamud.Interface;
 using Dalamud.IoC;
 using Dalamud.Logging;
 using Dalamud.Plugin;
-using ECommons;
-using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
 using System;
-using System.Diagnostics;
-using System.IO;
-using System.Numerics;
-using System.Threading.Tasks;
+using System.Linq;
 using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan
@@ -75,6 +68,12 @@ namespace Artisan
                 FetchRecommendation(CurrentStep, CurrentStep);
             }
 
+#if DEBUG
+            if (PluginUi.repeatTrial)
+            {
+                RepeatTrialCraft();
+            }
+#endif
             if (Autocraft.Handler.Enable)
             {
                 return;
@@ -104,24 +103,45 @@ namespace Artisan
                     BasicTouchUsed = false;
                     StandardTouchUsed = false;
                     AdvancedTouchUsed = false;
+                    ExpertCraftOpenerFinish = false;
 
                     return;
                 }
 
-                var rec = GetRecommendation();
+                var rec = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
                 CurrentRecommendation = rec;
 
                 if (rec != 0)
                 {
                     if (LuminaSheets.ActionSheet.TryGetValue(rec, out var normalAct))
                     {
-                        QuestToastOptions options = new QuestToastOptions() { IconId = normalAct.Icon };
-                        Service.ToastGui.ShowQuest($"Use {normalAct.Name}", options);
+                        if (normalAct.ClassJob.Value.RowId != CharacterInfo.JobID())
+                        {
+                            var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == normalAct.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
+                            QuestToastOptions options = new QuestToastOptions() { IconId = newAct.Icon };
+                            Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+
+                        }
+                        else
+                        {
+                            QuestToastOptions options = new QuestToastOptions() { IconId = normalAct.Icon };
+                            Service.ToastGui.ShowQuest($"Use {normalAct.Name}", options);
+                        }
                     }
-                    if (LuminaSheets.CraftActions.TryGetValue(rec, out var craftAct))
+
+                    if (LuminaSheets.CraftActions.TryGetValue(rec, out var craftAction))
                     {
-                        QuestToastOptions options = new QuestToastOptions() { IconId = craftAct.Icon };
-                        Service.ToastGui.ShowQuest($"Use {craftAct.Name}", options);
+                        if (craftAction.ClassJob.Row != CharacterInfo.JobID())
+                        {
+                            var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == craftAction.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
+                            QuestToastOptions options = new QuestToastOptions() { IconId = newAct.Icon };
+                            Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+                        }
+                        else
+                        {
+                            QuestToastOptions options = new QuestToastOptions() { IconId = craftAction.Icon };
+                            Service.ToastGui.ShowQuest($"Use {craftAction.Name}", options);
+                        }
                     }
 
                     if (Service.Configuration.AutoMode)

@@ -22,6 +22,10 @@ namespace Artisan
 
         // this extra bool exists for ImGui, since you can't ref a property
         private bool visible = false;
+
+#if DEBUG
+        public bool repeatTrial = false;
+#endif
         public bool Visible
         {
             get { return this.visible; }
@@ -103,6 +107,13 @@ namespace Artisan
                     PluginLog.Information("Configuration saved");
                 }
             }
+        }
+
+        private void DrawDebug()
+        {
+            ImGui.Text($"{BaseQuality()}");
+            ImGui.Text($"{GreatStridesByregotCombo()}");
+            ImGui.Text($"{CalculateNewProgress(CharacterInfo.HighestLevelSynth())}");
         }
 
         public unsafe static void MarkChanceOfSuccess()
@@ -253,6 +264,9 @@ namespace Artisan
                     Service.Configuration.Save();
                 }
 
+#if DEBUG
+                ImGui.Checkbox("Trial Craft Repeat", ref repeatTrial);
+#endif
                 //bool failureCheck = Service.Configuration.DisableFailurePrediction;
 
                 //if (ImGui.Checkbox($"Disable Failure Prediction", ref failureCheck))
@@ -272,6 +286,8 @@ namespace Artisan
                 {
                     Artisan.FetchRecommendation(null, 0);
                 }
+
+
 
             }
             ImGui.End();

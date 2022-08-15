@@ -51,13 +51,25 @@ namespace Artisan.RawInformation
 
         public static uint HighestLevelTouch()
         {
-            if (CanUse(Skills.FocusedTouch) && JustUsedObserve) return Skills.FocusedTouch;
-            if (CanUse(Skills.PreciseTouch) && (CurrentCondition is Condition.Good or Condition.Excellent)) return Skills.PreciseTouch;
-            if (CanUse(Skills.PreparatoryTouch) && CurrentDurability > 20) return Skills.PreparatoryTouch;
-            if (CanUse(Skills.PrudentTouch) && GetStatus(Buffs.WasteNot2) == null && GetStatus(Buffs.WasteNot) == null) return Skills.PrudentTouch;
-            if (CanUse(Skills.AdvancedTouch) && StandardTouchUsed) return Skills.AdvancedTouch;
-            if (CanUse(Skills.StandardTouch) && BasicTouchUsed) return Skills.StandardTouch;
-            if (CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
+            if (Recipe.IsExpert)
+            {
+                if (CanUse(Skills.HastyTouch) && CurrentCondition is Condition.Centered) return Skills.HastyTouch;
+                if (CanUse(Skills.PreciseTouch) && CurrentCondition is Condition.Good) return Skills.PreciseTouch;
+                if (AdvancedTouchUsed && CanUse(Skills.PrudentTouch)) return Skills.PrudentTouch;
+                if (CanUse(Skills.AdvancedTouch) && StandardTouchUsed) return Skills.AdvancedTouch;
+                if (CanUse(Skills.StandardTouch) && BasicTouchUsed) return Skills.StandardTouch;
+                if (CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
+            }
+            else
+            {
+                if (CanUse(Skills.FocusedTouch) && JustUsedObserve) return Skills.FocusedTouch;
+                if (CanUse(Skills.PreciseTouch) && (CurrentCondition is Condition.Good or Condition.Excellent)) return Skills.PreciseTouch;
+                if (CanUse(Skills.PreparatoryTouch) && CurrentDurability > 20 && (GetStatus(Buffs.InnerQuiet)?.StackCount < 10 || GetStatus(Buffs.InnerQuiet) is null)) return Skills.PreparatoryTouch;
+                if (CanUse(Skills.PrudentTouch) && GetStatus(Buffs.WasteNot2) == null && GetStatus(Buffs.WasteNot) == null) return Skills.PrudentTouch;
+                if (CanUse(Skills.AdvancedTouch) && StandardTouchUsed) return Skills.AdvancedTouch;
+                if (CanUse(Skills.StandardTouch) && BasicTouchUsed) return Skills.StandardTouch;
+                if (CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
+            }
 
             return 0;
         }
@@ -93,6 +105,55 @@ namespace Artisan.RawInformation
         private unsafe static bool QuestUnlocked(int v)
         {
             return QuestManager.IsQuestComplete((uint)v);
+        }
+
+        internal static uint CraftLevel()
+        {
+            return CharacterLevel() switch
+            {
+                <= 50 => CharacterLevel(),
+                51 => 120,
+                52 => 125,
+                53 => 130,
+                54 => 133,
+                55 => 136,
+                56 => 139,
+                57 => 142,
+                58 => 145,
+                59 => 148,
+                60 => 150,
+                61 => 260,
+                62 => 265,
+                63 => 270,
+                64 => 273,
+                65 => 276,
+                66 => 279,
+                67 => 282,
+                68 => 285,
+                69 => 288,
+                70 => 290,
+                71 => 390,
+                72 => 395,
+                73 => 400,
+                74 => 403,
+                75 => 406,
+                76 => 409,
+                77 => 412,
+                78 => 415,
+                79 => 418,
+                80 => 420,
+                81 => 517,
+                82 => 520,
+                83 => 525,
+                84 => 530,
+                85 => 535,
+                86 => 540,
+                87 => 545,
+                88 => 550,
+                89 => 555,
+                90 => 560,
+                _ => 0,
+            };
         }
     }
 
