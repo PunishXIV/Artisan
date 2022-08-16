@@ -83,14 +83,14 @@ namespace Artisan
                         DrawMainWindow();
                         ImGui.EndTabItem();
                     }
+                    if (ImGui.BeginTabItem("Endurance Mode"))
+                    {
+                        Autocraft.Handler.Draw();
+                        ImGui.EndTabItem();
+                    }
                     if (ImGui.BeginTabItem("About"))
                     {
                         PunishLib.ImGuiMethods.AboutTab.Draw(Plugin);
-                        ImGui.EndTabItem();
-                    }
-                    if (ImGui.BeginTabItem("Endurance mode"))
-                    {
-                        Autocraft.Handler.Draw();
                         ImGui.EndTabItem();
                     }
 #if DEBUG

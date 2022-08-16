@@ -167,8 +167,16 @@ namespace Artisan.Autocraft
 
         internal static void Draw()
         {
+            var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+            if (recipeWindow == IntPtr.Zero && !Enable)
+            {
+                ImGui.Text("Please open the Recipe List and select a recipe to enable Endurance Mode features.");
+                return;
+            }
+
+
             ImGui.Checkbox("Enable Endurance Mode", ref Enable);
-            ImGuiComponents.HelpMarker("In order to begin endurance crafting you should first select the recipe and NQ/HQ material distribution in the crafting menu.");
+            ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe and NQ/HQ material distribution in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
             if (!Enable)
             {
                 if(HQManager.TryGetCurrent(out var d))
