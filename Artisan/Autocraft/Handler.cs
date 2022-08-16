@@ -289,7 +289,8 @@ namespace Artisan.Autocraft
                     ImGui.EndCombo();
                 }
             }
-            ImGui.Checkbox("Stop autocrafting if food/medicine is not found", ref Service.Configuration.AbortIfNoFoodPot);
+            ImGui.Checkbox("Require Food or Medicine", ref Service.Configuration.AbortIfNoFoodPot);
+            ImGuiComponents.HelpMarker("Artisan will require the configured food or medicine and refuse to craft if it cannot be found.");
             ImGui.Checkbox("Automatic Repairs", ref Service.Configuration.Repair);
             ImGuiComponents.HelpMarker("If enabled, Artisan will automatically repair your gear using Dark Matter when any piece reaches the configured repair threshold.");
             if (Service.Configuration.Repair)
