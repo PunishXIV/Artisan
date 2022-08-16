@@ -223,7 +223,7 @@ namespace Artisan.Autocraft
             ImGuiEx.Text($"Recipe: {RecipeName}\nHQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}");
             {
                 
-                ImGuiEx.TextV("Maintain food buff:");
+                ImGuiEx.TextV("Food Usage:");
                 ImGui.SameLine(150f.Scale());
                 ImGuiEx.SetNextItemFullWidth();
                 if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == Service.Configuration.Food, out var item) ? $"{(Service.Configuration.FoodHQ ? " " : "")}{item.Name}" : $"{(Service.Configuration.Food == 0 ? "Disabled" : $"{(Service.Configuration.FoodHQ ? " " : "")}{Service.Configuration.Food}")}"))
@@ -253,7 +253,7 @@ namespace Artisan.Autocraft
             }
 
             {
-                ImGuiEx.TextV("Maintain potion buff:");
+                ImGuiEx.TextV("Medicine Usage:");
                 ImGui.SameLine(150f.Scale());
                 ImGuiEx.SetNextItemFullWidth();
                 if (ImGui.BeginCombo("##potBuff", ConsumableChecker.Pots.TryGetFirst(x => x.Id == Service.Configuration.Potion, out var item) ? $"{(Service.Configuration.PotHQ ? " " : "")}{item.Name}" : $"{(Service.Configuration.Potion == 0 ? "Disabled" : $"{(Service.Configuration.PotHQ ? " " : "")}{Service.Configuration.Potion}")}"))
