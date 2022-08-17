@@ -1,9 +1,12 @@
-﻿using Artisan.RawInformation;
+﻿using Artisan.Autocraft;
+using Artisan.CraftingLogic;
+using Artisan.RawInformation;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.IoC;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 using System;
 using System.Linq;
@@ -21,9 +24,10 @@ namespace Artisan
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
             [RequiredVersion("1.0")] CommandManager commandManager)
         {
-            FFXIVClientStructs.Resolver.Initialize();
+            //FFXIVClientStructs.Resolver.Initialize(); we don't do that
 
             pluginInterface.Create<Service>();
+            Service.Plugin = this;
 
             Service.Configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             Service.Configuration.Initialize(Service.Interface);
@@ -45,10 +49,8 @@ namespace Artisan
             Service.Framework.Update += FireBot;
             ActionWatching.Enable();
             StepChanged += ResetRecommendation;
-        }
-
-        public Artisan()
-        {
+            ConsumableChecker.Init();
+            Autocraft.Handler.Init();
         }
 
         private void ResetRecommendation(object? sender, int e)
@@ -72,15 +74,20 @@ namespace Artisan
                 RepeatTrialCraft();
             }
 #endif
-            bool enableAutoRepeat = Service.Configuration.AutoCraft;
-            if (enableAutoRepeat && Service.Condition[ConditionFlag.PreparingToCraft])
+            if (Autocraft.Handler.Enable)
             {
-                RepeatActualCraft();
+                return;
             }
 
+            bool enableAutoRepeat = Service.Configuration.AutoCraft;
+            if (enableAutoRepeat)
+            {
+                PluginLog.Debug($"Looping");
+                RepeatActualCraft();
+            }
         }
 
-        public static async void FetchRecommendation(object? sender, int e)
+        public static void FetchRecommendation(object? sender, int e)
         {
             try
             {
@@ -163,6 +170,7 @@ namespace Artisan
         public void Dispose()
         {
             this.PluginUi.Dispose();
+            Autocraft.Handler.Dispose();
             ECommons.ECommons.Dispose();
 
             Service.CommandManager.RemoveHandler(commandName);
@@ -173,6 +181,7 @@ namespace Artisan
             Service.Framework.Update -= FireBot;
 
             ActionWatching.Dispose();
+            Service.Plugin = null!;
         }
 
         private void OnCommand(string command, string args)

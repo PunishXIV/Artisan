@@ -21,7 +21,7 @@ namespace Artisan.RawInformation
 
         public IconInformation()
         {
-            this.getIconHook = new Hook<GetIconDelegate>(Service.Address.GetAdjustedActionId, this.GetIconDetour);
+            this.getIconHook = Hook<GetIconDelegate>.FromAddress(Service.Address.GetAdjustedActionId, this.GetIconDetour);
             this.getIconHook.Enable();
         }
 
