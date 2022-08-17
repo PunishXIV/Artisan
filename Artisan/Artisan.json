@@ -9,5 +9,5 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog": "- Endurance mode added. \r\n- Icons now show correct job actions."
+  "Changelog": "- Expert recipes should no longer get stuck trying to use actions you don't have CP for. \r\n- Certain mounts will no longer light up as recommended actions."
 }
