@@ -48,7 +48,7 @@ namespace Artisan
 
         private static string? CurrentSelectedCraft;
 
-        private IDalamudPlugin Plugin;
+        private readonly IDalamudPlugin Plugin;
         public PluginUI(Artisan plugin)
         {
             Plugin = plugin;
@@ -110,7 +110,7 @@ namespace Artisan
             }
         }
 
-        private void DrawDebug()
+        private static void DrawDebug()
         {
             ImGui.Text($"{BaseQuality()}");
             ImGui.Text($"{GreatStridesByregotCombo()}");
@@ -218,23 +218,16 @@ namespace Artisan
             var chance = q6 > 100 ? 100 : q6;
             chance = chance < 0 ? 0 : chance;
 
-            switch (chance)
+            return chance switch
             {
-                case < 20:
-                    return "EHQ: Do not attempt.";
-                case < 40:
-                    return "EHQ: Very low chance.";
-                case < 60:
-                    return "EHQ: Average chance.";
-                case < 80:
-                    return "EHQ: Good chance.";
-                case < 90:
-                    return "EHQ: High chance.";
-                case < 100:
-                    return "EHQ: Very high chance.";
-                default:
-                    return "EHQ: Guaranteed.";
-            }
+                < 20 => "EHQ: Do not attempt.",
+                < 40 => "EHQ: Very low chance.",
+                < 60 => "EHQ: Average chance.",
+                < 80 => "EHQ: Good chance.",
+                < 90 => "EHQ: High chance.",
+                < 100 => "EHQ: Very high chance.",
+                _ => "EHQ: Guaranteed.",
+            };
         }
 
         private void DrawCraftingWindow()
@@ -285,7 +278,7 @@ namespace Artisan
                 }
                 if (ImGui.Button("Fetch Recommendation"))
                 {
-                    Artisan.FetchRecommendation(null, 0);
+                    Artisan.FetchRecommendation(CurrentStep);
                 }
 
 
@@ -294,7 +287,7 @@ namespace Artisan
             ImGui.End();
         }
 
-        public void DrawMainWindow()
+        public static void DrawMainWindow()
         {
             ImGui.TextWrapped($"Here you can change some settings Artisan will use. Some of these can also be toggled during a craft.");
             ImGui.TextWrapped($"In order to use Artisan, please slot every crafting action you have unlocked to a visible hotbar.");

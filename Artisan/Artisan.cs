@@ -1,5 +1,4 @@
 ﻿using Artisan.Autocraft;
-using Artisan.CraftingLogic;
 using Artisan.RawInformation;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
@@ -24,8 +23,7 @@ namespace Artisan
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
             [RequiredVersion("1.0")] CommandManager commandManager)
         {
-            //FFXIVClientStructs.Resolver.Initialize(); we don't do that
-
+            
             pluginInterface.Create<Service>();
             Service.Plugin = this;
 
@@ -60,12 +58,12 @@ namespace Artisan
 
         private void FireBot(Framework framework)
         {
-            if (!Service.Condition[ConditionFlag.Crafting]) PluginUi.CraftingVisible = false;
-            GetCraft();
+            PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting];
 
+            GetCraft();
             if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0)
             {
-                FetchRecommendation(CurrentStep, CurrentStep);
+                FetchRecommendation(CurrentStep);
             }
 
 #if DEBUG
@@ -87,7 +85,7 @@ namespace Artisan
             }
         }
 
-        public static void FetchRecommendation(object? sender, int e)
+        public static void FetchRecommendation(int e)
         {
             try
             {
@@ -108,45 +106,44 @@ namespace Artisan
                     return;
                 }
 
-                var rec = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
-                CurrentRecommendation = rec;
+                CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
 
-                if (rec != 0)
+                if (CurrentRecommendation != 0)
                 {
-                    if (LuminaSheets.ActionSheet.TryGetValue(rec, out var normalAct))
+                    if (LuminaSheets.ActionSheet.TryGetValue(CurrentRecommendation, out var normalAct))
                     {
                         if (normalAct.ClassJob.Value.RowId != CharacterInfo.JobID())
                         {
                             var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == normalAct.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
-                            QuestToastOptions options = new QuestToastOptions() { IconId = newAct.Icon };
+                            QuestToastOptions options = new() { IconId = newAct.Icon };
                             Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
 
                         }
                         else
                         {
-                            QuestToastOptions options = new QuestToastOptions() { IconId = normalAct.Icon };
+                            QuestToastOptions options = new() { IconId = normalAct.Icon };
                             Service.ToastGui.ShowQuest($"Use {normalAct.Name}", options);
                         }
                     }
 
-                    if (LuminaSheets.CraftActions.TryGetValue(rec, out var craftAction))
+                    if (LuminaSheets.CraftActions.TryGetValue(CurrentRecommendation, out var craftAction))
                     {
                         if (craftAction.ClassJob.Row != CharacterInfo.JobID())
                         {
                             var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == craftAction.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
-                            QuestToastOptions options = new QuestToastOptions() { IconId = newAct.Icon };
+                            QuestToastOptions options = new() { IconId = newAct.Icon };
                             Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
                         }
                         else
                         {
-                            QuestToastOptions options = new QuestToastOptions() { IconId = craftAction.Icon };
+                            QuestToastOptions options = new() { IconId = craftAction.Icon };
                             Service.ToastGui.ShowQuest($"Use {craftAction.Name}", options);
                         }
                     }
 
                     if (Service.Configuration.AutoMode)
                     {
-                        Hotbars.ExecuteRecommended(rec);
+                        Hotbars.ExecuteRecommended(CurrentRecommendation);
                     }
 
                     return;
@@ -177,7 +174,6 @@ namespace Artisan
 
             Service.Interface.UiBuilder.OpenConfigUi -= DrawConfigUI;
             Service.Interface.UiBuilder.Draw -= DrawUI;
-            StepChanged -= FetchRecommendation;
             Service.Framework.Update -= FireBot;
 
             ActionWatching.Dispose();
