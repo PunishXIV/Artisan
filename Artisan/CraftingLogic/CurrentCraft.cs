@@ -412,25 +412,25 @@ namespace Artisan.CraftingLogic
             if (CurrentDurability <= 10 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
             if (CurrentProgress < MaxProgress && !ExpertCraftOpenerFinish)
             {
+                if (CurrentStep > 1 && GetStatus(Buffs.MuscleMemory) is null && CanUse(Skills.Innovation)) { ExpertCraftOpenerFinish = true; return 0; }
                 if (CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
                 if (CurrentStep == 2 && CanUse(Skills.Veneration)) return Skills.Veneration;
                 if (GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
-                if (GetStatus(Buffs.MuscleMemory) is null) { ExpertCraftOpenerFinish = true; return Skills.Innovation; }
-                if (CurrentCondition is Condition.Good) return Skills.IntensiveSynthesis;
-                if (CurrentCondition is Condition.Centered) return Skills.RapidSynthesis;
-                if (CurrentCondition is Condition.Sturdy or Condition.Primed or Condition.Normal) return Skills.Groundwork;
-                if (CurrentCondition is Condition.Malleable && CalculateNewProgress(Skills.Groundwork) >= MaxProgress && !JustUsedFinalAppraisal) return Skills.FinalAppraisal;
-                if (CurrentCondition is Condition.Malleable && (CalculateNewProgress(Skills.Groundwork) < MaxProgress) || GetStatus(Buffs.FinalAppraisal) is not null) return Skills.Groundwork;
-                if (CurrentCondition is Condition.Pliant && GetStatus(Buffs.Manipulation) is null && GetStatus(Buffs.MuscleMemory) is null) return Skills.Manipulation;
+                if (CurrentCondition is Condition.Good && CanUse(Skills.IntensiveSynthesis)) return Skills.IntensiveSynthesis;
+                if (CurrentCondition is Condition.Centered && CanUse(Skills.RapidSynthesis)) return Skills.RapidSynthesis;
+                if (CurrentCondition is Condition.Sturdy or Condition.Primed or Condition.Normal && CanUse(Skills.Groundwork)) return Skills.Groundwork;
+                if (CurrentCondition is Condition.Malleable && CalculateNewProgress(Skills.Groundwork) >= MaxProgress && !JustUsedFinalAppraisal && CanUse(Skills.FinalAppraisal)) return Skills.FinalAppraisal;
+                if (CurrentCondition is Condition.Malleable && (CalculateNewProgress(Skills.Groundwork) < MaxProgress) || GetStatus(Buffs.FinalAppraisal) is not null && CanUse(Skills.Groundwork)) return Skills.Groundwork;
+                if (CurrentCondition is Condition.Pliant && GetStatus(Buffs.Manipulation) is null && GetStatus(Buffs.MuscleMemory) is null && CanUse(Skills.Manipulation)) return Skills.Manipulation;
             }
             if (CurrentQuality < MaxQuality)
             {
                 if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
                 if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                 if (CurrentCondition == Condition.Pliant && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
-                if (CanUse(Skills.Manipulation) && GetStatus(Buffs.Manipulation) is null || (GetStatus(Buffs.Manipulation)?.StackCount <= 3 && CurrentCondition == Condition.Pliant)) return Skills.Manipulation;
+                if (CanUse(Skills.Manipulation) && (GetStatus(Buffs.Manipulation) is null || (GetStatus(Buffs.Manipulation)?.StackCount <= 3 && CurrentCondition == Condition.Pliant))) return Skills.Manipulation;
                 if (CurrentCondition == Condition.Pliant && CurrentDurability < MaxDurability - 20 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
-                if (GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation)) return Skills.Innovation;
+                if (CanUse(Skills.Innovation) && GetStatus(Buffs.Innovation) is null) return Skills.Innovation;
                 if (CharacterInfo.HighestLevelTouch() == 0) return CharacterInfo.HighestLevelSynth();
                 return CharacterInfo.HighestLevelTouch();
             }
