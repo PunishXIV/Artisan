@@ -1,6 +1,10 @@
-﻿using Artisan.RawInformation;
+﻿using Artisan.Autocraft;
+using Artisan.RawInformation;
 using Dalamud.Interface.Components;
+using Dalamud.Logging;
 using Dalamud.Plugin;
+using ECommons;
+using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using System;
@@ -79,20 +83,29 @@ namespace Artisan
                         DrawMainWindow();
                         ImGui.EndTabItem();
                     }
+                    if (ImGui.BeginTabItem("Endurance Mode"))
+                    {
+                        Autocraft.Handler.Draw();
+                        ImGui.EndTabItem();
+                    }
                     if (ImGui.BeginTabItem("About"))
                     {
                         PunishLib.ImGuiMethods.AboutTab.Draw(Plugin);
                         ImGui.EndTabItem();
                     }
 #if DEBUG
-                    if (ImGui.BeginTabItem("DEBUG"))
+                    if (ImGui.BeginTabItem("Debug"))
                     {
-                        DrawDebug();
+                        AutocraftDebugTab.Draw();
                         ImGui.EndTabItem();
                     }
 #endif
-
                     ImGui.EndTabBar();
+                }
+                if (!visible)
+                {
+                    Service.Configuration.Save();
+                    PluginLog.Information("Configuration saved");
                 }
             }
         }
@@ -308,6 +321,7 @@ namespace Artisan
                 Service.Configuration.Save();
             }
             ImGuiComponents.HelpMarker($"Repeats the currently selected craft in your recipe list.\nWill only work whilst you have the items.\nThis will repeat using your set item quality settings.");
+
             //if (ImGui.Checkbox($"Disable Failure Prediction", ref failureCheck))
             //{
             //    Service.Configuration.DisableFailurePrediction = failureCheck;
@@ -360,10 +374,6 @@ namespace Artisan
                 Service.Configuration.MaxPercentage = maxQuality;
                 Service.Configuration.Save();
             }
-
-
         }
-
-
     }
 }
