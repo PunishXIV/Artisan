@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Interface.Components;
 using Dalamud.Logging;
@@ -85,9 +86,15 @@ namespace Artisan
                     }
                     if (ImGui.BeginTabItem("Endurance Mode"))
                     {
-                        Autocraft.Handler.Draw();
+                        Handler.Draw();
                         ImGui.EndTabItem();
                     }
+                    if (ImGui.BeginTabItem("Macros"))
+                    {
+                        MacroUI.Draw();
+                        ImGui.EndTabItem();
+                    }
+
                     if (ImGui.BeginTabItem("About"))
                     {
                         PunishLib.ImGuiMethods.AboutTab.Draw(Plugin);

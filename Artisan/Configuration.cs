@@ -1,8 +1,10 @@
 ﻿using Artisan.CraftingLogic;
+using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Configuration;
 using Dalamud.Plugin;
 using System;
+using System.Collections.Generic;
 
 namespace Artisan
 {
@@ -36,6 +38,8 @@ namespace Artisan
         public int CurrentSimulated { get; set; } = 0;
 
         public bool UseSimulatedStartingQuality { get; set; } = false;
+
+        public List<Macro> UserMacros { get; set; } = new();
 
         public uint Food = 0;
         public uint Potion = 0;
