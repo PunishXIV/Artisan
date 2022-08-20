@@ -1,6 +1,8 @@
 ﻿using Artisan.RawInformation;
+using Dalamud.Interface.Components;
 using ImGuiNET;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -19,7 +21,8 @@ namespace Artisan.MacroSystem
         internal static void Draw()
         {
             ImGui.TextWrapped("This tab will allow you to add macros that Artisan can use instead of its own decisions.");
-
+            ImGui.Separator();
+            ImGui.Spacing();
             if (ImGui.Button("Import Macro From Clipboard"))
                 OpenMacroNamePopup(MacroNameUse.FromClipboard);
 
@@ -39,7 +42,9 @@ namespace Artisan.MacroSystem
                         longestName = ImGui.CalcTextSize(macro.Name).Length();
                 }
 
-                if (ImGui.BeginChild("##selector", new Vector2(longestName + 20, 0), true))
+                longestName = Math.Max(150, longestName);
+                ImGui.Text("Macro List");
+                if (ImGui.BeginChild("##selector", new Vector2(longestName + 40, 0), true))
                 {
                     foreach (Macro m in Service.Configuration.UserMacros)
                     {
@@ -95,11 +100,31 @@ namespace Artisan.MacroSystem
 
                         ImGui.NextColumn();
                         ImGui.Text($"Selected Action: {GetActionName(selectedMacro.MacroActions[selectedActionIndex])}");
+                        if (selectedActionIndex > 0)
+                        {
+                            ImGui.SameLine();
+                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowLeft))
+                            {
+                                selectedActionIndex--;
+                            }
+                        }
+
+                        if (selectedActionIndex < selectedMacro.MacroActions.Count - 1)
+                        {
+                            ImGui.SameLine();
+                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowRight))
+                            {
+                                selectedActionIndex++;
+                            }
+                        }
+
+
                         if (ImGui.Button("Delete Action (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                         {
                             selectedMacro.MacroActions.RemoveAt(selectedActionIndex);
                             Service.Configuration.Save();
                         }
+
                         if (ImGui.BeginCombo("###ReplaceAction", "Replace Action"))
                         {
                             foreach(var constant in typeof(Skills).GetFields().OrderBy(x => GetActionName((uint)x.GetValue(null))))
@@ -115,6 +140,35 @@ namespace Artisan.MacroSystem
                             }
 
                             ImGui.EndCombo();
+                        }
+
+                        ImGui.Text("Re-order Action");
+                        if (selectedActionIndex > 0)
+                        {
+                            ImGui.SameLine();
+                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowUp))
+                            {
+                                selectedMacro.MacroActions.Reverse(selectedActionIndex -1, 2);
+                                selectedActionIndex--;
+                                if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
+                                    Service.Configuration.SetMacro = selectedMacro;
+
+                                Service.Configuration.Save();
+                            }
+                        }
+
+                        if (selectedActionIndex < selectedMacro.MacroActions.Count - 1)
+                        {
+                            ImGui.SameLine();
+                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowDown))
+                            {
+                                selectedMacro.MacroActions.Reverse(selectedActionIndex, 2);
+                                selectedActionIndex++;
+                                if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
+                                    Service.Configuration.SetMacro = selectedMacro;
+
+                                Service.Configuration.Save();
+                            }
                         }
 
                     }

@@ -23,7 +23,7 @@ namespace Artisan
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
             [RequiredVersion("1.0")] CommandManager commandManager)
         {
-            
+
             pluginInterface.Create<Service>();
             Service.Plugin = this;
 
@@ -109,11 +109,7 @@ namespace Artisan
 
                 if (Service.Configuration.UseMacroMode && Service.Configuration.SetMacro != null && MacroStep < Service.Configuration.SetMacro.MacroActions.Count)
                 {
-                    Service.ChatGui.Print(Service.Configuration.SetMacro.MacroActions[MacroStep].ToString());
-                    while (CurrentRecommendation == 0)
-                    {
-                        CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep];
-                    }
+                    CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep];
                 }
                 else
                 {
