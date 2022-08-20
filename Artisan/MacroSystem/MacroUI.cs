@@ -160,6 +160,12 @@ namespace Artisan.MacroSystem
                         if (selectedActionIndex < selectedMacro.MacroActions.Count - 1)
                         {
                             ImGui.SameLine();
+                            if (selectedActionIndex == 0)
+                            {
+                                ImGui.Dummy(new Vector2(22));
+                                ImGui.SameLine();
+                            }
+
                             if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowDown))
                             {
                                 selectedMacro.MacroActions.Reverse(selectedActionIndex, 2);
