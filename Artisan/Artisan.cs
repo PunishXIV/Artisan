@@ -102,11 +102,23 @@ namespace Artisan
                     StandardTouchUsed = false;
                     AdvancedTouchUsed = false;
                     ExpertCraftOpenerFinish = false;
+                    MacroStep = 0;
 
                     return;
                 }
 
-                CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
+                if (Service.Configuration.UseMacroMode && Service.Configuration.SetMacro != null && MacroStep < Service.Configuration.SetMacro.MacroActions.Count)
+                {
+                    Service.ChatGui.Print(Service.Configuration.SetMacro.MacroActions[MacroStep].ToString());
+                    while (CurrentRecommendation == 0)
+                    {
+                        CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep];
+                    }
+                }
+                else
+                {
+                    CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
+                }
 
                 if (CurrentRecommendation != 0)
                 {

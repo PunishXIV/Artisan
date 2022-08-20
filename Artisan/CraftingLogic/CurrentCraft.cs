@@ -148,19 +148,7 @@ namespace Artisan.CraftingLogic
 
         public static bool ExpertCraftOpenerFinish { get; set; } = false;
 
-        public static int ObserveCounter
-        {
-            get => observeCounter;
-            set
-            {
-                observeCounter = value;
-                if (value == 2)
-                {
-                    observeCounter = 0;
-                    JustUsedObserve = false;
-                }
-            }
-        }
+        public static int MacroStep { get; set; } = 0;
 
         public unsafe static bool GetCraft()
         {

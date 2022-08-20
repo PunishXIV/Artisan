@@ -40,6 +40,9 @@ namespace Artisan
         public bool UseSimulatedStartingQuality { get; set; } = false;
 
         public List<Macro> UserMacros { get; set; } = new();
+        public bool UseMacroMode { get; set; }
+        public Macro? SetMacro { get; set; }
+
 
         public uint Food = 0;
         public uint Potion = 0;

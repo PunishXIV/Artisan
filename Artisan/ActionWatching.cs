@@ -76,6 +76,10 @@ namespace Artisan
 
                     JustUsedFinalAppraisal = false;
                 }
+                if (Service.Configuration.UseMacroMode && Service.Configuration.SetMacro != null && MacroStep < Service.Configuration.SetMacro.MacroActions.Count)
+                {
+                    MacroStep++;
+                }
                 return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
             }
             catch (Exception ex)

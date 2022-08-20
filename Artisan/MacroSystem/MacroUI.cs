@@ -60,13 +60,22 @@ namespace Artisan.MacroSystem
                     if (ImGui.Button("Delete Macro (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                     {
                         Service.Configuration.UserMacros.Remove(selectedMacro);
+                        if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
+                            Service.Configuration.SetMacro = null;
+
                         Service.Configuration.Save();
+                        selectedMacro = new();
+                        selectedActionIndex = -1;
                     }
                     ImGui.Spacing();
                     ImGui.Columns(2, "actionColumns", false);
                     if (ImGui.Button("Insert New Action"))
                     {
-                        selectedMacro.MacroActions.Add(Skills.BasicSynth);
+                        if (selectedMacro.MacroActions.Count == 0)
+                            selectedMacro.MacroActions.Add(Skills.BasicSynth);
+                        else
+                            selectedMacro.MacroActions.Insert(selectedActionIndex + 1, Skills.BasicSynth);
+
                         Service.Configuration.Save();
                     }
                     ImGui.TextWrapped("Macro Actions");
@@ -98,6 +107,9 @@ namespace Artisan.MacroSystem
                                 if (ImGui.Selectable($"{GetActionName((uint)constant.GetValue(null))}"))
                                 {
                                     selectedMacro.MacroActions[selectedActionIndex] = (uint)constant.GetValue(null);
+                                    if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
+                                        Service.Configuration.SetMacro = selectedMacro;
+
                                     Service.Configuration.Save();
                                 }
                             }
@@ -215,9 +227,9 @@ namespace Artisan.MacroSystem
                         action = action.Replace("\"", "");
                         if (string.IsNullOrEmpty(action)) continue;
 
-                        if (LuminaSheets.CraftActions.Values.Any(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase)))
+                        if (LuminaSheets.CraftActions.Values.Any(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0))
                         {
-                            var act = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                            var act = LuminaSheets.CraftActions.Values.FirstOrDefault(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0);
                             if (act == null)
                             {
                                 Service.ChatGui.PrintError($"Unable to parse action: {action}");
@@ -228,7 +240,7 @@ namespace Artisan.MacroSystem
                         }
                         else
                         {
-                            var act = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                            var act = LuminaSheets.ActionSheet.Values.FirstOrDefault(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0);
                             if (act == null)
                             {
                                 Service.ChatGui.PrintError($"Unable to parse action: {action}");
