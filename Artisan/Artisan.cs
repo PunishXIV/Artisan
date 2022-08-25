@@ -23,8 +23,8 @@ namespace Artisan
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
             [RequiredVersion("1.0")] CommandManager commandManager)
         {
-            
             pluginInterface.Create<Service>();
+            FFXIVClientStructs.Resolver.Initialize();
             Service.Plugin = this;
 
             Service.Configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();

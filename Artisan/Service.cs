@@ -9,7 +9,6 @@ using Dalamud.Game.Gui;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-using NAudio.Wave;
 
 namespace Artisan
 {
