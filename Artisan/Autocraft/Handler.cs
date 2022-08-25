@@ -18,6 +18,7 @@ using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using static ECommons.GenericHelpers;
@@ -179,19 +180,23 @@ namespace Artisan.Autocraft
             ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe and NQ/HQ material distribution in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
             if (!Enable)
             {
-                if(HQManager.TryGetCurrent(out var d))
+                if (HQManager.TryGetCurrent(out var d))
                 {
                     HQData = d;
                 }
                 RecipeID = 0;
                 RecipeName = "";
-                if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && addon->UldManager.NodeListCount >= 87
-                    && !addon->UldManager.NodeList[87]->GetAsAtkTextNode()->AtkResNode.IsVisible 
-                    //&& addon->UldManager.NodeList[76]->GetAsAtkTextNode()->NodeText.ToString() == "History"
-                    )
+                var addonPtr = Service.GameGui.GetAddonByName("RecipeNote", 1);
+                var addon = (AtkUnitBase*)addonPtr;
+
+                if (addon == null)
+                    return;
+
+                if (addon->IsVisible)
                 {
+                    PluginLog.Debug("HERE");
                     var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
-                    var str = MemoryHelper.ReadSeString(&text);
+                    var str = RawInformation.MemoryHelper.ReadSeString(&text);
                     foreach (var payload in str.Payloads)
                     {
                         if(payload is TextPayload tp)
@@ -220,7 +225,7 @@ namespace Artisan.Autocraft
                              * */
                             if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == tp.Text && x.CraftType.Value.RowId + 8 == Svc.ClientState.LocalPlayer?.ClassJob.Id, out var id))
                             {
-                                RecipeID = id.Number;
+                                RecipeID = id.Unknown0;
                                 RecipeName = tp.Text;
                                 break;
                             }
@@ -230,7 +235,6 @@ namespace Artisan.Autocraft
             }
             ImGuiEx.Text($"Recipe: {RecipeName}\nHQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}");
             {
-                
                 ImGuiEx.TextV("Food Usage:");
                 ImGui.SameLine(150f.Scale());
                 ImGuiEx.SetNextItemFullWidth();
