@@ -58,6 +58,8 @@
   <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="2.1.6" />
     <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
+    <ProjectReference Include="..\FFXIVClientStructs\FFXIVClientStructs.Generators\FFXIVClientStructs.Generators.csproj" />
+    <ProjectReference Include="..\FFXIVClientStructs\FFXIVClientStructs\FFXIVClientStructs.csproj" />
     <ProjectReference Include="..\PunishLib\ECommons\ECommons\ECommons.csproj" />
     <ProjectReference Include="..\PunishLib\PunishLib\PunishLib.csproj" />
     <Reference Include="Newtonsoft.Json">
