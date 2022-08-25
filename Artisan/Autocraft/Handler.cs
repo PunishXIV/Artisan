@@ -194,14 +194,12 @@ namespace Artisan.Autocraft
 
                 if (addon->IsVisible)
                 {
-                    PluginLog.Debug("HERE");
                     var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
                     var str = RawInformation.MemoryHelper.ReadSeString(&text);
                     foreach (var payload in str.Payloads)
                     {
                         if(payload is TextPayload tp)
                         {
-
                             /*
                              *  0	3	2	Woodworking
                                 1	1	5	Smithing
@@ -223,10 +221,16 @@ namespace Artisan.Autocraft
                                 (ClassJob - 8)
                              * 
                              * */
+
+                            if (tp.Text[^1] == '')
+                            {
+                                tp.Text = tp.Text.Remove(tp.Text.Length - 1, 1).Trim();
+                            }
+
                             if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == tp.Text && x.CraftType.Value.RowId + 8 == Svc.ClientState.LocalPlayer?.ClassJob.Id, out var id))
                             {
                                 RecipeID = id.Unknown0;
-                                RecipeName = tp.Text;
+                                RecipeName = id.ItemResult.Value.Name;
                                 break;
                             }
                         }
