@@ -132,7 +132,7 @@ namespace Artisan.Autocraft
                     if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
                     {
                         //PluginLog.Verbose("Addon visible");
-                        if (addon->UldManager.NodeListCount >= 87 && !addon->UldManager.NodeList[87]->GetAsAtkTextNode()->AtkResNode.IsVisible)
+                        if (addon->UldManager.NodeListCount >= 88 && !addon->UldManager.NodeList[88]->GetAsAtkTextNode()->AtkResNode.IsVisible)
                         {
                             //PluginLog.Verbose("Error text not visible");
                             if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
@@ -187,8 +187,10 @@ namespace Artisan.Autocraft
                 RecipeID = 0;
                 RecipeName = "";
                 var addonPtr = Service.GameGui.GetAddonByName("RecipeNote", 1);
-                var addon = (AtkUnitBase*)addonPtr;
+                if (addonPtr == IntPtr.Zero)
+                    return;
 
+                var addon = (AtkUnitBase*)addonPtr;
                 if (addon == null)
                     return;
 

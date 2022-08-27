@@ -30,8 +30,6 @@ namespace Artisan
             Service.Configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             Service.Configuration.Initialize(Service.Interface);
 
-            Service.Address = new PluginAddressResolver();
-            Service.Address.Setup();
 
             ECommons.ECommons.Init(pluginInterface);
             this.PluginUi = new PluginUI(this);
@@ -80,7 +78,6 @@ namespace Artisan
             bool enableAutoRepeat = Service.Configuration.AutoCraft;
             if (enableAutoRepeat)
             {
-                PluginLog.Debug($"Looping");
                 RepeatActualCraft();
             }
         }
