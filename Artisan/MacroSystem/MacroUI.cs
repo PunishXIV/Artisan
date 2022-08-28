@@ -73,6 +73,27 @@ namespace Artisan.MacroSystem
                         selectedActionIndex = -1;
                     }
                     ImGui.Spacing();
+                    ImGui.SameLine();
+                    bool skipQuality = selectedMacro.MacroOptions.SkipQualityIfMet;
+                    if (ImGui.Checkbox("Skip quality actions if at 100%", ref skipQuality))
+                    {
+                        selectedMacro.MacroOptions.SkipQualityIfMet = skipQuality;
+                        if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
+                            Service.Configuration.SetMacro = selectedMacro;
+                        Service.Configuration.Save();
+                    }
+                    ImGuiComponents.HelpMarker("Once you're at 100% quality, the macro will skip over all actions relating to quality, including buffs.");
+                    ImGui.SameLine();
+                    bool upgradeActions = selectedMacro.MacroOptions.UpgradeActions;
+                    if (ImGui.Checkbox("Upgrade actions", ref upgradeActions))
+                    {
+                        selectedMacro.MacroOptions.UpgradeActions = upgradeActions;
+                        if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
+                            Service.Configuration.SetMacro = selectedMacro;
+                        Service.Configuration.Save();
+                    }
+                    ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases quality or progress (not including Byregot's Blessing) then it will upgrade the action to either Precise Touch or Intensive Synthesis depending on what the original action would have increased.");
+
                     ImGui.Columns(2, "actionColumns", false);
                     if (ImGui.Button("Insert New Action"))
                     {
@@ -123,6 +144,9 @@ namespace Artisan.MacroSystem
                         {
                             selectedMacro.MacroActions.RemoveAt(selectedActionIndex);
                             Service.Configuration.Save();
+
+                            if (selectedActionIndex == selectedMacro.MacroActions.Count)
+                                selectedActionIndex--;
                         }
 
                         if (ImGui.BeginCombo("###ReplaceAction", "Replace Action"))

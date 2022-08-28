@@ -4,6 +4,7 @@ using ClickLib.Clicks;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Linq;
@@ -135,6 +136,7 @@ namespace Artisan.CraftingLogic
 
         public static bool JustUsedFinalAppraisal { get; set; } = false;
         public static bool JustUsedObserve { get; set; } = false;
+        public static bool JustUsedGreatStrides { get; set; } = false;
         public static bool ManipulationUsed { get; set; } = false;
         public static bool WasteNotUsed { get; set; } = false;
         public static bool InnovationUsed { get; set; } = false;
@@ -357,10 +359,8 @@ namespace Artisan.CraftingLogic
 
         public static uint CalculateNewQuality(uint id)
         {
-            if (GetStatus(Buffs.InnerQuiet) is null) return 0;
-
-            double efficiency = GetMultiplier(id);
-            double IQStacks = 1 + (GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
+            double efficiency = GetMultiplier(id, true);
+            double IQStacks = GetStatus(Buffs.InnerQuiet) is null ? 1 : 1 + (GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
             double innovation = GetStatus(Buffs.Innovation) is not null ? 0.5 : 0;
             double greatStrides = GetStatus(Buffs.GreatStrides) is not null ? 1 : 0;
 
@@ -383,7 +383,7 @@ namespace Artisan.CraftingLogic
 
             double efficiency = GetMultiplier(Skills.ByregotsBlessing);
             double IQStacks = 1 + (GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
-            double innovation = GetStatus(Buffs.Innovation)?.StackCount >= 2 ? 0.5 : 0;
+            double innovation = (GetStatus(Buffs.Innovation)?.StackCount >= 2 && CurrentCondition != Condition.Excellent) || (GetStatus(Buffs.Innovation)?.StackCount >= 3 && CurrentCondition == Condition.Excellent) || (JustUsedGreatStrides && GetStatus(Buffs.Innovation)?.StackCount >= 1) ? 0.5 : 0;
             double greatStrides = 1;
 
             return (uint)Math.Floor(CurrentQuality + (BaseQuality() * efficiency * IQStacks * (innovation + greatStrides + 1)));
@@ -431,7 +431,7 @@ namespace Artisan.CraftingLogic
             if (CanFinishCraft()) return CharacterInfo.HighestLevelSynth();
 
             if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || Recipe.ItemResult.Value.IsCollectable) && Recipe.CanHq) return Skills.TrainedEye;
-            if (CanUse(Skills.Tricks) && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent))) return Skills.Tricks;
+            if (CanUse(Skills.Tricks) && CurrentStep > 2 && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent))) return Skills.Tricks;
 
             if (MaxQuality == 0 || Service.Configuration.MaxPercentage == 0 || !Recipe.CanHq)
             {
@@ -446,16 +446,16 @@ namespace Artisan.CraftingLogic
             {
                 if (CurrentQuality < MaxQuality && (HighQualityPercentage < Service.Configuration.MaxPercentage || Recipe.ItemResult.Value.IsCollectable || Recipe.IsExpert))
                 {
-                    if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
+                    if (CurrentStep == 1 && CanUse(Skills.MuscleMemory) && CalculateNewProgress(Skills.MuscleMemory) < MaxProgress) return Skills.MuscleMemory;
                     if (CurrentStep == 2 && CanUse(Skills.FinalAppraisal) && !JustUsedFinalAppraisal && CalculateNewProgress(CharacterInfo.HighestLevelSynth()) >= MaxProgress) return Skills.FinalAppraisal;
                     if (GetStatus(Buffs.MuscleMemory) != null) return CharacterInfo.HighestLevelSynth();
-                    if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
-                    if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe;
-                    if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
-                    if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                     if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) return Skills.Manipulation;
                     if (!WasteNotUsed && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
-                    if (!InnovationUsed && GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation)) return Skills.Innovation;
+                    if (GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation)) return Skills.Innovation;
+                    if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
+                    if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
+                    if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe;
+                    if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                     //if (PredictFailureTouch(CharacterInfo.HighestLevelTouch())) return CharacterInfo.HighestLevelSynth();
                     return CharacterInfo.HighestLevelTouch();
 

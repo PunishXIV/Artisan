@@ -13,7 +13,17 @@ namespace Artisan.MacroSystem
         public string Name { get; set; }
 
         public List<uint> MacroActions { get; set; } = new();
+
+        public MacroOptions MacroOptions { get; set; } = new();
     }
+
+    public class MacroOptions
+    {
+        public bool SkipQualityIfMet { get; set; } = false;
+
+        public bool UpgradeActions { get; set; } = false;
+    }
+
 
     public static class MacroFunctions
     {

@@ -9,7 +9,6 @@ using Dalamud.Game.Gui;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-using NAudio.Wave;
 
 namespace Artisan
 {
@@ -68,12 +67,6 @@ namespace Artisan
         [PluginService]
         internal static Framework Framework { get; private set; } = null!;
 
-        /// <summary>
-        /// Gets the Dalamud object table.
-        /// </summary>
-        [PluginService]
-        internal static ObjectTable ObjectTable { get; private set; } = null!;
-
         [PluginService]
         internal static GameGui GameGui { get; private set; } = null!;
 
@@ -82,10 +75,6 @@ namespace Artisan
 
         [PluginService]
         internal static ToastGui ToastGui { get; private set; } = null!;
-
-        internal static PluginAddressResolver Address { get; set; } = null!;
-
-        internal static Hotbars Hotbars { get; set; } = null!;
 
 
     }
