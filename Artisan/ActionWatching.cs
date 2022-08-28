@@ -37,6 +37,11 @@ namespace Artisan
                     else
                         JustUsedFinalAppraisal = false;
 
+                    if (allOfSameName.Any(x => x == Skills.GreatStrides))
+                        JustUsedGreatStrides = true;
+                    else
+                        JustUsedGreatStrides = false;
+
                     if (allOfSameName.Any(x => x == Skills.Innovation))
                         InnovationUsed = true;
 
@@ -54,6 +59,9 @@ namespace Artisan
                     string skillName = act2.Name;
                     var allOfSameName = LuminaSheets.CraftActions.Where(x => x.Value.Name == skillName).Select(x => x.Key);
 
+                    if (allOfSameName.Any(x => x == Skills.CarefulObservation))
+                        CurrentRecommendation = 0;
+                    
                     if (allOfSameName.Any(x => x == Skills.Observe))
                         JustUsedObserve = true;
                     else
@@ -87,7 +95,7 @@ namespace Artisan
 
         static ActionWatching()
         {
-            UseActionHook ??= new Hook<UseActionDelegate>((IntPtr)ActionManager.fpUseAction, UseActionDetour);
+            UseActionHook ??= Hook<UseActionDelegate>.FromAddress((IntPtr)ActionManager.fpUseAction, UseActionDetour);
         }
 
         public static void Enable()

@@ -42,7 +42,9 @@ namespace Artisan.RawInformation
                     var slot = hotbar->Slot[j];
                     var slotOb = *(HotBarSlot*)slot;
 
+                    if (slotOb.CommandType == HotbarSlotType.Action || slotOb.CommandType == HotbarSlotType.CraftAction)
                     HotbarDict.Add(count, slotOb);
+
                     count++;
 
                 }

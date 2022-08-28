@@ -23,15 +23,13 @@ namespace Artisan
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
             [RequiredVersion("1.0")] CommandManager commandManager)
         {
-            
             pluginInterface.Create<Service>();
+            FFXIVClientStructs.Resolver.Initialize();
             Service.Plugin = this;
 
             Service.Configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             Service.Configuration.Initialize(Service.Interface);
 
-            Service.Address = new PluginAddressResolver();
-            Service.Address.Setup();
 
             ECommons.ECommons.Init(pluginInterface);
             this.PluginUi = new PluginUI(this);
@@ -65,6 +63,13 @@ namespace Artisan
             {
                 FetchRecommendation(CurrentStep);
             }
+            if (CanUse(Skills.BasicSynth) && CurrentRecommendation != 0)
+            {
+                if (Service.Configuration.AutoMode)
+                {
+                    Hotbars.ExecuteRecommended(CurrentRecommendation);
+                }
+            }
 
 #if DEBUG
             if (PluginUi.repeatTrial)
@@ -80,7 +85,6 @@ namespace Artisan
             bool enableAutoRepeat = Service.Configuration.AutoCraft;
             if (enableAutoRepeat)
             {
-                PluginLog.Debug($"Looping");
                 RepeatActualCraft();
             }
         }
