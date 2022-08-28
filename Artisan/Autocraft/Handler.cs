@@ -194,46 +194,49 @@ namespace Artisan.Autocraft
                 if (addon == null)
                     return;
 
-                if (addon->IsVisible)
+                if (addon->IsVisible && addon->UldManager.NodeListCount >= 49)
                 {
-                    var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
-                    var str = RawInformation.MemoryHelper.ReadSeString(&text);
-                    foreach (var payload in str.Payloads)
+                    if (addon->UldManager.NodeList[49]->IsVisible)
                     {
-                        if(payload is TextPayload tp)
+                        var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
+                        var str = RawInformation.MemoryHelper.ReadSeString(&text);
+                        foreach (var payload in str.Payloads)
                         {
-                            /*
-                             *  0	3	2	Woodworking
-                                1	1	5	Smithing
-                                2	3	1	Armorcraft
-                                3	2	4	Goldsmithing
-                                4	3	4	Leatherworking
-                                5	2	5	Clothcraft
-                                6	4	6	Alchemy
-                                7	5	6	Cooking
-
-                                8	carpenter
-                                9	blacksmith
-                                10	armorer
-                                11	goldsmith
-                                12	leatherworker
-                                13	weaver
-                                14	alchemist
-                                15	culinarian
-                                (ClassJob - 8)
-                             * 
-                             * */
-
-                            if (tp.Text[^1] == '')
+                            if (payload is TextPayload tp)
                             {
-                                tp.Text = tp.Text.Remove(tp.Text.Length - 1, 1).Trim();
-                            }
+                                /*
+                                 *  0	3	2	Woodworking
+                                    1	1	5	Smithing
+                                    2	3	1	Armorcraft
+                                    3	2	4	Goldsmithing
+                                    4	3	4	Leatherworking
+                                    5	2	5	Clothcraft
+                                    6	4	6	Alchemy
+                                    7	5	6	Cooking
 
-                            if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == tp.Text && x.CraftType.Value.RowId + 8 == Svc.ClientState.LocalPlayer?.ClassJob.Id, out var id))
-                            {
-                                RecipeID = id.Unknown0;
-                                RecipeName = id.ItemResult.Value.Name;
-                                break;
+                                    8	carpenter
+                                    9	blacksmith
+                                    10	armorer
+                                    11	goldsmith
+                                    12	leatherworker
+                                    13	weaver
+                                    14	alchemist
+                                    15	culinarian
+                                    (ClassJob - 8)
+                                 * 
+                                 * */
+
+                                if (tp.Text[^1] == '')
+                                {
+                                    tp.Text = tp.Text.Remove(tp.Text.Length - 1, 1).Trim();
+                                }
+
+                                if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == tp.Text && x.CraftType.Value.RowId + 8 == Svc.ClientState.LocalPlayer?.ClassJob.Id, out var id))
+                                {
+                                    RecipeID = id.Unknown0;
+                                    RecipeName = id.ItemResult.Value.Name;
+                                    break;
+                                }
                             }
                         }
                     }

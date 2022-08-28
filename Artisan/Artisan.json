@@ -9,6 +9,7 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog": "- Should now only attempt to automatically use actions, not macros/mounts/system commands etc.",
-  "DalamudApiLevel": 7
+  "Changelog": "- Testing lower level Muscle Memory usage.",
+  "DalamudApiLevel": 7,
+  "DownloadLinkTesting" : "https://love.puni.sh/plugins/Artisan/Testing/latest.zip"
 }

@@ -63,6 +63,13 @@ namespace Artisan
             {
                 FetchRecommendation(CurrentStep);
             }
+            if (CanUse(Skills.BasicSynth) && CurrentRecommendation != 0)
+            {
+                if (Service.Configuration.AutoMode)
+                {
+                    Hotbars.ExecuteRecommended(CurrentRecommendation);
+                }
+            }
 
 #if DEBUG
             if (PluginUi.repeatTrial)

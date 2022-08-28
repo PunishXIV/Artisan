@@ -70,7 +70,24 @@ namespace Artisan.Autocraft
                     }
                 }
             }
-            if(ImGui.Button("Repair all"))
+
+            if (ImGui.CollapsingHeader("Crafting Stats"))
+            {
+                ImGui.Text($"Current Durability: {CurrentCraft.CurrentDurability}");
+                ImGui.Text($"Max Durability: {CurrentCraft.MaxDurability}");
+                ImGui.Text($"Current Progress: {CurrentCraft.CurrentProgress}");
+                ImGui.Text($"Max Progress: {CurrentCraft.MaxProgress}");
+                ImGui.Text($"Current Quality: {CurrentCraft.CurrentQuality}");
+                ImGui.Text($"Max Quality: {CurrentCraft.MaxQuality}");
+                ImGui.Text($"Item name: {CurrentCraft.ItemName}");
+                ImGui.Text($"Current Condition: {CurrentCraft.CurrentCondition}");
+                ImGui.Text($"Current Step: {CurrentCraft.CurrentStep}");
+                ImGui.Text($"GS+ByregotCombo: {CurrentCraft.GreatStridesByregotCombo()}");
+                ImGui.Text($"Predicted Quality: {CurrentCraft.CalculateNewQuality(CurrentCraft.CurrentRecommendation)}");
+            }
+            ImGui.Separator();
+
+            if (ImGui.Button("Repair all"))
             {
                 RepairManager.Repair();
             }
@@ -86,16 +103,7 @@ namespace Artisan.Autocraft
                 AgentRecipeNote.Instance()->OpenRecipeByItemId((uint)SelRecId);
             }*/
             //ImGuiEx.Text($"Selected recipe id: {*(int*)(((IntPtr)AgentRecipeNote.Instance()) + 528)}");
-            
-            ImGui.Text($"{CurrentCraft.CurrentDurability}");
-            ImGui.Text($"{CurrentCraft.MaxDurability}");
-            ImGui.Text($"{CurrentCraft.CurrentProgress}");
-            ImGui.Text($"{CurrentCraft.MaxProgress}");
-            ImGui.Text($"{CurrentCraft.CurrentQuality}");
-            ImGui.Text($"{CurrentCraft.MaxQuality}");
-            ImGui.Text($"{CurrentCraft.ItemName}");
-            ImGui.Text($"{CurrentCraft.CurrentCondition}");
-            ImGui.Text($"{CurrentCraft.CurrentStep}");
+
 
 
 
