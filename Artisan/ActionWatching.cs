@@ -30,10 +30,7 @@ namespace Artisan
                         WasteNotUsed = true;
 
                     if (allOfSameName.Any(x => x == Skills.FinalAppraisal))
-                    {
-                        CurrentRecommendation = 0;
                         JustUsedFinalAppraisal = true;
-                    }
                     else
                         JustUsedFinalAppraisal = false;
 
@@ -59,9 +56,6 @@ namespace Artisan
                     string skillName = act2.Name;
                     var allOfSameName = LuminaSheets.CraftActions.Where(x => x.Value.Name == skillName).Select(x => x.Key);
 
-                    if (allOfSameName.Any(x => x == Skills.CarefulObservation))
-                        CurrentRecommendation = 0;
-                    
                     if (allOfSameName.Any(x => x == Skills.Observe))
                         JustUsedObserve = true;
                     else
@@ -87,7 +81,9 @@ namespace Artisan
                 if (Service.Configuration.UseMacroMode && Service.Configuration.SetMacro != null && MacroStep < Service.Configuration.SetMacro.MacroActions.Count)
                 {
                     MacroStep++;
+                
                 }
+                CurrentRecommendation = 0;
                 return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
             }
             catch (Exception ex)
