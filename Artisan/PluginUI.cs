@@ -378,6 +378,8 @@ If the macro cannot perform an action, you will have to manually intervene.");
                                 Service.Configuration.Save();
                             }
                         }
+
+                        ImGui.EndCombo();
                     }
                 }
             }
