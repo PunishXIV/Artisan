@@ -43,6 +43,8 @@ namespace Artisan
         public bool UseMacroMode { get; set; }
         public Macro? SetMacro { get; set; }
 
+        public int AutoDelay { get; set; } = 0;
+
 
         public uint Food = 0;
         public uint Potion = 0;
