@@ -1,10 +1,9 @@
 ﻿using Artisan.Autocraft;
+using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Interface.Components;
 using Dalamud.Logging;
 using Dalamud.Plugin;
-using ECommons;
-using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using System;
@@ -85,9 +84,15 @@ namespace Artisan
                     }
                     if (ImGui.BeginTabItem("Endurance Mode"))
                     {
-                        Autocraft.Handler.Draw();
+                        Handler.Draw();
                         ImGui.EndTabItem();
                     }
+                    if (ImGui.BeginTabItem("Macros"))
+                    {
+                        MacroUI.Draw();
+                        ImGui.EndTabItem();
+                    }
+
                     if (ImGui.BeginTabItem("About"))
                     {
                         PunishLib.ImGuiMethods.AboutTab.Draw(Plugin);
@@ -300,6 +305,7 @@ namespace Artisan
             bool useSpecialist = Service.Configuration.UseSpecialist;
             //bool showEHQ = Service.Configuration.ShowEHQ;
             //bool useSimulated = Service.Configuration.UseSimulatedStartingQuality;
+            bool useMacroMode = Service.Configuration.UseMacroMode;
 
             ImGui.Separator();
             if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
@@ -341,6 +347,44 @@ namespace Artisan
             //    ImGuiComponents.HelpMarker($"Set a starting quality as if you were using HQ items for calculating EHQ.");
             //    ImGui.Unindent();
             //}
+
+            if (Service.Configuration.UserMacros.Count > 0)
+            {
+                if (ImGui.Checkbox("Enabled Macro Mode", ref useMacroMode))
+                {
+                    Service.Configuration.UseMacroMode = useMacroMode;
+                    Service.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker(@"Use a macro to craft instead of Artisan making its own decisions. 
+If the macro ends before the craft is complete, Artisan will resume making decisions until the end of the craft.
+If the macro cannot perform an action, you will have to manually intervene.");
+
+                if (useMacroMode)
+                {
+                    string preview = Service.Configuration.SetMacro == null ? "" : Service.Configuration.SetMacro.Name;
+                    if (ImGui.BeginCombo("Select Macro", preview))
+                    {
+                        if (ImGui.Selectable(""))
+                        {
+                            Service.Configuration.SetMacro = null;
+                            Service.Configuration.Save();
+                        }
+                        foreach (var macro in Service.Configuration.UserMacros)
+                        {
+                            bool selected = Service.Configuration.SetMacro == null ? false : Service.Configuration.SetMacro.ID == macro.ID;
+                            if (ImGui.Selectable(macro.Name, selected))
+                            {
+                                Service.Configuration.SetMacro = macro;
+                                Service.Configuration.Save();
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                useMacroMode = false;
+            }
 
             if (ImGui.Checkbox("Use Tricks of the Trade - Good", ref useTricksGood))
             {

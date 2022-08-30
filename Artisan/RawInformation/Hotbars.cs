@@ -94,7 +94,7 @@ namespace Artisan.RawInformation
                 {
                     if (LuminaSheets.CraftActions.TryGetValue(slot.Value.CommandId, out var action))
                     {
-                        if (action.Name.RawString.Contains(sheet.Name.RawString, StringComparison.CurrentCultureIgnoreCase) && slot.Value.CommandType == HotbarSlotType.CraftAction)
+                        if (action.Name.RawString.Equals(sheet.Name.RawString, StringComparison.CurrentCultureIgnoreCase) && slot.Value.CommandType == HotbarSlotType.CraftAction)
                         MakeButtonGlow(slot.Value, slot.Key);
                     }
                     
@@ -107,7 +107,7 @@ namespace Artisan.RawInformation
                 {
                     if (LuminaSheets.ActionSheet.TryGetValue(slot.Value.CommandId, out var action))
                     {
-                        if (action.Name.RawString.Contains(sheet.Name.RawString, StringComparison.CurrentCultureIgnoreCase) && slot.Value.CommandType == HotbarSlotType.Action)
+                        if (action.Name.RawString.Equals(sheet.Name.RawString, StringComparison.CurrentCultureIgnoreCase) && slot.Value.CommandType == HotbarSlotType.Action)
                         {
                             MakeButtonGlow(slot.Value, slot.Key);
                         }

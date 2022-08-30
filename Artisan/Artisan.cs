@@ -5,7 +5,6 @@ using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.IoC;
-using Dalamud.Logging;
 using Dalamud.Plugin;
 using System;
 using System.Linq;
@@ -106,11 +105,37 @@ namespace Artisan
                     StandardTouchUsed = false;
                     AdvancedTouchUsed = false;
                     ExpertCraftOpenerFinish = false;
+                    MacroStep = 0;
 
                     return;
                 }
 
-                CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
+                if (Service.Configuration.UseMacroMode && Service.Configuration.SetMacro != null && MacroStep < Service.Configuration.SetMacro.MacroActions.Count)
+                {
+                    if (Service.Configuration.SetMacro.MacroOptions.SkipQualityIfMet)
+                    {
+                        if (CurrentQuality >= MaxQuality)
+                        {
+                            while (ActionIsQuality())
+                            {
+                                MacroStep++;
+                            }
+                        }
+                    }
+
+                    if (Service.Configuration.SetMacro.MacroOptions.UpgradeActions && ActionUpgradable(out uint newAction))
+                    {
+                        CurrentRecommendation = newAction;
+                    }
+                    else
+                    {
+                        CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep];
+                    }
+                }
+                else
+                {
+                    CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
+                }
 
                 if (CurrentRecommendation != 0)
                 {
@@ -158,6 +183,57 @@ namespace Artisan
                 Dalamud.Logging.PluginLog.Error(ex, "Crafting Step Change");
             }
 
+        }
+
+        private static bool ActionUpgradable(out uint newAction)
+        {
+            newAction = Service.Configuration.SetMacro.MacroActions[MacroStep];
+            if (CurrentCondition is CraftingLogic.CurrentCraft.Condition.Good or CraftingLogic.CurrentCraft.Condition.Excellent)
+            {
+                switch (newAction)
+                {
+                    case Skills.FocusedSynthesis:
+                    case Skills.Groundwork:
+                    case Skills.PrudentSynthesis:
+                    case Skills.CarefulSynthesis:
+                    case Skills.BasicSynth:
+                        newAction = Skills.IntensiveSynthesis;
+                        break;
+                    case Skills.HastyTouch:
+                    case Skills.FocusedTouch:
+                    case Skills.PreparatoryTouch:
+                    case Skills.AdvancedTouch:
+                    case Skills.StandardTouch:
+                    case Skills.BasicTouch:
+                        newAction = Skills.PreciseTouch;
+                        break;
+                }
+
+                return CanUse(newAction);
+            }
+
+            return false;
+        }
+
+        private static bool ActionIsQuality()
+        {
+            var currentAction = Service.Configuration.SetMacro.MacroActions[MacroStep];
+            switch (currentAction)
+            {
+                case Skills.HastyTouch:
+                case Skills.FocusedTouch:
+                case Skills.PreparatoryTouch:
+                case Skills.AdvancedTouch:
+                case Skills.StandardTouch:
+                case Skills.BasicTouch:
+                case Skills.GreatStrides:
+                case Skills.Innovation:
+                case Skills.ByregotsBlessing:
+                case Skills.TrainedFinesse:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private void CheckForCraftedState(ConditionFlag flag, bool value)
