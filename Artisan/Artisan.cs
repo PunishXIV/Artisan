@@ -56,10 +56,15 @@ namespace Artisan
 
         private async void FireBot(Framework framework)
         {
-            ActionWatching.TryDisable();
             PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting];
-            if (!PluginUi.CraftingVisible) return;
-            ActionWatching.TryEnable();
+            if (!PluginUi.CraftingVisible)
+            {
+                ActionWatching.TryDisable();
+                return;
+            }
+            else
+                ActionWatching.TryEnable();
+
             GetCraft();
             if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0)
             {
