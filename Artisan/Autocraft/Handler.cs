@@ -79,6 +79,11 @@ namespace Artisan.Autocraft
                 {
                     return;
                 }
+                if (Service.Configuration.CraftingX && Service.Configuration.CraftX == 0)
+                {
+                    Enable = false;
+                    return;
+                }
                 if (Svc.Condition[ConditionFlag.Occupied39])
                 {
                     Throttler.Rethrottle(1000);
@@ -311,6 +316,16 @@ namespace Artisan.Autocraft
                 //ImGui.SameLine();
                 ImGui.PushItemWidth(200);
                 ImGui.SliderInt("##repairp", ref Service.Configuration.RepairPercent, 10, 100, $"{Service.Configuration.RepairPercent}%%");
+            }
+            ImGui.Checkbox("Craft only X times", ref Service.Configuration.CraftingX);
+            if (Service.Configuration.CraftingX)
+            {
+                if (ImGui.InputInt("Number of times", ref Service.Configuration.CraftX))
+                {
+                    if (Service.Configuration.CraftX < 0)
+                        Service.Configuration.CraftX = 0;
+
+                }
             }
         }
     }

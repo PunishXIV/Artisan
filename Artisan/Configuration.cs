@@ -43,7 +43,6 @@ namespace Artisan
         public bool UseMacroMode { get; set; }
         public Macro? SetMacro { get; set; }
 
-
         public uint Food = 0;
         public uint Potion = 0;
         public bool AbortIfNoFoodPot = true;
@@ -51,6 +50,10 @@ namespace Artisan
         public bool PotHQ = true;
         public bool Repair = false;
         public int RepairPercent = 50;
+        public int CraftX = 0;
+        public bool CraftingX = false;
+
+
 
         [NonSerialized]
         private DalamudPluginInterface? pluginInterface;
