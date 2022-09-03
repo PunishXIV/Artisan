@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -128,48 +129,55 @@ namespace Artisan.RawInformation
         internal unsafe static void ExecuteRecommended(uint currentRecommendation)
         {
             if (currentRecommendation == 0) return;
+            ActionManager* actionManager = ActionManager.Instance();
+            if (actionManager == null)
+                return;
 
-            PopulateHotbarDict();
-            if (currentRecommendation >= 100000)
-            {
-                var sheet = LuminaSheets.CraftActions[currentRecommendation];
-                foreach (var slot in HotbarDict)
-                {
-                    if (LuminaSheets.CraftActions.TryGetValue(slot.Value.CommandId, out var action))
-                    {
-                        if (action.Name.RawString.Contains(sheet.Name.RawString, StringComparison.CurrentCultureIgnoreCase))
-                        {
-                            var raptureHotbarModule = Framework.Instance()->GetUiModule()->GetRaptureHotbarModule();
-                            var value = slot.Value;
-                            raptureHotbarModule->ExecuteSlot(&value);
+            ActionType actionType = currentRecommendation >= 100000 ? ActionType.CraftAction : ActionType.Spell;
+            actionManager->UseAction(actionType, currentRecommendation);
+            return;
 
-                            return;
-                        }
-                    }
+            //PopulateHotbarDict();
+            //if (currentRecommendation >= 100000)
+            //{
+            //    var sheet = LuminaSheets.CraftActions[currentRecommendation];
+            //    foreach (var slot in HotbarDict)
+            //    {
+            //        if (LuminaSheets.CraftActions.TryGetValue(slot.Value.CommandId, out var action))
+            //        {
+            //            if (action.Name.RawString.Contains(sheet.Name.RawString, StringComparison.CurrentCultureIgnoreCase))
+            //            {
+            //                var raptureHotbarModule = Framework.Instance()->GetUiModule()->GetRaptureHotbarModule();
+            //                var value = slot.Value;
+            //                raptureHotbarModule->ExecuteSlot(&value);
 
-                }
-            }
-            else
-            {
-                var sheet = LuminaSheets.ActionSheet[currentRecommendation];
-                foreach (var slot in HotbarDict)
-                {
-                    if (LuminaSheets.ActionSheet.TryGetValue(slot.Value.CommandId, out var action))
-                    {
-                        if (action.Name.RawString.Contains(sheet.Name.RawString, StringComparison.CurrentCultureIgnoreCase))
-                        {
-                            var raptureHotbarModule = Framework.Instance()->GetUiModule()->GetRaptureHotbarModule();
-                            var value = slot.Value;
-                            raptureHotbarModule->ExecuteSlot(&value);
+            //                return;
+            //            }
+            //        }
 
-                            return;
+            //    }
+            //}
+            //else
+            //{
+            //    var sheet = LuminaSheets.ActionSheet[currentRecommendation];
+            //    foreach (var slot in HotbarDict)
+            //    {
+            //        if (LuminaSheets.ActionSheet.TryGetValue(slot.Value.CommandId, out var action))
+            //        {
+            //            if (action.Name.RawString.Contains(sheet.Name.RawString, StringComparison.CurrentCultureIgnoreCase))
+            //            {
+            //                var raptureHotbarModule = Framework.Instance()->GetUiModule()->GetRaptureHotbarModule();
+            //                var value = slot.Value;
+            //                raptureHotbarModule->ExecuteSlot(&value);
 
-                        }
+            //                return;
 
-                    }
+            //            }
 
-                }
-            }
+            //        }
+
+            //    }
+            //}
         }
     }
 }
