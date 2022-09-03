@@ -13,7 +13,7 @@ namespace Artisan
     {
         public int Version { get; set; } = 0;
 
-        public bool AutoCraft { get; set; } = false;
+        //public bool AutoCraft { get; set; } = false;
         public bool AutoMode
         {
             get => autoMode; set
@@ -45,16 +45,16 @@ namespace Artisan
 
         public int AutoDelay { get; set; } = 0;
 
-
         public uint Food = 0;
         public uint Potion = 0;
-        public bool AbortIfNoFoodPot = true;
+        public bool AbortIfNoFoodPot { get; set; } = false;
         public bool FoodHQ = true;
         public bool PotHQ = true;
-        public bool Repair = false;
+        public bool Repair { get; set; } = false;
         public int RepairPercent = 50;
-        public int CraftX = 0;
+
         public bool CraftingX = false;
+        public int CraftX = 0;
 
 
 

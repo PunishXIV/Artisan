@@ -18,6 +18,7 @@ namespace Artisan
         public string Name => "Artisan";
         private const string commandName = "/artisan";
         private PluginUI PluginUi { get; init; }
+        private bool currentCraftFinished = false;
 
         public Artisan(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
@@ -51,7 +52,20 @@ namespace Artisan
 
         private void ResetRecommendation(object? sender, int e)
         {
+            if (e == 0)
+            {
+
+            }
             CurrentRecommendation = 0;
+        }
+
+        private bool CheckIfCraftFinished()
+        {
+            if (MaxProgress == 0) return false;
+            if (CurrentProgress == MaxProgress) return true;
+            if (CurrentProgress < MaxProgress && CurrentDurability == 0) return true;
+            currentCraftFinished = false;
+            return false;
         }
 
         private async void FireBot(Framework framework)
@@ -71,22 +85,35 @@ namespace Artisan
                 await Task.Factory.StartNew(() => FetchRecommendation(CurrentStep));
             }
 
+            if (CheckIfCraftFinished() && !currentCraftFinished)
+            {
+                currentCraftFinished = true;
+
+                if (Handler.Enable && Service.Configuration.CraftingX && Service.Configuration.CraftX > 0)
+                {
+                    Service.Configuration.CraftX -= 1;
+                    if (Service.Configuration.CraftX == 0)
+                        Handler.Enable = false;
+                }
+
+#if DEBUG
+                if (PluginUi.repeatTrial && Service.Configuration.CraftingX && Service.Configuration.CraftX > 0)
+                {
+                    Service.Configuration.CraftX -= 1;
+                    if (Service.Configuration.CraftX == 0)
+                        PluginUi.repeatTrial = false;
+                }
+#endif          
+            }
+
+
 #if DEBUG
             if (PluginUi.repeatTrial)
             {
                 RepeatTrialCraft();
             }
 #endif
-            if (Autocraft.Handler.Enable)
-            {
-                return;
-            }
 
-            bool enableAutoRepeat = Service.Configuration.AutoCraft;
-            if (enableAutoRepeat)
-            {
-                RepeatActualCraft();
-            }
         }
 
         public static void FetchRecommendation(int e)
@@ -145,6 +172,7 @@ namespace Artisan
                         if (normalAct.ClassJob.Value.RowId != CharacterInfo.JobID())
                         {
                             var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == normalAct.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
+                            CurrentRecommendation = newAct.RowId;
                             QuestToastOptions options = new() { IconId = newAct.Icon };
                             Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
 
@@ -161,6 +189,7 @@ namespace Artisan
                         if (craftAction.ClassJob.Row != CharacterInfo.JobID())
                         {
                             var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == craftAction.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
+                            CurrentRecommendation = newAct.RowId;
                             QuestToastOptions options = new() { IconId = newAct.Icon };
                             Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
                         }

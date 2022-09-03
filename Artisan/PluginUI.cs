@@ -82,7 +82,7 @@ namespace Artisan
                         DrawMainWindow();
                         ImGui.EndTabItem();
                     }
-                    if (ImGui.BeginTabItem("Endurance Mode"))
+                    if (ImGui.BeginTabItem("Endurance/Auto-Repeat Mode"))
                     {
                         Handler.Draw();
                         ImGui.EndTabItem();
@@ -255,12 +255,27 @@ namespace Artisan
                     Service.Configuration.Save();
                 }
 
-                bool enableAutoRepeat = Service.Configuration.AutoCraft;
-
-                if (ImGui.Checkbox("Automatically Repeat Last Craft", ref enableAutoRepeat))
+                if (autoMode)
                 {
-                    Service.Configuration.AutoCraft = enableAutoRepeat;
-                    Service.Configuration.Save();
+                    var delay = Service.Configuration.AutoDelay;
+                    ImGui.PushItemWidth(200);
+                    if (ImGui.SliderInt("Set delay (ms)", ref delay, 0, 1000))
+                    {
+                        if (delay < 0) delay = 0;
+                        if (delay > 1000) delay = 1000;
+
+                        Service.Configuration.AutoDelay = delay;
+                        Service.Configuration.Save();
+                    }
+                }
+
+
+                if (Handler.Enable)
+                ImGui.Checkbox("Endurance Mode Disable", ref Handler.Enable);
+
+                if (Service.Configuration.CraftingX && Handler.Enable)
+                {
+                    ImGui.Text($"Remaining Crafts: {Service.Configuration.CraftX}");
                 }
 
 #if DEBUG
@@ -297,7 +312,7 @@ namespace Artisan
             ImGui.TextWrapped($"Here you can change some settings Artisan will use. Some of these can also be toggled during a craft.");
             ImGui.TextWrapped($"In order to use Artisan, please slot every crafting action you have unlocked to a visible hotbar.");
             bool autoEnabled = Service.Configuration.AutoMode;
-            bool autoCraft = Service.Configuration.AutoCraft;
+            //bool autoCraft = Service.Configuration.AutoCraft;
             bool failureCheck = Service.Configuration.DisableFailurePrediction;
             int maxQuality = Service.Configuration.MaxPercentage;
             bool useTricksGood = Service.Configuration.UseTricksGood;
@@ -328,12 +343,12 @@ namespace Artisan
                 }
             }
 
-            if (ImGui.Checkbox($"Automatically Repeat Last Craft", ref autoCraft))
-            {
-                Service.Configuration.AutoCraft = autoCraft;
-                Service.Configuration.Save();
-            }
-            ImGuiComponents.HelpMarker($"Repeats the currently selected craft in your recipe list.\nWill only work whilst you have the items.\nThis will repeat using your set item quality settings.");
+            //if (ImGui.Checkbox($"Automatically Repeat Last Craft", ref autoCraft))
+            //{
+            //    Service.Configuration.AutoCraft = autoCraft;
+            //    Service.Configuration.Save();
+            //}
+            //ImGuiComponents.HelpMarker($"Repeats the currently selected craft in your recipe list.\nWill only work whilst you have the items.\nThis will repeat using your set item quality settings.");
 
             //if (ImGui.Checkbox($"Disable Failure Prediction", ref failureCheck))
             //{

@@ -36,14 +36,19 @@ namespace Artisan.RawInformation
             for (int i = 0; i <= 9; i++)
             {
                 var hotbar = raptureHotbarModule->HotBar[i];
-                
+                if ((IntPtr)hotbar == IntPtr.Zero)
+                    continue;
+
                 for (int j = 0; j <= 11; j++)
                 {
                     var slot = hotbar->Slot[j];
+                    if ((IntPtr)slot == IntPtr.Zero)
+                        continue;
+
                     var slotOb = *(HotBarSlot*)slot;
 
                     if (slotOb.CommandType == HotbarSlotType.Action || slotOb.CommandType == HotbarSlotType.CraftAction)
-                    HotbarDict.Add(count, slotOb);
+                    HotbarDict.TryAdd(count, slotOb);
 
                     count++;
 
@@ -87,6 +92,8 @@ namespace Artisan.RawInformation
             if (rec == 0) return;
 
             PopulateHotbarDict();
+            if (HotbarDict.Count == 0) return;
+
             if (rec >= 100000)
             {
                 var sheet = LuminaSheets.CraftActions[rec];
