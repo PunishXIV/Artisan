@@ -8,6 +8,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan
@@ -53,21 +54,21 @@ namespace Artisan
             CurrentRecommendation = 0;
         }
 
-        private void FireBot(Framework framework)
+        private async void FireBot(Framework framework)
         {
             PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting];
+            if (!PluginUi.CraftingVisible)
+            {
+                ActionWatching.TryDisable();
+                return;
+            }
+            else
+                ActionWatching.TryEnable();
 
             GetCraft();
             if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0)
             {
-                FetchRecommendation(CurrentStep);
-            }
-            if (CanUse(Skills.BasicSynth) && CurrentRecommendation != 0)
-            {
-                if (Service.Configuration.AutoMode)
-                {
-                    Hotbars.ExecuteRecommended(CurrentRecommendation);
-                }
+                await Task.Factory.StartNew(() => FetchRecommendation(CurrentStep));
             }
 
 #if DEBUG
@@ -172,6 +173,7 @@ namespace Artisan
 
                     if (Service.Configuration.AutoMode)
                     {
+                        Task.Delay(Service.Configuration.AutoDelay).Wait();
                         Hotbars.ExecuteRecommended(CurrentRecommendation);
                     }
 

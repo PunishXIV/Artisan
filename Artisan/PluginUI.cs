@@ -314,6 +314,20 @@ namespace Artisan
                 Service.Configuration.Save();
             }
             ImGuiComponents.HelpMarker($"Automatically use each recommended action.\nRequires the action to be on a visible hotbar.");
+            if (autoEnabled)
+            {
+                var delay = Service.Configuration.AutoDelay;
+                ImGui.PushItemWidth(200);
+                if (ImGui.SliderInt("Set delay (ms)", ref delay, 0, 1000))
+                {
+                    if (delay < 0) delay = 0;
+                    if (delay > 1000) delay = 1000;
+
+                    Service.Configuration.AutoDelay = delay;
+                    Service.Configuration.Save();
+                }
+            }
+
             if (ImGui.Checkbox($"Automatically Repeat Last Craft", ref autoCraft))
             {
                 Service.Configuration.AutoCraft = autoCraft;

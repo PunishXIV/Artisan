@@ -98,6 +98,17 @@ namespace Artisan
             UseActionHook ??= Hook<UseActionDelegate>.FromAddress((IntPtr)ActionManager.fpUseAction, UseActionDetour);
         }
 
+        public static void TryEnable()
+        {
+            if (!UseActionHook.IsEnabled)
+                UseActionHook?.Enable();
+        }
+
+        public static void TryDisable()
+        {
+            if (UseActionHook.IsEnabled)
+                UseActionHook?.Disable();
+        }
         public static void Enable()
         {
             UseActionHook?.Enable();
