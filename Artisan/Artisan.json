@@ -9,7 +9,7 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog": "- Testing lower level Muscle Memory usage.",
+  "Changelog": "- Adds \"Craft X Times\" feature.\r\n- Adds optional delay to auto mode.\r\n- Consolidated repeat last craft into Endurance mode.\r\n- Various other tweaks and bug fixes.",
   "DalamudApiLevel": 7,
   "DownloadLinkTesting" : "https://love.puni.sh/plugins/Artisan/Testing/latest.zip"
 }
