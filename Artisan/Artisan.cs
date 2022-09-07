@@ -19,6 +19,7 @@ namespace Artisan
         private const string commandName = "/artisan";
         private PluginUI PluginUi { get; init; }
         private bool currentCraftFinished = false;
+        internal BlockingTask BotTask = new();
 
         public Artisan(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
@@ -70,6 +71,10 @@ namespace Artisan
 
         private void FireBot(Framework framework)
         {
+            if (BotTask.TryBlockOrExecute())
+            {
+                return;
+            }
             PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting];
             if (!PluginUi.CraftingVisible)
             {
@@ -82,7 +87,7 @@ namespace Artisan
             GetCraft();
             if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0)
             {
-                Task.Factory.StartNew(() => FetchRecommendation(CurrentStep));
+                FetchRecommendation(CurrentStep);
             }
 
             if (CheckIfCraftFinished() && !currentCraftFinished)
@@ -103,7 +108,7 @@ namespace Artisan
                     if (Service.Configuration.CraftX == 0)
                         PluginUi.repeatTrial = false;
                 }
-#endif          
+#endif
             }
 
 
@@ -202,8 +207,7 @@ namespace Artisan
 
                     if (Service.Configuration.AutoMode)
                     {
-                        Task.Delay(Service.Configuration.AutoDelay).Wait();
-                        Hotbars.ExecuteRecommended(CurrentRecommendation);
+                        Service.Plugin.BotTask.Schedule(() => Hotbars.ExecuteRecommended(CurrentRecommendation), Service.Configuration.AutoDelay);
                     }
 
                     return;
