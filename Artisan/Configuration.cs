@@ -38,6 +38,7 @@ namespace Artisan
         public int CurrentSimulated { get; set; } = 0;
 
         public bool UseSimulatedStartingQuality { get; set; } = false;
+        public bool DisableHighlightedAction { get; set; } = false;
 
         public List<Macro> UserMacros { get; set; } = new();
         public bool UseMacroMode { get; set; }

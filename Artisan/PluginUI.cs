@@ -61,10 +61,11 @@ namespace Artisan
         public void Draw()
         {
             DrawCraftingWindow();
-
+            Handler.DrawRecipeData();
             //if (Service.Configuration.ShowEHQ)
             //    MarkChanceOfSuccess();
 
+            if (!Service.Configuration.DisableHighlightedAction)
             Hotbars.MakeButtonsGlow(CurrentRecommendation);
 
             if (!Visible)
@@ -270,8 +271,8 @@ namespace Artisan
                 }
 
 
-                if (Handler.Enable)
-                ImGui.Checkbox("Endurance Mode Disable", ref Handler.Enable);
+                if (Handler.RecipeID != 0)
+                ImGui.Checkbox("Endurance Mode Toggle", ref Handler.Enable);
 
                 if (Service.Configuration.CraftingX && Handler.Enable)
                 {
@@ -310,7 +311,7 @@ namespace Artisan
         public static void DrawMainWindow()
         {
             ImGui.TextWrapped($"Here you can change some settings Artisan will use. Some of these can also be toggled during a craft.");
-            ImGui.TextWrapped($"In order to use Artisan, please slot every crafting action you have unlocked to a visible hotbar.");
+            ImGui.TextWrapped($"In order to use Artisan's manual highlight, please slot every crafting action you have unlocked to a visible hotbar.");
             bool autoEnabled = Service.Configuration.AutoMode;
             //bool autoCraft = Service.Configuration.AutoCraft;
             bool failureCheck = Service.Configuration.DisableFailurePrediction;
@@ -321,6 +322,7 @@ namespace Artisan
             //bool showEHQ = Service.Configuration.ShowEHQ;
             //bool useSimulated = Service.Configuration.UseSimulatedStartingQuality;
             bool useMacroMode = Service.Configuration.UseMacroMode;
+            bool disableGlow = Service.Configuration.DisableHighlightedAction;
 
             ImGui.Separator();
             if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
@@ -341,6 +343,12 @@ namespace Artisan
                     Service.Configuration.AutoDelay = delay;
                     Service.Configuration.Save();
                 }
+            }
+
+            if (ImGui.Checkbox("Disable highlighting box", ref disableGlow))
+            {
+                Service.Configuration.DisableHighlightedAction = disableGlow;
+                Service.Configuration.Save();
             }
 
             //if (ImGui.Checkbox($"Automatically Repeat Last Craft", ref autoCraft))

@@ -18,6 +18,7 @@ namespace Artisan.RawInformation
         private static unsafe AtkUnitBase* HotBarRef { get; set; } = null;
         private static unsafe AtkResNode* HotBarSlotRef { get; set; } = null;
 
+        private static unsafe ActionManager* actionManager = ActionManager.Instance();
 
         public void Dispose()
         {
@@ -129,7 +130,6 @@ namespace Artisan.RawInformation
         internal unsafe static void ExecuteRecommended(uint currentRecommendation)
         {
             if (currentRecommendation == 0) return;
-            ActionManager* actionManager = ActionManager.Instance();
             if (actionManager == null)
                 return;
 

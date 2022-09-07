@@ -25,7 +25,7 @@ namespace Artisan
             [RequiredVersion("1.0")] CommandManager commandManager)
         {
             pluginInterface.Create<Service>();
-            FFXIVClientStructs.Resolver.Initialize();
+            //FFXIVClientStructs.Resolver.Initialize();
             Service.Plugin = this;
 
             Service.Configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
@@ -68,7 +68,7 @@ namespace Artisan
             return false;
         }
 
-        private async void FireBot(Framework framework)
+        private void FireBot(Framework framework)
         {
             PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting];
             if (!PluginUi.CraftingVisible)
@@ -82,7 +82,7 @@ namespace Artisan
             GetCraft();
             if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0)
             {
-                await Task.Factory.StartNew(() => FetchRecommendation(CurrentStep));
+                Task.Factory.StartNew(() => FetchRecommendation(CurrentStep));
             }
 
             if (CheckIfCraftFinished() && !currentCraftFinished)

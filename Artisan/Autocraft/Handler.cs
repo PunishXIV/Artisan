@@ -268,27 +268,21 @@ namespace Artisan.Autocraft
             }
         }
 
-        private static void DrawRecipeData()
+        internal static void DrawRecipeData()
         {
             if (HQManager.TryGetCurrent(out var d))
             {
                 HQData = d;
             }
-            RecipeID = 0;
-            RecipeName = "";
             var addonPtr = Service.GameGui.GetAddonByName("RecipeNote", 1);
             if (addonPtr == IntPtr.Zero)
             {
-                RecipeID = 0;
-                RecipeName = "";
                 return;
             }
 
             var addon = (AtkUnitBase*)addonPtr;
             if (addon == null)
             {
-                RecipeID = 0;
-                RecipeName = "";
                 return;
             }
 
@@ -347,11 +341,6 @@ namespace Artisan.Autocraft
                     RecipeID = 0;
                     RecipeName = "";
                 }
-            }
-            else
-            {
-                RecipeID = 0;
-                RecipeName = "";
             }
         }
     }

@@ -9,7 +9,7 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog": "- Adds \"Craft X Times\" feature.\r\n- Adds optional delay to auto mode.\r\n- Consolidated repeat last craft into Endurance mode.\r\n- Various other tweaks and bug fixes.",
+  "Changelog": "- Attempts to fix crashing. Please post to Discord if you continue to crash.\r\n- Endurance Mode toggle added to settings whilst crafting.\r\n- Option to disable highlight box added.",
   "DalamudApiLevel": 7,
   "DownloadLinkTesting" : "https://love.puni.sh/plugins/Artisan/Testing/latest.zip"
 }
