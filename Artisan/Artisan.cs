@@ -71,10 +71,10 @@ namespace Artisan
 
         private void FireBot(Framework framework)
         {
-            if (BotTask.TryBlockOrExecute())
-            {
-                return;
-            }
+            //if (BotTask.TryBlockOrExecute())
+            //{
+            //    return;
+            //}
             PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting];
             if (!PluginUi.CraftingVisible)
             {
@@ -178,14 +178,20 @@ namespace Artisan
                         {
                             var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == normalAct.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
                             CurrentRecommendation = newAct.RowId;
-                            QuestToastOptions options = new() { IconId = newAct.Icon };
-                            Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+                            if (!Service.Configuration.DisableToasts)
+                            {
+                                QuestToastOptions options = new() { IconId = newAct.Icon };
+                                Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+                            }
 
                         }
                         else
                         {
-                            QuestToastOptions options = new() { IconId = normalAct.Icon };
-                            Service.ToastGui.ShowQuest($"Use {normalAct.Name}", options);
+                            if (!Service.Configuration.DisableToasts)
+                            {
+                                QuestToastOptions options = new() { IconId = normalAct.Icon };
+                                Service.ToastGui.ShowQuest($"Use {normalAct.Name}", options);
+                            }
                         }
                     }
 
@@ -195,19 +201,27 @@ namespace Artisan
                         {
                             var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == craftAction.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
                             CurrentRecommendation = newAct.RowId;
-                            QuestToastOptions options = new() { IconId = newAct.Icon };
-                            Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+                            if (!Service.Configuration.DisableToasts)
+                            {
+                                QuestToastOptions options = new() { IconId = newAct.Icon };
+                                Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+                            }
                         }
                         else
                         {
-                            QuestToastOptions options = new() { IconId = craftAction.Icon };
-                            Service.ToastGui.ShowQuest($"Use {craftAction.Name}", options);
+                            if (!Service.Configuration.DisableToasts)
+                            {
+                                QuestToastOptions options = new() { IconId = craftAction.Icon };
+                                Service.ToastGui.ShowQuest($"Use {craftAction.Name}", options);
+                            }
                         }
                     }
 
                     if (Service.Configuration.AutoMode)
                     {
-                        Service.Plugin.BotTask.Schedule(() => Hotbars.ExecuteRecommended(CurrentRecommendation), Service.Configuration.AutoDelay);
+                        Service.Framework.RunOnTick(() => Hotbars.ExecuteRecommended(CurrentRecommendation), TimeSpan.FromMilliseconds(Service.Configuration.AutoDelay));
+                        
+                        //Service.Plugin.BotTask.Schedule(() => Hotbars.ExecuteRecommended(CurrentRecommendation), Service.Configuration.AutoDelay);
                     }
 
                     return;

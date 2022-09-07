@@ -52,6 +52,8 @@ namespace Artisan
         public bool FoodHQ = true;
         public bool PotHQ = true;
         public bool Repair { get; set; } = false;
+        public bool DisableToasts { get; set; } = false;
+
         public int RepairPercent = 50;
 
         public bool CraftingX = false;

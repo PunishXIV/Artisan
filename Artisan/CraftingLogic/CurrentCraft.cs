@@ -482,7 +482,7 @@ namespace Artisan.CraftingLogic
                 }
             }
 
-            if (CanUse(Skills.Veneration) && GetStatus(Buffs.Veneration) == null) return Skills.Veneration;
+            if (CanUse(Skills.Veneration) && GetStatus(Buffs.Veneration) == null && !VenerationUsed) return Skills.Veneration;
             return CharacterInfo.HighestLevelSynth();
         }
 

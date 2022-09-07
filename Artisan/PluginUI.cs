@@ -323,6 +323,7 @@ namespace Artisan
             //bool useSimulated = Service.Configuration.UseSimulatedStartingQuality;
             bool useMacroMode = Service.Configuration.UseMacroMode;
             bool disableGlow = Service.Configuration.DisableHighlightedAction;
+            bool disableToasts = Service.Configuration.DisableToasts;
 
             ImGui.Separator();
             if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
@@ -350,6 +351,15 @@ namespace Artisan
                 Service.Configuration.DisableHighlightedAction = disableGlow;
                 Service.Configuration.Save();
             }
+            ImGuiComponents.HelpMarker("This is the box that highlights the actions on your hotbars for manual play.");
+
+            if (ImGui.Checkbox($"Disable recommendation toasts", ref disableToasts))
+            {
+                Service.Configuration.DisableToasts = disableToasts;
+                Service.Configuration.Save();
+            }
+
+            ImGuiComponents.HelpMarker("These are the pop-ups whenever a new action is recommended.");
 
             //if (ImGui.Checkbox($"Automatically Repeat Last Craft", ref autoCraft))
             //{

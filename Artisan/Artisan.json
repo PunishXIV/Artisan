@@ -9,7 +9,7 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog": "- Attempts to fix crashing. Please post to Discord if you continue to crash.\r\n- Endurance Mode toggle added to settings whilst crafting.\r\n- Option to disable highlight box added.",
+  "Changelog": "- Attempts to fix crashing...AGAIN. Please post to Discord if you continue to crash.\r\n- Toggle added for recommendation toasts.",
   "DalamudApiLevel": 7,
   "DownloadLinkTesting" : "https://love.puni.sh/plugins/Artisan/Testing/latest.zip"
 }
