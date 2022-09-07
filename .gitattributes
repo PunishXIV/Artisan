@@ -1,0 +1,11 @@
+# Auto detect text files and perform LF normalization
+*          text=auto eol=lf
+
+*.cs       text diff=csharp
+*.cshtml   text diff=html
+*.csx      text diff=csharp
+*.sln      text eol=lf
+*.csproj   text eol=lf
+
+.gitattributes export-ignore
+.gitignore     export-ignore
