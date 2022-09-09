@@ -48,7 +48,8 @@ namespace Artisan.MacroSystem
                 {
                     foreach (Macro m in Service.Configuration.UserMacros)
                     {
-                        var selected = ImGui.Selectable($"{m.Name}###{m.ID}", m.ID == selectedMacro.ID);
+                        uint cpCost = GetCPCost(m);
+                        var selected = ImGui.Selectable($"{m.Name} (CP Cost: {cpCost})###{m.ID}", m.ID == selectedMacro.ID);
 
                         if (selected)
                         {
@@ -217,6 +218,24 @@ namespace Artisan.MacroSystem
                 selectedMacro = new();
                 selectedActionIndex = -1;
             }
+        }
+
+        private static uint GetCPCost(Macro m)
+        {
+            uint output = 0;
+            foreach (var act in m.MacroActions)
+            {
+                if (act >= 100000)
+                {
+                    output += LuminaSheets.CraftActions[act].Cost;
+                }
+                else
+                {
+                    output += LuminaSheets.ActionSheet[act].PrimaryCostValue;
+                }
+            }
+
+            return output;
         }
 
         private static string GetActionName(uint action)
