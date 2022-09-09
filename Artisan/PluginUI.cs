@@ -61,7 +61,10 @@ namespace Artisan
         public void Draw()
         {
             DrawCraftingWindow();
+
+            if (!Handler.Enable)
             Handler.DrawRecipeData();
+
             //if (Service.Configuration.ShowEHQ)
             //    MarkChanceOfSuccess();
 

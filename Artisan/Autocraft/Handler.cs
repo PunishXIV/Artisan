@@ -108,7 +108,7 @@ namespace Artisan.Autocraft
                     return;
                 }
                 //PluginLog.Verbose("Repair ok");
-                if (!ConsumableChecker.CheckConsumables(false))
+                if (Service.Configuration.AbortIfNoFoodPot && !ConsumableChecker.CheckConsumables(false))
                 {
                     if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                     {
@@ -170,7 +170,7 @@ namespace Artisan.Autocraft
             DrawRecipeData();
             ImGuiEx.Text($"Recipe: {RecipeName}\nHQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}");
             bool requireFoodPot = Service.Configuration.AbortIfNoFoodPot;
-            if (ImGui.Checkbox("Require Food or Medicine", ref requireFoodPot))
+            if (ImGui.Checkbox("Use Food and/or Medicine", ref requireFoodPot))
             {
                 Service.Configuration.AbortIfNoFoodPot = requireFoodPot;
                 Service.Configuration.Save();

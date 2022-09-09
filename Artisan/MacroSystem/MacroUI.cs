@@ -38,8 +38,8 @@ namespace Artisan.MacroSystem
                 float longestName = 0;
                 foreach (var macro in Service.Configuration.UserMacros)
                 {
-                    if (ImGui.CalcTextSize(macro.Name).Length() > longestName)
-                        longestName = ImGui.CalcTextSize(macro.Name).Length();
+                    if (ImGui.CalcTextSize($"{macro.Name} (CP Cost: {GetCPCost(macro)})").Length() > longestName)
+                        longestName = ImGui.CalcTextSize($"{macro.Name} (CP Cost: {GetCPCost(macro)})").Length();
                 }
 
                 longestName = Math.Max(150, longestName);

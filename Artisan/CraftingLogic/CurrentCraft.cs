@@ -469,12 +469,12 @@ namespace Artisan.CraftingLogic
                     if (CurrentQuality < MaxQuality && (HighQualityPercentage < Service.Configuration.MaxPercentage || Recipe.ItemResult.Value.IsCollectable || Recipe.IsExpert))
                     {
                         if (CurrentStep == 1 && CanUse(Skills.Reflect)) return Skills.Reflect;
-                        if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
-                        if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe;
                         if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) return Skills.Manipulation;
                         if (!WasteNotUsed && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
                         if (!InnovationUsed && CanUse(Skills.Innovation)) return Skills.Innovation;
                         if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
+                        if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
+                        if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe;
                         if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                         //if (PredictFailureTouch(CharacterInfo.HighestLevelTouch())) return CharacterInfo.HighestLevelSynth();
                         if (CharacterInfo.HighestLevelTouch() != 0) return CharacterInfo.HighestLevelTouch();
