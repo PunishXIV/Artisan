@@ -14,6 +14,7 @@ namespace Artisan
     {
         public delegate byte UseActionDelegate(ActionManager* actionManager, uint actionType, uint actionID, long targetObjectID, uint param, uint useType, int pvp, bool* isGroundTarget);
         public static Hook<UseActionDelegate> UseActionHook;
+        public static uint LastUsedAction = 0;
         private static byte UseActionDetour(ActionManager* actionManager, uint actionType, uint actionID, long targetObjectID, uint param, uint useType, int pvp, bool* isGroundTarget)
         {
             try
