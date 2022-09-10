@@ -178,100 +178,45 @@ namespace Artisan.Autocraft
 
             ImGui.Checkbox("Enable Endurance Mode", ref Enable);
             ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe and NQ/HQ material distribution in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
-            if (!Enable)
+            ImGuiEx.Text($"Recipe: {RecipeName}\nHQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}");
+            bool requireFoodPot = Service.Configuration.AbortIfNoFoodPot;
+            if (ImGui.Checkbox("Use Food and/or Medicine", ref requireFoodPot))
             {
-                if (HQManager.TryGetCurrent(out var d))
+                Service.Configuration.AbortIfNoFoodPot = requireFoodPot;
+                Service.Configuration.Save();
+            }
+            ImGuiComponents.HelpMarker("Artisan will require the configured food or medicine and refuse to craft if it cannot be found.");
+            if (requireFoodPot)
+            {
                 {
-                    HQData = d;
-                }
-                RecipeID = 0;
-                RecipeName = "";
-                var addonPtr = Service.GameGui.GetAddonByName("RecipeNote", 1);
-                if (addonPtr == IntPtr.Zero)
-                    return;
-
-                var addon = (AtkUnitBase*)addonPtr;
-                if (addon == null)
-                    return;
-
-                if (addon->IsVisible && addon->UldManager.NodeListCount >= 49)
-                {
-                    if (addon->UldManager.NodeList[49]->IsVisible)
+                    ImGuiEx.TextV("Food Usage:");
+                    ImGui.SameLine(150f.Scale());
+                    ImGuiEx.SetNextItemFullWidth();
+                    if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == Service.Configuration.Food, out var item) ? $"{(Service.Configuration.FoodHQ ? " " : "")}{item.Name}" : $"{(Service.Configuration.Food == 0 ? "Disabled" : $"{(Service.Configuration.FoodHQ ? " " : "")}{Service.Configuration.Food}")}"))
                     {
-                        var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
-                        var str = RawInformation.MemoryHelper.ReadSeString(&text);
-                        foreach (var payload in str.Payloads)
+                        if (ImGui.Selectable("Disable"))
                         {
-                            if (payload is TextPayload tp)
+                            Service.Configuration.Food = 0;
+                        }
+                        foreach (var x in ConsumableChecker.GetFood(true))
+                        {
+                            if (ImGui.Selectable($"{x.Name}"))
                             {
-                                /*
-                                 *  0	3	2	Woodworking
-                                    1	1	5	Smithing
-                                    2	3	1	Armorcraft
-                                    3	2	4	Goldsmithing
-                                    4	3	4	Leatherworking
-                                    5	2	5	Clothcraft
-                                    6	4	6	Alchemy
-                                    7	5	6	Cooking
-
-                                    8	carpenter
-                                    9	blacksmith
-                                    10	armorer
-                                    11	goldsmith
-                                    12	leatherworker
-                                    13	weaver
-                                    14	alchemist
-                                    15	culinarian
-                                    (ClassJob - 8)
-                                 * 
-                                 * */
-
-                                if (tp.Text[^1] == '')
-                                {
-                                    tp.Text = tp.Text.Remove(tp.Text.Length - 1, 1).Trim();
-                                }
-
-                                if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == tp.Text && x.CraftType.Value.RowId + 8 == Svc.ClientState.LocalPlayer?.ClassJob.Id, out var id))
-                                {
-                                    RecipeID = id.Unknown0;
-                                    RecipeName = id.ItemResult.Value.Name;
-                                    break;
-                                }
+                                Service.Configuration.Food = x.Id;
+                                Service.Configuration.FoodHQ = false;
                             }
                         }
+                        foreach (var x in ConsumableChecker.GetFood(true, true))
+                        {
+                            if (ImGui.Selectable($" {x.Name}"))
+                            {
+                                Service.Configuration.Food = x.Id;
+                                Service.Configuration.FoodHQ = true;
+                            }
+                        }
+                        ImGui.EndCombo();
                     }
                 }
-            }
-            ImGuiEx.Text($"Recipe: {RecipeName}\nHQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}");
-            {
-                ImGuiEx.TextV("Food Usage:");
-                ImGui.SameLine(150f.Scale());
-                ImGuiEx.SetNextItemFullWidth();
-                if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == Service.Configuration.Food, out var item) ? $"{(Service.Configuration.FoodHQ ? " " : "")}{item.Name}" : $"{(Service.Configuration.Food == 0 ? "Disabled" : $"{(Service.Configuration.FoodHQ ? " " : "")}{Service.Configuration.Food}")}"))
-                {
-                    if (ImGui.Selectable("Disable"))
-                    {
-                        Service.Configuration.Food = 0;
-                    }
-                    foreach (var x in ConsumableChecker.GetFood(true))
-                    {
-                        if (ImGui.Selectable($"{x.Name}"))
-                        {
-                            Service.Configuration.Food = x.Id;
-                            Service.Configuration.FoodHQ = false;
-                        }
-                    }
-                    foreach (var x in ConsumableChecker.GetFood(true, true))
-                    {
-                        if (ImGui.Selectable($" {x.Name}"))
-                        {
-                            Service.Configuration.Food = x.Id;
-                            Service.Configuration.FoodHQ = true;
-                        }
-                    }
-                    ImGui.EndCombo();
-                }
-            }
 
             {
                 ImGuiEx.TextV("Medicine Usage:");

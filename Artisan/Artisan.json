@@ -9,7 +9,7 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog": "- Testing lower level Muscle Memory usage.",
+  "Changelog": "- Bug fixes to endurance mode's memory.\r\n- Adds CP cost to macro names in macro menu.",
   "DalamudApiLevel": 7,
   "DownloadLinkTesting" : "https://love.puni.sh/plugins/Artisan/Testing/latest.zip"
 }
