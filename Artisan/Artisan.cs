@@ -18,13 +18,15 @@ namespace Artisan
         public string Name => "Artisan";
         private const string commandName = "/artisan";
         private PluginUI PluginUi { get; init; }
+        private bool currentCraftFinished = false;
+        internal BlockingTask BotTask = new();
 
         public Artisan(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
             [RequiredVersion("1.0")] CommandManager commandManager)
         {
             pluginInterface.Create<Service>();
-            FFXIVClientStructs.Resolver.Initialize();
+            //FFXIVClientStructs.Resolver.Initialize();
             Service.Plugin = this;
 
             Service.Configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
@@ -51,11 +53,28 @@ namespace Artisan
 
         private void ResetRecommendation(object? sender, int e)
         {
+            if (e == 0)
+            {
+
+            }
             CurrentRecommendation = 0;
         }
 
-        private async void FireBot(Framework framework)
+        private bool CheckIfCraftFinished()
         {
+            if (MaxProgress == 0) return false;
+            if (CurrentProgress == MaxProgress) return true;
+            if (CurrentProgress < MaxProgress && CurrentDurability == 0) return true;
+            currentCraftFinished = false;
+            return false;
+        }
+
+        private void FireBot(Framework framework)
+        {
+            //if (BotTask.TryBlockOrExecute())
+            //{
+            //    return;
+            //}
             PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting];
             if (!PluginUi.CraftingVisible)
             {
@@ -68,8 +87,30 @@ namespace Artisan
             GetCraft();
             if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0)
             {
-                await Task.Factory.StartNew(() => FetchRecommendation(CurrentStep));
+                FetchRecommendation(CurrentStep);
             }
+
+            if (CheckIfCraftFinished() && !currentCraftFinished)
+            {
+                currentCraftFinished = true;
+
+                if (Handler.Enable && Service.Configuration.CraftingX && Service.Configuration.CraftX > 0)
+                {
+                    Service.Configuration.CraftX -= 1;
+                    if (Service.Configuration.CraftX == 0)
+                        Handler.Enable = false;
+                }
+
+#if DEBUG
+                if (PluginUi.repeatTrial && Service.Configuration.CraftingX && Service.Configuration.CraftX > 0)
+                {
+                    Service.Configuration.CraftX -= 1;
+                    if (Service.Configuration.CraftX == 0)
+                        PluginUi.repeatTrial = false;
+                }
+#endif
+            }
+
 
 #if DEBUG
             if (PluginUi.repeatTrial)
@@ -77,16 +118,7 @@ namespace Artisan
                 RepeatTrialCraft();
             }
 #endif
-            if (Autocraft.Handler.Enable)
-            {
-                return;
-            }
 
-            bool enableAutoRepeat = Service.Configuration.AutoCraft;
-            if (enableAutoRepeat)
-            {
-                RepeatActualCraft();
-            }
         }
 
         public static void FetchRecommendation(int e)
@@ -145,14 +177,21 @@ namespace Artisan
                         if (normalAct.ClassJob.Value.RowId != CharacterInfo.JobID())
                         {
                             var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == normalAct.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
-                            QuestToastOptions options = new() { IconId = newAct.Icon };
-                            Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+                            CurrentRecommendation = newAct.RowId;
+                            if (!Service.Configuration.DisableToasts)
+                            {
+                                QuestToastOptions options = new() { IconId = newAct.Icon };
+                                Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+                            }
 
                         }
                         else
                         {
-                            QuestToastOptions options = new() { IconId = normalAct.Icon };
-                            Service.ToastGui.ShowQuest($"Use {normalAct.Name}", options);
+                            if (!Service.Configuration.DisableToasts)
+                            {
+                                QuestToastOptions options = new() { IconId = normalAct.Icon };
+                                Service.ToastGui.ShowQuest($"Use {normalAct.Name}", options);
+                            }
                         }
                     }
 
@@ -161,20 +200,28 @@ namespace Artisan
                         if (craftAction.ClassJob.Row != CharacterInfo.JobID())
                         {
                             var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == craftAction.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
-                            QuestToastOptions options = new() { IconId = newAct.Icon };
-                            Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+                            CurrentRecommendation = newAct.RowId;
+                            if (!Service.Configuration.DisableToasts)
+                            {
+                                QuestToastOptions options = new() { IconId = newAct.Icon };
+                                Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+                            }
                         }
                         else
                         {
-                            QuestToastOptions options = new() { IconId = craftAction.Icon };
-                            Service.ToastGui.ShowQuest($"Use {craftAction.Name}", options);
+                            if (!Service.Configuration.DisableToasts)
+                            {
+                                QuestToastOptions options = new() { IconId = craftAction.Icon };
+                                Service.ToastGui.ShowQuest($"Use {craftAction.Name}", options);
+                            }
                         }
                     }
 
                     if (Service.Configuration.AutoMode)
                     {
-                        Task.Delay(Service.Configuration.AutoDelay).Wait();
-                        Hotbars.ExecuteRecommended(CurrentRecommendation);
+                        Service.Framework.RunOnTick(() => Hotbars.ExecuteRecommended(CurrentRecommendation), TimeSpan.FromMilliseconds(Service.Configuration.AutoDelay));
+                        
+                        //Service.Plugin.BotTask.Schedule(() => Hotbars.ExecuteRecommended(CurrentRecommendation), Service.Configuration.AutoDelay);
                     }
 
                     return;
