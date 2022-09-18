@@ -1,11 +1,11 @@
 ﻿using Artisan.Autocraft;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using Artisan.CraftingLogic;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static ECommons.GenericHelpers;
 
 namespace Artisan.CraftingLists
@@ -21,6 +21,7 @@ namespace Artisan.CraftingLists
 
     public static class CraftingListFunctions
     {
+        public static int CurrentIndex = 0;
         public static void SetID(this CraftingList list)
         {
             var rng = new Random();
@@ -43,19 +44,123 @@ namespace Artisan.CraftingLists
 
         public unsafe static void OpenCraftingMenu()
         {
+            Dalamud.Logging.PluginLog.Debug($"{TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var test)}");
+
+            if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
+            {
+                if (Throttler.Throttle(1000))
+                {
+                    CommandProcessor.ExecuteThrottled("/clog");
+                }
+            }
+        }
+
+        public unsafe static void CloseCraftingMenu()
+        {
+            Dalamud.Logging.PluginLog.Debug($"{TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var test)}");
+
             if (TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) && addon->AtkUnitBase.IsVisible)
             {
-                return;
+                if (Throttler.Throttle(1000))
+                {
+                    CommandProcessor.ExecuteThrottled("/clog");
+                }
             }
-            CommandProcessor.ExecuteThrottled("/clog");
         }
 
         public unsafe static void OpenRecipeByID(uint recipeID)
         {
-            if (TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) && addon->AtkUnitBase.IsVisible) 
+            if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
             {
-                AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal(recipeID);
+                if (Throttler.Throttle(1000))
+                {
+                    AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal(recipeID);
+                }
             }
+        }
+
+        private static bool HasItemsForRecipe(uint currentProcessedItem)
+        {
+            var recipe = CraftingListUI.FilteredList[currentProcessedItem];
+            if (recipe.RowId == 0) return false;
+
+            return CraftingListUI.CheckForIngredients(recipe);
+        }
+
+        internal static void ProcessList(CraftingList selectedList)
+        {
+            var isCrafting = Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting];
+            if (CurrentIndex < selectedList.Items.Count)
+            {
+                CraftingListUI.CurrentProcessedItem = selectedList.Items[CurrentIndex];
+            }
+            else
+            {
+                CraftingListUI.Processing = false;
+            }
+
+            var recipe = CraftingListUI.FilteredList[CraftingListUI.CurrentProcessedItem];
+            if (!Throttler.Throttle(0))
+            {
+                return;
+            }
+
+            if (HasItemsForRecipe(CraftingListUI.CurrentProcessedItem))
+            {
+                if (Service.ClientState.LocalPlayer.ClassJob.Id != recipe.CraftType.Value.RowId + 8)
+                {
+                    if (isCrafting)
+                    {
+                        CloseCraftingMenu();
+                    }
+
+                    SwitchJobGearset(recipe.CraftType.Value.RowId + 8);
+                }
+
+                if (!Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting])
+                {
+                    OpenRecipeByID(CraftingListUI.CurrentProcessedItem);
+
+                    CurrentCraft.RepeatActualCraft();
+                }
+            }
+            else
+            {
+                CurrentIndex++;
+            }
+
+            Dalamud.Logging.PluginLog.Debug($"{Artisan.CheckIfCraftFinished()} {!Artisan.currentCraftFinished}");
+            if (Artisan.CheckIfCraftFinished() && !Artisan.currentCraftFinished)
+            { 
+                CloseCraftingMenu();
+            }
+
+        }
+
+        private unsafe static bool SwitchJobGearset(uint cjID)
+        {
+            var gs = GetGearsetForClassJob(cjID);
+            if (gs is null) return false;
+
+            if (Throttler.Throttle(1000))
+            {
+                CommandProcessor.ExecuteThrottled($"/gearset change {gs.Value + 1}");
+            }
+            return true;
+        }
+
+        private unsafe static byte? GetGearsetForClassJob(uint cjId)
+        {
+            var gearsetModule = RaptureGearsetModule.Instance();
+            for (var i = 0; i < 100; i++)
+            {
+                var gearset = gearsetModule->Gearset[i];
+                if (gearset == null) continue;
+                if (!gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists)) continue;
+                if (gearset->ID != i) continue;
+                if (gearset->ClassJob == cjId) return gearset->ID;
+            }
+            return null;
         }
     }
 }

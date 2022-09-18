@@ -18,13 +18,13 @@ namespace Artisan.CraftingLists
         internal static Recipe? SelectedRecipe = null;
         internal static string Search = "";
         internal unsafe static InventoryManager* invManager = InventoryManager.Instance();
-        internal static Dictionary<Recipe, bool> CraftableItems = new();
+        public static Dictionary<Recipe, bool> CraftableItems = new();
         internal static List<int> SelectedRecipeRawIngredients = new();
         internal static Dictionary<int, bool> SelectedRecipesCraftable = new();
         private static bool keyboardFocus = true;
         private static string newListName = String.Empty;
         private static CraftingList selectedList = new();
-        private static Dictionary<uint, Recipe> FilteredList = LuminaSheets.RecipeSheet.Values
+        public static Dictionary<uint, Recipe> FilteredList = LuminaSheets.RecipeSheet.Values
                     .DistinctBy(x => x.ItemResult.Value.Name.RawString)
                     .OrderBy(x => x.RecipeLevelTable.Value.ClassJobLevel)
                     .ThenBy(x => x.ItemResult.Value.Name.RawString)
@@ -35,12 +35,13 @@ namespace Artisan.CraftingLists
         private static List<int> subtableList = new();
         private static uint selectedListItem;
         public static bool Processing = false;
-        internal static uint currentItem;
+        public static uint CurrentProcessedItem;
 
         internal static void Draw()
         {
             ImGui.TextWrapped($"You can use this tab to see what items you can craft with the items in your inventory. You can also use it to create a quick crafting list that Artisan will try and work through.");
             ImGui.TextWrapped($"Please note that due to heavy computational requirements, filtering the recipe list to show only recipes you have ingredients for will not take into account raw ingredients for any crafted items. This may be addressed in the future. For now, it will only look at final ingredients *only* for a given recipe.");
+            ImGui.TextWrapped($"Crafting lists process from top to bottom, so ensure any pre-requsite crafts come first.");
             ImGui.Separator();
 
             DrawListOptions();
@@ -123,7 +124,7 @@ namespace Artisan.CraftingLists
                             if (selectedListItem != 0)
                             {
                                 ImGui.Text("Options");
-                                if (ImGui.Button("Remove Item"))
+                                if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.Trash))
                                 {
                                     selectedList.Items.RemoveAll(x => x == selectedListItem);
                                     selectedListItem = 0;
@@ -138,6 +139,52 @@ namespace Artisan.CraftingLists
                                 if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.MinusCircle))
                                 {
                                     selectedList.Items.Remove(selectedListItem);
+                                }
+                                ImGui.Text("Re-order list");
+                                ImGui.SameLine();
+
+                                bool isFirstItem = selectedList.Items.IndexOf(selectedListItem) == 0;
+                                bool isLastItem = selectedList.Items.LastIndexOf(selectedListItem) == selectedList.Items.Count - 1;
+
+                                if (!isFirstItem)
+                                {
+                                    if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowUp))
+                                    {
+                                        var loops = selectedList.Items.Count(x => x == selectedListItem);
+                                        var previousNum = selectedList.Items[selectedList.Items.IndexOf(selectedListItem) - 1];
+                                        var insertionIndex = selectedList.Items.IndexOf(previousNum);
+
+                                        selectedList.Items.RemoveAll(x => x == selectedListItem);
+                                        for (int i = 1; i <= loops; i++)
+                                        {
+                                            selectedList.Items.Insert(insertionIndex, selectedListItem);
+                                        }
+
+                                    }
+                                    ImGui.SameLine();
+                                }
+
+                                if (!isLastItem)
+                                {
+                                    if (isFirstItem)
+                                    {
+                                        ImGui.Dummy(new Vector2(22));
+                                        ImGui.SameLine();
+                                    }
+
+                                    if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowDown))
+                                    {
+                                        var nextNum = selectedList.Items[selectedList.Items.LastIndexOf(selectedListItem) + 1];
+                                        var loops = selectedList.Items.Count(x => x == nextNum);
+                                        var insertionIndex = selectedList.Items.IndexOf(selectedListItem);
+
+                                        selectedList.Items.RemoveAll(x => x == nextNum);
+                                        for (int i = 1; i <= loops; i++)
+                                        {
+                                            selectedList.Items.Insert(insertionIndex, nextNum);
+                                        }
+
+                                    }
                                 }
                             }
 
@@ -213,9 +260,71 @@ namespace Artisan.CraftingLists
                 DrawRecipeSubTable();
 
                 ImGui.PushItemWidth(-1f);
-                if (ImGui.Button("Add to List", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
+                if (ImGui.Button("Add to List", new Vector2(ImGui.GetContentRegionAvail().X/2, 30)))
                 {
-                    selectedList.Items.Add(SelectedRecipe.RowId);
+                    if (selectedList.Items.IndexOf(SelectedRecipe.RowId) == -1)
+                    {
+                        selectedList.Items.Add(SelectedRecipe.RowId);
+                    }
+                    else
+                    {
+                        var indexOfLast = selectedList.Items.IndexOf(SelectedRecipe.RowId);
+                        selectedList.Items.Insert(indexOfLast, SelectedRecipe.RowId);
+                    }
+                    Service.Configuration.Save();
+                }
+                ImGui.SameLine();
+                if (ImGui.Button("Add to List (with all subcrafts)", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
+                {
+                    foreach (var subItem in SelectedRecipe.UnkData5)
+                    {
+                        var subRecipe = GetIngredientRecipe(subItem.ItemIngredient);
+                        if (subRecipe.RowId != 0)
+                        {
+                            foreach (var subsubItem in subRecipe.UnkData5)
+                            {
+                                var subsubRecipe = GetIngredientRecipe(subsubItem.ItemIngredient);
+                                if (subsubRecipe.RowId != 0)
+                                {
+                                    for (int i = 1; i<= subsubItem.AmountIngredient; i++)
+                                    {
+                                        if (selectedList.Items.IndexOf(subsubRecipe.RowId) == -1)
+                                        {
+                                            selectedList.Items.Add(subsubRecipe.RowId);
+                                        }
+                                        else
+                                        {
+                                            var indexOfLast = selectedList.Items.IndexOf(subsubRecipe.RowId);
+                                            selectedList.Items.Insert(indexOfLast, subsubRecipe.RowId);
+                                        }
+                                    }
+                                }
+                            }
+                            for (int i = 1; i<= subItem.AmountIngredient; i++)
+                            {
+                                if (selectedList.Items.IndexOf(subRecipe.RowId) == -1)
+                                {
+                                    selectedList.Items.Add(subRecipe.RowId);
+                                }
+                                else
+                                {
+                                    var indexOfLast = selectedList.Items.IndexOf(subRecipe.RowId);
+                                    selectedList.Items.Insert(indexOfLast, subRecipe.RowId);
+                                }
+                            }
+                        }
+                    }
+
+                    if (selectedList.Items.IndexOf(SelectedRecipe.RowId) == -1)
+                    {
+                        selectedList.Items.Add(SelectedRecipe.RowId);
+                    }
+                    else
+                    {
+                        var indexOfLast = selectedList.Items.IndexOf(SelectedRecipe.RowId);
+                        selectedList.Items.Insert(indexOfLast, SelectedRecipe.RowId);
+                    }
+
                     Service.Configuration.Save();
                 }
             }
@@ -349,7 +458,7 @@ namespace Artisan.CraftingLists
             }
         }
 
-        private unsafe static bool CheckForIngredients(Recipe recipe)
+        public unsafe static bool CheckForIngredients(Recipe recipe)
         {
             if (CraftableItems.TryGetValue(recipe, out bool canCraft)) return canCraft;
 
@@ -514,45 +623,33 @@ namespace Artisan.CraftingLists
         {
             if (Processing)
             {
+                Service.Framework.RunOnFrameworkThread(() => CraftingListFunctions.ProcessList(selectedList));
+
                 ImGui.SetNextWindowSize(new Vector2(375, 330), ImGuiCond.FirstUseEver);
                 if (ImGui.Begin("Processing Crafting List", ref Processing, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar))
                 {
                     ImGui.Text($"Now Processing: {selectedList.Name}");
                     ImGui.Separator();
                     ImGui.Spacing();
-                    if (currentItem != 0)
-                        ImGuiEx.TextV($"Trying to craft: {FilteredList[currentItem].ItemResult.Value.Name.RawString}");
+                    if (CurrentProcessedItem != 0)
+                        ImGuiEx.TextV($"Trying to craft: {FilteredList[CurrentProcessedItem].ItemResult.Value.Name.RawString}");
 
                     if (ImGui.Button("Cancel"))
                     {
                         Processing = false;
                     }
 
-                    if (currentItem != 0) return;
-
-                    foreach (var rec in selectedList.Items)
-                    {
-                        currentItem = rec;
-                        var recipe = FilteredList[currentItem];
-                        var task = new BlockingTask();
-                        Service.Framework.RunOnTick(CraftingListFunctions.OpenCraftingMenu, TimeSpan.FromSeconds(3));
-                        CraftingListFunctions.OpenRecipeByID(recipe.RowId);
-
-                        currentItem = 0;
-                    }
-
-
-                    Processing = false;
+                   
                 }
             }
         }
 
-        private static Recipe? GetIngredientRecipe(string ingredient)
+        public static Recipe? GetIngredientRecipe(string ingredient)
         {
             return FilteredList.Values.Any(x => x.ItemResult.Value.Name.RawString == ingredient) ? FilteredList.Values.First(x => x.ItemResult.Value.Name.RawString == ingredient) : null;
         }
 
-        private static Recipe GetIngredientRecipe(int ingredient)
+        public static Recipe GetIngredientRecipe(int ingredient)
         {
             if (FilteredList.Values.Any(x => x.ItemResult.Value.RowId == ingredient))
                 return FilteredList.Values.First(x => x.ItemResult.Value.RowId == ingredient);
