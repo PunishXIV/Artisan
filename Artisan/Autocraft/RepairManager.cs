@@ -1,4 +1,5 @@
-﻿using ClickLib.Clicks;
+﻿using Artisan.RawInformation;
+using ClickLib.Clicks;
 using Dalamud.Logging;
 using ECommons;
 using ECommons.DalamudServices;
@@ -54,7 +55,7 @@ namespace Artisan.Autocraft
                     if (Throttler.Throttle(500))
                     {
                         //PluginLog.Verbose("Closing repair window");
-                        CommandProcessor.ExecuteThrottled("/generalaction repair");
+                        Hotbars.actionManager->UseAction(ActionType.General, 6);
                     }
                     return false;
                 }
@@ -79,7 +80,7 @@ namespace Artisan.Autocraft
                         if (Throttler.Throttle(500))
                         {
                             //PluginLog.Verbose($"Opening repair");
-                            CommandProcessor.ExecuteThrottled("/generalaction repair");
+                            Hotbars.actionManager->UseAction(ActionType.General, 6);
                         }
                     }
                 }

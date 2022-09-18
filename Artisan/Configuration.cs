@@ -1,4 +1,5 @@
-﻿using Artisan.CraftingLogic;
+﻿using Artisan.CraftingLists;
+using Artisan.CraftingLogic;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Configuration;
@@ -41,6 +42,7 @@ namespace Artisan
         public bool DisableHighlightedAction { get; set; } = false;
 
         public List<Macro> UserMacros { get; set; } = new();
+        public List<CraftingList> CraftingLists { get; set; } = new();
         public bool UseMacroMode { get; set; }
         public Macro? SetMacro { get; set; }
 
@@ -53,6 +55,7 @@ namespace Artisan
         public bool PotHQ = true;
         public bool Repair { get; set; } = false;
         public bool DisableToasts { get; set; } = false;
+        public bool ShowOnlyCraftable { get; set; } = false;
 
         public int RepairPercent = 50;
 

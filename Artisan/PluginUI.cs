@@ -1,12 +1,16 @@
 ﻿using Artisan.Autocraft;
+using Artisan.CraftingLists;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Interface.Components;
 using Dalamud.Logging;
 using Dalamud.Plugin;
+using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Newtonsoft.Json;
 using System;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using static Artisan.CraftingLogic.CurrentCraft;
@@ -60,7 +64,22 @@ namespace Artisan
 
         public void Draw()
         {
+            if (!CheckIfCorrectRepo())
+            {
+                ImGui.SetWindowSize(new Vector2(500, 500), ImGuiCond.FirstUseEver);
+                if (ImGui.Begin("Fraudulant Repo Detected", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysAutoResize))
+                {
+                    ImGui.Text("[Artisan] Please uninstall and use the official repo:");
+                    if (ImGui.Button("Repository"))
+                    {
+                        ImGui.SetClipboardText("https://love.puni.sh/ment.json");
+                        Notify.Success("Link copied to clipboard");
+                    }
+                    return;
+                }
+            }
             DrawCraftingWindow();
+            CraftingListUI.DrawProcessingWindow();
 
             if (!Handler.Enable)
             Handler.DrawRecipeData();
@@ -96,6 +115,11 @@ namespace Artisan
                         MacroUI.Draw();
                         ImGui.EndTabItem();
                     }
+                    if (ImGui.BeginTabItem("Crafting List"))
+                    {
+                        CraftingListUI.Draw();
+                        ImGui.EndTabItem();
+                    }
 
                     if (ImGui.BeginTabItem("About"))
                     {
@@ -119,12 +143,31 @@ namespace Artisan
             }
         }
 
-        private static void DrawDebug()
+        private bool CheckIfCorrectRepo()
         {
-            ImGui.Text($"{BaseQuality()}");
-            ImGui.Text($"{GreatStridesByregotCombo()}");
-            ImGui.Text($"{CalculateNewProgress(CharacterInfo.HighestLevelSynth())}");
+#if DEBUG
+            return true;
+#endif
+            FileInfo? m = ECommons.DalamudServices.Svc.PluginInterface.AssemblyLocation;
+            var manifest = Path.Join(m.DirectoryName, "Artison.json");
+            if (File.Exists(manifest))
+            {
+                DRM? drm = JsonConvert.DeserializeObject<DRM>(File.ReadAllText(manifest));
+                if (drm is null)
+                    return false;
+
+                if (!drm.DownloadLinkInstall.Equals(@"https://love.puni.sh/plugins/Artisan/latest.zip")) return false;
+                if (!drm.Name.Equals("Artisan")) return false;
+
+                return true;
+
+            }
+            else
+            {
+                return false;
+            }
         }
+
 
         public unsafe static void MarkChanceOfSuccess()
         {
