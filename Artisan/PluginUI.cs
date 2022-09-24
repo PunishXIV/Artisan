@@ -334,7 +334,7 @@ namespace Artisan
                 Service.Configuration.AutoMode = autoEnabled;
                 Service.Configuration.Save();
             }
-            ImGuiComponents.HelpMarker($"Automatically use each recommended action.\nRequires the action to be on a visible hotbar.");
+            ImGuiComponents.HelpMarker($"Automatically use each recommended action.");
             if (autoEnabled)
             {
                 var delay = Service.Configuration.AutoDelay;
