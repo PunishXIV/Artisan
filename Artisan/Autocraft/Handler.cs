@@ -133,6 +133,11 @@ namespace Artisan.Autocraft
                             {
                                 return;
                             }
+                            if (HQManager.InsufficientMaterials)
+                            {
+                                HQManager.InsufficientMaterials = false;
+                                Enable = false;
+                            }
                             ////PluginLog.Verbose("HQ data restored");
                             CurrentCraft.RepeatActualCraft();
                         }

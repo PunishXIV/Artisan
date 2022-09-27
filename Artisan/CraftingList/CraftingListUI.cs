@@ -110,14 +110,17 @@ namespace Artisan.CraftingLists
                             ImGui.Columns(2, null, false);
                             ImGui.Text("Current Items");
                             ImGui.Indent();
+                            var loop = 1;
                             foreach (var item in CollectionsMarshal.AsSpan(selectedList.Items.Distinct().ToList()))
                             {
-                                var selected = ImGui.Selectable($"{FilteredList[item].ItemResult.Value.Name.RawString} x{selectedList.Items.Count(x => x == item)}", selectedListItem == item);
+                                var selected = ImGui.Selectable($"{loop}. {FilteredList[item].ItemResult.Value.Name.RawString} x{selectedList.Items.Count(x => x == item)}", selectedListItem == item);
 
                                 if (selected)
                                 {
                                     selectedListItem = item;
                                 }
+
+                                loop++;
                             }
                             ImGui.Unindent();
                             ImGui.NextColumn();
@@ -133,7 +136,7 @@ namespace Artisan.CraftingLists
                                 ImGui.SameLine();
                                 if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.PlusCircle))
                                 {
-                                    selectedList.Items.Add(selectedListItem);
+                                    selectedList.Items.Insert(selectedList.Items.IndexOf(selectedListItem), selectedListItem);
                                 }
                                 ImGui.SameLine();
                                 if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.MinusCircle))

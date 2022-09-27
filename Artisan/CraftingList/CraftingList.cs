@@ -57,8 +57,6 @@ namespace Artisan.CraftingLists
 
         public unsafe static void CloseCraftingMenu()
         {
-            Dalamud.Logging.PluginLog.Debug($"{TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var test)}");
-
             if (TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) && addon->AtkUnitBase.IsVisible)
             {
                 if (Throttler.Throttle(1000))
@@ -129,7 +127,6 @@ namespace Artisan.CraftingLists
                 CurrentIndex++;
             }
 
-            Dalamud.Logging.PluginLog.Debug($"{Artisan.CheckIfCraftFinished()} {!Artisan.currentCraftFinished}");
             if (Artisan.CheckIfCraftFinished() && !Artisan.currentCraftFinished)
             { 
                 CloseCraftingMenu();
