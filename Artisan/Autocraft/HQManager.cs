@@ -74,11 +74,6 @@ namespace Artisan.Autocraft
                         return false;
                     }
 
-                    if (currentData.SequenceEqual(ingredients))
-                    {
-                        dataFinalized = true;
-                        return true;
-                    }
 
                     if (ingredients[i] > currentData[i])
                     {
@@ -102,6 +97,12 @@ namespace Artisan.Autocraft
                             return true;
                         }
                     }
+                }
+
+                if (currentData.SequenceEqual(ingredients))
+                {
+                    dataFinalized = true;
+                    return true;
                 }
 
             }
