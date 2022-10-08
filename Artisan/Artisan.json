@@ -9,7 +9,7 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog": "- Bug fixes to endurance mode's memory.\r\n- Adds CP cost to macro names in macro menu.",
+  "Changelog": "- Crafting lists have been released! Check Discord for details.\r\n- Updated support for non-English clients.\r\n- Additional bug fixes made to Endurance mode checks.",
   "DalamudApiLevel": 7,
   "DownloadLinkTesting" : "https://love.puni.sh/plugins/Artisan/Testing/latest.zip"
 }

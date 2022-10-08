@@ -64,20 +64,21 @@ namespace Artisan
 
         public void Draw()
         {
-            if (!CheckIfCorrectRepo())
-            {
-                ImGui.SetWindowSize(new Vector2(500, 500), ImGuiCond.FirstUseEver);
-                if (ImGui.Begin("Fraudulant Repo Detected", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysAutoResize))
-                {
-                    ImGui.Text("[Artisan] Please uninstall and use the official repo:");
-                    if (ImGui.Button("Repository"))
-                    {
-                        ImGui.SetClipboardText("https://love.puni.sh/ment.json");
-                        Notify.Success("Link copied to clipboard");
-                    }
-                    return;
-                }
-            }
+            //if (!CheckIfCorrectRepo())
+            //{
+            //    ImGui.SetWindowSize(new Vector2(500, 500), ImGuiCond.FirstUseEver);
+            //    if (ImGui.Begin("Fraudulant Repo Detected", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysAutoResize))
+            //    {
+            //        ImGui.Text("[Artisan] Please uninstall and use the official repo:");
+            //        if (ImGui.Button("Repository"))
+            //        {
+            //            ImGui.SetClipboardText("https://love.puni.sh/ment.json");
+            //            Notify.Success("Link copied to clipboard");
+            //        }
+            //        return;
+            //    }
+            //}
+
             DrawCraftingWindow();
             CraftingListUI.DrawProcessingWindow();
 
@@ -115,7 +116,7 @@ namespace Artisan
                         MacroUI.Draw();
                         ImGui.EndTabItem();
                     }
-                    if (ImGui.BeginTabItem("Crafting List"))
+                    if (ImGui.BeginTabItem("Crafting List (BETA)"))
                     {
                         CraftingListUI.Draw();
                         ImGui.EndTabItem();

@@ -42,6 +42,7 @@ namespace Artisan.CraftingLists
             ImGui.TextWrapped($"You can use this tab to see what items you can craft with the items in your inventory. You can also use it to create a quick crafting list that Artisan will try and work through.");
             ImGui.TextWrapped($"Please note that due to heavy computational requirements, filtering the recipe list to show only recipes you have ingredients for will not take into account raw ingredients for any crafted items. This may be addressed in the future. For now, it will only look at final ingredients *only* for a given recipe.");
             ImGui.TextWrapped($"Crafting lists process from top to bottom, so ensure any pre-requsite crafts come first.");
+            ImGui.TextWrapped("Please ensure that you have gearsets saved for each job you have items to craft. Also if you require the usage of food and/or potions, please do so before starting the crafting list as this will not be automated.");
             ImGui.Separator();
 
             DrawListOptions();
@@ -143,50 +144,53 @@ namespace Artisan.CraftingLists
                                 {
                                     selectedList.Items.Remove(selectedListItem);
                                 }
-                                ImGui.Text("Re-order list");
-                                ImGui.SameLine();
-
-                                bool isFirstItem = selectedList.Items.IndexOf(selectedListItem) == 0;
-                                bool isLastItem = selectedList.Items.LastIndexOf(selectedListItem) == selectedList.Items.Count - 1;
-
-                                if (!isFirstItem)
+                                if (selectedList.Items.Distinct().Count() > 1)
                                 {
-                                    if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowUp))
-                                    {
-                                        var loops = selectedList.Items.Count(x => x == selectedListItem);
-                                        var previousNum = selectedList.Items[selectedList.Items.IndexOf(selectedListItem) - 1];
-                                        var insertionIndex = selectedList.Items.IndexOf(previousNum);
-
-                                        selectedList.Items.RemoveAll(x => x == selectedListItem);
-                                        for (int i = 1; i <= loops; i++)
-                                        {
-                                            selectedList.Items.Insert(insertionIndex, selectedListItem);
-                                        }
-
-                                    }
+                                    ImGui.Text("Re-order list");
                                     ImGui.SameLine();
-                                }
 
-                                if (!isLastItem)
-                                {
-                                    if (isFirstItem)
+                                    bool isFirstItem = selectedList.Items.IndexOf(selectedListItem) == 0;
+                                    bool isLastItem = selectedList.Items.LastIndexOf(selectedListItem) == selectedList.Items.Count - 1;
+
+                                    if (!isFirstItem)
                                     {
-                                        ImGui.Dummy(new Vector2(22));
-                                        ImGui.SameLine();
+                                        if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowUp))
+                                        {
+                                            var loops = selectedList.Items.Count(x => x == selectedListItem);
+                                            var previousNum = selectedList.Items[selectedList.Items.IndexOf(selectedListItem) - 1];
+                                            var insertionIndex = selectedList.Items.IndexOf(previousNum);
+
+                                            selectedList.Items.RemoveAll(x => x == selectedListItem);
+                                            for (int i = 1; i <= loops; i++)
+                                            {
+                                                selectedList.Items.Insert(insertionIndex, selectedListItem);
+                                            }
+
+                                        }
+                                        if (!isLastItem) ImGui.SameLine();
                                     }
 
-                                    if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowDown))
+                                    if (!isLastItem)
                                     {
-                                        var nextNum = selectedList.Items[selectedList.Items.LastIndexOf(selectedListItem) + 1];
-                                        var loops = selectedList.Items.Count(x => x == nextNum);
-                                        var insertionIndex = selectedList.Items.IndexOf(selectedListItem);
-
-                                        selectedList.Items.RemoveAll(x => x == nextNum);
-                                        for (int i = 1; i <= loops; i++)
+                                        if (isFirstItem)
                                         {
-                                            selectedList.Items.Insert(insertionIndex, nextNum);
+                                            ImGui.Dummy(new Vector2(22));
+                                            ImGui.SameLine();
                                         }
 
+                                        if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowDown))
+                                        {
+                                            var nextNum = selectedList.Items[selectedList.Items.LastIndexOf(selectedListItem) + 1];
+                                            var loops = selectedList.Items.Count(x => x == nextNum);
+                                            var insertionIndex = selectedList.Items.IndexOf(selectedListItem);
+
+                                            selectedList.Items.RemoveAll(x => x == nextNum);
+                                            for (int i = 1; i <= loops; i++)
+                                            {
+                                                selectedList.Items.Insert(insertionIndex, nextNum);
+                                            }
+
+                                        }
                                     }
                                 }
                             }
@@ -194,6 +198,7 @@ namespace Artisan.CraftingLists
                             ImGui.Columns(1, null, false);
                             if (ImGui.Button("Start Crafting List", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
                             {
+                                CraftingListFunctions.CurrentIndex = 0;
                                 Processing = true;
                             }
                         }
@@ -461,8 +466,9 @@ namespace Artisan.CraftingLists
             }
         }
 
-        public unsafe static bool CheckForIngredients(Recipe recipe)
+        public unsafe static bool CheckForIngredients(Recipe recipe, bool fetchFromCache = true)
         {
+            if (fetchFromCache)
             if (CraftableItems.TryGetValue(recipe, out bool canCraft)) return canCraft;
 
             foreach (var value in recipe.UnkData5.Where(x => x.ItemIngredient != 0 && x.AmountIngredient > 0))
@@ -471,7 +477,6 @@ namespace Artisan.CraftingLists
                 {
                     int? invNumberNQ = invManager->GetInventoryItemCount((uint)value.ItemIngredient);
                     int? invNumberHQ = invManager->GetInventoryItemCount((uint)value.ItemIngredient, true);
-
 
                     if (value.AmountIngredient > (invNumberNQ + invNumberHQ))
                     {
@@ -635,7 +640,10 @@ namespace Artisan.CraftingLists
                     ImGui.Separator();
                     ImGui.Spacing();
                     if (CurrentProcessedItem != 0)
+                    {
                         ImGuiEx.TextV($"Trying to craft: {FilteredList[CurrentProcessedItem].ItemResult.Value.Name.RawString}");
+                        ImGuiEx.TextV($"Overall Progress: {CraftingListFunctions.CurrentIndex + 1} / {selectedList.Items.Count}");
+                    }
 
                     if (ImGui.Button("Cancel"))
                     {

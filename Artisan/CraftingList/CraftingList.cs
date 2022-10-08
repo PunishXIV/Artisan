@@ -1,8 +1,11 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLogic;
+using Artisan.RawInformation;
+using ClickLib.Clicks;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -68,9 +71,9 @@ namespace Artisan.CraftingLists
 
         public unsafe static void OpenRecipeByID(uint recipeID)
         {
-            if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
+            if (Throttler.Throttle(500))
             {
-                if (Throttler.Throttle(1000))
+                if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
                 {
                     AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal(recipeID);
                 }
@@ -82,7 +85,7 @@ namespace Artisan.CraftingLists
             var recipe = CraftingListUI.FilteredList[currentProcessedItem];
             if (recipe.RowId == 0) return false;
 
-            return CraftingListUI.CheckForIngredients(recipe);
+            return CraftingListUI.CheckForIngredients(recipe, false);
         }
 
         internal static void ProcessList(CraftingList selectedList)
@@ -90,10 +93,13 @@ namespace Artisan.CraftingLists
             var isCrafting = Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting];
             if (CurrentIndex < selectedList.Items.Count)
             {
+                Dalamud.Logging.PluginLog.Verbose($"Current Item: {selectedList.Items[CurrentIndex]}");
                 CraftingListUI.CurrentProcessedItem = selectedList.Items[CurrentIndex];
             }
             else
             {
+                Dalamud.Logging.PluginLog.Verbose($"End of Index");
+                CurrentIndex = 0;
                 CraftingListUI.Processing = false;
             }
 
@@ -103,33 +109,113 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if (HasItemsForRecipe(CraftingListUI.CurrentProcessedItem))
+
+            if (!HasItemsForRecipe(CraftingListUI.CurrentProcessedItem) && !isCrafting)
             {
-                if (Service.ClientState.LocalPlayer.ClassJob.Id != recipe.CraftType.Value.RowId + 8)
+                if (Throttler.Throttle(500))
                 {
-                    if (isCrafting)
+                    Service.ChatGui.PrintError("Insufficient materials for recipe. Moving on.");
+                    var currentRecipe = selectedList.Items[CurrentIndex];
+                    while (currentRecipe == selectedList.Items[CurrentIndex])
                     {
-                        CloseCraftingMenu();
+                        IngredientsSet = false;
+                        CurrentIndex++;
                     }
-
-                    SwitchJobGearset(recipe.CraftType.Value.RowId + 8);
                 }
+            }
 
-                if (!Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting])
+            if (Service.ClientState.LocalPlayer.ClassJob.Id != recipe.CraftType.Value.RowId + 8 && !isCrafting)
+            {
+                if (!SwitchJobGearset(recipe.CraftType.Value.RowId + 8))
+                {
+                    Service.ChatGui.PrintError($"Gearset not found for {LuminaSheets.ClassJobSheet[recipe.CraftType.Value.RowId + 8].Name.RawString}. Moving on.");
+                    CurrentIndex++;
+                    return;
+                }
+            }
+
+            if (Service.ClientState.LocalPlayer.Level < recipe.RecipeLevelTable.Value.ClassJobLevel && !isCrafting)
+            {
+                Service.ChatGui.PrintError("Insufficient level to craft this item. Moving on.");
+                CurrentIndex++;
+                return;
+            }
+
+            if (!isCrafting)
+            {
+                if (!IngredientsSet)
                 {
                     OpenRecipeByID(CraftingListUI.CurrentProcessedItem);
-
+                    SetIngredients(CraftingListUI.CurrentProcessedItem);
+                }
+                else
+                {
                     CurrentCraft.RepeatActualCraft();
                 }
             }
-            else
+
+            if (isCrafting)
             {
-                CurrentIndex++;
+                CloseCraftingMenu();
             }
 
-            if (Artisan.CheckIfCraftFinished() && !Artisan.currentCraftFinished)
-            { 
+            if (Artisan.CheckIfCraftFinished())
+            {
                 CloseCraftingMenu();
+            }
+
+        }
+
+        internal static bool IngredientsSet = false;
+        private unsafe static void SetIngredients(uint currentProcessedItem)
+        {
+            if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
+            {
+                for (var i = 0; i <= 5; i++)
+                {
+                    try
+                    {
+                        var node = addon->UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
+                        if (node is null || !node->AtkResNode.IsVisible)
+                        {
+                            return;
+                        }
+
+                        var setNQ = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode()->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText.ToString();
+                        var setHQ = node->Component->UldManager.NodeList[6]->GetAsAtkComponentNode()->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText.ToString();
+                        var setNQint = Convert.ToInt32(setNQ);
+                        var setHQint = Convert.ToInt32(setHQ);
+
+                        var nqNodeText = node->Component->UldManager.NodeList[8]->GetAsAtkTextNode();
+                        var hqNodeText = node->Component->UldManager.NodeList[5]->GetAsAtkTextNode();
+                        var required = node->Component->UldManager.NodeList[15]->GetAsAtkTextNode();
+
+                        int nqMaterials = Convert.ToInt32(nqNodeText->NodeText.ToString());
+                        int hqMaterials = Convert.ToInt32(hqNodeText->NodeText.ToString());
+                        int requiredMaterials = Convert.ToInt32(required->NodeText.ToString());
+
+                        if ((setNQint + setHQint) == requiredMaterials)
+                        {
+                            IngredientsSet = true;
+                            return;
+                        }
+
+                        for (int m = 0; m <= requiredMaterials && m <= nqMaterials; m++)
+                        {
+                            ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
+                        }
+
+                        for (int m = 0; m <= requiredMaterials && m <= hqMaterials; m++)
+                        {
+                            ClickRecipeNote.Using((IntPtr)addon).Material(i, true);
+                        }
+                    }
+                    catch
+                    {
+                        return;
+                    }
+                }
+                IngredientsSet = false;
             }
 
         }
