@@ -26,7 +26,12 @@ namespace Artisan.Autocraft
 
         internal static void ConfirmYesNo()
         {
-            if(TryGetAddonByName<AddonRepair>("Repair", out var r) && r->AtkUnitBase.IsVisible && TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) && addon->AtkUnitBase.IsVisible && addon->YesButton->IsEnabled && addon->AtkUnitBase.UldManager.NodeList[15]->GetAsAtkTextNode()->NodeText.ToString().StartsWith("Repair as many of the displayed items as") && Throttler.Throttle(500))
+            if(TryGetAddonByName<AddonRepair>("Repair", out var r) && 
+                r->AtkUnitBase.IsVisible && TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) && 
+                addon->AtkUnitBase.IsVisible && 
+                addon->YesButton->IsEnabled && 
+                addon->AtkUnitBase.UldManager.NodeList[15]->IsVisible && 
+                Throttler.Throttle(500))
             {
                 new ClickSelectYesNo((IntPtr)addon).Yes();
             }

@@ -71,9 +71,9 @@ namespace Artisan.CraftingLists
 
         public unsafe static void OpenRecipeByID(uint recipeID)
         {
-            if (Throttler.Throttle(500))
+            if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
             {
-                if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
+                if (Throttler.Throttle(500))
                 {
                     AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal(recipeID);
                 }
@@ -91,6 +91,8 @@ namespace Artisan.CraftingLists
         internal static void ProcessList(CraftingList selectedList)
         {
             var isCrafting = Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting];
+            var preparing = Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft];
+
             if (CurrentIndex < selectedList.Items.Count)
             {
                 Dalamud.Logging.PluginLog.Verbose($"Current Item: {selectedList.Items[CurrentIndex]}");
@@ -118,13 +120,12 @@ namespace Artisan.CraftingLists
                     var currentRecipe = selectedList.Items[CurrentIndex];
                     while (currentRecipe == selectedList.Items[CurrentIndex])
                     {
-                        IngredientsSet = false;
                         CurrentIndex++;
                     }
                 }
             }
 
-            if (Service.ClientState.LocalPlayer.ClassJob.Id != recipe.CraftType.Value.RowId + 8 && !isCrafting)
+            if (Service.ClientState.LocalPlayer.ClassJob.Id != recipe.CraftType.Value.RowId + 8 && !isCrafting && !preparing)
             {
                 if (!SwitchJobGearset(recipe.CraftType.Value.RowId + 8))
                 {
@@ -143,15 +144,10 @@ namespace Artisan.CraftingLists
 
             if (!isCrafting)
             {
-                if (!IngredientsSet)
-                {
-                    OpenRecipeByID(CraftingListUI.CurrentProcessedItem);
-                    SetIngredients(CraftingListUI.CurrentProcessedItem);
-                }
-                else
-                {
-                    CurrentCraft.RepeatActualCraft();
-                }
+                OpenRecipeByID(CraftingListUI.CurrentProcessedItem);
+                SetIngredients(CraftingListUI.CurrentProcessedItem);
+
+                CurrentCraft.RepeatActualCraft();
             }
 
             if (isCrafting)
@@ -166,7 +162,6 @@ namespace Artisan.CraftingLists
 
         }
 
-        internal static bool IngredientsSet = false;
         private unsafe static void SetIngredients(uint currentProcessedItem)
         {
             if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
@@ -194,11 +189,7 @@ namespace Artisan.CraftingLists
                         int hqMaterials = Convert.ToInt32(hqNodeText->NodeText.ToString());
                         int requiredMaterials = Convert.ToInt32(required->NodeText.ToString());
 
-                        if ((setNQint + setHQint) == requiredMaterials)
-                        {
-                            IngredientsSet = true;
-                            return;
-                        }
+                        if ((setHQint + setNQint) == requiredMaterials) continue;
 
                         for (int m = 0; m <= requiredMaterials && m <= nqMaterials; m++)
                         {
@@ -215,16 +206,14 @@ namespace Artisan.CraftingLists
                         return;
                     }
                 }
-                IngredientsSet = false;
             }
-
         }
 
         private unsafe static bool SwitchJobGearset(uint cjID)
         {
             var gs = GetGearsetForClassJob(cjID);
             if (gs is null) return false;
-
+            
             if (Throttler.Throttle(1000))
             {
                 CommandProcessor.ExecuteThrottled($"/gearset change {gs.Value + 1}");

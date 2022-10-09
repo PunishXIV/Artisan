@@ -97,7 +97,6 @@ namespace Artisan
                 if (CraftingLists.CraftingListUI.Processing)
                 {
                     //Dalamud.Logging.PluginLog.Debug("Advancing Crafting List");
-                    CraftingLists.CraftingListFunctions.IngredientsSet = false;  
                     CraftingLists.CraftingListFunctions.CurrentIndex++;
                 }
 

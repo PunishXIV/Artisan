@@ -400,10 +400,11 @@ namespace Artisan.CraftingLists
                     for (int i = 1; i <= ing.AmountIngredient; i++)
                     {
                         ingredientList.Add(ing.ItemIngredient);
+                        if (GetIngredientRecipe(ing.ItemIngredient).RowId != 0)
+                        {
+                            AddRecipeIngredientsToList(GetIngredientRecipe(ing.ItemIngredient), ref ingredientList);
+                        }
                     }
-
-                    if (GetIngredientRecipe(ing.ItemIngredient).RowId != 0)
-                        AddRecipeIngredientsToList(GetIngredientRecipe(ing.ItemIngredient), ref ingredientList);
                 }
             }
             catch (Exception ex)
