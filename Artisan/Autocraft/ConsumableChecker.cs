@@ -68,12 +68,12 @@ namespace Artisan.Autocraft
 
         internal static bool IsFooded()
         {
-            return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.GameData.Name.ToString() == "Well Fed" && x.RemainingTime > 0f) == true;
+            return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.StatusId == 48 && x.RemainingTime > 0f) == true;
         }
 
         internal static bool IsPotted()
         {
-            return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.GameData.Name.ToString() == "Medicated" && x.RemainingTime > 0f) == true;
+            return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.StatusId == 49 && x.RemainingTime > 0f) == true;
         }
 
         internal static bool UseItem(uint id, bool hq = false)

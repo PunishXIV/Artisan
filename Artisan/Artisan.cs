@@ -18,7 +18,7 @@ namespace Artisan
         public string Name => "Artisan";
         private const string commandName = "/artisan";
         private PluginUI PluginUi { get; init; }
-        private bool currentCraftFinished = false;
+        public static bool currentCraftFinished = false;
         internal BlockingTask BotTask = new();
 
         public Artisan(
@@ -60,7 +60,7 @@ namespace Artisan
             CurrentRecommendation = 0;
         }
 
-        private bool CheckIfCraftFinished()
+        public static bool CheckIfCraftFinished()
         {
             if (MaxProgress == 0) return false;
             if (CurrentProgress == MaxProgress) return true;
@@ -93,6 +93,12 @@ namespace Artisan
             if (CheckIfCraftFinished() && !currentCraftFinished)
             {
                 currentCraftFinished = true;
+
+                if (CraftingLists.CraftingListUI.Processing)
+                {
+                    //Dalamud.Logging.PluginLog.Debug("Advancing Crafting List");
+                    CraftingLists.CraftingListFunctions.CurrentIndex++;
+                }
 
                 if (Handler.Enable && Service.Configuration.CraftingX && Service.Configuration.CraftX > 0)
                 {

@@ -89,7 +89,7 @@ namespace Artisan.Autocraft
 
             if (ImGui.Button("Repair all"))
             {
-                RepairManager.Repair();
+                RepairManager.ProcessRepair();
             }
             ImGuiEx.Text($"Gear condition: {RepairManager.GetMinEquippedPercent()}");
             ImGuiEx.Text($"Selected recipe: {AgentRecipeNote.Instance()->SelectedRecipeIndex}");

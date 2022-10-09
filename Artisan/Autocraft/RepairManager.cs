@@ -1,4 +1,5 @@
-﻿using ClickLib.Clicks;
+﻿using Artisan.RawInformation;
+using ClickLib.Clicks;
 using Dalamud.Logging;
 using ECommons;
 using ECommons.DalamudServices;
@@ -25,7 +26,12 @@ namespace Artisan.Autocraft
 
         internal static void ConfirmYesNo()
         {
-            if(TryGetAddonByName<AddonRepair>("Repair", out var r) && r->AtkUnitBase.IsVisible && TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) && addon->AtkUnitBase.IsVisible && addon->YesButton->IsEnabled && addon->AtkUnitBase.UldManager.NodeList[15]->GetAsAtkTextNode()->NodeText.ToString().StartsWith("Repair as many of the displayed items as") && Throttler.Throttle(500))
+            if(TryGetAddonByName<AddonRepair>("Repair", out var r) && 
+                r->AtkUnitBase.IsVisible && TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) && 
+                addon->AtkUnitBase.IsVisible && 
+                addon->YesButton->IsEnabled && 
+                addon->AtkUnitBase.UldManager.NodeList[15]->IsVisible && 
+                Throttler.Throttle(500))
             {
                 new ClickSelectYesNo((IntPtr)addon).Yes();
             }
@@ -54,7 +60,7 @@ namespace Artisan.Autocraft
                     if (Throttler.Throttle(500))
                     {
                         //PluginLog.Verbose("Closing repair window");
-                        CommandProcessor.ExecuteThrottled("/generalaction repair");
+                        Hotbars.actionManager->UseAction(ActionType.General, 6);
                     }
                     return false;
                 }
@@ -79,7 +85,7 @@ namespace Artisan.Autocraft
                         if (Throttler.Throttle(500))
                         {
                             //PluginLog.Verbose($"Opening repair");
-                            CommandProcessor.ExecuteThrottled("/generalaction repair");
+                            Hotbars.actionManager->UseAction(ActionType.General, 6);
                         }
                     }
                 }

@@ -18,7 +18,7 @@ namespace Artisan.RawInformation
         private static unsafe AtkUnitBase* HotBarRef { get; set; } = null;
         private static unsafe AtkResNode* HotBarSlotRef { get; set; } = null;
 
-        private static unsafe ActionManager* actionManager = ActionManager.Instance();
+        public static unsafe ActionManager* actionManager = ActionManager.Instance();
 
         public void Dispose()
         {

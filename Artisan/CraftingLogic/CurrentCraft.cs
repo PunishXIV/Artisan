@@ -589,6 +589,7 @@ namespace Artisan.CraftingLogic
                     Dalamud.Logging.PluginLog.Debug("AddonRecipeNote: Enabling synth button");
                     synthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
                 }
+
                 if (Throttler.Throttle(500))
                 {
                     try

@@ -48,10 +48,7 @@ namespace Artisan.Autocraft
         {
             if (Enable)
             {
-                if (message.ToString().ContainsAny("Unable to craft.", "You do not have"))
-                {
-                    Enable = false;
-                }
+                Enable = false;
             }
         }
 
@@ -135,6 +132,11 @@ namespace Artisan.Autocraft
                             if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
                             {
                                 return;
+                            }
+                            if (HQManager.InsufficientMaterials)
+                            {
+                                HQManager.InsufficientMaterials = false;
+                                Enable = false;
                             }
                             ////PluginLog.Verbose("HQ data restored");
                             CurrentCraft.RepeatActualCraft();
@@ -239,7 +241,7 @@ namespace Artisan.Autocraft
             }
 
             bool repairs = Service.Configuration.Repair;
-            if(ImGui.Checkbox("Automatic Repairs", ref repairs))
+            if (ImGui.Checkbox("Automatic Repairs", ref repairs))
             {
                 Service.Configuration.Repair = repairs;
                 Service.Configuration.Save();
@@ -334,7 +336,7 @@ namespace Artisan.Autocraft
                         }
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Dalamud.Logging.PluginLog.Error(ex, "Setting Recipe ID");
                     RecipeID = 0;
