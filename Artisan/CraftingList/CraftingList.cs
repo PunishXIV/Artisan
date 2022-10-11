@@ -133,9 +133,10 @@ namespace Artisan.CraftingLists
                     CurrentIndex++;
                     return;
                 }
+
             }
 
-            if (Service.ClientState.LocalPlayer.Level < recipe.RecipeLevelTable.Value.ClassJobLevel && !isCrafting)
+            if (Service.ClientState.LocalPlayer.Level < recipe.RecipeLevelTable.Value.ClassJobLevel && Service.ClientState.LocalPlayer.ClassJob.Id == recipe.CraftType.Value.RowId + 8 && !isCrafting && !preparing)
             {
                 Service.ChatGui.PrintError("Insufficient level to craft this item. Moving on.");
                 CurrentIndex++;

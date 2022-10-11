@@ -20,6 +20,7 @@ namespace Artisan.CraftingLists
         internal unsafe static InventoryManager* invManager = InventoryManager.Instance();
         public static Dictionary<Recipe, bool> CraftableItems = new();
         internal static List<int> SelectedRecipeRawIngredients = new();
+        internal static List<int> SelectedListMaterials = new();
         internal static Dictionary<int, bool> SelectedRecipesCraftable = new();
         private static bool keyboardFocus = true;
         private static string newListName = String.Empty;
@@ -33,16 +34,24 @@ namespace Artisan.CraftingLists
         private static List<uint> jobs = new();
         private static List<int> rawIngredientsList = new();
         private static List<int> subtableList = new();
+        private static List<int> listMaterials = new();
         private static uint selectedListItem;
         public static bool Processing = false;
         public static uint CurrentProcessedItem;
 
         internal static void Draw()
         {
-            ImGui.TextWrapped($"You can use this tab to see what items you can craft with the items in your inventory. You can also use it to create a quick crafting list that Artisan will try and work through.");
-            ImGui.TextWrapped($"Please note that due to heavy computational requirements, filtering the recipe list to show only recipes you have ingredients for will not take into account raw ingredients for any crafted items. This may be addressed in the future. For now, it will only look at final ingredients *only* for a given recipe.");
-            ImGui.TextWrapped($"Crafting lists process from top to bottom, so ensure any pre-requsite crafts come first.");
-            ImGui.TextWrapped("Please ensure that you have gearsets saved for each job you have items to craft. Also if you require the usage of food and/or potions, please do so before starting the crafting list as this will not be automated.");
+            string hoverText = "!! HOVER FOR INFORMATION !!";
+            var hoverLength = ImGui.CalcTextSize(hoverText);
+            ImGui.SetCursorPosX((ImGui.GetContentRegionAvail().X / 2) - (hoverLength.Length() / 2));
+            ImGui.TextColored(ImGuiColors.DalamudYellow, hoverText);
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.TextWrapped($"You can use this tab to see what items you can craft with the items in your inventory. You can also use it to create a quick crafting list that Artisan will try and work through.");
+                ImGui.TextWrapped($"Please note that due to heavy computational requirements, filtering the recipe list to show only recipes you have ingredients for will not take into account raw ingredients for any crafted items. This may be addressed in the future. For now, it will only look at final ingredients *only* for a given recipe.");
+                ImGui.TextWrapped($"Crafting lists process from top to bottom, so ensure any pre-requsite crafts come first.");
+                ImGui.TextWrapped("Please ensure that you have gearsets saved for each job you have items to craft. Also if you require the usage of food and/or potions, please do so before starting the crafting list as this will not be automated.");
+            }
             ImGui.Separator();
 
             DrawListOptions();
@@ -86,6 +95,8 @@ namespace Artisan.CraftingLists
                         if (selected)
                         {
                             selectedList = l;
+                            SelectedListMaterials.Clear();
+                            listMaterials.Clear();
                         }
                     }
                     ImGui.EndChild();
@@ -104,6 +115,9 @@ namespace Artisan.CraftingLists
 
                             Service.Configuration.Save();
                             selectedList = new();
+
+                            SelectedListMaterials.Clear();
+                            listMaterials.Clear();
                         }
 
                         if (selectedList.Items.Count > 0)
@@ -133,16 +147,27 @@ namespace Artisan.CraftingLists
                                     selectedList.Items.RemoveAll(x => x == selectedListItem);
                                     selectedListItem = 0;
                                     Service.Configuration.Save();
+
+                                    SelectedListMaterials.Clear();
+                                    listMaterials.Clear();
                                 }
                                 ImGui.SameLine();
                                 if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.PlusCircle))
                                 {
                                     selectedList.Items.Insert(selectedList.Items.IndexOf(selectedListItem), selectedListItem);
+                                    Service.Configuration.Save();
+
+                                    SelectedListMaterials.Clear();
+                                    listMaterials.Clear();
                                 }
                                 ImGui.SameLine();
                                 if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.MinusCircle))
                                 {
                                     selectedList.Items.Remove(selectedListItem);
+                                    Service.Configuration.Save();
+
+                                    SelectedListMaterials.Clear();
+                                    listMaterials.Clear();
                                 }
                                 if (selectedList.Items.Distinct().Count() > 1)
                                 {
@@ -196,6 +221,10 @@ namespace Artisan.CraftingLists
                             }
 
                             ImGui.Columns(1, null, false);
+                            if (ImGui.CollapsingHeader("Total Ingredients"))
+                            {
+                                DrawTotalIngredientsTable();
+                            }
                             if (ImGui.Button("Start Crafting List", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
                             {
                                 CraftingListFunctions.CurrentIndex = 0;
@@ -204,12 +233,70 @@ namespace Artisan.CraftingLists
                         }
                         ImGui.Spacing();
                         ImGui.Separator();
+
                         DrawRecipeData();
 
                         ImGui.EndChild();
                     }
                 }
 
+            }
+        }
+
+        private static void DrawTotalIngredientsTable()
+        {
+            if (ImGui.BeginTable("###ListMaterialTable", 3, ImGuiTableFlags.Borders))
+            {
+                ImGui.TableSetupColumn("Ingredient", ImGuiTableColumnFlags.WidthFixed);
+                ImGui.TableSetupColumn("Required", ImGuiTableColumnFlags.WidthFixed);
+                ImGui.TableSetupColumn("Inventory", ImGuiTableColumnFlags.WidthFixed);
+                ImGui.TableHeadersRow();
+
+                if (SelectedListMaterials.Count == 0)
+                {
+                    foreach (var item in selectedList.Items)
+                    {
+                        Recipe r = FilteredList[item];
+                        AddRecipeIngredientsToList(r, ref SelectedListMaterials, false);
+                    }
+                }
+
+                if (listMaterials.Count == 0)
+                    listMaterials = SelectedListMaterials.OrderByDescending(x => x).Distinct().ToList();
+
+                try
+                {
+                    foreach (var item in CollectionsMarshal.AsSpan(listMaterials))
+                    {
+                        if (LuminaSheets.ItemSheet.TryGetValue((uint)item, out var sheetItem))
+                        {
+                            if (SelectedRecipesCraftable[item]) continue;
+                            ImGui.PushID(item);
+                            var name = sheetItem.Name.RawString;
+                            var count = SelectedListMaterials.Count(x => x == item);
+                            ImGui.TableNextRow();
+                            ImGui.TableNextColumn();
+                            ImGui.Text($"{name}");
+                            ImGui.TableNextColumn();
+                            ImGui.Text($"{count}");
+                            ImGui.TableNextColumn();
+                            if (NumberOfIngredient((uint)item) >= count)
+                            {
+                                var color = ImGuiColors.HealerGreen;
+                                color.W -= 0.3f;
+                                ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                            }
+                            ImGui.Text($"{NumberOfIngredient((uint)item)}");
+                            ImGui.PopID();
+                        }
+                    }
+                }
+                catch
+                {
+
+                }
+
+                ImGui.EndTable();
             }
         }
 
@@ -259,17 +346,24 @@ namespace Artisan.CraftingLists
 
             if (SelectedRecipe != null)
             {
-                DrawRecipeOptions();
-
+                if (ImGui.CollapsingHeader("Recipe Information"))
+                {
+                    DrawRecipeOptions();
+                }
                 if (SelectedRecipeRawIngredients.Count == 0)
                     AddRecipeIngredientsToList(SelectedRecipe, ref SelectedRecipeRawIngredients);
 
-                ImGui.Text($"Raw Ingredients Required");
-                DrawRecipeSubTable();
-
-                ImGui.PushItemWidth(-1f);
-                if (ImGui.Button("Add to List", new Vector2(ImGui.GetContentRegionAvail().X/2, 30)))
+                if (ImGui.CollapsingHeader("Raw Ingredients"))
                 {
+                    ImGui.Text($"Raw Ingredients Required");
+                    DrawRecipeSubTable();
+                }
+                ImGui.PushItemWidth(-1f);
+                if (ImGui.Button("Add to List", new Vector2(ImGui.GetContentRegionAvail().X / 2, 30)))
+                {
+                    SelectedListMaterials.Clear();
+                    listMaterials.Clear();
+
                     if (selectedList.Items.IndexOf(SelectedRecipe.RowId) == -1)
                     {
                         selectedList.Items.Add(SelectedRecipe.RowId);
@@ -284,6 +378,9 @@ namespace Artisan.CraftingLists
                 ImGui.SameLine();
                 if (ImGui.Button("Add to List (with all subcrafts)", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
                 {
+                    SelectedListMaterials.Clear();
+                    listMaterials.Clear();
+
                     foreach (var subItem in SelectedRecipe.UnkData5)
                     {
                         var subRecipe = GetIngredientRecipe(subItem.ItemIngredient);
@@ -294,7 +391,7 @@ namespace Artisan.CraftingLists
                                 var subsubRecipe = GetIngredientRecipe(subsubItem.ItemIngredient);
                                 if (subsubRecipe.RowId != 0)
                                 {
-                                    for (int i = 1; i<= subsubItem.AmountIngredient; i++)
+                                    for (int i = 1; i <= subsubItem.AmountIngredient; i++)
                                     {
                                         if (selectedList.Items.IndexOf(subsubRecipe.RowId) == -1)
                                         {
@@ -305,10 +402,12 @@ namespace Artisan.CraftingLists
                                             var indexOfLast = selectedList.Items.IndexOf(subsubRecipe.RowId);
                                             selectedList.Items.Insert(indexOfLast, subsubRecipe.RowId);
                                         }
+
+                                        if (subsubItem.AmountIngredient < subsubRecipe.AmountResult) break;
                                     }
                                 }
                             }
-                            for (int i = 1; i<= subItem.AmountIngredient; i++)
+                            for (int i = 1; i <= subItem.AmountIngredient; i++)
                             {
                                 if (selectedList.Items.IndexOf(subRecipe.RowId) == -1)
                                 {
@@ -319,6 +418,8 @@ namespace Artisan.CraftingLists
                                     var indexOfLast = selectedList.Items.IndexOf(subRecipe.RowId);
                                     selectedList.Items.Insert(indexOfLast, subRecipe.RowId);
                                 }
+
+                                if (subItem.AmountIngredient < subRecipe.AmountResult) break;
                             }
                         }
                     }
@@ -386,7 +487,7 @@ namespace Artisan.CraftingLists
             }
         }
 
-        private static void AddRecipeIngredientsToList(Recipe? recipe, ref List<int> ingredientList)
+        private static void AddRecipeIngredientsToList(Recipe? recipe, ref List<int> ingredientList, bool addSubList = true)
         {
             try
             {
@@ -400,7 +501,7 @@ namespace Artisan.CraftingLists
                     for (int i = 1; i <= ing.AmountIngredient; i++)
                     {
                         ingredientList.Add(ing.ItemIngredient);
-                        if (GetIngredientRecipe(ing.ItemIngredient).RowId != 0)
+                        if (GetIngredientRecipe(ing.ItemIngredient).RowId != 0 && addSubList)
                         {
                             AddRecipeIngredientsToList(GetIngredientRecipe(ing.ItemIngredient), ref ingredientList);
                         }
@@ -470,7 +571,7 @@ namespace Artisan.CraftingLists
         public unsafe static bool CheckForIngredients(Recipe recipe, bool fetchFromCache = true)
         {
             if (fetchFromCache)
-            if (CraftableItems.TryGetValue(recipe, out bool canCraft)) return canCraft;
+                if (CraftableItems.TryGetValue(recipe, out bool canCraft)) return canCraft;
 
             foreach (var value in recipe.UnkData5.Where(x => x.ItemIngredient != 0 && x.AmountIngredient > 0))
             {
@@ -651,7 +752,7 @@ namespace Artisan.CraftingLists
                         Processing = false;
                     }
 
-                   
+
                 }
             }
         }

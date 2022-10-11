@@ -26,7 +26,9 @@ namespace Artisan.Autocraft
         internal static bool Enable = false;
         internal static List<int>? HQData = null;
         internal static int RecipeID = 0;
-        internal static string RecipeName = "";
+        private static string recipeName = "";
+
+        internal static string RecipeName { get => recipeName; set { if (value != recipeName) Dalamud.Logging.PluginLog.Debug($"{value}"); recipeName = value; } }
 
         internal static void Init()
         {
@@ -295,6 +297,7 @@ namespace Artisan.Autocraft
                     {
                         var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
                         var str = RawInformation.MemoryHelper.ReadSeString(&text);
+                        var rName = "";
                         foreach (var payload in str.Payloads)
                         {
                             if (payload is TextPayload tp)
@@ -323,15 +326,20 @@ namespace Artisan.Autocraft
 
                                 if (tp.Text[^1] == '')
                                 {
-                                    tp.Text = tp.Text.Remove(tp.Text.Length - 1, 1).Trim();
+                                    rName += tp.Text.Remove(tp.Text.Length - 1, 1).Trim();
                                 }
-
-                                if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == tp.Text && x.CraftType.Value.RowId + 8 == Svc.ClientState.LocalPlayer?.ClassJob.Id, out var id))
+                                else
                                 {
-                                    RecipeID = id.Unknown0;
-                                    RecipeName = id.ItemResult.Value.Name;
-                                    break;
+                                    rName += tp.Text.Trim();
                                 }
+                            }
+
+                            //Dalamud.Logging.PluginLog.Debug($"{rName}");
+                            if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == rName && x.CraftType.Value.RowId + 8 == Svc.ClientState.LocalPlayer?.ClassJob.Id, out var id))
+                            {
+                                RecipeID = id.Unknown0;
+                                RecipeName = id.ItemResult.Value.Name;
+                                break;
                             }
                         }
                     }
