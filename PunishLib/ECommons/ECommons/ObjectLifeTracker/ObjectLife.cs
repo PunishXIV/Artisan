@@ -1,6 +1,6 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Hooking;
-using Dalamud.Logging;
+using ECommons.Logging;
 using ECommons.DalamudServices;
 using System;
 using System.Collections.Generic;

@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
 using ECommons.MathHelpers;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Vfx;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +11,12 @@ namespace ECommons.GameFunctions
 {
     public static unsafe class CharacterFunctions
     {
+        public static ushort GetVFXId(void* VfxData)
+        {
+            if (VfxData == null) return 0;
+            return *(ushort*)((IntPtr)(VfxData) + 8);
+        }
+
         public static FFXIVClientStructs.FFXIV.Client.Game.Character.Character* Struct(this Character o)
         {
             return (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)o.Address;
@@ -27,11 +34,6 @@ namespace ECommons.GameFunctions
             return Bitmask.IsBitSet(*(byte*)(v + 136), 0);
         }
 
-        public static int GetModelId(this Character a)
-        {
-            return *(int*)(a.Address + 0x01B4);
-        }
-
         public static CombatRole GetRole(this Character c)
         {
             if (c.ClassJob.GameData.Role == 1) return CombatRole.Tank;
@@ -41,22 +43,19 @@ namespace ECommons.GameFunctions
             return CombatRole.NonCombat;
         }
 
-        public static bool IsCasting(this Character c, uint spellId = 0)
+        public static bool IsCasting(this BattleChara c, uint spellId = 0)
         {
-            var castInfo = ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)c.Address)->GetCastInfo();
-            return castInfo->IsCasting != 0 && (spellId == 0 || castInfo->ActionID == spellId);
+            return c.IsCasting && (spellId == 0 || c.CastActionId.EqualsAny(spellId));
         }
 
-        public static bool IsCasting(this Character c, params uint[] spellId)
+        public static bool IsCasting(this BattleChara c, params uint[] spellId)
         {
-            var castInfo = ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)c.Address)->GetCastInfo();
-            return castInfo->IsCasting != 0 && castInfo->ActionID.EqualsAny(spellId);
+            return c.IsCasting && c.CastActionId.EqualsAny(spellId);
         }
 
-        public static bool IsCasting(this Character c, IEnumerable<uint> spellId)
+        public static bool IsCasting(this BattleChara c, IEnumerable<uint> spellId)
         {
-            var castInfo = ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)c.Address)->GetCastInfo();
-            return castInfo->IsCasting != 0 && castInfo->ActionID.EqualsAny(spellId);
+            return c.IsCasting && c.CastActionId.EqualsAny(spellId);
         }
     }
 }

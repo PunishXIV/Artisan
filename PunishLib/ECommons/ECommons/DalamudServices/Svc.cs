@@ -16,6 +16,8 @@ using Dalamud.Game.Gui.Toast;
 using Dalamud.Game.Libc;
 using Dalamud.Game.Network;
 using Dalamud.Plugin;
+using ECommons.Logging;
+using System;
 
 namespace ECommons.DalamudServices
 {
@@ -46,73 +48,86 @@ namespace ECommons.DalamudServices
         public static TargetManager Targets { get; private set; }
         public static ToastGui Toasts { get; private set; }
 
-        internal static void Init(DalamudPluginInterface pi)
+        internal static bool IsInitialized = false;
+        public static void Init(DalamudPluginInterface pi)
         {
-            pi.Create<SDalamudPluginInterface>();
-            PluginInterface = SDalamudPluginInterface.PluginInterface;
-            
-            pi.Create<SBuddyList>();
-            Buddies = SBuddyList.Buddies;
-            
-            pi.Create<SChatGui>();
-            Chat = SChatGui.Chat;
-            
-            pi.Create<SChatHandlers>();
-            ChatHandlers = SChatHandlers.ChatHandlers;
-            
-            pi.Create<SClientState>();
-            ClientState = SClientState.ClientState;
-            
-            pi.Create<SCommandManager>();
-            Commands = SCommandManager.Commands;
-            
-            pi.Create<SCondition>();
-            Condition = SCondition.Condition;
-            
-            pi.Create<SDataManager>();
-            Data = SDataManager.Data;
-            
-            pi.Create<SFateTable>();
-            Fates = SFateTable.Fates;
-            
-            pi.Create<SFlyTextGui>();
-            FlyText = SFlyTextGui.FlyText;
-            
-            pi.Create<SFramework>();
-            Framework = SFramework.Framework;
-            
-            pi.Create<SGameGui>();
-            GameGui = SGameGui.GameGui;
-            
-            pi.Create<SGameNetwork>();
-            GameNetwork = SGameNetwork.GameNetwork;
-            
-            pi.Create<SJobGauges>();
-            Gauges = SJobGauges.Gauges;
-            
-            pi.Create<SKeyState>();
-            KeyState = SKeyState.KeyState;
-            
-            pi.Create<SLibcFunction>();
-            LibcFunction = SLibcFunction.LibcFunction;
-            
-            pi.Create<SObjectTable>();
-            Objects = SObjectTable.Objects;
-            
-            pi.Create<SPartyFinderGui>();
-            PfGui = SPartyFinderGui.PfGui;
-            
-            pi.Create<SPartyList>();
-            Party = SPartyList.Party;
-            
-            pi.Create<SSigScanner>();
-            SigScanner = SSigScanner.SigScanner;
-            
-            pi.Create<STargetManager>();
-            Targets = STargetManager.Targets;
-            
-            pi.Create<SToastGui>();
-            Toasts = SToastGui.Toasts;
+            if (IsInitialized)
+            {
+                PluginLog.Debug("Services already initialized, skipping");
+            }
+            IsInitialized = true;
+            try
+            {
+                pi.Create<SDalamudPluginInterface>();
+                PluginInterface = SDalamudPluginInterface.PluginInterface;
+
+                pi.Create<SBuddyList>();
+                Buddies = SBuddyList.Buddies;
+
+                pi.Create<SChatGui>();
+                Chat = SChatGui.Chat;
+
+                pi.Create<SChatHandlers>();
+                ChatHandlers = SChatHandlers.ChatHandlers;
+
+                pi.Create<SClientState>();
+                ClientState = SClientState.ClientState;
+
+                pi.Create<SCommandManager>();
+                Commands = SCommandManager.Commands;
+
+                pi.Create<SCondition>();
+                Condition = SCondition.Condition;
+
+                pi.Create<SDataManager>();
+                Data = SDataManager.Data;
+
+                pi.Create<SFateTable>();
+                Fates = SFateTable.Fates;
+
+                pi.Create<SFlyTextGui>();
+                FlyText = SFlyTextGui.FlyText;
+
+                pi.Create<SFramework>();
+                Framework = SFramework.Framework;
+
+                pi.Create<SGameGui>();
+                GameGui = SGameGui.GameGui;
+
+                pi.Create<SGameNetwork>();
+                GameNetwork = SGameNetwork.GameNetwork;
+
+                pi.Create<SJobGauges>();
+                Gauges = SJobGauges.Gauges;
+
+                pi.Create<SKeyState>();
+                KeyState = SKeyState.KeyState;
+
+                pi.Create<SLibcFunction>();
+                LibcFunction = SLibcFunction.LibcFunction;
+
+                pi.Create<SObjectTable>();
+                Objects = SObjectTable.Objects;
+
+                pi.Create<SPartyFinderGui>();
+                PfGui = SPartyFinderGui.PfGui;
+
+                pi.Create<SPartyList>();
+                Party = SPartyList.Party;
+
+                pi.Create<SSigScanner>();
+                SigScanner = SSigScanner.SigScanner;
+
+                pi.Create<STargetManager>();
+                Targets = STargetManager.Targets;
+
+                pi.Create<SToastGui>();
+                Toasts = SToastGui.Toasts;
+            }
+            catch(Exception ex)
+            {
+                ex.Log();
+            }
         }
     }
 }

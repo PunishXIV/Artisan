@@ -1,5 +1,9 @@
 ﻿using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Logging;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using ECommons.Logging;
+using Dalamud.Utility;
+using ECommons.ChatMethods;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -18,6 +22,82 @@ namespace ECommons
 {
     public static unsafe class GenericHelpers
     {
+        public static string ReplaceFirst(this string text, string search, string replace)
+        {
+            int pos = text.IndexOf(search);
+            if (pos < 0)
+            {
+                return text;
+            }
+            return text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
+        }
+
+        public static bool TryDecodeSender(SeString sender, out Sender senderStruct)
+        {
+            if (sender == null)
+            {
+                senderStruct = default;
+                return false;
+            }
+            foreach (var x in sender.Payloads)
+            {
+                if (x is PlayerPayload p)
+                {
+                    senderStruct = new(p.PlayerName, p.World.RowId);
+                    return true;
+                }
+            }
+            senderStruct = default;
+            return false;
+        }
+
+        public static bool IsAddonReady(AtkUnitBase* addon)
+        {
+            return addon->IsVisible && addon->UldManager.LoadedState == AtkLoadState.Loaded;
+        }
+
+        public static bool IsAddonReady(AtkComponentNode* addon)
+        {
+            return addon->AtkResNode.IsVisible && addon->Component->UldManager.LoadedState == AtkLoadState.Loaded;
+        }
+
+        public static string ExtractText(this Lumina.Text.SeString s, bool onlyFirst = false)
+        {
+            return s.ToDalamudString().ExtractText(onlyFirst);
+        }
+
+        public static string ExtractText(this SeString seStr, bool onlyFirst = false)
+        {
+            StringBuilder sb = new();
+            foreach(var x in seStr.Payloads)
+            {
+                if(x is TextPayload tp)
+                {
+                    sb.Append(tp.Text);
+                    if (onlyFirst) break;
+                }
+            }
+            return sb.ToString();
+        }
+
+        public static bool StartsWithAny(this string source, IEnumerable<string> compareTo, StringComparison stringComparison = StringComparison.Ordinal)
+        {
+            foreach(var x in compareTo)
+            {
+                if (source.StartsWith(x, stringComparison)) return true;
+            }
+            return false;
+        }
+
+        public static SeStringBuilder Add(this SeStringBuilder b, IEnumerable<Payload> payloads)
+        {
+            foreach(var x in payloads)
+            {
+                b = b.Add(x);
+            }
+            return b;
+        }
+
         public static bool Toggle<T>(this HashSet<T> hashSet, T value)
         {
             if (hashSet.Contains(value))
@@ -41,7 +121,7 @@ namespace ECommons
         public static string GetTerritoryName(this uint terr)
         {
             var t = Svc.Data.GetExcelSheet<TerritoryType>().GetRow(terr);
-            return $"{terr} | {t.ContentFinderCondition.Value.Name.ToString().Default(t.PlaceName.Value.Name.ToString())}";
+            return $"{terr} | {t?.ContentFinderCondition.Value?.Name.ToString().Default(t?.PlaceName.Value?.Name.ToString())}";
         }
 
         public static T FirstOr0<T>(this IEnumerable<T> collection, Func<T, bool> predicate)
@@ -318,6 +398,18 @@ namespace ECommons
             return false;
         }
 
+        public static bool ContainsAny<T>(this IEnumerable<T> obj, IEnumerable<T> values)
+        {
+            foreach (var x in values)
+            {
+                if (obj.Contains(x))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public static bool ContainsAny(this string obj, params string[] values)
         {
             foreach (var x in values)
@@ -342,22 +434,12 @@ namespace ECommons
             return false;
         }
 
-        public static bool ContainsAny<T>(this IEnumerable<T> obj, IEnumerable<T> values)
-        {
-            foreach (var x in values)
-            {
-                if (obj.Contains(x))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
 
         public static bool EqualsAny<T>(this T obj, params T[] values)
         {
             return values.Any(x => x.Equals(obj));
-}
+        }
+
 
         public static bool EqualsIgnoreCaseAny(this string obj, params string[] values)
         {
@@ -441,7 +523,10 @@ namespace ECommons
         {
             var col = textNodePtr->TextColor;
             //EEE1C5FF
-            return (col.A == 0xFF && col.R == 0xEE && col.G == 0xE1 && col.B == 0xC5);
+            return (col.A == 0xFF && col.R == 0xEE && col.G == 0xE1 && col.B == 0xC5)
+                //7D523BFF
+                || (col.A == 0xFF && col.R == 0x7D && col.G == 0x52 && col.B == 0x3B)
+                || (col.A == 0xFF && col.R == 0xFF && col.G == 0xFF && col.B == 0xFF);
         }
     }
 }

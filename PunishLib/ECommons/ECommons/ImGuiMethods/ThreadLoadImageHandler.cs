@@ -1,9 +1,10 @@
-﻿using Dalamud.Logging;
+﻿using ECommons.Logging;
 using ECommons.DalamudServices;
 using ImGuiScene;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -54,10 +55,17 @@ namespace ECommons.ImGuiMethods
                                 idleTicks = 0;
                                 keyValuePair.Value.isCompleted = true;
                                 PluginLog.Information("Loading image " + keyValuePair.Key);
-                                var result = httpClient.GetAsync(keyValuePair.Key).Result;
-                                result.EnsureSuccessStatusCode();
-                                var content = result.Content.ReadAsByteArrayAsync().Result;
-                                keyValuePair.Value.texture = Svc.PluginInterface.UiBuilder.LoadImage(content);
+                                if (keyValuePair.Key.StartsWith("http:", StringComparison.OrdinalIgnoreCase) || keyValuePair.Key.StartsWith("https:", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var result = httpClient.GetAsync(keyValuePair.Key).Result;
+                                    result.EnsureSuccessStatusCode();
+                                    var content = result.Content.ReadAsByteArrayAsync().Result;
+                                    keyValuePair.Value.texture = Svc.PluginInterface.UiBuilder.LoadImage(content);
+                                }
+                                else
+                                {
+                                    keyValuePair.Value.texture = Svc.PluginInterface.UiBuilder.LoadImage(keyValuePair.Key);
+                                }
                             }
                         });
                         idleTicks++;

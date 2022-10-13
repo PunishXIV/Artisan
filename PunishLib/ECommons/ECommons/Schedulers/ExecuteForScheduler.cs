@@ -1,5 +1,5 @@
 ﻿using Dalamud.Game;
-using Dalamud.Logging;
+using ECommons.Logging;
 using ECommons.DalamudServices;
 using System;
 using System.Collections.Generic;

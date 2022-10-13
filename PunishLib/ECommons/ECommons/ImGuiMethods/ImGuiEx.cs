@@ -9,12 +9,19 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Internal.Notifications;
 using ECommons.DalamudServices;
+using ECommons.Reflection;
 using ImGuiNET;
 
 namespace ECommons.ImGuiMethods
 {
     public static class ImGuiEx
     {
+        public static bool IsKeyPressed(int key, bool repeat)
+        {
+            byte repeat2 = (byte)(repeat ? 1 : 0);
+            return ImGuiNative.igIsKeyPressed((ImGuiKey)key, repeat2) != 0;
+        }
+
         public static void TextUnderlined(uint color, string text)
         {
             ImGui.PushStyleColor(ImGuiCol.Text, color);
@@ -462,6 +469,34 @@ namespace ECommons.ImGuiMethods
             {
                 ImGui.SetClipboardText(text);
                 Svc.PluginInterface.UiBuilder.AddNotification("Text copied to clipboard", null, NotificationType.Success);
+            }
+        }
+
+        public static void TextWrappedCopy(string text)
+        {
+            ImGuiEx.TextWrapped(text);
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            }
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
+            {
+                ImGui.SetClipboardText(text);
+                Svc.PluginInterface.UiBuilder.AddNotification("Text copied to clipboard", DalamudReflector.GetPluginName(), NotificationType.Success);
+            }
+        }
+
+        public static void TextWrappedCopy(Vector4 col, string text)
+        {
+            ImGuiEx.TextWrapped(col, text);
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            }
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
+            {
+                ImGui.SetClipboardText(text);
+                Svc.PluginInterface.UiBuilder.AddNotification("Text copied to clipboard", DalamudReflector.GetPluginName(), NotificationType.Success);
             }
         }
 
