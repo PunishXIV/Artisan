@@ -33,7 +33,7 @@ namespace Artisan
             Service.Configuration.Initialize(Service.Interface);
 
 
-            ECommons.ECommons.Init(pluginInterface);
+            ECommons.ECommons.Init(pluginInterface, this);
             this.PluginUi = new PluginUI(this);
 
             Service.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
