@@ -1,6 +1,5 @@
 ﻿using Artisan.CraftingLogic;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Components;
 using Dalamud.Logging;
 using Dalamud.Utility.Signatures;
@@ -28,11 +27,11 @@ namespace Artisan.Autocraft
         internal static bool Enable = false;
         internal static List<int>? HQData = null;
         internal static int RecipeID = 0;
-        internal static string RecipeName = "";
+        internal static string RecipeName { get => recipeName; set { if (value != recipeName) Dalamud.Logging.PluginLog.Debug($"{value}"); recipeName = value; } }
         internal static CircularBuffer<long> Errors = new(5);
         private static string recipeName = "";
 
-        internal static string RecipeName { get => recipeName; set { if (value != recipeName) Dalamud.Logging.PluginLog.Debug($"{value}"); recipeName = value; } }
+
 
         internal static void Init()
         {
@@ -142,12 +141,9 @@ namespace Artisan.Autocraft
                             if (AutocraftDebugTab.Debug) PluginLog.Verbose("Error text not visible");
                             if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
                             {
-                                return;
-                            }
-                            if (HQManager.InsufficientMaterials)
-                            {
-                                HQManager.InsufficientMaterials = false;
+                                if (AutocraftDebugTab.Debug) PluginLog.Verbose("HQ data finalised");
                                 Enable = false;
+                                return;
                             }
                             if (AutocraftDebugTab.Debug) PluginLog.Verbose("HQ data restored");
                             CurrentCraft.RepeatActualCraft();
@@ -307,51 +303,47 @@ namespace Artisan.Autocraft
                         var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
                         var str = RawInformation.MemoryHelper.ReadSeString(&text);
                         var rName = "";
-                        foreach (var payload in str.Payloads)
+
+                        /*
+                         *  0	3	2	Woodworking
+                            1	1	5	Smithing
+                            2	3	1	Armorcraft
+                            3	2	4	Goldsmithing
+                            4	3	4	Leatherworking
+                            5	2	5	Clothcraft
+                            6	4	6	Alchemy
+                            7	5	6	Cooking
+
+                            8	carpenter
+                            9	blacksmith
+                            10	armorer
+                            11	goldsmith
+                            12	leatherworker
+                            13	weaver
+                            14	alchemist
+                            15	culinarian
+                            (ClassJob - 8)
+                         * 
+                         * */
+
+                        if (str.TextValue.Length == 0) return;
+
+                        if (str.TextValue[^1] == '')
                         {
-                            if (payload is TextPayload tp)
-                            {
-                                /*
-                                 *  0	3	2	Woodworking
-                                    1	1	5	Smithing
-                                    2	3	1	Armorcraft
-                                    3	2	4	Goldsmithing
-                                    4	3	4	Leatherworking
-                                    5	2	5	Clothcraft
-                                    6	4	6	Alchemy
-                                    7	5	6	Cooking
+                            rName += str.TextValue.Remove(str.TextValue.Length - 1, 1).Trim();
+                        }
+                        else
+                        {
+                            rName += str.TextValue.Trim();
+                        }
 
-                                    8	carpenter
-                                    9	blacksmith
-                                    10	armorer
-                                    11	goldsmith
-                                    12	leatherworker
-                                    13	weaver
-                                    14	alchemist
-                                    15	culinarian
-                                    (ClassJob - 8)
-                                 * 
-                                 * */
-
-                                if (tp.Text[^1] == '')
-                                {
-                                    rName += tp.Text.Remove(tp.Text.Length - 1, 1).Trim();
-                                }
-                                else
-                                {
-                                    rName += tp.Text.Trim();
-                                }
-                            }
-
-                            //Dalamud.Logging.PluginLog.Debug($"{rName}");
-                            if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == rName && x.CraftType.Value.RowId + 8 == Svc.ClientState.LocalPlayer?.ClassJob.Id, out var id))
-                            {
-                                RecipeID = id.Unknown0;
-                                RecipeName = id.ItemResult.Value.Name;
-                                break;
-                            }
+                        if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == rName, out var id))
+                        {
+                            RecipeID = id.Unknown0;
+                            RecipeName = id.ItemResult.Value.Name;
                         }
                     }
+
                 }
                 catch (Exception ex)
                 {

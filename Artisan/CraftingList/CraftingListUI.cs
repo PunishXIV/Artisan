@@ -5,11 +5,13 @@ using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using PunishLib.ImGuiMethods;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Artisan.CraftingLists
 {
@@ -38,6 +40,11 @@ namespace Artisan.CraftingLists
         private static uint selectedListItem;
         public static bool Processing = false;
         public static uint CurrentProcessedItem;
+        private static string importListName = "";
+        private static string importListPreCraft = "";
+        private static string importListItems = "";
+        private static bool openImportWindow = false;
+
 
         internal static void Draw()
         {
@@ -99,6 +106,9 @@ namespace Artisan.CraftingLists
                             listMaterials.Clear();
                         }
                     }
+
+                    DrawTeamCraftListButtons();
+
                     ImGui.EndChild();
 
                 }
@@ -122,104 +132,107 @@ namespace Artisan.CraftingLists
 
                         if (selectedList.Items.Count > 0)
                         {
-                            ImGui.Columns(2, null, false);
-                            ImGui.Text("Current Items");
-                            ImGui.Indent();
-                            var loop = 1;
-                            foreach (var item in CollectionsMarshal.AsSpan(selectedList.Items.Distinct().ToList()))
+                            if (ImGui.CollapsingHeader("List Items"))
                             {
-                                var selected = ImGui.Selectable($"{loop}. {FilteredList[item].ItemResult.Value.Name.RawString} x{selectedList.Items.Count(x => x == item)}", selectedListItem == item);
 
-                                if (selected)
+                                ImGui.Columns(2, null, false);
+                                ImGui.Text("Current Items");
+                                ImGui.Indent();
+                                var loop = 1;
+                                foreach (var item in CollectionsMarshal.AsSpan(selectedList.Items.Distinct().ToList()))
                                 {
-                                    selectedListItem = item;
+                                    var selected = ImGui.Selectable($"{loop}. {FilteredList[item].ItemResult.Value.Name.RawString} x{selectedList.Items.Count(x => x == item)} {(FilteredList[item].AmountResult > 1 ? $"({FilteredList[item].AmountResult * selectedList.Items.Count(x => x == item)} total)" : $"")}", selectedListItem == item);
+
+                                    if (selected)
+                                    {
+                                        selectedListItem = item;
+                                    }
+
+                                    loop++;
                                 }
-
-                                loop++;
-                            }
-                            ImGui.Unindent();
-                            ImGui.NextColumn();
-                            if (selectedListItem != 0)
-                            {
-                                ImGui.Text("Options");
-                                if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.Trash))
+                                ImGui.Unindent();
+                                ImGui.NextColumn();
+                                if (selectedListItem != 0)
                                 {
-                                    selectedList.Items.RemoveAll(x => x == selectedListItem);
-                                    selectedListItem = 0;
-                                    Service.Configuration.Save();
+                                    ImGui.Text("Options");
+                                    if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.Trash))
+                                    {
+                                        selectedList.Items.RemoveAll(x => x == selectedListItem);
+                                        selectedListItem = 0;
+                                        Service.Configuration.Save();
 
-                                    SelectedListMaterials.Clear();
-                                    listMaterials.Clear();
-                                }
-                                ImGui.SameLine();
-                                if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.PlusCircle))
-                                {
-                                    selectedList.Items.Insert(selectedList.Items.IndexOf(selectedListItem), selectedListItem);
-                                    Service.Configuration.Save();
-
-                                    SelectedListMaterials.Clear();
-                                    listMaterials.Clear();
-                                }
-                                ImGui.SameLine();
-                                if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.MinusCircle))
-                                {
-                                    selectedList.Items.Remove(selectedListItem);
-                                    Service.Configuration.Save();
-
-                                    SelectedListMaterials.Clear();
-                                    listMaterials.Clear();
-                                }
-                                if (selectedList.Items.Distinct().Count() > 1)
-                                {
-                                    ImGui.Text("Re-order list");
+                                        SelectedListMaterials.Clear();
+                                        listMaterials.Clear();
+                                    }
                                     ImGui.SameLine();
-
-                                    bool isFirstItem = selectedList.Items.IndexOf(selectedListItem) == 0;
-                                    bool isLastItem = selectedList.Items.LastIndexOf(selectedListItem) == selectedList.Items.Count - 1;
-
-                                    if (!isFirstItem)
+                                    if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.PlusCircle))
                                     {
-                                        if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowUp))
-                                        {
-                                            var loops = selectedList.Items.Count(x => x == selectedListItem);
-                                            var previousNum = selectedList.Items[selectedList.Items.IndexOf(selectedListItem) - 1];
-                                            var insertionIndex = selectedList.Items.IndexOf(previousNum);
+                                        selectedList.Items.Insert(selectedList.Items.IndexOf(selectedListItem), selectedListItem);
+                                        Service.Configuration.Save();
 
-                                            selectedList.Items.RemoveAll(x => x == selectedListItem);
-                                            for (int i = 1; i <= loops; i++)
-                                            {
-                                                selectedList.Items.Insert(insertionIndex, selectedListItem);
-                                            }
-
-                                        }
-                                        if (!isLastItem) ImGui.SameLine();
+                                        SelectedListMaterials.Clear();
+                                        listMaterials.Clear();
                                     }
-
-                                    if (!isLastItem)
+                                    ImGui.SameLine();
+                                    if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.MinusCircle))
                                     {
-                                        if (isFirstItem)
+                                        selectedList.Items.Remove(selectedListItem);
+                                        Service.Configuration.Save();
+
+                                        SelectedListMaterials.Clear();
+                                        listMaterials.Clear();
+                                    }
+                                    if (selectedList.Items.Distinct().Count() > 1)
+                                    {
+                                        ImGui.Text("Re-order list");
+                                        ImGui.SameLine();
+
+                                        bool isFirstItem = selectedList.Items.IndexOf(selectedListItem) == 0;
+                                        bool isLastItem = selectedList.Items.LastIndexOf(selectedListItem) == selectedList.Items.Count - 1;
+
+                                        if (!isFirstItem)
                                         {
-                                            ImGui.Dummy(new Vector2(22));
-                                            ImGui.SameLine();
+                                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowUp))
+                                            {
+                                                var loops = selectedList.Items.Count(x => x == selectedListItem);
+                                                var previousNum = selectedList.Items[selectedList.Items.IndexOf(selectedListItem) - 1];
+                                                var insertionIndex = selectedList.Items.IndexOf(previousNum);
+
+                                                selectedList.Items.RemoveAll(x => x == selectedListItem);
+                                                for (int i = 1; i <= loops; i++)
+                                                {
+                                                    selectedList.Items.Insert(insertionIndex, selectedListItem);
+                                                }
+
+                                            }
+                                            if (!isLastItem) ImGui.SameLine();
                                         }
 
-                                        if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowDown))
+                                        if (!isLastItem)
                                         {
-                                            var nextNum = selectedList.Items[selectedList.Items.LastIndexOf(selectedListItem) + 1];
-                                            var loops = selectedList.Items.Count(x => x == nextNum);
-                                            var insertionIndex = selectedList.Items.IndexOf(selectedListItem);
-
-                                            selectedList.Items.RemoveAll(x => x == nextNum);
-                                            for (int i = 1; i <= loops; i++)
+                                            if (isFirstItem)
                                             {
-                                                selectedList.Items.Insert(insertionIndex, nextNum);
+                                                ImGui.Dummy(new Vector2(22));
+                                                ImGui.SameLine();
                                             }
 
+                                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowDown))
+                                            {
+                                                var nextNum = selectedList.Items[selectedList.Items.LastIndexOf(selectedListItem) + 1];
+                                                var loops = selectedList.Items.Count(x => x == nextNum);
+                                                var insertionIndex = selectedList.Items.IndexOf(selectedListItem);
+
+                                                selectedList.Items.RemoveAll(x => x == nextNum);
+                                                for (int i = 1; i <= loops; i++)
+                                                {
+                                                    selectedList.Items.Insert(insertionIndex, nextNum);
+                                                }
+
+                                            }
                                         }
                                     }
                                 }
                             }
-
                             ImGui.Columns(1, null, false);
                             if (ImGui.CollapsingHeader("Total Ingredients"))
                             {
@@ -241,6 +254,223 @@ namespace Artisan.CraftingLists
                 }
 
             }
+            else
+            {
+                DrawTeamCraftListButtons();
+            }
+        }
+
+        private static void DrawTeamCraftListButtons()
+        {
+            ImGui.SetCursorPosY(ImGui.GetContentRegionMax().Y - 90);
+            if (ImGui.BeginChild("###TeamCraftSection", new Vector2(0, 0), false))
+            {
+                string labelText = "Teamcraft Lists";
+                var labelLength = ImGui.CalcTextSize(labelText);
+                ImGui.SetCursorPosX((ImGui.GetContentRegionMax().X - labelLength.X) * 0.5f);
+                ImGui.TextColored(ImGuiColors.ParsedGreen, labelText);
+                if (IconButtons.IconTextButton(Dalamud.Interface.FontAwesomeIcon.Download, "Import", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
+                {
+                    openImportWindow = true;
+                }
+                OpenTeamcraftImportWindow();
+                if (selectedList.ID != 0)
+                {
+                    if (IconButtons.IconTextButton(Dalamud.Interface.FontAwesomeIcon.Upload, "Export", new Vector2(ImGui.GetContentRegionAvail().X, 30), true))
+                    {
+                        ExportSelectedListToTC();
+                    }
+                }
+                ImGui.EndChild();
+            }
+        }
+
+        private static void ExportSelectedListToTC()
+        {
+            string baseUrl = "https://ffxivteamcraft.com/import/";
+            string exportItems = "";
+
+            var sublist = selectedList.Items.Distinct().Reverse().ToList();
+            for (int i = 0; i < sublist.Count(); i++)
+            {
+                if (i >= sublist.Count()) break;
+
+                int number = selectedList.Items.Count(x => x == sublist[i]);
+                var recipe = FilteredList[sublist[i]];
+                var itemID = recipe.ItemResult.Value.RowId;
+
+                Dalamud.Logging.PluginLog.Debug($"{recipe.ItemResult.Value.Name.RawString} {sublist.Count()}");
+                foreach (var ing in recipe.UnkData5.Where(x => x.AmountIngredient > 0))
+                {
+                    var subRec = GetIngredientRecipe(ing.ItemIngredient);
+                    if (sublist.Contains(subRec.RowId))
+                    {
+                        foreach (var subIng in subRec.UnkData5.Where(x => x.AmountIngredient > 0))
+                        {
+                            var subSubRec = GetIngredientRecipe(subIng.ItemIngredient);
+                            if (sublist.Contains(subSubRec.RowId))
+                            {
+                                for (int y = 1; y <= subIng.AmountIngredient; y++)
+                                {
+                                    sublist.Remove(subSubRec.RowId);
+                                }
+                            }
+                        }
+
+                        for (int y = 1; y <= ing.AmountIngredient; y++)
+                        {
+                            sublist.Remove(subRec.RowId);
+                        }
+                    }
+                }
+            }
+
+            foreach (var item in sublist)
+            {
+                int number = selectedList.Items.Count(x => x == item);
+                var recipe = FilteredList[item];
+                var itemID = recipe.ItemResult.Value.RowId;
+
+                exportItems += $"{itemID},null,{number};";
+            }
+
+            exportItems = exportItems.TrimEnd(';');
+
+            var plainTextBytes = Encoding.UTF8.GetBytes(exportItems);
+            string base64 = Convert.ToBase64String(plainTextBytes);
+
+            ImGui.SetClipboardText($"{baseUrl}{base64}");
+            Notify.Success("Link copied to clipboard");
+        }
+
+        private static void OpenTeamcraftImportWindow()
+        {
+            if (!openImportWindow) return;
+
+
+            ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0.2f, 0.1f, 0.2f, 1f));
+            if (ImGui.Begin("Teamcraft Import", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysAutoResize))
+            {
+                ImGui.Text("List Name");
+                ImGui.SameLine();
+                ImGuiComponents.HelpMarker("Guide to importing lists.\r\n\r\n" +
+                    "Step 1. Open a list on Teamcraft with the items you wish to craft.\r\n\r\n" +
+                    "Step 2. Find the pre crafts section and click the \"Copy as Text\" button.\r\n\r\n" +
+                    "Step 3. Paste into the Pre-Craft Items box in this window.\r\n\r\n" +
+                    "Step 4. Repeat Step 2 & 3 but for the final items section.\r\n\r\n" +
+                    "Step 5. Give your list a name and click import.");
+                ImGui.InputText("###ImportListName", ref importListName, 50);
+                ImGui.Text("Pre-craft Items");
+                ImGui.InputTextMultiline("###PrecraftItems", ref importListPreCraft, 1000, new Vector2(ImGui.GetContentRegionAvail().X, 100));
+                ImGui.Text("Final Items");
+                ImGui.InputTextMultiline("###FinalItems", ref importListItems, 1000, new Vector2(ImGui.GetContentRegionAvail().X, 100));
+
+
+                if (ImGui.Button("Import"))
+                {
+                    CraftingList? importedList = ParseImport();
+                    if (importedList is not null)
+                    {
+                        importedList.SetID();
+                        importedList.Save();
+                        openImportWindow = false;
+                        importListName = "";
+                        importListPreCraft = "";
+                        importListItems = "";
+
+                    }
+                    else
+                    {
+                        Notify.Error("Something has gone wrong with importing. Please check you have filled everything out correctly.");
+                    }
+
+                }
+                ImGui.SameLine();
+                if (ImGui.Button("Cancel"))
+                {
+                    openImportWindow = false;
+                    importListName = "";
+                    importListPreCraft = "";
+                    importListItems = "";
+                }
+                ImGui.End();
+            }
+            ImGui.PopStyleColor();
+        }
+
+        private static CraftingList? ParseImport()
+        {
+            if (string.IsNullOrEmpty(importListName) || string.IsNullOrEmpty(importListItems) || string.IsNullOrEmpty(importListPreCraft)) return null;
+            CraftingList output = new CraftingList();
+            output.Name = importListName;
+            using (System.IO.StringReader reader = new System.IO.StringReader(importListPreCraft))
+            {
+                string line = "";
+                while ((line = reader.ReadLine()) != null)
+                {
+                    var parts = line.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length < 2)
+                        continue;
+
+                    if (parts[0][^1] == 'x')
+                    {
+                        int numberOfItem = int.Parse(parts[0].Substring(0, parts[0].Length - 1));
+                        var builder = new StringBuilder();
+                        for (int i = 1; i < parts.Length; i++)
+                        {
+                            builder.Append(parts[i]);
+                            builder.Append(" ");
+                        }
+                        var item = builder.ToString().Trim();
+                        Dalamud.Logging.PluginLog.Debug($"{numberOfItem} x {item}");
+
+                        var recipe = LuminaSheets.RecipeSheet?.Where(x => x.Value.ItemResult.Value.Name.RawString == item).Select(x => x.Value).FirstOrDefault();
+                        if (recipe is not null)
+                        {
+                            for (int i = 1; i <= numberOfItem / recipe.AmountResult; i++)
+                            {
+                                output.Items.Add(recipe.RowId);
+                            }
+                        }
+                    }
+
+                }
+            }
+            using (System.IO.StringReader reader = new System.IO.StringReader(importListItems))
+            {
+                string line = "";
+                while ((line = reader.ReadLine()) != null)
+                {
+                    var parts = line.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length < 2)
+                        continue;
+
+                    if (parts[0][^1] == 'x')
+                    {
+                        int numberOfItem = int.Parse(parts[0].Substring(0, parts[0].Length - 1));
+                        var builder = new StringBuilder();
+                        for (int i = 1; i < parts.Length; i++)
+                        {
+                            builder.Append(parts[i]);
+                            builder.Append(" ");
+                        }
+                        var item = builder.ToString().Trim();
+                        Dalamud.Logging.PluginLog.Debug($"{numberOfItem} x {item}");
+
+                        var recipe = LuminaSheets.RecipeSheet?.Where(x => x.Value.ItemResult.Value.Name.RawString == item).Select(x => x.Value).FirstOrDefault();
+                        if (recipe is not null)
+                        {
+                            for (int i = 1; i <= numberOfItem; i++)
+                            {
+                                output.Items.Add(recipe.RowId);
+                            }
+                        }
+                    }
+
+                }
+            }
+
+            return output;
         }
 
         private static void DrawTotalIngredientsTable()
@@ -391,7 +621,7 @@ namespace Artisan.CraftingLists
                                 var subsubRecipe = GetIngredientRecipe(subsubItem.ItemIngredient);
                                 if (subsubRecipe.RowId != 0)
                                 {
-                                    for (int i = 1; i <= subsubItem.AmountIngredient; i++)
+                                    for (int i = 1; i <= Math.Ceiling((double)subsubItem.AmountIngredient / (double)subsubRecipe.AmountResult); i++)
                                     {
                                         if (selectedList.Items.IndexOf(subsubRecipe.RowId) == -1)
                                         {
@@ -403,11 +633,10 @@ namespace Artisan.CraftingLists
                                             selectedList.Items.Insert(indexOfLast, subsubRecipe.RowId);
                                         }
 
-                                        if (subsubItem.AmountIngredient < subsubRecipe.AmountResult) break;
                                     }
                                 }
                             }
-                            for (int i = 1; i <= subItem.AmountIngredient; i++)
+                            for (int i = 1; i <= Math.Ceiling((double)subItem.AmountIngredient / (double)subRecipe.AmountResult); i++)
                             {
                                 if (selectedList.Items.IndexOf(subRecipe.RowId) == -1)
                                 {
@@ -418,8 +647,6 @@ namespace Artisan.CraftingLists
                                     var indexOfLast = selectedList.Items.IndexOf(subRecipe.RowId);
                                     selectedList.Items.Insert(indexOfLast, subRecipe.RowId);
                                 }
-
-                                if (subItem.AmountIngredient < subRecipe.AmountResult) break;
                             }
                         }
                     }

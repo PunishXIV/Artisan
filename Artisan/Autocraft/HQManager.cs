@@ -69,6 +69,7 @@ namespace Artisan.Autocraft
 
                     if (nqMaterials + hqMaterials < requiredMaterials)
                     {
+                        if (AutocraftDebugTab.Debug) PluginLog.Verbose("Insufficient Materials");
                         InsufficientMaterials = true;
                         dataFinalized = true;
                         return false;
