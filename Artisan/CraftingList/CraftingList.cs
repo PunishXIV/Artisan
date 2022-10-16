@@ -145,22 +145,27 @@ namespace Artisan.CraftingLists
 
             if (!isCrafting)
             {
+                if (CurrentIndex == 0 || CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1])
                 OpenRecipeByID(CraftingListUI.CurrentProcessedItem);
                 SetIngredients(CraftingListUI.CurrentProcessedItem);
 
                 CurrentCraft.RepeatActualCraft();
             }
 
-            if (isCrafting)
+            if (CurrentIndex == 0 || CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1])
             {
-                CloseCraftingMenu();
+                if (isCrafting)
+                {
+                    CloseCraftingMenu();
+                }
+
+                if (Artisan.CheckIfCraftFinished())
+                {
+                    CloseCraftingMenu();
+                }
             }
 
-            if (Artisan.CheckIfCraftFinished())
-            {
-                CloseCraftingMenu();
-            }
-
+            CurrentCraft.RepeatActualCraft();
         }
 
         private unsafe static void SetIngredients(uint currentProcessedItem)
