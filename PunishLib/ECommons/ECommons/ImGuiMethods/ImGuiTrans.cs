@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace ECommons.ImGuiMethods
 {
+    [Obsolete("Deprecated", true)]
     public class ImGuiTrans
     {
         public static void PushStyleColor(ImGuiCol target, Vector4 value)

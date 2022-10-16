@@ -9,7 +9,7 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog": "- Crafting lists have been released! Check Discord for details.\r\n- Updated support for non-English clients.\r\n- Additional bug fixes made to Endurance mode checks.",
+  "Changelog": "- Fix for Endurance crafting not resuming after food/medicine buffs expire",
   "DalamudApiLevel": 7,
   "DownloadLinkTesting" : "https://love.puni.sh/plugins/Artisan/Testing/latest.zip"
 }

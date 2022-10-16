@@ -14,8 +14,10 @@ namespace Artisan.Autocraft
     {
         internal static int offset = 0;
         internal static int SelRecId = 0;
+        internal static bool Debug = false;
         internal static void Draw()
         {
+            ImGui.Checkbox("Debug logging", ref Debug);
             if (ImGui.CollapsingHeader("Crafter's food"))
             {
                 foreach (var x in ConsumableChecker.GetFood())

@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
+//using System.Windows.Forms;
 using static PInvoke.User32;
 
 namespace ECommons.Interop
@@ -57,9 +57,9 @@ namespace ECommons.Interop
             return false;
         }
 
-        public static bool SendKeypress(Keys key)
+        /*public static bool SendKeypress(Keys key)
         {
             return SendKeypress((int)key);
-        }
+        }*/
     }
 }

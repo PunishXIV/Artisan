@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<Authors>Eternita</Authors>
-		<Version>1.0.0.0</Version>
+		<Authors>NightmareXIV</Authors>
+		<Version>1.0.0.2</Version>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -15,7 +15,7 @@
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<OutputPath>bin\$(Configuration)\</OutputPath>
 		<NoWarn>CS1591;CA1401</NoWarn>
-		<UseWindowsForms>true</UseWindowsForms>
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 	</PropertyGroup>
 
 	<PropertyGroup Label="Documentation">
@@ -26,6 +26,11 @@
 	<PropertyGroup>
 		<DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
 	</PropertyGroup>
+	
+	<PropertyGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))'">
+        	<DalamudLibPath>$(DALAMUD_HOME)/</DalamudLibPath>
+        	<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    	</PropertyGroup>
 
 	<!--PropertyGroup>
 		<SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
@@ -87,6 +92,10 @@
 		</Reference>
 		<Reference Include="Reloaded.Hooks.Definitions">
 			<HintPath>$(DalamudLibPath)Reloaded.Hooks.Definitions.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Serilog">
+			<HintPath>$(DalamudLibPath)Serilog.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 	</ItemGroup>

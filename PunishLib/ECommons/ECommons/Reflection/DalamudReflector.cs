@@ -1,6 +1,6 @@
 ﻿using Dalamud;
 using Dalamud.Game.ClientState.Keys;
-using Dalamud.Logging;
+using ECommons.Logging;
 using Dalamud.Plugin;
 using ECommons.DalamudServices;
 using ECommons.Schedulers;
@@ -42,8 +42,8 @@ namespace ECommons.Reflection
         {
             if (pluginCache != null)
             {
-                pluginCache?.Clear();
-                onPluginsChangedActions?.Clear();
+                pluginCache = null;
+                onPluginsChangedActions = null;
                 GenericHelpers.Safe(delegate
                 {
                     var pm = GetPluginManager();
@@ -79,9 +79,9 @@ namespace ECommons.Reflection
                     GetMethod("Get").Invoke(null, BindingFlags.Default, null, Array.Empty<object>(), null);
         }
 
-        public static bool TryGetDalamudPlugin(string internalName, out IDalamudPlugin instance, bool suppressErrors = false)
+        public static bool TryGetDalamudPlugin(string internalName, out IDalamudPlugin instance, bool suppressErrors = false, bool ignoreCache = false)
         {
-            if(pluginCache.TryGetValue(internalName, out instance) && instance != null)
+            if(!ignoreCache && pluginCache.TryGetValue(internalName, out instance) && instance != null)
             {
                 return true;
             }
@@ -96,9 +96,16 @@ namespace ECommons.Reflection
                     {
                         var type = t.GetType().Name == "LocalDevPlugin" ? t.GetType().BaseType : t.GetType();
                         var plugin = (IDalamudPlugin)type.GetField("instance", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(t);
-                        instance = plugin;
-                        pluginCache[internalName] = plugin;
-                        return true;
+                        if (plugin == null)
+                        {
+                            PluginLog.Warning($"Found requested plugin {internalName} but it was null");
+                        }
+                        else
+                        {
+                            instance = plugin;
+                            pluginCache[internalName] = plugin;
+                            return true;
+                        }
                     }
                 }
                 instance = null;
@@ -135,14 +142,9 @@ namespace ECommons.Reflection
             }
         }
 
-        static string pluginName = null;
         public static string GetPluginName()
         {
-            GenericHelpers.Safe(delegate
-            {
-                pluginName ??= (string)Svc.PluginInterface.GetType().GetField("pluginName", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(Svc.PluginInterface);
-            });
-            return pluginName;
+            return ECommons.Instance?.Name ?? "Not initialized";
         }
 
         internal static void OnInstalledPluginsChanged()

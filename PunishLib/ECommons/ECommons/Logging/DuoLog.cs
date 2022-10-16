@@ -1,5 +1,5 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Logging;
+using ECommons.Logging;
 using ECommons.DalamudServices;
 using ECommons.Reflection;
 using ECommons.Schedulers;
@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ECommons
+namespace ECommons.Logging
 {
     public static class DuoLog
     {
