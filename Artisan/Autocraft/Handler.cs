@@ -142,7 +142,6 @@ namespace Artisan.Autocraft
                             if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
                             {
                                 if (AutocraftDebugTab.Debug) PluginLog.Verbose("HQ data finalised");
-                                Enable = false;
                                 return;
                             }
                             if (AutocraftDebugTab.Debug) PluginLog.Verbose("HQ data restored");

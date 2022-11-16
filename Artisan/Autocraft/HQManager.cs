@@ -1,4 +1,5 @@
-﻿using ClickLib.Clicks;
+﻿using Artisan.RawInformation;
+using ClickLib.Clicks;
 using Dalamud.Logging;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -51,6 +52,7 @@ namespace Artisan.Autocraft
         {
             if (Environment.TickCount64 < NextCheckAt)
             {
+                InsufficientMaterials = false;
                 dataFinalized = false;
                 return false;
             }
@@ -63,13 +65,14 @@ namespace Artisan.Autocraft
                     var hqNodeText = node->Component->UldManager.NodeList[5]->GetAsAtkTextNode();
                     var required = node->Component->UldManager.NodeList[15]->GetAsAtkTextNode();
 
-                    int nqMaterials = Convert.ToInt32(nqNodeText->NodeText.ToString());
-                    int hqMaterials = Convert.ToInt32(hqNodeText->NodeText.ToString());
-                    int requiredMaterials = Convert.ToInt32(required->NodeText.ToString());
+                    int nqMaterials = Convert.ToInt32(nqNodeText->NodeText.ToString().GetNumbers());
+                    int hqMaterials = Convert.ToInt32(hqNodeText->NodeText.ToString().GetNumbers());
+                    int requiredMaterials = Convert.ToInt32(required->NodeText.ToString().GetNumbers());
 
                     if (nqMaterials + hqMaterials < requiredMaterials)
                     {
                         if (AutocraftDebugTab.Debug) PluginLog.Verbose("Insufficient Materials");
+                        Handler.Enable = false;
                         InsufficientMaterials = true;
                         dataFinalized = true;
                         return false;

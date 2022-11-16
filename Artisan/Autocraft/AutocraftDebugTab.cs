@@ -95,6 +95,8 @@ namespace Artisan.Autocraft
             }
             ImGuiEx.Text($"Gear condition: {RepairManager.GetMinEquippedPercent()}");
             ImGuiEx.Text($"Selected recipe: {AgentRecipeNote.Instance()->SelectedRecipeIndex}");
+            ImGuiEx.Text($"Insufficient Materials: {HQManager.InsufficientMaterials}");
+
             /*ImGui.InputInt("id", ref SelRecId);
             if (ImGui.Button("OpenRecipeByRecipeId"))
             {

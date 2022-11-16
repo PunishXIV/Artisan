@@ -191,9 +191,9 @@ namespace Artisan.CraftingLists
                         var hqNodeText = node->Component->UldManager.NodeList[5]->GetAsAtkTextNode();
                         var required = node->Component->UldManager.NodeList[15]->GetAsAtkTextNode();
 
-                        int nqMaterials = Convert.ToInt32(nqNodeText->NodeText.ToString());
-                        int hqMaterials = Convert.ToInt32(hqNodeText->NodeText.ToString());
-                        int requiredMaterials = Convert.ToInt32(required->NodeText.ToString());
+                        int nqMaterials = Convert.ToInt32(nqNodeText->NodeText.ToString().GetNumbers());
+                        int hqMaterials = Convert.ToInt32(hqNodeText->NodeText.ToString().GetNumbers());
+                        int requiredMaterials = Convert.ToInt32(required->NodeText.ToString().GetNumbers());
 
                         if ((setHQint + setNQint) == requiredMaterials) continue;
 
