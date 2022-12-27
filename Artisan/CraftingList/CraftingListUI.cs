@@ -1,17 +1,16 @@
 ﻿using Artisan.RawInformation;
+using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
-using PunishLib.ImGuiMethods;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Artisan.CraftingLists
 {
@@ -256,11 +255,11 @@ namespace Artisan.CraftingLists
             }
         }
 
-        
+
 
         private static void DrawTotalIngredientsTable()
         {
-            if (ImGui.BeginTable("###ListMaterialTable", 3, ImGuiTableFlags.Borders))
+            if (ImGui.BeginTable("###ListMaterialTableRaw", 3, ImGuiTableFlags.Borders))
             {
                 ImGui.TableSetupColumn("Ingredient", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Required", ImGuiTableColumnFlags.WidthFixed);
@@ -303,6 +302,62 @@ namespace Artisan.CraftingLists
                             }
                             ImGui.Text($"{NumberOfIngredient((uint)item)}");
                             ImGui.PopID();
+                        }
+                    }
+                }
+                catch
+                {
+
+                }
+
+                ImGui.EndTable();
+            }
+
+            if (ImGui.BeginTable("###ListMaterialTableSub", 3, ImGuiTableFlags.Borders))
+            {
+                ImGui.TableSetupColumn("Ingredient", ImGuiTableColumnFlags.WidthFixed);
+                ImGui.TableSetupColumn("Required", ImGuiTableColumnFlags.WidthFixed);
+                ImGui.TableSetupColumn("Inventory", ImGuiTableColumnFlags.WidthFixed);
+                ImGui.TableHeadersRow();
+
+                if (SelectedListMaterials.Count == 0)
+                {
+                    foreach (var item in selectedList.Items)
+                    {
+                        Recipe r = FilteredList[item];
+                        AddRecipeIngredientsToList(r, ref SelectedListMaterials, false);
+                    }
+                }
+
+                if (listMaterials.Count == 0)
+                    listMaterials = SelectedListMaterials.OrderByDescending(x => x).Distinct().ToList();
+
+                try
+                {
+                    foreach (var item in CollectionsMarshal.AsSpan(listMaterials))
+                    {
+                        if (LuminaSheets.ItemSheet.TryGetValue((uint)item, out var sheetItem))
+                        {
+                            if (SelectedRecipesCraftable[item])
+                            {
+                                ImGui.PushID(item);
+                                var name = sheetItem.Name.RawString;
+                                var count = SelectedListMaterials.Count(x => x == item);
+                                ImGui.TableNextRow();
+                                ImGui.TableNextColumn();
+                                ImGui.Text($"{name}");
+                                ImGui.TableNextColumn();
+                                ImGui.Text($"{count}");
+                                ImGui.TableNextColumn();
+                                if (NumberOfIngredient((uint)item) >= count)
+                                {
+                                    var color = ImGuiColors.HealerGreen;
+                                    color.W -= 0.3f;
+                                    ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                                }
+                                ImGui.Text($"{NumberOfIngredient((uint)item)}");
+                                ImGui.PopID();
+                            }
                         }
                     }
                 }
