@@ -79,7 +79,7 @@ namespace Artisan
 
                     JustUsedFinalAppraisal = false;
                 }
-                if (Service.Configuration.UseMacroMode && Service.Configuration.SetMacro != null && MacroStep < Service.Configuration.SetMacro.MacroActions.Count)
+                if (Service.Configuration.UseMacroMode)
                 {
                     MacroStep++;
                 

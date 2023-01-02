@@ -40,5 +40,8 @@ namespace Artisan.RawInformation
 
         public static Dictionary<uint, RecipeLevelTable>? RecipeLevelTableSheet = Service.DataManager?.GetExcelSheet<RecipeLevelTable>()?
             .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, Addon>? AddonSheet = Service.DataManager?.GetExcelSheet<Addon>()?
+            .ToDictionary(i => i.RowId, i => i);
     }
 }

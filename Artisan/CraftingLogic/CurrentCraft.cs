@@ -216,19 +216,17 @@ namespace Artisan.CraftingLogic
                     }
                 }
 
-                CurrentCondition = cond.NodeText.ToString() switch
-                {
-                    "Poor" => Condition.Poor,
-                    "Good" => Condition.Good,
-                    "Normal" => Condition.Normal,
-                    "Excellent" => Condition.Excellent,
-                    "Centered" => Condition.Centered,
-                    "Sturdy" => Condition.Sturdy,
-                    "Pliant" => Condition.Pliant,
-                    "Malleable" => Condition.Malleable,
-                    "Primed" => Condition.Primed,
-                    _ => Condition.Unknown
-                };
+
+                CurrentCondition = Condition.Unknown;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[229].Text.RawString) CurrentCondition = Condition.Poor;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[227].Text.RawString) CurrentCondition = Condition.Good;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[226].Text.RawString) CurrentCondition = Condition.Normal;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[228].Text.RawString) CurrentCondition = Condition.Excellent;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[239].Text.RawString) CurrentCondition = Condition.Centered;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[240].Text.RawString) CurrentCondition = Condition.Sturdy;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[241].Text.RawString) CurrentCondition = Condition.Pliant;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[13455].Text.RawString) CurrentCondition = Condition.Malleable;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[13454].Text.RawString) CurrentCondition = Condition.Primed;
 
                 CurrentStep = Convert.ToInt32(cs.NodeText.ToString());
                 HQLiteral = hql.NodeText.ToString();

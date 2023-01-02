@@ -46,6 +46,8 @@ namespace Artisan
         public bool UseMacroMode { get; set; }
         public Macro? SetMacro { get; set; }
 
+        public Dictionary<uint, Macro?> IndividualMacros { get; set; } = new();
+
         public int AutoDelay { get; set; } = 0;
 
         public uint Food = 0;

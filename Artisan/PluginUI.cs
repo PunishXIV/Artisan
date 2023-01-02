@@ -5,7 +5,6 @@ using Artisan.RawInformation;
 using Dalamud.Interface.Components;
 using Dalamud.Logging;
 using Dalamud.Plugin;
-using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Newtonsoft.Json;
@@ -19,7 +18,7 @@ namespace Artisan
 {
     // It is good to have this be disposable in general, in case you ever need it
     // to do any cleanup
-    class PluginUI : IDisposable
+    public class PluginUI : IDisposable
     {
         public event EventHandler<bool>? CraftingWindowStateChanged;
 
@@ -64,32 +63,17 @@ namespace Artisan
 
         public void Draw()
         {
-            //if (!CheckIfCorrectRepo())
-            //{
-            //    ImGui.SetWindowSize(new Vector2(500, 500), ImGuiCond.FirstUseEver);
-            //    if (ImGui.Begin("Fraudulant Repo Detected", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysAutoResize))
-            //    {
-            //        ImGui.Text("[Artisan] Please uninstall and use the official repo:");
-            //        if (ImGui.Button("Repository"))
-            //        {
-            //            ImGui.SetClipboardText("https://love.puni.sh/ment.json");
-            //            Notify.Success("Link copied to clipboard");
-            //        }
-            //        return;
-            //    }
-            //}
-
             DrawCraftingWindow();
             CraftingListUI.DrawProcessingWindow();
 
             if (!Handler.Enable)
-            Handler.DrawRecipeData();
+                Handler.DrawRecipeData();
 
-            //if (Service.Configuration.ShowEHQ)
-            //    MarkChanceOfSuccess();
+            ShowConfigOnRecipeWindow();
+            DrawMacroChoiceOnRecipe();
 
             if (!Service.Configuration.DisableHighlightedAction)
-            Hotbars.MakeButtonsGlow(CurrentRecommendation);
+                Hotbars.MakeButtonsGlow(CurrentRecommendation);
 
             if (!Visible)
             {
@@ -144,6 +128,37 @@ namespace Artisan
             }
         }
 
+        private unsafe void ShowConfigOnRecipeWindow()
+        {
+            var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+            if (recipeWindow == IntPtr.Zero)
+                return;
+
+            var addonPtr = (AtkUnitBase*)recipeWindow;
+            if (addonPtr == null)
+                return;
+
+            var baseX = addonPtr->X;
+            var baseY = addonPtr->Y;
+
+            AtkResNodeFunctions.DrawOptions(addonPtr->UldManager.NodeList[104]);
+        }
+
+        private unsafe void DrawMacroChoiceOnRecipe()
+        {
+            var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+            if (recipeWindow == IntPtr.Zero)
+                return;
+
+            var addonPtr = (AtkUnitBase*)recipeWindow;
+            if (addonPtr == null)
+                return;
+
+            var baseX = addonPtr->X;
+            var baseY = addonPtr->Y;
+
+            AtkResNodeFunctions.DrawMacroOptions(addonPtr->UldManager.NodeList[104]);
+        }
         private bool CheckIfCorrectRepo()
         {
 #if DEBUG
@@ -283,7 +298,7 @@ namespace Artisan
             };
         }
 
-        private void DrawCraftingWindow()
+        public void DrawCraftingWindow()
         {
             if (!CraftingVisible)
             {
@@ -319,7 +334,7 @@ namespace Artisan
 
 
                 if (Handler.RecipeID != 0)
-                ImGui.Checkbox("Endurance Mode Toggle", ref Handler.Enable);
+                    ImGui.Checkbox("Endurance Mode Toggle", ref Handler.Enable);
 
                 if (Service.Configuration.CraftingX && Handler.Enable)
                 {
@@ -444,14 +459,15 @@ namespace Artisan
 
             if (Service.Configuration.UserMacros.Count > 0)
             {
-                if (ImGui.Checkbox("Enabled Macro Mode", ref useMacroMode))
+                if (ImGui.Checkbox("Macro Mode Enabled", ref useMacroMode))
                 {
                     Service.Configuration.UseMacroMode = useMacroMode;
                     Service.Configuration.Save();
                 }
-                ImGuiComponents.HelpMarker(@"Use a macro to craft instead of Artisan making its own decisions. 
-If the macro ends before the craft is complete, Artisan will resume making decisions until the end of the craft.
-If the macro cannot perform an action, you will have to manually intervene.");
+                ImGuiComponents.HelpMarker($"Use a macro to craft instead of Artisan making its own decisions.\r\n" +
+                    $"Priority is individual recipe macros followed by the selected macro below.\r\n" +
+                    $"If you wish to only use individual recipe macros then leave below unset.\r\n" +
+                    $"If the macro ends before a craft is complete, Artisan will make its own suggestions until the end of the craft.");
 
                 if (useMacroMode)
                 {
@@ -482,13 +498,13 @@ If the macro cannot perform an action, you will have to manually intervene.");
                 useMacroMode = false;
             }
 
-            if (ImGui.Checkbox("Use Tricks of the Trade - Good", ref useTricksGood))
+            if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[227].Text.RawString}", ref useTricksGood))
             {
                 Service.Configuration.UseTricksGood = useTricksGood;
                 Service.Configuration.Save();
             }
             ImGui.SameLine();
-            if (ImGui.Checkbox("Use Tricks of the Trade - Excellent", ref useTricksExcellent))
+            if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[228].Text.RawString}", ref useTricksExcellent))
             {
                 Service.Configuration.UseTricksExcellent = useTricksExcellent;
                 Service.Configuration.Save();

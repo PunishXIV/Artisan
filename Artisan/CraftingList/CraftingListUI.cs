@@ -177,6 +177,41 @@ namespace Artisan.CraftingLists
                                         SelectedListMaterials.Clear();
                                         listMaterials.Clear();
                                     }
+
+                                    string preview = Service.Configuration.IndividualMacros.TryGetValue((uint)selectedListItem, out var prevMacro) && prevMacro != null ? Service.Configuration.IndividualMacros[(uint)selectedListItem].Name : "";
+                                    if (prevMacro is not null && !Service.Configuration.UserMacros.Where(x => x.ID == prevMacro.ID).Any())
+                                    {
+                                        preview = "";
+                                        Service.Configuration.IndividualMacros[(uint)selectedListItem] = null;
+                                        Service.Configuration.Save();
+                                    }
+
+                                    if (Service.Configuration.UserMacros.Count > 0)
+                                    {
+                                        ImGui.Spacing();
+                                        ImGui.Text($"Use a macro for this recipe (only when Macro mode is enabled)");
+                                        if (ImGui.BeginCombo("", preview))
+                                        {
+                                            if (ImGui.Selectable(""))
+                                            {
+                                                Service.Configuration.IndividualMacros[selectedListItem] = null;
+                                                Service.Configuration.Save();
+                                            }
+                                            foreach (var macro in Service.Configuration.UserMacros)
+                                            {
+                                                bool selected = Service.Configuration.IndividualMacros.TryGetValue((uint)selectedListItem, out var selectedMacro) && selectedMacro != null;
+                                                if (ImGui.Selectable(macro.Name, selected))
+                                                {
+                                                    Service.Configuration.IndividualMacros[(uint)selectedListItem] = macro;
+                                                    Service.Configuration.Save();
+                                                }
+                                            }
+
+                                            ImGui.EndCombo();
+                                        }
+                                    }
+                                    ImGui.Spacing();
+
                                     if (selectedList.Items.Distinct().Count() > 1)
                                     {
                                         ImGui.Text("Re-order list");
@@ -226,6 +261,7 @@ namespace Artisan.CraftingLists
                                             }
                                         }
                                     }
+
                                 }
                             }
                             ImGui.Columns(1, null, false);

@@ -162,6 +162,7 @@ namespace Artisan.Autocraft
                                 }
                                 else
                                 {
+                                    if (AutocraftDebugTab.Debug) PluginLog.Debug($"Opening recipe {RecipeID}");
                                     AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal((uint)RecipeID);
                                 }
                             }
@@ -338,7 +339,7 @@ namespace Artisan.Autocraft
 
                         if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == rName, out var id))
                         {
-                            RecipeID = id.Unknown0;
+                            RecipeID = (int)id.RowId;
                             RecipeName = id.ItemResult.Value.Name;
                         }
                     }

@@ -72,6 +72,8 @@ namespace Artisan.MacroSystem
                         Service.Configuration.Save();
                         selectedMacro = new();
                         selectedActionIndex = -1;
+
+                        Artisan.CleanUpIndividualMacros();
                     }
                     ImGui.Spacing();
                     ImGui.SameLine();

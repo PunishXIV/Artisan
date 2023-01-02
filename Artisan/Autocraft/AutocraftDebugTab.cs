@@ -86,6 +86,7 @@ namespace Artisan.Autocraft
                 ImGui.Text($"Current Step: {CurrentCraft.CurrentStep}");
                 ImGui.Text($"GS+ByregotCombo: {CurrentCraft.GreatStridesByregotCombo()}");
                 ImGui.Text($"Predicted Quality: {CurrentCraft.CalculateNewQuality(CurrentCraft.CurrentRecommendation)}");
+                ImGui.Text($"Macro Step: {CurrentCraft.MacroStep}");
             }
             ImGui.Separator();
 
@@ -96,6 +97,11 @@ namespace Artisan.Autocraft
             ImGuiEx.Text($"Gear condition: {RepairManager.GetMinEquippedPercent()}");
             ImGuiEx.Text($"Selected recipe: {AgentRecipeNote.Instance()->SelectedRecipeIndex}");
             ImGuiEx.Text($"Insufficient Materials: {HQManager.InsufficientMaterials}");
+
+            if (ImGui.Button($"Open Endurance Item"))
+            {
+                CraftingLists.CraftingListFunctions.OpenRecipeByID((uint)Handler.RecipeID);
+            }
 
             /*ImGui.InputInt("id", ref SelRecId);
             if (ImGui.Button("OpenRecipeByRecipeId"))
