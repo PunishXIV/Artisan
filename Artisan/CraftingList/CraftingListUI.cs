@@ -150,7 +150,7 @@ namespace Artisan.CraftingLists
                                 if (selectedListItem != 0)
                                 {
                                     ImGui.Text("Options");
-                                    if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.Trash))
+                                    if (ImGuiComponents.IconButton(FontAwesomeIcon.Trash))
                                     {
                                         selectedList.Items.RemoveAll(x => x == selectedListItem);
                                         selectedListItem = 0;
@@ -160,7 +160,7 @@ namespace Artisan.CraftingLists
                                         listMaterials.Clear();
                                     }
                                     ImGui.SameLine();
-                                    if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.PlusCircle))
+                                    if (ImGuiComponents.IconButton(FontAwesomeIcon.PlusCircle))
                                     {
                                         selectedList.Items.Insert(selectedList.Items.IndexOf(selectedListItem), selectedListItem);
                                         Service.Configuration.Save();
@@ -169,13 +169,25 @@ namespace Artisan.CraftingLists
                                         listMaterials.Clear();
                                     }
                                     ImGui.SameLine();
-                                    if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.MinusCircle))
+                                    if (ImGuiComponents.IconButton(FontAwesomeIcon.MinusCircle))
                                     {
                                         selectedList.Items.Remove(selectedListItem);
                                         Service.Configuration.Save();
 
                                         SelectedListMaterials.Clear();
                                         listMaterials.Clear();
+                                    }
+
+                                    if (!selectedList.ListItemOptions.ContainsKey(selectedListItem))
+                                    {
+                                        selectedList.ListItemOptions.TryAdd(selectedListItem, new ListItemOptions());
+                                    }
+                                    selectedList.ListItemOptions.TryGetValue(selectedListItem, out var options);
+                                    bool NQOnly = options.NQOnly;
+                                    if (ImGui.Checkbox("Quick Synthesis this item", ref NQOnly))
+                                    {
+                                        options.NQOnly = NQOnly;
+                                        Service.Configuration.Save();
                                     }
 
                                     string preview = Service.Configuration.IndividualMacros.TryGetValue((uint)selectedListItem, out var prevMacro) && prevMacro != null ? Service.Configuration.IndividualMacros[(uint)selectedListItem].Name : "";
@@ -212,6 +224,7 @@ namespace Artisan.CraftingLists
                                     }
                                     ImGui.Spacing();
 
+
                                     if (selectedList.Items.Distinct().Count() > 1)
                                     {
                                         ImGui.Text("Re-order list");
@@ -222,7 +235,7 @@ namespace Artisan.CraftingLists
 
                                         if (!isFirstItem)
                                         {
-                                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowUp))
+                                            if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowUp))
                                             {
                                                 var loops = selectedList.Items.Count(x => x == selectedListItem);
                                                 var previousNum = selectedList.Items[selectedList.Items.IndexOf(selectedListItem) - 1];
@@ -246,7 +259,7 @@ namespace Artisan.CraftingLists
                                                 ImGui.SameLine();
                                             }
 
-                                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowDown))
+                                            if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowDown))
                                             {
                                                 var nextNum = selectedList.Items[selectedList.Items.LastIndexOf(selectedListItem) + 1];
                                                 var loops = selectedList.Items.Count(x => x == nextNum);

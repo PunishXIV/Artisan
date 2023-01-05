@@ -141,6 +141,7 @@ namespace Artisan
             var baseX = addonPtr->X;
             var baseY = addonPtr->Y;
 
+            if (addonPtr->UldManager.NodeList[104]->IsVisible)
             AtkResNodeFunctions.DrawOptions(addonPtr->UldManager.NodeList[104]);
         }
 

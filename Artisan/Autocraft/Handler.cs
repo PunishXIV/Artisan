@@ -27,7 +27,7 @@ namespace Artisan.Autocraft
         internal static bool Enable = false;
         internal static List<int>? HQData = null;
         internal static int RecipeID = 0;
-        internal static string RecipeName { get => recipeName; set { if (value != recipeName) Dalamud.Logging.PluginLog.Debug($"{value}"); recipeName = value; } }
+        internal static string RecipeName { get => recipeName; set { if (value != recipeName) PluginLog.Verbose($"{value}"); recipeName = value; } }
         internal static CircularBuffer<long> Errors = new(5);
         private static string recipeName = "";
 
@@ -347,7 +347,7 @@ namespace Artisan.Autocraft
                 }
                 catch (Exception ex)
                 {
-                    Dalamud.Logging.PluginLog.Error(ex, "Setting Recipe ID");
+                    PluginLog.Error(ex, "Setting Recipe ID");
                     RecipeID = 0;
                     RecipeName = "";
                 }

@@ -47,7 +47,7 @@ namespace Artisan.RawInformation
             return false;
         }
         public static bool CanUseTrainedEye
-            => Service.ClientState?.LocalPlayer?.Level >= Recipe?.RecipeLevelTable.Value?.ClassJobLevel + 10 && CraftingLogic.CurrentCraft.CurrentStep == 1 && Service.ClientState?.LocalPlayer?.Level >= 80;
+            => Service.ClientState?.LocalPlayer?.Level >= Recipe?.RecipeLevelTable.Value?.ClassJobLevel + 10 && CurrentStep == 1 && Service.ClientState?.LocalPlayer?.Level >= 80;
 
         public static uint HighestLevelTouch()
         {

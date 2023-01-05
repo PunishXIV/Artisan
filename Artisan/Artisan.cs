@@ -48,7 +48,7 @@ namespace Artisan
             ActionWatching.Enable();
             StepChanged += ResetRecommendation;
             ConsumableChecker.Init();
-            Autocraft.Handler.Init();
+            Handler.Init();
             CleanUpIndividualMacros();
         }
 
@@ -75,6 +75,7 @@ namespace Artisan
 
         public static bool CheckIfCraftFinished()
         {
+            //if (QuickSynthMax > 0 && QuickSynthCurrent == QuickSynthMax) return true;
             if (MaxProgress == 0) return false;
             if (CurrentProgress == MaxProgress) return true;
             if (CurrentProgress < MaxProgress && CurrentDurability == 0) return true;
@@ -109,7 +110,7 @@ namespace Artisan
 
                 if (CraftingLists.CraftingListUI.Processing)
                 {
-                    //Dalamud.Logging.PluginLog.Debug("Advancing Crafting List");
+                    Dalamud.Logging.PluginLog.Verbose("Advancing Crafting List");
                     CraftingLists.CraftingListFunctions.CurrentIndex++;
                 }
 
@@ -346,7 +347,7 @@ namespace Artisan
         public void Dispose()
         {
             PluginUi.Dispose();
-            Autocraft.Handler.Dispose();
+            Handler.Dispose();
             ECommons.ECommons.Dispose();
 
             Service.CommandManager.RemoveHandler(commandName);
@@ -361,7 +362,7 @@ namespace Artisan
 
         private void OnCommand(string command, string args)
         {
-            PluginUi.Visible = true;
+            PluginUi.Visible = !PluginUi.Visible;
         }
 
         private void DrawUI()

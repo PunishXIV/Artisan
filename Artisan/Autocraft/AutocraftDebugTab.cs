@@ -15,6 +15,9 @@ namespace Artisan.Autocraft
         internal static int offset = 0;
         internal static int SelRecId = 0;
         internal static bool Debug = false;
+
+        public static int DebugValue = 0;
+
         internal static void Draw()
         {
             ImGui.Checkbox("Debug logging", ref Debug);
@@ -84,6 +87,8 @@ namespace Artisan.Autocraft
                 ImGui.Text($"Item name: {CurrentCraft.ItemName}");
                 ImGui.Text($"Current Condition: {CurrentCraft.CurrentCondition}");
                 ImGui.Text($"Current Step: {CurrentCraft.CurrentStep}");
+                ImGui.Text($"Current Quick Synth Step: {CurrentCraft.QuickSynthCurrent}");
+                ImGui.Text($"Max Quick Synth Step: {CurrentCraft.QuickSynthMax}");
                 ImGui.Text($"GS+ByregotCombo: {CurrentCraft.GreatStridesByregotCombo()}");
                 ImGui.Text($"Predicted Quality: {CurrentCraft.CalculateNewQuality(CurrentCraft.CurrentRecommendation)}");
                 ImGui.Text($"Macro Step: {CurrentCraft.MacroStep}");
@@ -101,6 +106,17 @@ namespace Artisan.Autocraft
             if (ImGui.Button($"Open Endurance Item"))
             {
                 CraftingLists.CraftingListFunctions.OpenRecipeByID((uint)Handler.RecipeID);
+            }
+
+            ImGui.InputInt("Debug Value", ref DebugValue);
+
+            if (ImGui.Button($"Open And Quick Synth"))
+            {
+                CurrentCraft.QuickSynthItem(DebugValue);
+            }
+            if (ImGui.Button($"Close Quick Synth Window"))
+            {
+                CurrentCraft.CloseQuickSynthWindow();
             }
 
             /*ImGui.InputInt("id", ref SelRecId);
