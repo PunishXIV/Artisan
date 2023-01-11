@@ -69,8 +69,14 @@ namespace Artisan
             if (!Handler.Enable)
                 Handler.DrawRecipeData();
 
-            ShowConfigOnRecipeWindow();
+            if (!Service.Configuration.DisableMiniMenu)
+            {
+                ShowConfigOnRecipeWindow();
+                DrawEnduranceModeCounterOnRecipe();
+
+            }
             DrawMacroChoiceOnRecipe();
+
 
             if (!Service.Configuration.DisableHighlightedAction)
                 Hotbars.MakeButtonsGlow(CurrentRecommendation);
@@ -128,6 +134,22 @@ namespace Artisan
             }
         }
 
+        private unsafe void DrawEnduranceModeCounterOnRecipe()
+        {
+            var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+            if (recipeWindow == IntPtr.Zero)
+                return;
+
+            var addonPtr = (AtkUnitBase*)recipeWindow;
+            if (addonPtr == null)
+                return;
+
+            var baseX = addonPtr->X;
+            var baseY = addonPtr->Y;
+
+            AtkResNodeFunctions.DrawEnduranceCounter(addonPtr->UldManager.NodeList[7]);
+        }
+
         private unsafe void ShowConfigOnRecipeWindow()
         {
             var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
@@ -159,99 +181,6 @@ namespace Artisan
             var baseY = addonPtr->Y;
 
             AtkResNodeFunctions.DrawMacroOptions(addonPtr->UldManager.NodeList[104]);
-        }
-        private bool CheckIfCorrectRepo()
-        {
-#if DEBUG
-            return true;
-#endif
-            FileInfo? m = ECommons.DalamudServices.Svc.PluginInterface.AssemblyLocation;
-            var manifest = Path.Join(m.DirectoryName, "Artison.json");
-            if (File.Exists(manifest))
-            {
-                DRM? drm = JsonConvert.DeserializeObject<DRM>(File.ReadAllText(manifest));
-                if (drm is null)
-                    return false;
-
-                if (!drm.DownloadLinkInstall.Equals(@"https://love.puni.sh/plugins/Artisan/latest.zip")) return false;
-                if (!drm.Name.Equals("Artisan")) return false;
-
-                return true;
-
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-
-        public unsafe static void MarkChanceOfSuccess()
-        {
-            try
-            {
-                var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
-                if (recipeWindow == IntPtr.Zero)
-                    return;
-
-                var addonPtr = (AtkUnitBase*)recipeWindow;
-                if (addonPtr == null)
-                    return;
-
-                var baseX = addonPtr->X;
-                var baseY = addonPtr->Y;
-
-                var visCheck = (AtkComponentNode*)addonPtr->UldManager.NodeList[6];
-                if (!visCheck->AtkResNode.IsVisible)
-                    return;
-
-                var selectedCraftNameNode = (AtkTextNode*)addonPtr->UldManager.NodeList[49];
-                var selectedCraftWindowBox = (AtkTextNode*)addonPtr->UldManager.NodeList[31];
-                var selectedCraftName = selectedCraftNameNode->NodeText.ToString()[14..];
-                selectedCraftName = selectedCraftName.Remove(selectedCraftName.Length - 10, 10);
-                if (!char.IsLetterOrDigit(selectedCraftName[^1]))
-                {
-                    selectedCraftName = selectedCraftName.Remove(selectedCraftName.Length - 1, 1).Trim();
-                }
-                CurrentSelectedCraft = selectedCraftName;
-                string selectedCalculated = CalculateEstimate(selectedCraftName);
-                AtkResNodeFunctions.DrawSuccessRate(&selectedCraftWindowBox->AtkResNode, selectedCalculated, selectedCraftName, true);
-                AtkResNodeFunctions.DrawQualitySlider(&selectedCraftNameNode->AtkResNode, selectedCraftName);
-
-                var craftCount = (AtkTextNode*)addonPtr->UldManager.NodeList[63];
-                string count = craftCount->NodeText.ToString();
-                int maxCrafts = Convert.ToInt32(count.Split("-")[^1]);
-
-                var crafts = (AtkComponentNode*)addonPtr->UldManager.NodeList[67];
-                if (crafts->AtkResNode.IsVisible)
-                {
-                    var currentShownNodes = 0;
-
-                    for (int i = 1; i <= 13; i++)
-                    {
-                        var craft = (AtkComponentNode*)crafts->Component->UldManager.NodeList[i];
-                        if (craft->AtkResNode.IsVisible && craft->AtkResNode.Y >= 0 && craft->AtkResNode.Y < 340 && currentShownNodes < 10 && currentShownNodes < maxCrafts)
-                        {
-                            currentShownNodes++;
-                            var craftNameNode = (AtkTextNode*)craft->Component->UldManager.NodeList[14];
-                            var ItemName = craftNameNode->NodeText.ToString()[14..];
-                            ItemName = ItemName.Remove(ItemName.Length - 10, 10);
-                            if (!char.IsLetterOrDigit(ItemName[^1]))
-                            {
-                                ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
-                            }
-
-                            string calculatedPercentage = CalculateEstimate(ItemName);
-
-                            AtkResNodeFunctions.DrawSuccessRate(&craft->AtkResNode, $"{calculatedPercentage}", ItemName);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                //Dalamud.Logging.PluginLog.Error(ex, "DrawRecipeChance");
-            }
         }
 
         private static string CalculateEstimate(string itemName)
@@ -387,6 +316,7 @@ namespace Artisan
             bool useMacroMode = Service.Configuration.UseMacroMode;
             bool disableGlow = Service.Configuration.DisableHighlightedAction;
             bool disableToasts = Service.Configuration.DisableToasts;
+            bool disableMini = Service.Configuration.DisableMiniMenu;
 
             ImGui.Separator();
             if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
@@ -524,6 +454,13 @@ namespace Artisan
                 Service.Configuration.MaxPercentage = maxQuality;
                 Service.Configuration.Save();
             }
+
+            if (ImGui.Checkbox("Disable Recipe List mini-menu", ref disableMini))
+            {
+                Service.Configuration.DisableMiniMenu = disableMini;
+                Service.Configuration.Save();
+            }
+            ImGuiComponents.HelpMarker("Hides the mini-menu for config settings in the recipe list. Still shows individual macro menu.");
         }
     }
 }

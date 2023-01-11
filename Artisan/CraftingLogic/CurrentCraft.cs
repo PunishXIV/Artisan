@@ -1,6 +1,7 @@
 ﻿using Artisan.Autocraft;
 using Artisan.RawInformation;
 using ClickLib.Clicks;
+using Dalamud.Utility.Signatures;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -713,7 +714,6 @@ namespace Artisan.CraftingLogic
                     }
                     AtkResNodeFunctions.ClickButton(quickSynthWindow, qsynthButton, 0);
                 }
-
 
             }
             catch (Exception e)

@@ -157,7 +157,17 @@ namespace Artisan.CraftingLists
 
                 if (selectedList.ListItemOptions.TryGetValue(CraftingListUI.CurrentProcessedItem, out var options) && options.NQOnly)
                 {
-                    CurrentCraft.QuickSynthItem(selectedList.Items.Count(x => x == CraftingListUI.CurrentProcessedItem));
+                    var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
+                    var count = lastIndex - CurrentIndex;
+                    if (count >= 99)
+                    {
+                        CurrentCraft.QuickSynthItem(99);
+                    }
+                    else
+                    {
+                        CurrentCraft.QuickSynthItem(count);
+                    }
+
                 }
                 else
                 {
@@ -165,7 +175,7 @@ namespace Artisan.CraftingLists
                 }
             }
 
-            if (CurrentIndex == 0 || CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1])
+            if (CurrentIndex == 0 || CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1] || (CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0))
             {
                 if (isCrafting)
                 {
@@ -180,6 +190,28 @@ namespace Artisan.CraftingLists
                 if (Artisan.CheckIfCraftFinished())
                 {
                     CloseCraftingMenu();
+                }
+            }
+
+            if (isCrafting)
+            {
+                if (selectedList.ListItemOptions.TryGetValue(CraftingListUI.CurrentProcessedItem, out var options) && options.NQOnly)
+                {
+                    var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
+                    var count = lastIndex - CurrentIndex;
+                    if (count >= 99)
+                    {
+                        CurrentCraft.QuickSynthItem(99);
+                    }
+                    else
+                    {
+                        CurrentCraft.QuickSynthItem(count);
+                    }
+                }
+                else
+                {
+                    SetIngredients(CraftingListUI.CurrentProcessedItem);
+                    CurrentCraft.RepeatActualCraft();
                 }
             }
         }

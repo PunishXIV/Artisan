@@ -39,7 +39,8 @@ namespace Artisan.CraftingLists
         internal static uint selectedListItem;
         public static bool Processing = false;
         public static uint CurrentProcessedItem;
-
+        private static bool renameMode = false;
+        private static string renameList;
 
         internal static void Draw()
         {
@@ -113,7 +114,27 @@ namespace Artisan.CraftingLists
                     ImGui.SameLine();
                     if (ImGui.BeginChild("###selectedList", new Vector2(0, ImGui.GetContentRegionAvail().Y), false))
                     {
-                        ImGui.Text($"Selected List: {selectedList.Name}");
+                        if (!renameMode)
+                        {
+                            ImGui.Text($"Selected List: {selectedList.Name}");
+                            ImGui.SameLine();
+                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.Pen))
+                            {
+                                renameMode = true;
+                            }
+                        }
+                        else
+                        {
+                            renameList = selectedList.Name;
+                            if (ImGui.InputText("", ref renameList, 64, ImGuiInputTextFlags.EnterReturnsTrue))
+                            {
+                                selectedList.Name = renameList;
+                                Service.Configuration.Save();
+
+                                renameMode = false;
+                                renameList = String.Empty;
+                            }
+                        }
                         if (ImGui.Button("Delete List (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                         {
                             Service.Configuration.CraftingLists.Remove(selectedList);

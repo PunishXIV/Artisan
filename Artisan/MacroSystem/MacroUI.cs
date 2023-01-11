@@ -13,10 +13,12 @@ namespace Artisan.MacroSystem
     internal class MacroUI
     {
         private static string _newMacroName = string.Empty;
+        private static string renameMacro = string.Empty;
         private static bool _keyboardFocus;
         private const string MacroNamePopupLabel = "Macro Name";
         private static Macro selectedMacro = new();
         private static int selectedActionIndex = -1;
+        private static bool renameMode = false;
 
         internal static void Draw()
         {
@@ -62,7 +64,27 @@ namespace Artisan.MacroSystem
                 {
                     ImGui.SameLine();
                     ImGui.BeginChild("###selectedMacro", new Vector2(0, 0), false);
-                    ImGui.Text($"Selected Macro: {selectedMacro.Name}");
+                    if (!renameMode)
+                    {
+                        ImGui.Text($"Selected Macro: {selectedMacro.Name}");
+                        ImGui.SameLine();
+                        if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.Pen))
+                        {
+                            renameMode = true;
+                        }
+                    }
+                    else
+                    {
+                        renameMacro = selectedMacro.Name;
+                        if (ImGui.InputText("", ref renameMacro, 64, ImGuiInputTextFlags.EnterReturnsTrue))
+                        {
+                            selectedMacro.Name = renameMacro;
+                            Service.Configuration.Save();
+
+                            renameMode = false;
+                            renameMacro = String.Empty;
+                        }
+                    }
                     if (ImGui.Button("Delete Macro (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                     {
                         Service.Configuration.UserMacros.Remove(selectedMacro);

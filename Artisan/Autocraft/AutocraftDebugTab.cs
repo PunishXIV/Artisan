@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLogic;
+using Artisan.RawInformation;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
@@ -78,6 +79,9 @@ namespace Artisan.Autocraft
 
             if (ImGui.CollapsingHeader("Crafting Stats"))
             {
+
+                ImGui.Text($"Control: {CharacterInfo.Control()}");
+                ImGui.Text($"Craftsmanship: {CharacterInfo.Craftsmanship()}");
                 ImGui.Text($"Current Durability: {CurrentCraft.CurrentDurability}");
                 ImGui.Text($"Max Durability: {CurrentCraft.MaxDurability}");
                 ImGui.Text($"Current Progress: {CurrentCraft.CurrentProgress}");
@@ -92,6 +96,25 @@ namespace Artisan.Autocraft
                 ImGui.Text($"GS+ByregotCombo: {CurrentCraft.GreatStridesByregotCombo()}");
                 ImGui.Text($"Predicted Quality: {CurrentCraft.CalculateNewQuality(CurrentCraft.CurrentRecommendation)}");
                 ImGui.Text($"Macro Step: {CurrentCraft.MacroStep}");
+            }
+
+            if (ImGui.CollapsingHeader("Spiritbonds"))
+            {
+                ImGui.Text($"Weapon Spiritbond: {Spiritbond.Weapon}");
+                ImGui.Text($"Off-hand Spiritbond: {Spiritbond.Offhand}");
+                ImGui.Text($"Helm Spiritbond: {Spiritbond.Helm}");
+                ImGui.Text($"Body Spiritbond: {Spiritbond.Body}");
+                ImGui.Text($"Hands Spiritbond: {Spiritbond.Hands}");
+                ImGui.Text($"Legs Spiritbond: {Spiritbond.Legs}");
+                ImGui.Text($"Feet Spiritbond: {Spiritbond.Feet}");
+                ImGui.Text($"Earring Spiritbond: {Spiritbond.Earring}");
+                ImGui.Text($"Neck Spiritbond: {Spiritbond.Neck}");
+                ImGui.Text($"Wrist Spiritbond: {Spiritbond.Wrist}");
+                ImGui.Text($"Ring 1 Spiritbond: {Spiritbond.Ring1}");
+                ImGui.Text($"Ring 2 Spiritbond: {Spiritbond.Ring2}");
+
+                ImGui.Text($"Spiritbond Ready Any: {Spiritbond.IsSpiritbondReadyAny()}");
+
             }
             ImGui.Separator();
 
@@ -118,6 +141,15 @@ namespace Artisan.Autocraft
             {
                 CurrentCraft.CloseQuickSynthWindow();
             }
+            if (ImGui.Button($"Open Materia Window"))
+            {
+                Spiritbond.OpenMateriaMenu();
+            }
+            if (ImGui.Button($"Extract First Materia"))
+            {
+                Spiritbond.ExtractFirstMateria();
+            }
+
 
             /*ImGui.InputInt("id", ref SelRecId);
             if (ImGui.Button("OpenRecipeByRecipeId"))

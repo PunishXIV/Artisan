@@ -59,19 +59,19 @@ namespace Artisan.RawInformation
                 Service.Configuration.Save();
             }
 
-            if (autoMode)
-            {
-                var delay = Service.Configuration.AutoDelay;
-                ImGui.PushItemWidth(200);
-                if (ImGui.SliderInt("Set delay (ms)", ref delay, 0, 1000))
-                {
-                    if (delay < 0) delay = 0;
-                    if (delay > 1000) delay = 1000;
+            //if (autoMode)
+            //{
+            //    var delay = Service.Configuration.AutoDelay;
+            //    ImGui.PushItemWidth(200);
+            //    if (ImGui.SliderInt("Set delay (ms)", ref delay, 0, 1000))
+            //    {
+            //        if (delay < 0) delay = 0;
+            //        if (delay > 1000) delay = 1000;
 
-                    Service.Configuration.AutoDelay = delay;
-                    Service.Configuration.Save();
-                }
-            }
+            //        Service.Configuration.AutoDelay = delay;
+            //        Service.Configuration.Save();
+            //    }
+            //}
 
             ImGui.Checkbox("Endurance Mode Toggle", ref Handler.Enable);
 
@@ -118,7 +118,7 @@ namespace Artisan.RawInformation
             {
                 if (ImGui.Selectable(""))
                 {
-                    Service.Configuration.IndividualMacros[(uint)Handler.RecipeID] = null;
+                    Service.Configuration.IndividualMacros.Remove((uint)Handler.RecipeID);
                     Service.Configuration.Save();
                 }
                 foreach (var macro in Service.Configuration.UserMacros)
@@ -137,6 +137,44 @@ namespace Artisan.RawInformation
             ImGui.End();
             ImGui.PopStyleVar(2);
         }
+
+        internal static unsafe void DrawEnduranceCounter(AtkResNode* node)
+        {
+            var position = GetNodePosition(node);
+            var scale = GetNodeScale(node);
+            var size = new Vector2(node->Width, node->Height) * scale;
+            var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
+            position += ImGuiHelpers.MainViewport.Pos;
+
+            ImGuiHelpers.ForceNextWindowMainViewport();
+            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.Length() + 20, position.Y));
+
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(4f, 4f));
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
+            ImGui.Begin($"###Options{node->NodeID}", ImGuiWindowFlags.NoScrollbar
+                | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
+                | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
+
+            ImGui.Text("Craft X Times:");
+            ImGui.SameLine();
+            ImGui.PushItemWidth(100);
+            if (ImGui.InputInt($"###TimesRepeat{node->NodeID}", ref Service.Configuration.CraftX))
+            {
+                if (Service.Configuration.CraftX < 0)
+                    Service.Configuration.CraftX = 0;
+
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Craft") && Service.Configuration.CraftX > 0)
+            {
+                Service.Configuration.CraftingX = true;
+                Handler.Enable = true;
+            }
+
+            ImGui.End();
+            ImGui.PopStyleVar(2);
+        }
+
         public unsafe static void DrawSuccessRate(AtkResNode* node, string str, string itemName, bool isMainWindow = false)
         {
             var position = GetNodePosition(node);

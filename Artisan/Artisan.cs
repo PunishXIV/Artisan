@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
@@ -8,7 +9,6 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan
@@ -114,11 +114,15 @@ namespace Artisan
                     CraftingLists.CraftingListFunctions.CurrentIndex++;
                 }
 
+
                 if (Handler.Enable && Service.Configuration.CraftingX && Service.Configuration.CraftX > 0)
                 {
                     Service.Configuration.CraftX -= 1;
                     if (Service.Configuration.CraftX == 0)
+                    {
+                        Service.Configuration.CraftingX = false;
                         Handler.Enable = false;
+                    }
                 }
 
 #if DEBUG
@@ -126,7 +130,10 @@ namespace Artisan
                 {
                     Service.Configuration.CraftX -= 1;
                     if (Service.Configuration.CraftX == 0)
+                    {
+                        Service.Configuration.CraftingX = false;
                         PluginUi.repeatTrial = false;
+                    }
                 }
 #endif
             }
@@ -176,14 +183,14 @@ namespace Artisan
                             {
                                 if (CurrentQuality >= MaxQuality)
                                 {
-                                    while (ActionIsQuality())
+                                    while (ActionIsQuality(macro))
                                     {
                                         MacroStep++;
                                     }
                                 }
                             }
 
-                            if (macro.MacroOptions.UpgradeActions && ActionUpgradable(out uint newAction))
+                            if (macro.MacroOptions.UpgradeActions && ActionUpgradable(macro, out uint newAction))
                             {
                                 CurrentRecommendation = newAction;
                             }
@@ -201,14 +208,14 @@ namespace Artisan
                             {
                                 if (CurrentQuality >= MaxQuality)
                                 {
-                                    while (ActionIsQuality())
+                                    while (ActionIsQuality(Service.Configuration.SetMacro))
                                     {
                                         MacroStep++;
                                     }
                                 }
                             }
 
-                            if (Service.Configuration.SetMacro.MacroOptions.UpgradeActions && ActionUpgradable(out uint newAction))
+                            if (Service.Configuration.SetMacro.MacroOptions.UpgradeActions && ActionUpgradable(Service.Configuration.SetMacro, out uint newAction))
                             {
                                 CurrentRecommendation = newAction;
                             }
@@ -271,7 +278,7 @@ namespace Artisan
                     if (Service.Configuration.AutoMode)
                     {
                         Service.Framework.RunOnTick(() => Hotbars.ExecuteRecommended(CurrentRecommendation), TimeSpan.FromMilliseconds(Service.Configuration.AutoDelay));
-                        
+
                         //Service.Plugin.BotTask.Schedule(() => Hotbars.ExecuteRecommended(CurrentRecommendation), Service.Configuration.AutoDelay);
                     }
 
@@ -285,9 +292,9 @@ namespace Artisan
 
         }
 
-        private static bool ActionUpgradable(out uint newAction)
+        private static bool ActionUpgradable(Macro macro, out uint newAction)
         {
-            newAction = Service.Configuration.SetMacro.MacroActions[MacroStep];
+            newAction = macro.MacroActions[MacroStep];
             if (CurrentCondition is CraftingLogic.CurrentCraft.Condition.Good or CraftingLogic.CurrentCraft.Condition.Excellent)
             {
                 switch (newAction)
@@ -315,9 +322,9 @@ namespace Artisan
             return false;
         }
 
-        private static bool ActionIsQuality()
+        private static bool ActionIsQuality(Macro macro)
         {
-            var currentAction = Service.Configuration.SetMacro.MacroActions[MacroStep];
+            var currentAction = macro.MacroActions[MacroStep];
             switch (currentAction)
             {
                 case Skills.HastyTouch:
