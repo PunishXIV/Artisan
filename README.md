@@ -1,3 +1,3 @@
 # Artisan
 
-Crafting Bot/Helper for FFXIV
+Crafting Automation Plugin/Helper for FFXIV
