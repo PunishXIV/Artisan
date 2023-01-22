@@ -158,7 +158,7 @@ namespace Artisan.CraftingLists
                 if (selectedList.ListItemOptions.TryGetValue(CraftingListUI.CurrentProcessedItem, out var options) && options.NQOnly)
                 {
                     var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
-                    var count = lastIndex - CurrentIndex;
+                    var count = lastIndex - CurrentIndex + 1;
                     if (count >= 99)
                     {
                         CurrentCraft.QuickSynthItem(99);
@@ -198,7 +198,7 @@ namespace Artisan.CraftingLists
                 if (selectedList.ListItemOptions.TryGetValue(CraftingListUI.CurrentProcessedItem, out var options) && options.NQOnly)
                 {
                     var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
-                    var count = lastIndex - CurrentIndex;
+                    var count = lastIndex - CurrentIndex + 1;
                     if (count >= 99)
                     {
                         CurrentCraft.QuickSynthItem(99);

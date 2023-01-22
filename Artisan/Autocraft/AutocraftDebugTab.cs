@@ -96,6 +96,9 @@ namespace Artisan.Autocraft
                 ImGui.Text($"GS+ByregotCombo: {CurrentCraft.GreatStridesByregotCombo()}");
                 ImGui.Text($"Predicted Quality: {CurrentCraft.CalculateNewQuality(CurrentCraft.CurrentRecommendation)}");
                 ImGui.Text($"Macro Step: {CurrentCraft.MacroStep}");
+                ImGui.Text($"Collectibility Low: {CurrentCraft.CollectabilityLow}");
+                ImGui.Text($"Collectibility Mid: {CurrentCraft.CollectabilityMid}");
+                ImGui.Text($"Collectibility High: {CurrentCraft.CollectabilityHigh}");
             }
 
             if (ImGui.CollapsingHeader("Spiritbonds"))

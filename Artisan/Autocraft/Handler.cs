@@ -126,7 +126,7 @@ namespace Artisan.Autocraft
                     Spiritbond.CloseMateriaMenu();
                 }
 
-                if (Service.Configuration.Repair && !RepairManager.ProcessRepair(false))
+                if (Service.Configuration.Repair && !RepairManager.ProcessRepair(false) && ((Service.Configuration.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!Service.Configuration.Materia)))
                 {
                     if (AutocraftDebugTab.Debug) PluginLog.Verbose("Entered repair check");
                     if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])

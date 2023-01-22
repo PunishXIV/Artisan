@@ -1,5 +1,6 @@
 ﻿using Artisan.RawInformation;
 using Dalamud.Interface.Components;
+using ECommons.ImGuiMethods;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
@@ -228,6 +229,18 @@ namespace Artisan.MacroSystem
 
                     }
                     ImGui.Columns(1);
+                    ImGuiEx.ImGuiLineCentered("MTimeHead", delegate
+                    {
+                        ImGuiEx.TextUnderlined($"Estimated Macro Length");
+                    });
+                    ImGuiEx.ImGuiLineCentered("MTimeArtisan", delegate
+                    {
+                        ImGuiEx.Text($"Artisan: {GetMacroLength(selectedMacro)} seconds");
+                    });
+                    ImGuiEx.ImGuiLineCentered("MTimeTeamcraft", delegate
+                    {
+                        ImGuiEx.Text($"Normal Macro: {GetTeamcraftMacroLength(selectedMacro)} seconds");
+                    });
                     ImGui.EndChild();
                 }
                 else
@@ -246,9 +259,17 @@ namespace Artisan.MacroSystem
 
         private static uint GetCPCost(Macro m)
         {
+            uint previousAction = 0;
             uint output = 0;
             foreach (var act in m.MacroActions)
             {
+                if ((act == Skills.StandardTouch && previousAction == Skills.BasicTouch) || (act == Skills.AdvancedTouch && previousAction == Skills.StandardTouch))
+                {
+                    output += 18;
+                    previousAction = act;
+                    continue;
+                }
+
                 if (act >= 100000)
                 {
                     output += LuminaSheets.CraftActions[act].Cost;
@@ -257,10 +278,84 @@ namespace Artisan.MacroSystem
                 {
                     output += LuminaSheets.ActionSheet[act].PrimaryCostValue;
                 }
+
+                previousAction = act;
             }
 
             return output;
         }
+
+        private static double GetMacroLength(Macro m)
+        {
+            double output = 0;
+            var delay = (double)Service.Configuration.AutoDelay;
+            var delaySeconds = delay / 1000;
+
+            foreach (var act in m.MacroActions)
+            {
+                if (ActionIsLengthyAnimation(act))
+                {
+                    output += 2.5 + delaySeconds;
+                }
+                else
+                {
+                    output += 1.25 + delaySeconds;
+                }
+            }
+
+            return Math.Round(output, 2);
+
+        }
+
+        private static float GetTeamcraftMacroLength(Macro m)
+        {
+            float output = 0;
+            foreach (var act in m.MacroActions)
+            {
+                if (ActionIsLengthyAnimation(act))
+                {
+                    output += 3f;
+                }
+                else
+                {
+                    output += 2f;
+                }
+            }
+
+            return output;
+
+        }
+        private static bool ActionIsLengthyAnimation(uint id)
+        {
+            switch (id)
+            {
+                case Skills.BasicSynth:
+                case Skills.RapidSynthesis:
+                case Skills.MuscleMemory:
+                case Skills.CarefulSynthesis:
+                case Skills.FocusedSynthesis:
+                case Skills.Groundwork:
+                case Skills.DelicateSynthesis:
+                case Skills.IntensiveSynthesis:
+                case Skills.PrudentSynthesis:
+                case Skills.BasicTouch:
+                case Skills.HastyTouch:
+                case Skills.StandardTouch:
+                case Skills.PreciseTouch:
+                case Skills.PrudentTouch:
+                case Skills.FocusedTouch:
+                case Skills.Reflect:
+                case Skills.PreparatoryTouch:
+                case Skills.AdvancedTouch:
+                case Skills.TrainedFinesse:
+                case Skills.ByregotsBlessing:
+                case Skills.MastersMend:
+                    return true;
+                    default:
+                    return false;
+            };
+        }
+
 
         private static string GetActionName(uint action)
         {

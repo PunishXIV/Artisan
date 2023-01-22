@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using Artisan.CraftingLists;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Game;
@@ -8,7 +9,9 @@ using Dalamud.Game.Gui.Toast;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan
@@ -20,6 +23,7 @@ namespace Artisan
         public static PluginUI? PluginUi { get; set; }
         public static bool currentCraftFinished = false;
         internal BlockingTask BotTask = new();
+        public static Stopwatch Benchmark = new();
 
         public Artisan(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
@@ -45,11 +49,19 @@ namespace Artisan
             Service.Interface.UiBuilder.OpenConfigUi += DrawConfigUI;
             Service.Condition.ConditionChange += CheckForCraftedState;
             Service.Framework.Update += FireBot;
+            Service.ClientState.Logout += DisableEndurance;
+            Service.ClientState.Login += DisableEndurance;
             ActionWatching.Enable();
             StepChanged += ResetRecommendation;
             ConsumableChecker.Init();
             Handler.Init();
             CleanUpIndividualMacros();
+        }
+
+        private void DisableEndurance(object? sender, EventArgs e)
+        {
+            Handler.Enable = false;
+            CraftingListUI.Processing = false;
         }
 
         public static void CleanUpIndividualMacros()
@@ -89,6 +101,12 @@ namespace Artisan
             //{
             //    return;
             //}
+
+            if (!Service.ClientState.IsLoggedIn)
+            {
+                Handler.Enable = false;
+                CraftingListUI.Processing = false;
+            }
             PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting];
             if (!PluginUi.CraftingVisible)
             {
@@ -101,6 +119,7 @@ namespace Artisan
             GetCraft();
             if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0)
             {
+                Benchmark.Restart();
                 FetchRecommendation(CurrentStep);
             }
 
@@ -154,6 +173,7 @@ namespace Artisan
             {
                 if (e == 0)
                 {
+                    Benchmark.Reset();
                     CurrentRecommendation = 0;
                     ManipulationUsed = false;
                     JustUsedObserve = false;
@@ -227,6 +247,7 @@ namespace Artisan
                     }
                 }
 
+                RecommendationName = CurrentRecommendation.NameOfAction();
 
                 if (CurrentRecommendation != 0)
                 {
@@ -322,7 +343,7 @@ namespace Artisan
             return false;
         }
 
-        private static bool ActionIsQuality(Macro macro)
+        public static bool ActionIsQuality(Macro macro)
         {
             var currentAction = macro.MacroActions[MacroStep];
             switch (currentAction)

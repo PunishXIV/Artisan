@@ -13,6 +13,7 @@ namespace Artisan.RawInformation
 {
     internal class AtkResNodeFunctions
     {
+        public static bool ResetPosition = false;
         public unsafe static void DrawOutline(AtkResNode* node)
         {
             var position = GetNodePosition(node);
@@ -27,6 +28,9 @@ namespace Artisan.RawInformation
 
         public unsafe static void DrawOptions(AtkResNode* node)
         {
+            if (!node->IsVisible)
+                return;
+
             var position = GetNodePosition(node);
             var scale = GetNodeScale(node);
             var size = new Vector2(node->Width, node->Height) * scale;
@@ -35,13 +39,20 @@ namespace Artisan.RawInformation
 
             ImGuiHelpers.ForceNextWindowMainViewport();
 
-            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.Length() * 2, position.Y));
+            if (ResetPosition && position.X != 0)
+            {
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + node->Width + 7, position.Y + 7), ImGuiCond.Always);
+                ResetPosition = false;
+            }
+            else
+            {
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + node->Width + 7, position.Y + 7), ImGuiCond.FirstUseEver);
+            }
 
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(4f, 4f));
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(7f, 7f));
             ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
             ImGui.Begin($"###Options{node->NodeID}", ImGuiWindowFlags.NoScrollbar
-                | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
-                | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
+                | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding);
 
             DrawCopyOfCraftMenu();
 
@@ -89,6 +100,9 @@ namespace Artisan.RawInformation
             if (Service.Configuration.UserMacros.Count == 0)
                 return;
 
+            if (!node->IsVisible)
+                return;
+
             var position = GetNodePosition(node);
             var scale = GetNodeScale(node);
             var size = new Vector2(node->Width, node->Height) * scale;
@@ -96,13 +110,21 @@ namespace Artisan.RawInformation
             position += ImGuiHelpers.MainViewport.Pos;
 
             ImGuiHelpers.ForceNextWindowMainViewport();
-            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.Length() * 2, position.Y));
+            if (ResetPosition && position.X != 0)
+            {
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + node->Width + 7, position.Y + 7), ImGuiCond.Always);
+                ResetPosition = false;
+            }
+            else
+            {
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + node->Width + 7, position.Y + 7), ImGuiCond.FirstUseEver);
+            }
 
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(4f, 4f));
+            //Dalamud.Logging.PluginLog.Debug($"{position.X + node->Width + 7}");
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(7f, 7f));
             ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
             ImGui.Begin($"###Options{node->NodeID}", ImGuiWindowFlags.NoScrollbar
-                | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
-                | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
+                | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding);
 
             string preview = Service.Configuration.IndividualMacros.TryGetValue((uint)Handler.RecipeID, out var prevMacro) && prevMacro != null ? Service.Configuration.IndividualMacros[(uint)Handler.RecipeID].Name : "";
             if (prevMacro is not null && !Service.Configuration.UserMacros.Where(x => x.ID == prevMacro.ID).Any())
@@ -145,13 +167,14 @@ namespace Artisan.RawInformation
             var size = new Vector2(node->Width, node->Height) * scale;
             var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
             position += ImGuiHelpers.MainViewport.Pos;
+            var textHeight = ImGui.CalcTextSize("Craft X Times:");
 
             ImGuiHelpers.ForceNextWindowMainViewport();
-            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.Length() + 20, position.Y));
+            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + node->Width + 11, position.Y + node->Height - (textHeight.Y * 2) - 3f));
 
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(4f, 4f));
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(7f, 7f));
             ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
-            ImGui.Begin($"###Options{node->NodeID}", ImGuiWindowFlags.NoScrollbar
+            ImGui.Begin($"###Repeat{node->NodeID}", ImGuiWindowFlags.NoScrollbar
                 | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
                 | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
 

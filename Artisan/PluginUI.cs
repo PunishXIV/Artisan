@@ -5,6 +5,7 @@ using Artisan.RawInformation;
 using Dalamud.Interface.Components;
 using Dalamud.Logging;
 using Dalamud.Plugin;
+using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Newtonsoft.Json;
@@ -71,7 +72,9 @@ namespace Artisan
 
             if (!Service.Configuration.DisableMiniMenu)
             {
+                if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] && !Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
                 ShowConfigOnRecipeWindow();
+
                 DrawEnduranceModeCounterOnRecipe();
 
             }
@@ -147,7 +150,7 @@ namespace Artisan
             var baseX = addonPtr->X;
             var baseY = addonPtr->Y;
 
-            AtkResNodeFunctions.DrawEnduranceCounter(addonPtr->UldManager.NodeList[7]);
+            AtkResNodeFunctions.DrawEnduranceCounter(addonPtr->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[4]);
         }
 
         private unsafe void ShowConfigOnRecipeWindow()
@@ -163,8 +166,8 @@ namespace Artisan
             var baseX = addonPtr->X;
             var baseY = addonPtr->Y;
 
-            if (addonPtr->UldManager.NodeList[104]->IsVisible)
-            AtkResNodeFunctions.DrawOptions(addonPtr->UldManager.NodeList[104]);
+            if (addonPtr->UldManager.NodeList[1]->IsVisible)
+            AtkResNodeFunctions.DrawOptions(addonPtr->UldManager.NodeList[1]);
         }
 
         private unsafe void DrawMacroChoiceOnRecipe()
@@ -180,7 +183,8 @@ namespace Artisan
             var baseX = addonPtr->X;
             var baseY = addonPtr->Y;
 
-            AtkResNodeFunctions.DrawMacroOptions(addonPtr->UldManager.NodeList[104]);
+            if (addonPtr->UldManager.NodeList[1]->IsVisible)
+                AtkResNodeFunctions.DrawMacroOptions(addonPtr->UldManager.NodeList[1]);
         }
 
         private static string CalculateEstimate(string itemName)
@@ -461,6 +465,10 @@ namespace Artisan
                 Service.Configuration.Save();
             }
             ImGuiComponents.HelpMarker("Hides the mini-menu for config settings in the recipe list. Still shows individual macro menu.");
+            if (ImGui.Button("Reset Recipe List mini-menu position"))
+            {
+                AtkResNodeFunctions.ResetPosition = true;
+            }
         }
     }
 }

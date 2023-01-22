@@ -9,6 +9,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 
 namespace Artisan.CraftingLogic
@@ -103,7 +104,7 @@ namespace Artisan.CraftingLogic
         public static int CurrentQuality { get; set; } = 0;
         public static int MaxQuality { get; set; } = 0;
         public static int HighQualityPercentage { get; set; } = 0;
-
+        public static string RecommendationName { get; set; }
         public static Condition CurrentCondition { get; set; }
         private static int currentStep = 0;
         private static int observeCounter;
@@ -118,6 +119,7 @@ namespace Artisan.CraftingLogic
                 if (currentStep != value)
                 {
                     currentStep = value;
+                    Dalamud.Logging.PluginLog.Debug($"Benchmark: {RecommendationName} = {Artisan.Benchmark.ElapsedMilliseconds}ms");
                     StepChanged?.Invoke(currentStep, value);
                 }
 
@@ -224,8 +226,8 @@ namespace Artisan.CraftingLogic
                 MaxProgress = Convert.ToInt32(mp.NodeText.ToString());
                 CurrentQuality = Convert.ToInt32(cq.NodeText.ToString());
                 MaxQuality = Convert.ToInt32(mq.NodeText.ToString());
-                ItemName = item.NodeText.ToString()[14..];
-                ItemName = ItemName.Remove(ItemName.Length - 10, 10);
+                ItemName = item.NodeText.ExtractText();
+                //ItemName = ItemName.Remove(ItemName.Length - 10, 10);
                 if (ItemName[^1] == '')
                 {
                     ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();

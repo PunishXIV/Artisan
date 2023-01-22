@@ -181,23 +181,41 @@ namespace Artisan.CraftingLists
                                         listMaterials.Clear();
                                     }
                                     ImGui.SameLine();
-                                    if (ImGuiComponents.IconButton(FontAwesomeIcon.PlusCircle))
-                                    {
-                                        selectedList.Items.Insert(selectedList.Items.IndexOf(selectedListItem), selectedListItem);
-                                        Service.Configuration.Save();
+                                    var count = selectedList.Items.Count(x => x == selectedListItem);
 
-                                        SelectedListMaterials.Clear();
-                                        listMaterials.Clear();
-                                    }
-                                    ImGui.SameLine();
-                                    if (ImGuiComponents.IconButton(FontAwesomeIcon.MinusCircle))
+                                    ImGui.PushItemWidth(100);
+                                    if (ImGui.InputInt("Adjust quantity", ref count))
                                     {
-                                        selectedList.Items.Remove(selectedListItem);
-                                        Service.Configuration.Save();
+                                        if (count > 0)
+                                        {
+                                            var oldCount = selectedList.Items.Count(x => x == selectedListItem);
+                                            if (oldCount < count)
+                                            {
+                                                var diff = count - oldCount;
+                                                for (int i = 1; i <= diff; i++)
+                                                {
+                                                    selectedList.Items.Insert(selectedList.Items.IndexOf(selectedListItem), selectedListItem);
+                                                }
+                                                Service.Configuration.Save();
 
-                                        SelectedListMaterials.Clear();
-                                        listMaterials.Clear();
+                                                SelectedListMaterials.Clear();
+                                                listMaterials.Clear();
+                                            }
+                                            if (count < oldCount)
+                                            {
+                                                var diff = oldCount - count;
+                                                for (int i = 1; i <= diff; i++)
+                                                {
+                                                    selectedList.Items.Remove(selectedListItem);
+                                                }
+                                                Service.Configuration.Save();
+
+                                                SelectedListMaterials.Clear();
+                                                listMaterials.Clear();
+                                            }
+                                        }
                                     }
+
 
                                     if (!selectedList.ListItemOptions.ContainsKey(selectedListItem))
                                     {
