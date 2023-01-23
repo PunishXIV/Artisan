@@ -72,11 +72,11 @@ namespace Artisan
 
             if (!Service.Configuration.DisableMiniMenu)
             {
-                if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] && !Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
-                ShowConfigOnRecipeWindow();
+                var notCrafting = !Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] &&
+                                      !Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft];
+                ShowConfigOnRecipeWindow(notCrafting);
 
                 DrawEnduranceModeCounterOnRecipe();
-
             }
             DrawMacroChoiceOnRecipe();
 
@@ -153,7 +153,7 @@ namespace Artisan
             AtkResNodeFunctions.DrawEnduranceCounter(addonPtr->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[4]);
         }
 
-        private unsafe void ShowConfigOnRecipeWindow()
+        private unsafe void ShowConfigOnRecipeWindow(bool notCrafting)
         {
             var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
             if (recipeWindow == IntPtr.Zero)
@@ -167,7 +167,7 @@ namespace Artisan
             var baseY = addonPtr->Y;
 
             if (addonPtr->UldManager.NodeList[1]->IsVisible)
-            AtkResNodeFunctions.DrawOptions(addonPtr->UldManager.NodeList[1]);
+                AtkResNodeFunctions.DrawOptions(addonPtr->UldManager.NodeList[1], notCrafting);
         }
 
         private unsafe void DrawMacroChoiceOnRecipe()

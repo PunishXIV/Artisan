@@ -26,7 +26,7 @@ namespace Artisan.RawInformation
             ImGui.GetForegroundDrawList(ImGuiHelpers.MainViewport).AddRect(position, position + size, 0xFFFFFF00, 0, ImDrawFlags.RoundCornersAll, 8);
         }
 
-        public unsafe static void DrawOptions(AtkResNode* node)
+        public unsafe static void DrawOptions(AtkResNode* node, bool notCrafting)
         {
             if (!node->IsVisible)
                 return;
@@ -54,37 +54,40 @@ namespace Artisan.RawInformation
             ImGui.Begin($"###Options{node->NodeID}", ImGuiWindowFlags.NoScrollbar
                 | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding);
 
-            DrawCopyOfCraftMenu();
+            DrawCopyOfCraftMenu(notCrafting);
 
             ImGui.End();
             ImGui.PopStyleVar(2);
         }
 
-        private static void DrawCopyOfCraftMenu()
+        private static void DrawCopyOfCraftMenu(bool notCrafting)
         {
-            bool autoMode = Service.Configuration.AutoMode;
-
-            if (ImGui.Checkbox("Auto Mode", ref autoMode))
+            if (notCrafting)
             {
-                Service.Configuration.AutoMode = autoMode;
-                Service.Configuration.Save();
+                bool autoMode = Service.Configuration.AutoMode;
+
+                if (ImGui.Checkbox("Auto Mode", ref autoMode))
+                {
+                    Service.Configuration.AutoMode = autoMode;
+                    Service.Configuration.Save();
+                }
+
+                //if (autoMode)
+                //{
+                //    var delay = Service.Configuration.AutoDelay;
+                //    ImGui.PushItemWidth(200);
+                //    if (ImGui.SliderInt("Set delay (ms)", ref delay, 0, 1000))
+                //    {
+                //        if (delay < 0) delay = 0;
+                //        if (delay > 1000) delay = 1000;
+
+                //        Service.Configuration.AutoDelay = delay;
+                //        Service.Configuration.Save();
+                //    }
+                //}
+
+                ImGui.Checkbox("Endurance Mode Toggle", ref Handler.Enable);
             }
-
-            //if (autoMode)
-            //{
-            //    var delay = Service.Configuration.AutoDelay;
-            //    ImGui.PushItemWidth(200);
-            //    if (ImGui.SliderInt("Set delay (ms)", ref delay, 0, 1000))
-            //    {
-            //        if (delay < 0) delay = 0;
-            //        if (delay > 1000) delay = 1000;
-
-            //        Service.Configuration.AutoDelay = delay;
-            //        Service.Configuration.Save();
-            //    }
-            //}
-
-            ImGui.Checkbox("Endurance Mode Toggle", ref Handler.Enable);
 
             bool macroMode = Service.Configuration.UseMacroMode;
             if (ImGui.Checkbox("Macro Mode", ref macroMode))
