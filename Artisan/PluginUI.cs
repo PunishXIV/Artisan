@@ -287,17 +287,20 @@ namespace Artisan
                 //}
                 //ImGuiComponents.HelpMarker($"Disabling failure prediction may result in items failing to be crafted.\nUse at your own discretion.");
 
-                ImGui.Text("Semi-Manual Mode");
-
-                if (ImGui.Button("Execute recommended action"))
+                if (!autoMode)
                 {
-                    Hotbars.ExecuteRecommended(CurrentRecommendation);
-                }
-                if (ImGui.Button("Fetch Recommendation"))
-                {
-                    Artisan.FetchRecommendation(CurrentStep);
-                }
+                    ImGui.Text("Semi-Manual Mode");
 
+                    if (ImGui.Button("Execute recommended action"))
+                    {
+                        Hotbars.ExecuteRecommended(CurrentRecommendation);
+                    }
+
+                    if (ImGui.Button("Fetch Recommendation"))
+                    {
+                        Artisan.FetchRecommendation(CurrentStep);
+                    }
+                }
 
 
             }
