@@ -107,7 +107,7 @@ namespace Artisan
                 Handler.Enable = false;
                 CraftingListUI.Processing = false;
             }
-            PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting];
+            PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting] && !Service.Condition[ConditionFlag.PreparingToCraft];
             if (!PluginUi.CraftingVisible)
             {
                 ActionWatching.TryDisable();

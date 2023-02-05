@@ -72,7 +72,7 @@ namespace Artisan
 
             if (!Service.Configuration.DisableMiniMenu)
             {
-                if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] && !Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
+                if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] || Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
                 ShowConfigOnRecipeWindow();
 
                 DrawEnduranceModeCounterOnRecipe();
@@ -465,6 +465,13 @@ namespace Artisan
                 Service.Configuration.Save();
             }
             ImGuiComponents.HelpMarker("Hides the mini-menu for config settings in the recipe list. Still shows individual macro menu.");
+
+            bool lockMini = Service.Configuration.LockMiniMenu;
+            if (ImGui.Checkbox("Keep Recipe List mini-menu position attached to Recipe List.", ref lockMini))
+            {
+                Service.Configuration.LockMiniMenu = lockMini;
+                Service.Configuration.Save();
+            }
             if (ImGui.Button("Reset Recipe List mini-menu position"))
             {
                 AtkResNodeFunctions.ResetPosition = true;

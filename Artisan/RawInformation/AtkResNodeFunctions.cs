@@ -39,14 +39,14 @@ namespace Artisan.RawInformation
 
             ImGuiHelpers.ForceNextWindowMainViewport();
 
-            if (ResetPosition && position.X != 0)
+            if ((ResetPosition && position.X != 0) || Service.Configuration.LockMiniMenu)
             {
-                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + node->Width + 7, position.Y + 7), ImGuiCond.Always);
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.Always);
                 ResetPosition = false;
             }
             else
             {
-                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + node->Width + 7, position.Y + 7), ImGuiCond.FirstUseEver);
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.FirstUseEver);
             }
 
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(7f, 7f));
@@ -110,14 +110,14 @@ namespace Artisan.RawInformation
             position += ImGuiHelpers.MainViewport.Pos;
 
             ImGuiHelpers.ForceNextWindowMainViewport();
-            if (ResetPosition && position.X != 0)
+            if ((ResetPosition && position.X != 0) || Service.Configuration.LockMiniMenu)
             {
-                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + node->Width + 7, position.Y + 7), ImGuiCond.Always);
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.Always);
                 ResetPosition = false;
             }
             else
             {
-                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + node->Width + 7, position.Y + 7), ImGuiCond.FirstUseEver);
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.FirstUseEver);
             }
 
             //Dalamud.Logging.PluginLog.Debug($"{position.X + node->Width + 7}");
@@ -170,7 +170,8 @@ namespace Artisan.RawInformation
             var textHeight = ImGui.CalcTextSize("Craft X Times:");
 
             ImGuiHelpers.ForceNextWindowMainViewport();
-            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + node->Width + 11, position.Y + node->Height - (textHeight.Y * 2) - 3f));
+            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 11f, position.Y + size.Y - (textHeight.Y * 2) - 3f));
+            //Dalamud.Logging.PluginLog.Debug($"Length: {size.Length()}, Width: {node->Width}, Scale: {scale.X}");
 
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(7f, 7f));
             ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));

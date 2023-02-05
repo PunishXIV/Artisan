@@ -60,6 +60,7 @@ namespace Artisan
         public bool ShowOnlyCraftable { get; set; } = false;
         public bool DisableMiniMenu { get; set; } = false;
         public bool Materia { get; set; } = false;
+        public bool LockMiniMenu { get; set; } = false;
 
         public int RepairPercent = 50;
 
