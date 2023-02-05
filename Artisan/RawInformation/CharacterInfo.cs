@@ -1,4 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using System;
 using System.Runtime.InteropServices;
 using static Artisan.CraftingLogic.CurrentCraft;
@@ -47,7 +48,7 @@ namespace Artisan.RawInformation
             return false;
         }
         public static bool CanUseTrainedEye
-            => Service.ClientState?.LocalPlayer?.Level >= Recipe?.RecipeLevelTable.Value?.ClassJobLevel + 10 && CraftingLogic.CurrentCraft.CurrentStep == 1 && Service.ClientState?.LocalPlayer?.Level >= 80;
+            => Service.ClientState?.LocalPlayer?.Level >= Recipe?.RecipeLevelTable.Value?.ClassJobLevel + 10 && CurrentStep == 1 && Service.ClientState?.LocalPlayer?.Level >= 80;
 
         public static uint HighestLevelTouch()
         {
@@ -157,17 +158,17 @@ namespace Artisan.RawInformation
         }
     }
 
-    public static class CharacterStats
+    public unsafe static class CharacterStats
     {
         private static IntPtr playerStaticAddress;
         private static IntPtr getBaseParamAddress;
-        private delegate ulong GetBaseParam(IntPtr playerAddress, uint baseParamId);
+        private unsafe delegate ulong GetBaseParam(PlayerState* playerAddress, uint baseParamId);
         private static GetBaseParam getBaseParam;
 
         public static ulong Craftsmanship { get; set; }
         public static ulong Control { get; set; }
 
-        private static void FetchMemory()
+        private unsafe static void FetchMemory()
         {
             try
             {
@@ -177,11 +178,6 @@ namespace Artisan.RawInformation
                     getBaseParam = Marshal.GetDelegateForFunctionPointer<GetBaseParam>(getBaseParamAddress);
                 }
 
-                if (playerStaticAddress == IntPtr.Zero)
-                {
-                    playerStaticAddress = Service.SigScanner.GetStaticAddressFromSig("8B D7 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 0F B7 E8");
-                }
-
             }
             catch (Exception ex)
             {
@@ -189,16 +185,13 @@ namespace Artisan.RawInformation
             }
         }
 
-        public static void FetchStats()
+        public unsafe static void FetchStats()
         {
-            if (playerStaticAddress != IntPtr.Zero)
+            FetchMemory();
+            if (UIState.Instance() is not null)
             {
-                Craftsmanship = getBaseParam(playerStaticAddress, 70);
-                Control = getBaseParam(playerStaticAddress, 71);
-            }
-            else
-            {
-                FetchMemory();
+                Craftsmanship = getBaseParam(&UIState.Instance()->PlayerState, 70);
+                Control = getBaseParam(&UIState.Instance()->PlayerState, 71);
             }
         }
 

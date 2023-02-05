@@ -46,6 +46,8 @@ namespace Artisan
         public bool UseMacroMode { get; set; }
         public Macro? SetMacro { get; set; }
 
+        public Dictionary<uint, Macro?> IndividualMacros { get; set; } = new();
+
         public int AutoDelay { get; set; } = 0;
 
         public uint Food = 0;
@@ -56,6 +58,9 @@ namespace Artisan
         public bool Repair { get; set; } = false;
         public bool DisableToasts { get; set; } = false;
         public bool ShowOnlyCraftable { get; set; } = false;
+        public bool DisableMiniMenu { get; set; } = false;
+        public bool Materia { get; set; } = false;
+        public bool LockMiniMenu { get; set; } = false;
 
         public int RepairPercent = 50;
 

@@ -39,7 +39,8 @@ namespace Artisan.CraftingLists
         internal static uint selectedListItem;
         public static bool Processing = false;
         public static uint CurrentProcessedItem;
-
+        private static bool renameMode = false;
+        private static string renameList;
 
         internal static void Draw()
         {
@@ -113,7 +114,27 @@ namespace Artisan.CraftingLists
                     ImGui.SameLine();
                     if (ImGui.BeginChild("###selectedList", new Vector2(0, ImGui.GetContentRegionAvail().Y), false))
                     {
-                        ImGui.Text($"Selected List: {selectedList.Name}");
+                        if (!renameMode)
+                        {
+                            ImGui.Text($"Selected List: {selectedList.Name}");
+                            ImGui.SameLine();
+                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.Pen))
+                            {
+                                renameMode = true;
+                            }
+                        }
+                        else
+                        {
+                            renameList = selectedList.Name;
+                            if (ImGui.InputText("", ref renameList, 64, ImGuiInputTextFlags.EnterReturnsTrue))
+                            {
+                                selectedList.Name = renameList;
+                                Service.Configuration.Save();
+
+                                renameMode = false;
+                                renameList = String.Empty;
+                            }
+                        }
                         if (ImGui.Button("Delete List (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                         {
                             Service.Configuration.CraftingLists.Remove(selectedList);
@@ -150,7 +171,7 @@ namespace Artisan.CraftingLists
                                 if (selectedListItem != 0)
                                 {
                                     ImGui.Text("Options");
-                                    if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.Trash))
+                                    if (ImGuiComponents.IconButton(FontAwesomeIcon.Trash))
                                     {
                                         selectedList.Items.RemoveAll(x => x == selectedListItem);
                                         selectedListItem = 0;
@@ -160,23 +181,89 @@ namespace Artisan.CraftingLists
                                         listMaterials.Clear();
                                     }
                                     ImGui.SameLine();
-                                    if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.PlusCircle))
-                                    {
-                                        selectedList.Items.Insert(selectedList.Items.IndexOf(selectedListItem), selectedListItem);
-                                        Service.Configuration.Save();
+                                    var count = selectedList.Items.Count(x => x == selectedListItem);
 
-                                        SelectedListMaterials.Clear();
-                                        listMaterials.Clear();
-                                    }
-                                    ImGui.SameLine();
-                                    if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.MinusCircle))
+                                    ImGui.PushItemWidth(100);
+                                    if (ImGui.InputInt("Adjust quantity", ref count))
                                     {
-                                        selectedList.Items.Remove(selectedListItem);
-                                        Service.Configuration.Save();
+                                        if (count > 0)
+                                        {
+                                            var oldCount = selectedList.Items.Count(x => x == selectedListItem);
+                                            if (oldCount < count)
+                                            {
+                                                var diff = count - oldCount;
+                                                for (int i = 1; i <= diff; i++)
+                                                {
+                                                    selectedList.Items.Insert(selectedList.Items.IndexOf(selectedListItem), selectedListItem);
+                                                }
+                                                Service.Configuration.Save();
 
-                                        SelectedListMaterials.Clear();
-                                        listMaterials.Clear();
+                                                SelectedListMaterials.Clear();
+                                                listMaterials.Clear();
+                                            }
+                                            if (count < oldCount)
+                                            {
+                                                var diff = oldCount - count;
+                                                for (int i = 1; i <= diff; i++)
+                                                {
+                                                    selectedList.Items.Remove(selectedListItem);
+                                                }
+                                                Service.Configuration.Save();
+
+                                                SelectedListMaterials.Clear();
+                                                listMaterials.Clear();
+                                            }
+                                        }
                                     }
+
+
+                                    if (!selectedList.ListItemOptions.ContainsKey(selectedListItem))
+                                    {
+                                        selectedList.ListItemOptions.TryAdd(selectedListItem, new ListItemOptions());
+                                    }
+                                    selectedList.ListItemOptions.TryGetValue(selectedListItem, out var options);
+                                    bool NQOnly = options.NQOnly;
+                                    if (ImGui.Checkbox("Quick Synthesis this item", ref NQOnly))
+                                    {
+                                        options.NQOnly = NQOnly;
+                                        Service.Configuration.Save();
+                                    }
+
+                                    string preview = Service.Configuration.IndividualMacros.TryGetValue((uint)selectedListItem, out var prevMacro) && prevMacro != null ? Service.Configuration.IndividualMacros[(uint)selectedListItem].Name : "";
+                                    if (prevMacro is not null && !Service.Configuration.UserMacros.Where(x => x.ID == prevMacro.ID).Any())
+                                    {
+                                        preview = "";
+                                        Service.Configuration.IndividualMacros[(uint)selectedListItem] = null;
+                                        Service.Configuration.Save();
+                                    }
+
+                                    if (Service.Configuration.UserMacros.Count > 0)
+                                    {
+                                        ImGui.Spacing();
+                                        ImGui.Text($"Use a macro for this recipe (only when Macro mode is enabled)");
+                                        if (ImGui.BeginCombo("", preview))
+                                        {
+                                            if (ImGui.Selectable(""))
+                                            {
+                                                Service.Configuration.IndividualMacros[selectedListItem] = null;
+                                                Service.Configuration.Save();
+                                            }
+                                            foreach (var macro in Service.Configuration.UserMacros)
+                                            {
+                                                bool selected = Service.Configuration.IndividualMacros.TryGetValue((uint)selectedListItem, out var selectedMacro) && selectedMacro != null;
+                                                if (ImGui.Selectable(macro.Name, selected))
+                                                {
+                                                    Service.Configuration.IndividualMacros[(uint)selectedListItem] = macro;
+                                                    Service.Configuration.Save();
+                                                }
+                                            }
+
+                                            ImGui.EndCombo();
+                                        }
+                                    }
+                                    ImGui.Spacing();
+
+
                                     if (selectedList.Items.Distinct().Count() > 1)
                                     {
                                         ImGui.Text("Re-order list");
@@ -187,7 +274,7 @@ namespace Artisan.CraftingLists
 
                                         if (!isFirstItem)
                                         {
-                                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowUp))
+                                            if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowUp))
                                             {
                                                 var loops = selectedList.Items.Count(x => x == selectedListItem);
                                                 var previousNum = selectedList.Items[selectedList.Items.IndexOf(selectedListItem) - 1];
@@ -211,7 +298,7 @@ namespace Artisan.CraftingLists
                                                 ImGui.SameLine();
                                             }
 
-                                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowDown))
+                                            if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowDown))
                                             {
                                                 var nextNum = selectedList.Items[selectedList.Items.LastIndexOf(selectedListItem) + 1];
                                                 var loops = selectedList.Items.Count(x => x == nextNum);
@@ -226,6 +313,7 @@ namespace Artisan.CraftingLists
                                             }
                                         }
                                     }
+
                                 }
                             }
                             ImGui.Columns(1, null, false);

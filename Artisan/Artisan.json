@@ -9,7 +9,7 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog": "- Increases the text length of imports up to 10,000,000 characters per box.",
-  "DalamudApiLevel": 7,
+  "Changelog": "- Please visit the Discord for a full list of updates.",
+  "DalamudApiLevel": 8,
   "DownloadLinkTesting" : "https://love.puni.sh/plugins/Artisan/Testing/latest.zip"
 }

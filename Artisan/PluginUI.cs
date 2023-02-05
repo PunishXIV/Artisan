@@ -5,7 +5,7 @@ using Artisan.RawInformation;
 using Dalamud.Interface.Components;
 using Dalamud.Logging;
 using Dalamud.Plugin;
-using ECommons.ImGuiMethods;
+using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Newtonsoft.Json;
@@ -19,7 +19,7 @@ namespace Artisan
 {
     // It is good to have this be disposable in general, in case you ever need it
     // to do any cleanup
-    class PluginUI : IDisposable
+    public class PluginUI : IDisposable
     {
         public event EventHandler<bool>? CraftingWindowStateChanged;
 
@@ -64,32 +64,25 @@ namespace Artisan
 
         public void Draw()
         {
-            //if (!CheckIfCorrectRepo())
-            //{
-            //    ImGui.SetWindowSize(new Vector2(500, 500), ImGuiCond.FirstUseEver);
-            //    if (ImGui.Begin("Fraudulant Repo Detected", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysAutoResize))
-            //    {
-            //        ImGui.Text("[Artisan] Please uninstall and use the official repo:");
-            //        if (ImGui.Button("Repository"))
-            //        {
-            //            ImGui.SetClipboardText("https://love.puni.sh/ment.json");
-            //            Notify.Success("Link copied to clipboard");
-            //        }
-            //        return;
-            //    }
-            //}
-
             DrawCraftingWindow();
             CraftingListUI.DrawProcessingWindow();
 
             if (!Handler.Enable)
-            Handler.DrawRecipeData();
+                Handler.DrawRecipeData();
 
-            //if (Service.Configuration.ShowEHQ)
-            //    MarkChanceOfSuccess();
+            if (!Service.Configuration.DisableMiniMenu)
+            {
+                if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] || Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
+                ShowConfigOnRecipeWindow();
+
+                DrawEnduranceModeCounterOnRecipe();
+
+            }
+            DrawMacroChoiceOnRecipe();
+
 
             if (!Service.Configuration.DisableHighlightedAction)
-            Hotbars.MakeButtonsGlow(CurrentRecommendation);
+                Hotbars.MakeButtonsGlow(CurrentRecommendation);
 
             if (!Visible)
             {
@@ -144,98 +137,54 @@ namespace Artisan
             }
         }
 
-        private bool CheckIfCorrectRepo()
+        private unsafe void DrawEnduranceModeCounterOnRecipe()
         {
-#if DEBUG
-            return true;
-#endif
-            FileInfo? m = ECommons.DalamudServices.Svc.PluginInterface.AssemblyLocation;
-            var manifest = Path.Join(m.DirectoryName, "Artison.json");
-            if (File.Exists(manifest))
-            {
-                DRM? drm = JsonConvert.DeserializeObject<DRM>(File.ReadAllText(manifest));
-                if (drm is null)
-                    return false;
+            var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+            if (recipeWindow == IntPtr.Zero)
+                return;
 
-                if (!drm.DownloadLinkInstall.Equals(@"https://love.puni.sh/plugins/Artisan/latest.zip")) return false;
-                if (!drm.Name.Equals("Artisan")) return false;
+            var addonPtr = (AtkUnitBase*)recipeWindow;
+            if (addonPtr == null)
+                return;
 
-                return true;
+            var baseX = addonPtr->X;
+            var baseY = addonPtr->Y;
 
-            }
-            else
-            {
-                return false;
-            }
+            AtkResNodeFunctions.DrawEnduranceCounter(addonPtr->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[4]);
         }
 
-
-        public unsafe static void MarkChanceOfSuccess()
+        private unsafe void ShowConfigOnRecipeWindow()
         {
-            try
-            {
-                var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
-                if (recipeWindow == IntPtr.Zero)
-                    return;
+            var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+            if (recipeWindow == IntPtr.Zero)
+                return;
 
-                var addonPtr = (AtkUnitBase*)recipeWindow;
-                if (addonPtr == null)
-                    return;
+            var addonPtr = (AtkUnitBase*)recipeWindow;
+            if (addonPtr == null)
+                return;
 
-                var baseX = addonPtr->X;
-                var baseY = addonPtr->Y;
+            var baseX = addonPtr->X;
+            var baseY = addonPtr->Y;
 
-                var visCheck = (AtkComponentNode*)addonPtr->UldManager.NodeList[6];
-                if (!visCheck->AtkResNode.IsVisible)
-                    return;
+            if (addonPtr->UldManager.NodeList[1]->IsVisible)
+            AtkResNodeFunctions.DrawOptions(addonPtr->UldManager.NodeList[1]);
+        }
 
-                var selectedCraftNameNode = (AtkTextNode*)addonPtr->UldManager.NodeList[49];
-                var selectedCraftWindowBox = (AtkTextNode*)addonPtr->UldManager.NodeList[31];
-                var selectedCraftName = selectedCraftNameNode->NodeText.ToString()[14..];
-                selectedCraftName = selectedCraftName.Remove(selectedCraftName.Length - 10, 10);
-                if (!char.IsLetterOrDigit(selectedCraftName[^1]))
-                {
-                    selectedCraftName = selectedCraftName.Remove(selectedCraftName.Length - 1, 1).Trim();
-                }
-                CurrentSelectedCraft = selectedCraftName;
-                string selectedCalculated = CalculateEstimate(selectedCraftName);
-                AtkResNodeFunctions.DrawSuccessRate(&selectedCraftWindowBox->AtkResNode, selectedCalculated, selectedCraftName, true);
-                AtkResNodeFunctions.DrawQualitySlider(&selectedCraftNameNode->AtkResNode, selectedCraftName);
+        private unsafe void DrawMacroChoiceOnRecipe()
+        {
+            var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+            if (recipeWindow == IntPtr.Zero)
+                return;
 
-                var craftCount = (AtkTextNode*)addonPtr->UldManager.NodeList[63];
-                string count = craftCount->NodeText.ToString();
-                int maxCrafts = Convert.ToInt32(count.Split("-")[^1]);
+            var addonPtr = (AtkUnitBase*)recipeWindow;
+            if (addonPtr == null)
+                return;
 
-                var crafts = (AtkComponentNode*)addonPtr->UldManager.NodeList[67];
-                if (crafts->AtkResNode.IsVisible)
-                {
-                    var currentShownNodes = 0;
+            var baseX = addonPtr->X;
+            var baseY = addonPtr->Y;
 
-                    for (int i = 1; i <= 13; i++)
-                    {
-                        var craft = (AtkComponentNode*)crafts->Component->UldManager.NodeList[i];
-                        if (craft->AtkResNode.IsVisible && craft->AtkResNode.Y >= 0 && craft->AtkResNode.Y < 340 && currentShownNodes < 10 && currentShownNodes < maxCrafts)
-                        {
-                            currentShownNodes++;
-                            var craftNameNode = (AtkTextNode*)craft->Component->UldManager.NodeList[14];
-                            var ItemName = craftNameNode->NodeText.ToString()[14..];
-                            ItemName = ItemName.Remove(ItemName.Length - 10, 10);
-                            if (!char.IsLetterOrDigit(ItemName[^1]))
-                            {
-                                ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
-                            }
-
-                            string calculatedPercentage = CalculateEstimate(ItemName);
-
-                            AtkResNodeFunctions.DrawSuccessRate(&craft->AtkResNode, $"{calculatedPercentage}", ItemName);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                //Dalamud.Logging.PluginLog.Error(ex, "DrawRecipeChance");
-            }
+            if (addonPtr->UldManager.NodeList[1]->IsVisible)
+                AtkResNodeFunctions.DrawMacroOptions(addonPtr->UldManager.NodeList[1]);
         }
 
         private static string CalculateEstimate(string itemName)
@@ -283,7 +232,7 @@ namespace Artisan
             };
         }
 
-        private void DrawCraftingWindow()
+        public void DrawCraftingWindow()
         {
             if (!CraftingVisible)
             {
@@ -319,7 +268,7 @@ namespace Artisan
 
 
                 if (Handler.RecipeID != 0)
-                ImGui.Checkbox("Endurance Mode Toggle", ref Handler.Enable);
+                    ImGui.Checkbox("Endurance Mode Toggle", ref Handler.Enable);
 
                 if (Service.Configuration.CraftingX && Handler.Enable)
                 {
@@ -371,6 +320,7 @@ namespace Artisan
             bool useMacroMode = Service.Configuration.UseMacroMode;
             bool disableGlow = Service.Configuration.DisableHighlightedAction;
             bool disableToasts = Service.Configuration.DisableToasts;
+            bool disableMini = Service.Configuration.DisableMiniMenu;
 
             ImGui.Separator();
             if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
@@ -444,14 +394,15 @@ namespace Artisan
 
             if (Service.Configuration.UserMacros.Count > 0)
             {
-                if (ImGui.Checkbox("Enabled Macro Mode", ref useMacroMode))
+                if (ImGui.Checkbox("Macro Mode Enabled", ref useMacroMode))
                 {
                     Service.Configuration.UseMacroMode = useMacroMode;
                     Service.Configuration.Save();
                 }
-                ImGuiComponents.HelpMarker(@"Use a macro to craft instead of Artisan making its own decisions. 
-If the macro ends before the craft is complete, Artisan will resume making decisions until the end of the craft.
-If the macro cannot perform an action, you will have to manually intervene.");
+                ImGuiComponents.HelpMarker($"Use a macro to craft instead of Artisan making its own decisions.\r\n" +
+                    $"Priority is individual recipe macros followed by the selected macro below.\r\n" +
+                    $"If you wish to only use individual recipe macros then leave below unset.\r\n" +
+                    $"If the macro ends before a craft is complete, Artisan will make its own suggestions until the end of the craft.");
 
                 if (useMacroMode)
                 {
@@ -482,13 +433,13 @@ If the macro cannot perform an action, you will have to manually intervene.");
                 useMacroMode = false;
             }
 
-            if (ImGui.Checkbox("Use Tricks of the Trade - Good", ref useTricksGood))
+            if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[227].Text.RawString}", ref useTricksGood))
             {
                 Service.Configuration.UseTricksGood = useTricksGood;
                 Service.Configuration.Save();
             }
             ImGui.SameLine();
-            if (ImGui.Checkbox("Use Tricks of the Trade - Excellent", ref useTricksExcellent))
+            if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[228].Text.RawString}", ref useTricksExcellent))
             {
                 Service.Configuration.UseTricksExcellent = useTricksExcellent;
                 Service.Configuration.Save();
@@ -506,6 +457,24 @@ If the macro cannot perform an action, you will have to manually intervene.");
             {
                 Service.Configuration.MaxPercentage = maxQuality;
                 Service.Configuration.Save();
+            }
+
+            if (ImGui.Checkbox("Disable Recipe List mini-menu", ref disableMini))
+            {
+                Service.Configuration.DisableMiniMenu = disableMini;
+                Service.Configuration.Save();
+            }
+            ImGuiComponents.HelpMarker("Hides the mini-menu for config settings in the recipe list. Still shows individual macro menu.");
+
+            bool lockMini = Service.Configuration.LockMiniMenu;
+            if (ImGui.Checkbox("Keep Recipe List mini-menu position attached to Recipe List.", ref lockMini))
+            {
+                Service.Configuration.LockMiniMenu = lockMini;
+                Service.Configuration.Save();
+            }
+            if (ImGui.Button("Reset Recipe List mini-menu position"))
+            {
+                AtkResNodeFunctions.ResetPosition = true;
             }
         }
     }

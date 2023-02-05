@@ -23,8 +23,8 @@ namespace Artisan.Autocraft
         internal static (uint Id, string Name)[] Pots;
         static Dictionary<uint, string> Usables;
         static AgentInterface* itemContextMenuAgent;
-        [Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 41 B0 01 BA 13 00 00 00", Fallibility = Fallibility.Infallible)]
-        static delegate* unmanaged<AgentInterface*, uint, uint, uint, short, void> useItem;
+        //[Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 41 B0 01 BA 13 00 00 00", Fallibility = Fallibility.Infallible)]
+        //static delegate* unmanaged<AgentInterface*, uint, uint, uint, short, void> useItem;
 
         internal static void Init()
         {
@@ -80,21 +80,33 @@ namespace Artisan.Autocraft
         {
             if (Throttler.Throttle(2000))
             {
-                var ret = UseItemInternal(id, hq);
-                return ret;
+                if (hq)
+                {
+                    return UseItem2(id + 1_000_000);
+                }
+                else
+                {
+                    return UseItem2(id);
+                }
+                //var ret = UseItemInternal(id, hq);
+                //return ret;
             }
             return false;
         }
 
-        internal static bool UseItemInternal(uint id, bool hq = false)
-        {
-            if (id == 0) return false;
-            if (hq) id += 1_000_000;
-            if (!Usables.ContainsKey(id is >= 1_000_000 and < 2_000_000 ? id - 1_000_000 : id)) return false;
-            useItem(itemContextMenuAgent, id, 9999, 0, 0);
-            return true;
-        }
+        //internal static bool UseItemInternal(uint id, bool hq = false)
+        //{
+        //    if (id == 0) return false;
+        //    if (hq) id += 1_000_000;
+        //    if (!Usables.ContainsKey(id is >= 1_000_000 and < 2_000_000 ? id - 1_000_000 : id)) return false;
+        //    useItem(itemContextMenuAgent, id, 9999, 0, 0);
+        //    return true;
+        //}
 
+        internal static unsafe bool UseItem2(uint itemID) =>
+            ActionManager.Instance() is not null && ActionManager.Instance()->UseAction(ActionType.Item, itemID, a4: 65535);
+
+        internal static unsafe uint GetItemStatus(uint itemID) => ActionManager.Instance() is null ? uint.MaxValue : ActionManager.Instance()->GetActionStatus(ActionType.Item, itemID);
         internal static bool CheckConsumables(bool use = true)
         {
             var fooded = IsFooded() || Service.Configuration.Food == 0;

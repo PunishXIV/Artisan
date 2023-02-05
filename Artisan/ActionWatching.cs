@@ -79,7 +79,7 @@ namespace Artisan
 
                     JustUsedFinalAppraisal = false;
                 }
-                if (Service.Configuration.UseMacroMode && Service.Configuration.SetMacro != null && MacroStep < Service.Configuration.SetMacro.MacroActions.Count)
+                if (Service.Configuration.UseMacroMode)
                 {
                     MacroStep++;
                 
@@ -96,7 +96,7 @@ namespace Artisan
 
         static ActionWatching()
         {
-            UseActionHook ??= Hook<UseActionDelegate>.FromAddress((IntPtr)ActionManager.fpUseAction, UseActionDetour);
+            UseActionHook ??= Hook<UseActionDelegate>.FromAddress((IntPtr)ActionManager.Addresses.UseAction.Value, UseActionDetour);
         }
 
         public static void TryEnable()
@@ -124,5 +124,6 @@ namespace Artisan
         {
             UseActionHook?.Dispose();
         }
+
     }
 }

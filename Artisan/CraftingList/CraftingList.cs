@@ -20,8 +20,14 @@ namespace Artisan.CraftingLists
         public string Name { get; set; }
 
         public List<uint> Items { get; set; } = new();
+
+        public Dictionary<uint, ListItemOptions> ListItemOptions { get; set; } = new();
     }
 
+    public class ListItemOptions
+    {
+        public bool NQOnly { get; set; } = false;
+    }
     public static class CraftingListFunctions
     {
         public static int CurrentIndex = 0;
@@ -149,14 +155,36 @@ namespace Artisan.CraftingLists
                 OpenRecipeByID(CraftingListUI.CurrentProcessedItem);
                 SetIngredients(CraftingListUI.CurrentProcessedItem);
 
-                CurrentCraft.RepeatActualCraft();
+                if (selectedList.ListItemOptions.TryGetValue(CraftingListUI.CurrentProcessedItem, out var options) && options.NQOnly)
+                {
+                    var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
+                    var count = lastIndex - CurrentIndex + 1;
+                    if (count >= 99)
+                    {
+                        CurrentCraft.QuickSynthItem(99);
+                    }
+                    else
+                    {
+                        CurrentCraft.QuickSynthItem(count);
+                    }
+
+                }
+                else
+                {
+                    CurrentCraft.RepeatActualCraft();
+                }
             }
 
-            if (CurrentIndex == 0 || CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1])
+            if (CurrentIndex == 0 || CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1] || (CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0))
             {
                 if (isCrafting)
                 {
                     CloseCraftingMenu();
+                }
+
+                if (CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0)
+                {
+                    CurrentCraft.CloseQuickSynthWindow();
                 }
 
                 if (Artisan.CheckIfCraftFinished())
@@ -165,7 +193,27 @@ namespace Artisan.CraftingLists
                 }
             }
 
-            CurrentCraft.RepeatActualCraft();
+            if (isCrafting)
+            {
+                if (selectedList.ListItemOptions.TryGetValue(CraftingListUI.CurrentProcessedItem, out var options) && options.NQOnly)
+                {
+                    var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
+                    var count = lastIndex - CurrentIndex + 1;
+                    if (count >= 99)
+                    {
+                        CurrentCraft.QuickSynthItem(99);
+                    }
+                    else
+                    {
+                        CurrentCraft.QuickSynthItem(count);
+                    }
+                }
+                else
+                {
+                    SetIngredients(CraftingListUI.CurrentProcessedItem);
+                    CurrentCraft.RepeatActualCraft();
+                }
+            }
         }
 
         private unsafe static void SetIngredients(uint currentProcessedItem)

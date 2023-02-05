@@ -1,6 +1,7 @@
 ﻿using Artisan.Autocraft;
 using Artisan.RawInformation;
 using ClickLib.Clicks;
+using Dalamud.Utility.Signatures;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -8,6 +9,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 
 namespace Artisan.CraftingLogic
@@ -102,10 +104,12 @@ namespace Artisan.CraftingLogic
         public static int CurrentQuality { get; set; } = 0;
         public static int MaxQuality { get; set; } = 0;
         public static int HighQualityPercentage { get; set; } = 0;
-
+        public static string RecommendationName { get; set; }
         public static Condition CurrentCondition { get; set; }
         private static int currentStep = 0;
         private static int observeCounter;
+        private static int quickSynthCurrent = 0;
+        private static int quickSynthMax = 0;
 
         public static int CurrentStep
         {
@@ -115,6 +119,7 @@ namespace Artisan.CraftingLogic
                 if (currentStep != value)
                 {
                     currentStep = value;
+                    Dalamud.Logging.PluginLog.Debug($"Benchmark: {RecommendationName} = {Artisan.Benchmark.ElapsedMilliseconds}ms");
                     StepChanged?.Invoke(currentStep, value);
                 }
 
@@ -150,12 +155,41 @@ namespace Artisan.CraftingLogic
 
         public static bool ExpertCraftOpenerFinish { get; set; } = false;
 
+        public static int QuickSynthCurrent { get => quickSynthCurrent; set { if (value != 0 && quickSynthCurrent != value) { CraftingLists.CraftingListFunctions.CurrentIndex++; } quickSynthCurrent = value; } }
+        public static int QuickSynthMax { get => quickSynthMax; set => quickSynthMax = value; }
         public static int MacroStep { get; set; } = 0;
 
         public unsafe static bool GetCraft()
         {
             try
             {
+                var quickSynthPTR = Service.GameGui.GetAddonByName("SynthesisSimple", 1);
+                if (quickSynthPTR != IntPtr.Zero)
+                {
+                    var quickSynthWindow = (AtkUnitBase*)quickSynthPTR;
+                    if (quickSynthWindow != null)
+                    {
+                        try
+                        {
+                            var currentTextNode = (AtkTextNode*)quickSynthWindow->UldManager.NodeList[20];
+                            var maxTextNode = (AtkTextNode*)quickSynthWindow->UldManager.NodeList[18];
+
+                            QuickSynthCurrent = Convert.ToInt32(currentTextNode->NodeText.ToString());
+                            QuickSynthMax = Convert.ToInt32(maxTextNode->NodeText.ToString());
+                        }
+                        catch
+                        {
+
+                        }
+                        return true;
+                    }
+                }
+                else
+                {
+                    QuickSynthCurrent = 0;
+                    QuickSynthMax = 0;
+                }
+
                 IntPtr synthWindow = Service.GameGui.GetAddonByName("Synthesis", 1);
                 if (synthWindow == IntPtr.Zero)
                 {
@@ -192,8 +226,8 @@ namespace Artisan.CraftingLogic
                 MaxProgress = Convert.ToInt32(mp.NodeText.ToString());
                 CurrentQuality = Convert.ToInt32(cq.NodeText.ToString());
                 MaxQuality = Convert.ToInt32(mq.NodeText.ToString());
-                ItemName = item.NodeText.ToString()[14..];
-                ItemName = ItemName.Remove(ItemName.Length - 10, 10);
+                ItemName = item.NodeText.ExtractText();
+                //ItemName = ItemName.Remove(ItemName.Length - 10, 10);
                 if (ItemName[^1] == '')
                 {
                     ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
@@ -216,19 +250,17 @@ namespace Artisan.CraftingLogic
                     }
                 }
 
-                CurrentCondition = cond.NodeText.ToString() switch
-                {
-                    "Poor" => Condition.Poor,
-                    "Good" => Condition.Good,
-                    "Normal" => Condition.Normal,
-                    "Excellent" => Condition.Excellent,
-                    "Centered" => Condition.Centered,
-                    "Sturdy" => Condition.Sturdy,
-                    "Pliant" => Condition.Pliant,
-                    "Malleable" => Condition.Malleable,
-                    "Primed" => Condition.Primed,
-                    _ => Condition.Unknown
-                };
+
+                CurrentCondition = Condition.Unknown;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[229].Text.RawString) CurrentCondition = Condition.Poor;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[227].Text.RawString) CurrentCondition = Condition.Good;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[226].Text.RawString) CurrentCondition = Condition.Normal;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[228].Text.RawString) CurrentCondition = Condition.Excellent;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[239].Text.RawString) CurrentCondition = Condition.Centered;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[240].Text.RawString) CurrentCondition = Condition.Sturdy;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[241].Text.RawString) CurrentCondition = Condition.Pliant;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[13455].Text.RawString) CurrentCondition = Condition.Malleable;
+                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[13454].Text.RawString) CurrentCondition = Condition.Primed;
 
                 CurrentStep = Convert.ToInt32(cs.NodeText.ToString());
                 HQLiteral = hql.NodeText.ToString();
@@ -237,6 +269,7 @@ namespace Artisan.CraftingLogic
                 CollectabilityHigh = collectHigh.NodeText.ToString();
 
                 return true;
+
 
             }
             catch (Exception ex)
@@ -554,7 +587,6 @@ namespace Artisan.CraftingLogic
 
                 if (synthButton != null && !synthButton->IsEnabled)
                 {
-                    Dalamud.Logging.PluginLog.Debug("AddonRecipeNote: Enabling trial synth button");
                     synthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
                 }
                 else
@@ -562,12 +594,133 @@ namespace Artisan.CraftingLogic
                     return;
                 }
 
-                Dalamud.Logging.PluginLog.Debug("AddonRecipeNote: Selecting trial");
                 ClickRecipeNote.Using(recipeWindow).TrialSynthesis();
             }
             catch (Exception ex)
             {
                 Dalamud.Logging.PluginLog.Error(ex, "RepeatTrialCraft");
+            }
+        }
+
+        public static void QuickSynthItem(int crafts)
+        {
+            try
+            {
+                var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+                if (recipeWindow == IntPtr.Zero)
+                    return;
+
+                var addonPtr = (AddonRecipeNote*)recipeWindow;
+                if (addonPtr == null)
+                    return;
+                var synthButton = addonPtr->SynthesizeButton;
+
+                if (synthButton != null && !synthButton->IsEnabled)
+                {
+                    synthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
+                }
+
+                try
+                {
+                    if (Throttler.Throttle(500))
+                    {
+                        ClickRecipeNote.Using(recipeWindow).QuickSynthesis();
+
+                        var quickSynthPTR = Service.GameGui.GetAddonByName("SynthesisSimpleDialog", 1);
+                        if (quickSynthPTR == IntPtr.Zero)
+                            return;
+
+                        var quickSynthWindow = (AtkUnitBase*)quickSynthPTR;
+                        if (quickSynthWindow == null)
+                            return;
+
+                        var values = stackalloc AtkValue[2];
+                        values[0] = new()
+                        {
+                            Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int,
+                            Int = crafts,
+                        };
+                        values[1] = new()
+                        {
+                            Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool,
+                            Byte = 1,
+                        };
+
+                        quickSynthWindow->FireCallback(3, values);
+
+                        //var qsynthButton = (AtkComponentButton*)quickSynthWindow->UldManager.NodeList[3];
+                        //if (qsynthButton != null && !qsynthButton->IsEnabled)
+                        //{
+                        //    qsynthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
+                        //}
+
+                        //var checkboxNode = (AtkComponentNode*)quickSynthWindow->UldManager.NodeList[5];
+                        //if (checkboxNode == null)
+                        //    return;
+                        //var checkboxComponent = (AtkComponentCheckBox*)checkboxNode->Component;
+                        //if (!checkboxComponent->IsChecked)
+                        //{
+
+                        //    //checkboxComponent->AtkComponentButton.Flags ^= 0x40000;
+
+                        //    //AtkResNode* checkmarkNode = checkboxComponent->AtkComponentButton.ButtonBGNode->PrevSiblingNode;
+
+                        //    //checkmarkNode->Color.A = (byte)(true ? 0xFF : 0x7F);
+                        //    //checkmarkNode->Flags ^= 0x10;
+                        //}
+
+                        //var numericInput = (AtkComponentNode*)quickSynthWindow->UldManager.NodeList[4];
+                        //if (numericInput == null)
+                        //    return;
+                        //var numericComponent = (AtkComponentNumericInput*)numericInput->Component;
+
+                        //if (crafts <= numericComponent->Data.Max)
+                        //{
+                        //    numericComponent->SetValue(numericComponent->Data.Max);
+                        //}
+                        //AtkResNodeFunctions.ClickButton(quickSynthWindow, qsynthButton, 1);
+                    }
+
+
+                }
+                catch (Exception e)
+                {
+                    e.Log();
+                }
+
+            }
+            catch (Exception ex)
+            {
+                ex.Log();
+            }
+        }
+
+        public static void CloseQuickSynthWindow()
+        {
+            try
+            {
+                if (Throttler.Throttle(500))
+                {
+                    var quickSynthPTR = Service.GameGui.GetAddonByName("SynthesisSimple", 1);
+                    if (quickSynthPTR == IntPtr.Zero)
+                        return;
+
+                    var quickSynthWindow = (AtkUnitBase*)quickSynthPTR;
+                    if (quickSynthWindow == null)
+                        return;
+
+                    var qsynthButton = (AtkComponentButton*)quickSynthWindow->UldManager.NodeList[2];
+                    if (qsynthButton != null && !qsynthButton->IsEnabled)
+                    {
+                        qsynthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
+                    }
+                    AtkResNodeFunctions.ClickButton(quickSynthWindow, qsynthButton, 0);
+                }
+
+            }
+            catch (Exception e)
+            {
+                e.Log();
             }
         }
 
@@ -586,7 +739,7 @@ namespace Artisan.CraftingLogic
 
                 if (synthButton != null && !synthButton->IsEnabled)
                 {
-                    Dalamud.Logging.PluginLog.Debug("AddonRecipeNote: Enabling synth button");
+                    Dalamud.Logging.PluginLog.Verbose("AddonRecipeNote: Enabling synth button");
                     synthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
                 }
 
@@ -594,10 +747,10 @@ namespace Artisan.CraftingLogic
                 {
                     try
                     {
-                        Dalamud.Logging.PluginLog.Debug("AddonRecipeNote: Selecting synth");
+                        Dalamud.Logging.PluginLog.Verbose("AddonRecipeNote: Selecting synth");
                         ClickRecipeNote.Using(recipeWindow).Synthesize();
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         e.Log();
                     }

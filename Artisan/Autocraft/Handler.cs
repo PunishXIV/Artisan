@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLogic;
+using Artisan.RawInformation;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Components;
 using Dalamud.Logging;
@@ -27,7 +28,7 @@ namespace Artisan.Autocraft
         internal static bool Enable = false;
         internal static List<int>? HQData = null;
         internal static int RecipeID = 0;
-        internal static string RecipeName { get => recipeName; set { if (value != recipeName) Dalamud.Logging.PluginLog.Debug($"{value}"); recipeName = value; } }
+        internal static string RecipeName { get => recipeName; set { if (value != recipeName) PluginLog.Verbose($"{value}"); recipeName = value; } }
         internal static CircularBuffer<long> Errors = new(5);
         private static string recipeName = "";
 
@@ -74,6 +75,9 @@ namespace Artisan.Autocraft
         {
             if (Enable)
             {
+                var isCrafting = Service.Condition[ConditionFlag.Crafting];
+                var preparing = Service.Condition[ConditionFlag.PreparingToCraft];
+
                 if (!Throttler.Throttle(0))
                 {
                     return;
@@ -81,6 +85,7 @@ namespace Artisan.Autocraft
                 if (Service.Configuration.CraftingX && Service.Configuration.CraftX == 0)
                 {
                     Enable = false;
+                    Service.Configuration.CraftingX = false;
                     return;
                 }
                 if (Svc.Condition[ConditionFlag.Occupied39])
@@ -95,7 +100,33 @@ namespace Artisan.Autocraft
                     return;
                 }
                 if (AutocraftDebugTab.Debug) PluginLog.Verbose("HQ not null");
-                if (Service.Configuration.Repair && !RepairManager.ProcessRepair(false))
+                if (Service.Configuration.Materia && Spiritbond.IsSpiritbondReadyAny())
+                {
+                    if (AutocraftDebugTab.Debug) PluginLog.Verbose("Entered materia extraction");
+                    if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
+                    {
+                        if (AutocraftDebugTab.Debug) PluginLog.Verbose("Crafting");
+                        if (Throttler.Throttle(1000))
+                        {
+                            if (AutocraftDebugTab.Debug) PluginLog.Verbose("Closing crafting log");
+                            CommandProcessor.ExecuteThrottled("/clog");
+                        }
+                    }
+                    if (!Spiritbond.IsMateriaMenuOpen() && !isCrafting && !preparing)
+                    {
+                        Spiritbond.OpenMateriaMenu();
+                    }
+                    if (Spiritbond.IsMateriaMenuOpen() && !isCrafting && !preparing)
+                    {
+                        Spiritbond.ExtractFirstMateria();
+                    }
+                }
+                else
+                {
+                    Spiritbond.CloseMateriaMenu();
+                }
+
+                if (Service.Configuration.Repair && !RepairManager.ProcessRepair(false) && ((Service.Configuration.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!Service.Configuration.Materia)))
                 {
                     if (AutocraftDebugTab.Debug) PluginLog.Verbose("Entered repair check");
                     if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
@@ -162,6 +193,7 @@ namespace Artisan.Autocraft
                                 }
                                 else
                                 {
+                                    if (AutocraftDebugTab.Debug) PluginLog.Debug($"Opening recipe {RecipeID}");
                                     AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal((uint)RecipeID);
                                 }
                             }
@@ -260,6 +292,14 @@ namespace Artisan.Autocraft
                 ImGui.SliderInt("##repairp", ref Service.Configuration.RepairPercent, 10, 100, $"{Service.Configuration.RepairPercent}%%");
             }
 
+            bool materia = Service.Configuration.Materia;
+            if (ImGui.Checkbox("Automatically Extract Materia", ref materia))
+            {
+                Service.Configuration.Materia = materia;
+                Service.Configuration.Save();
+            }
+            ImGuiComponents.HelpMarker("Will automatically extract materia from any equipped gear once it's spiritbond is 100%");
+
             ImGui.Checkbox("Craft only X times", ref Service.Configuration.CraftingX);
             if (Service.Configuration.CraftingX)
             {
@@ -325,20 +365,21 @@ namespace Artisan.Autocraft
                          * 
                          * */
 
-                        if (str.TextValue.Length == 0) return;
+                        if (str.ExtractText().Length == 0) return;
 
-                        if (str.TextValue[^1] == '')
+                        if (str.ExtractText()[^1] == '')
                         {
-                            rName += str.TextValue.Remove(str.TextValue.Length - 1, 1).Trim();
+                            rName += str.ExtractText().Remove(str.ExtractText().Length - 1, 1).Trim();
                         }
                         else
                         {
-                            rName += str.TextValue.Trim();
+                          
+                            rName += str.ExtractText().Trim();
                         }
 
                         if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == rName, out var id))
                         {
-                            RecipeID = id.Unknown0;
+                            RecipeID = (int)id.RowId;
                             RecipeName = id.ItemResult.Value.Name;
                         }
                     }
@@ -346,7 +387,7 @@ namespace Artisan.Autocraft
                 }
                 catch (Exception ex)
                 {
-                    Dalamud.Logging.PluginLog.Error(ex, "Setting Recipe ID");
+                    PluginLog.Error(ex, "Setting Recipe ID");
                     RecipeID = 0;
                     RecipeName = "";
                 }

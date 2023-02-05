@@ -1,4 +1,6 @@
 ﻿using Artisan.Autocraft;
+using Artisan.CraftingLists;
+using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
@@ -7,8 +9,9 @@ using Dalamud.Game.Gui.Toast;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using System;
+using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Threading;
 using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan
@@ -17,9 +20,10 @@ namespace Artisan
     {
         public string Name => "Artisan";
         private const string commandName = "/artisan";
-        private PluginUI PluginUi { get; init; }
+        public static PluginUI? PluginUi { get; set; }
         public static bool currentCraftFinished = false;
         internal BlockingTask BotTask = new();
+        public static Stopwatch Benchmark = new();
 
         public Artisan(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
@@ -34,7 +38,7 @@ namespace Artisan
 
 
             ECommons.ECommons.Init(pluginInterface, this);
-            this.PluginUi = new PluginUI(this);
+            PluginUi = new PluginUI(this);
 
             Service.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
@@ -45,10 +49,31 @@ namespace Artisan
             Service.Interface.UiBuilder.OpenConfigUi += DrawConfigUI;
             Service.Condition.ConditionChange += CheckForCraftedState;
             Service.Framework.Update += FireBot;
+            Service.ClientState.Logout += DisableEndurance;
+            Service.ClientState.Login += DisableEndurance;
             ActionWatching.Enable();
             StepChanged += ResetRecommendation;
             ConsumableChecker.Init();
-            Autocraft.Handler.Init();
+            Handler.Init();
+            CleanUpIndividualMacros();
+        }
+
+        private void DisableEndurance(object? sender, EventArgs e)
+        {
+            Handler.Enable = false;
+            CraftingListUI.Processing = false;
+        }
+
+        public static void CleanUpIndividualMacros()
+        {
+            foreach (var item in Service.Configuration.IndividualMacros)
+            {
+                if (item.Value is null || !Service.Configuration.UserMacros.Any(x => x.ID == item.Value.ID))
+                {
+                    Service.Configuration.IndividualMacros.Remove(item.Key);
+                    Service.Configuration.Save();
+                }
+            }
         }
 
         private void ResetRecommendation(object? sender, int e)
@@ -62,6 +87,7 @@ namespace Artisan
 
         public static bool CheckIfCraftFinished()
         {
+            //if (QuickSynthMax > 0 && QuickSynthCurrent == QuickSynthMax) return true;
             if (MaxProgress == 0) return false;
             if (CurrentProgress == MaxProgress) return true;
             if (CurrentProgress < MaxProgress && CurrentDurability == 0) return true;
@@ -75,7 +101,13 @@ namespace Artisan
             //{
             //    return;
             //}
-            PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting];
+
+            if (!Service.ClientState.IsLoggedIn)
+            {
+                Handler.Enable = false;
+                CraftingListUI.Processing = false;
+            }
+            PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting] && !Service.Condition[ConditionFlag.PreparingToCraft];
             if (!PluginUi.CraftingVisible)
             {
                 ActionWatching.TryDisable();
@@ -87,6 +119,7 @@ namespace Artisan
             GetCraft();
             if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0)
             {
+                Benchmark.Restart();
                 FetchRecommendation(CurrentStep);
             }
 
@@ -96,15 +129,19 @@ namespace Artisan
 
                 if (CraftingLists.CraftingListUI.Processing)
                 {
-                    //Dalamud.Logging.PluginLog.Debug("Advancing Crafting List");
+                    Dalamud.Logging.PluginLog.Verbose("Advancing Crafting List");
                     CraftingLists.CraftingListFunctions.CurrentIndex++;
                 }
+
 
                 if (Handler.Enable && Service.Configuration.CraftingX && Service.Configuration.CraftX > 0)
                 {
                     Service.Configuration.CraftX -= 1;
                     if (Service.Configuration.CraftX == 0)
+                    {
+                        Service.Configuration.CraftingX = false;
                         Handler.Enable = false;
+                    }
                 }
 
 #if DEBUG
@@ -112,7 +149,10 @@ namespace Artisan
                 {
                     Service.Configuration.CraftX -= 1;
                     if (Service.Configuration.CraftX == 0)
+                    {
+                        Service.Configuration.CraftingX = false;
                         PluginUi.repeatTrial = false;
+                    }
                 }
 #endif
             }
@@ -133,6 +173,7 @@ namespace Artisan
             {
                 if (e == 0)
                 {
+                    Benchmark.Reset();
                     CurrentRecommendation = 0;
                     ManipulationUsed = false;
                     JustUsedObserve = false;
@@ -149,32 +190,64 @@ namespace Artisan
                     return;
                 }
 
-                if (Service.Configuration.UseMacroMode && Service.Configuration.SetMacro != null && MacroStep < Service.Configuration.SetMacro.MacroActions.Count)
+                CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
+
+                if (Service.Configuration.UseMacroMode && Service.Configuration.UserMacros.Count > 0)
                 {
-                    if (Service.Configuration.SetMacro.MacroOptions.SkipQualityIfMet)
+                    if (Service.Configuration.IndividualMacros.TryGetValue(Recipe.RowId, out var macro))
                     {
-                        if (CurrentQuality >= MaxQuality)
+                        macro = Service.Configuration.UserMacros.First(x => x.ID == macro.ID);
+                        if (MacroStep < macro.MacroActions.Count)
                         {
-                            while (ActionIsQuality())
+                            if (macro.MacroOptions.SkipQualityIfMet)
                             {
-                                MacroStep++;
+                                if (CurrentQuality >= MaxQuality)
+                                {
+                                    while (ActionIsQuality(macro))
+                                    {
+                                        MacroStep++;
+                                    }
+                                }
+                            }
+
+                            if (macro.MacroOptions.UpgradeActions && ActionUpgradable(macro, out uint newAction))
+                            {
+                                CurrentRecommendation = newAction;
+                            }
+                            else
+                            {
+                                CurrentRecommendation = macro.MacroActions[MacroStep];
                             }
                         }
                     }
-
-                    if (Service.Configuration.SetMacro.MacroOptions.UpgradeActions && ActionUpgradable(out uint newAction))
-                    {
-                        CurrentRecommendation = newAction;
-                    }
                     else
                     {
-                        CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep];
+                        if (Service.Configuration.SetMacro != null && MacroStep < Service.Configuration.SetMacro.MacroActions.Count)
+                        {
+                            if (Service.Configuration.SetMacro.MacroOptions.SkipQualityIfMet)
+                            {
+                                if (CurrentQuality >= MaxQuality)
+                                {
+                                    while (ActionIsQuality(Service.Configuration.SetMacro))
+                                    {
+                                        MacroStep++;
+                                    }
+                                }
+                            }
+
+                            if (Service.Configuration.SetMacro.MacroOptions.UpgradeActions && ActionUpgradable(Service.Configuration.SetMacro, out uint newAction))
+                            {
+                                CurrentRecommendation = newAction;
+                            }
+                            else
+                            {
+                                CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep];
+                            }
+                        }
                     }
                 }
-                else
-                {
-                    CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
-                }
+
+                RecommendationName = CurrentRecommendation.NameOfAction();
 
                 if (CurrentRecommendation != 0)
                 {
@@ -226,7 +299,7 @@ namespace Artisan
                     if (Service.Configuration.AutoMode)
                     {
                         Service.Framework.RunOnTick(() => Hotbars.ExecuteRecommended(CurrentRecommendation), TimeSpan.FromMilliseconds(Service.Configuration.AutoDelay));
-                        
+
                         //Service.Plugin.BotTask.Schedule(() => Hotbars.ExecuteRecommended(CurrentRecommendation), Service.Configuration.AutoDelay);
                     }
 
@@ -240,9 +313,9 @@ namespace Artisan
 
         }
 
-        private static bool ActionUpgradable(out uint newAction)
+        private static bool ActionUpgradable(Macro macro, out uint newAction)
         {
-            newAction = Service.Configuration.SetMacro.MacroActions[MacroStep];
+            newAction = macro.MacroActions[MacroStep];
             if (CurrentCondition is CraftingLogic.CurrentCraft.Condition.Good or CraftingLogic.CurrentCraft.Condition.Excellent)
             {
                 switch (newAction)
@@ -270,9 +343,9 @@ namespace Artisan
             return false;
         }
 
-        private static bool ActionIsQuality()
+        public static bool ActionIsQuality(Macro macro)
         {
-            var currentAction = Service.Configuration.SetMacro.MacroActions[MacroStep];
+            var currentAction = macro.MacroActions[MacroStep];
             switch (currentAction)
             {
                 case Skills.HastyTouch:
@@ -295,14 +368,14 @@ namespace Artisan
         {
             if (flag == ConditionFlag.Crafting && value)
             {
-                this.PluginUi.CraftingVisible = true;
+                PluginUi.CraftingVisible = true;
             }
         }
 
         public void Dispose()
         {
-            this.PluginUi.Dispose();
-            Autocraft.Handler.Dispose();
+            PluginUi.Dispose();
+            Handler.Dispose();
             ECommons.ECommons.Dispose();
 
             Service.CommandManager.RemoveHandler(commandName);
@@ -317,17 +390,17 @@ namespace Artisan
 
         private void OnCommand(string command, string args)
         {
-            this.PluginUi.Visible = true;
+            PluginUi.Visible = !PluginUi.Visible;
         }
 
         private void DrawUI()
         {
-            this.PluginUi.Draw();
+            PluginUi.Draw();
         }
 
         private void DrawConfigUI()
         {
-            this.PluginUi.Visible = true;
+            PluginUi.Visible = true;
         }
     }
 }
