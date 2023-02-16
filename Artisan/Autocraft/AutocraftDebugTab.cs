@@ -76,6 +76,40 @@ namespace Artisan.Autocraft
                     }
                 }
             }
+            if (ImGui.CollapsingHeader("Manuals"))
+            {
+                foreach (var x in ConsumableChecker.GetManuals())
+                {
+                    ImGuiEx.Text($"{x.Id}: {x.Name}");
+                }
+            }
+            if (ImGui.CollapsingHeader("Manuals in inventory"))
+            {
+                foreach (var x in ConsumableChecker.GetManuals(true))
+                {
+                    if (ImGui.Selectable($"{x.Id}: {x.Name}"))
+                    {
+                        ConsumableChecker.UseItem(x.Id);
+                    }
+                }
+            }
+            if (ImGui.CollapsingHeader("Squadron Manuals"))
+            {
+                foreach (var x in ConsumableChecker.GetSquadronManuals())
+                {
+                    ImGuiEx.Text($"{x.Id}: {x.Name}");
+                }
+            }
+            if (ImGui.CollapsingHeader("SquadronManuals in inventory"))
+            {
+                foreach (var x in ConsumableChecker.GetSquadronManuals(true))
+                {
+                    if (ImGui.Selectable($"{x.Id}: {x.Name}"))
+                    {
+                        ConsumableChecker.UseItem(x.Id);
+                    }
+                }
+            }
 
             if (ImGui.CollapsingHeader("Crafting Stats"))
             {

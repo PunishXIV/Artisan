@@ -21,6 +21,8 @@ namespace Artisan.Autocraft
     {
         internal static (uint Id, string Name)[] Food;
         internal static (uint Id, string Name)[] Pots;
+        internal static (uint Id, string Name)[] Manuals;
+        internal static (uint Id, string Name)[] SquadronManuals;
         static Dictionary<uint, string> Usables;
         static AgentInterface* itemContextMenuAgent;
         //[Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 41 B0 01 BA 13 00 00 00", Fallibility = Fallibility.Infallible)]
@@ -34,7 +36,9 @@ namespace Artisan.Autocraft
             .Concat(Service.DataManager.GetExcelSheet<EventItem>().Where(i => i.Action.Row > 0).ToDictionary(i => i.RowId, i => i.Name.ToString().ToLower()))
             .ToDictionary(kv => kv.Key, kv => kv.Value);
             Food = Service.DataManager.GetExcelSheet<Item>().Where(x => x.ItemUICategory.Value.RowId == 46 && IsCraftersAttribute(x)).Select(x => (x.RowId, x.Name.ToString())).ToArray();
-            Pots = Service.DataManager.GetExcelSheet<Item>().Where(x => !x.RowId.EqualsAny<uint>(4570) && x.ItemUICategory.Value.RowId == 44 && IsCraftersAttribute(x)).Select(x => (x.RowId, x.Name.ToString())).ToArray();
+            Pots = Service.DataManager.GetExcelSheet<Item>().Where(x => !x.RowId.EqualsAny<uint>(4570) && x.ItemUICategory.Value.RowId == 44 && (IsCraftersAttribute(x) || IsSpiritBondAttribute(x))).Select(x => (x.RowId, x.Name.ToString())).ToArray();
+            Manuals = Service.DataManager.GetExcelSheet<Item>().Where(x => !x.RowId.EqualsAny<uint>(4570) && x.ItemUICategory.Value.RowId == 63 && IsManualAttribute(x)).Select(x => (x.RowId, x.Name.ToString())).ToArray();
+            SquadronManuals = Service.DataManager.GetExcelSheet<Item>().Where(x => !x.RowId.EqualsAny<uint>(4570) && x.ItemUICategory.Value.RowId == 63 && IsSquadronManualAttribute(x)).Select(x => (x.RowId, x.Name.ToString())).ToArray();
         }
 
         internal static (uint Id, string Name)[] GetFood(bool inventoryOnly = false, bool hq = false)
@@ -47,6 +51,62 @@ namespace Artisan.Autocraft
         {
             if (inventoryOnly) return Pots.Where(x => InventoryManager.Instance()->GetInventoryItemCount(x.Id, hq) > 0).ToArray();
             return Pots;
+        }
+
+        internal static (uint Id, string Name)[] GetManuals(bool inventoryOnly = false, bool hq = false)
+        {
+            if (inventoryOnly) return Manuals.Where(x => InventoryManager.Instance()->GetInventoryItemCount(x.Id, hq) > 0).ToArray();
+            return Manuals;
+        }
+
+        internal static (uint Id, string Name)[] GetSquadronManuals(bool inventoryOnly = false, bool hq = false)
+        {
+            if (inventoryOnly) return SquadronManuals.Where(x => InventoryManager.Instance()->GetInventoryItemCount(x.Id, hq) > 0).ToArray();
+            return SquadronManuals;
+        }
+
+        internal static bool IsManualAttribute(Item x)
+        {
+            try
+            {
+                ushort[] engineeringManuals = { 301, 1751, 5329 };
+                if (x.ItemAction.Value.Type.Equals(816) && x.ItemAction.Value.Data[0].EqualsAny(engineeringManuals))
+                {
+                    return true;
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        internal static bool IsSquadronManualAttribute(Item x)
+        {
+            try
+            {
+                ushort[] squadrantManuals = { 2291, 2292, 2293, 2294 };
+                if (x.ItemAction.Value.Type.Equals(816) && x.ItemAction.Value.Data[0].EqualsAny(squadrantManuals))
+                {
+                   return true;
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        internal static bool IsSpiritBondAttribute(Item x)
+        {
+            try
+            {
+                foreach (var z in x.ItemAction.Value?.Data)
+                {
+                    if (Service.DataManager.GetExcelSheet<ItemFood>().GetRow(z).UnkData1[0].BaseParam.EqualsAny<byte>(69))
+                    {
+                        return true;
+                    }
+                }
+            }
+            catch { }
+            return false;
         }
 
         internal static bool IsCraftersAttribute(Item x)
@@ -74,6 +134,18 @@ namespace Artisan.Autocraft
         internal static bool IsPotted()
         {
             return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.StatusId == 49 && x.RemainingTime > 0f) == true;
+        }
+
+        internal static bool IsManualled()
+        {
+            return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.StatusId == 45 && x.RemainingTime > 0f) == true;
+        }
+
+        internal static bool IsSquadronManualled()
+        {
+            // Squadron engineering/spiritbonding/rationing/gear manual.
+            uint[] SquadronManualBuffss = { 1082, 1083, 1084, 1085 };
+            return Svc.ClientState.LocalPlayer?.StatusList.Any(x => SquadronManualBuffss.Contains(x.StatusId) && x.RemainingTime > 0f) == true;
         }
 
         internal static bool UseItem(uint id, bool hq = false)
@@ -135,7 +207,33 @@ namespace Artisan.Autocraft
                     potted = !Service.Configuration.AbortIfNoFoodPot;
                 }
             }
-            var ret = potted && fooded;
+            var manualed = IsManualled() || Service.Configuration.Manual == 0;
+            if (!manualed)
+            {
+                if (GetManuals(true).Any())
+                {
+                    if (use) UseItem(Service.Configuration.Manual);
+                    return false;
+                }
+                else
+                {
+                    manualed = !Service.Configuration.AbortIfNoFoodPot;
+                }
+            }
+            var squadronManualed = IsSquadronManualled() || Service.Configuration.SquadronManual == 0;
+            if (!squadronManualed)
+            {
+                if (GetSquadronManuals(true).Any())
+                {
+                    if (use) UseItem(Service.Configuration.SquadronManual);
+                    return false;
+                }
+                else
+                {
+                    squadronManualed = !Service.Configuration.AbortIfNoFoodPot;
+                }
+            }
+            var ret = potted && fooded && manualed && squadronManualed;
             return ret;
         }
 

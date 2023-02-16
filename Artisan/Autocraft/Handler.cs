@@ -276,6 +276,48 @@ namespace Artisan.Autocraft
                         ImGui.EndCombo();
                     }
                 }
+
+                {
+                    ImGuiEx.TextV("Manual Usage:");
+                    ImGui.SameLine(150f.Scale());
+                    ImGuiEx.SetNextItemFullWidth();
+                    if (ImGui.BeginCombo("##manualBuff", ConsumableChecker.Manuals.TryGetFirst(x => x.Id == Service.Configuration.Manual, out var item) ? $"{item.Name}" : $"{(Service.Configuration.Manual == 0 ? "Disabled" : $"{Service.Configuration.Manual}")}"))
+                    {
+                        if (ImGui.Selectable("Disable"))
+                        {
+                            Service.Configuration.Manual = 0;
+                        }
+                        foreach (var x in ConsumableChecker.GetManuals(true))
+                        {
+                            if (ImGui.Selectable($"{x.Name}"))
+                            {
+                                Service.Configuration.Manual = x.Id;
+                            }
+                        }
+                        ImGui.EndCombo();
+                    }
+                }
+
+                {
+                    ImGuiEx.TextV("Squadron Manual Usage:");
+                    ImGui.SameLine(150f.Scale());
+                    ImGuiEx.SetNextItemFullWidth();
+                    if (ImGui.BeginCombo("##squadronManualBuff", ConsumableChecker.SquadronManuals.TryGetFirst(x => x.Id == Service.Configuration.SquadronManual, out var item) ? $"{item.Name}" : $"{(Service.Configuration.SquadronManual == 0 ? "Disabled" : $"{Service.Configuration.SquadronManual}")}"))
+                    {
+                        if (ImGui.Selectable("Disable"))
+                        {
+                            Service.Configuration.SquadronManual = 0;
+                        }
+                        foreach (var x in ConsumableChecker.GetSquadronManuals(true))
+                        {
+                            if (ImGui.Selectable($"{x.Name}"))
+                            {
+                                Service.Configuration.SquadronManual = x.Id;
+                            }
+                        }
+                        ImGui.EndCombo();
+                    }
+                }
             }
 
             bool repairs = Service.Configuration.Repair;
