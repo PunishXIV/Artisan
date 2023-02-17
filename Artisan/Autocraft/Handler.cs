@@ -209,12 +209,12 @@ namespace Artisan.Autocraft
             ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe and NQ/HQ material distribution in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
             ImGuiEx.Text($"Recipe: {RecipeName}\nHQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}");
             bool requireFoodPot = Service.Configuration.AbortIfNoFoodPot;
-            if (ImGui.Checkbox("Use Food and/or Medicine", ref requireFoodPot))
+            if (ImGui.Checkbox("Use Food, Manuals and/or Medicine", ref requireFoodPot))
             {
                 Service.Configuration.AbortIfNoFoodPot = requireFoodPot;
                 Service.Configuration.Save();
             }
-            ImGuiComponents.HelpMarker("Artisan will require the configured food or medicine and refuse to craft if it cannot be found.");
+            ImGuiComponents.HelpMarker("Artisan will require the configured food, manuals or medicine and refuse to craft if it cannot be found.");
             if (requireFoodPot)
             {
                 {
@@ -271,6 +271,48 @@ namespace Artisan.Autocraft
                             {
                                 Service.Configuration.Potion = x.Id;
                                 Service.Configuration.PotHQ = true;
+                            }
+                        }
+                        ImGui.EndCombo();
+                    }
+                }
+
+                {
+                    ImGuiEx.TextV("Manual Usage:");
+                    ImGui.SameLine(150f.Scale());
+                    ImGuiEx.SetNextItemFullWidth();
+                    if (ImGui.BeginCombo("##manualBuff", ConsumableChecker.Manuals.TryGetFirst(x => x.Id == Service.Configuration.Manual, out var item) ? $"{item.Name}" : $"{(Service.Configuration.Manual == 0 ? "Disabled" : $"{Service.Configuration.Manual}")}"))
+                    {
+                        if (ImGui.Selectable("Disable"))
+                        {
+                            Service.Configuration.Manual = 0;
+                        }
+                        foreach (var x in ConsumableChecker.GetManuals(true))
+                        {
+                            if (ImGui.Selectable($"{x.Name}"))
+                            {
+                                Service.Configuration.Manual = x.Id;
+                            }
+                        }
+                        ImGui.EndCombo();
+                    }
+                }
+
+                {
+                    ImGuiEx.TextV("Squadron Manual Usage:");
+                    ImGui.SameLine(150f.Scale());
+                    ImGuiEx.SetNextItemFullWidth();
+                    if (ImGui.BeginCombo("##squadronManualBuff", ConsumableChecker.SquadronManuals.TryGetFirst(x => x.Id == Service.Configuration.SquadronManual, out var item) ? $"{item.Name}" : $"{(Service.Configuration.SquadronManual == 0 ? "Disabled" : $"{Service.Configuration.SquadronManual}")}"))
+                    {
+                        if (ImGui.Selectable("Disable"))
+                        {
+                            Service.Configuration.SquadronManual = 0;
+                        }
+                        foreach (var x in ConsumableChecker.GetSquadronManuals(true))
+                        {
+                            if (ImGui.Selectable($"{x.Name}"))
+                            {
+                                Service.Configuration.SquadronManual = x.Id;
                             }
                         }
                         ImGui.EndCombo();
