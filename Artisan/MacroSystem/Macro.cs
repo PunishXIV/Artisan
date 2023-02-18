@@ -21,7 +21,9 @@ namespace Artisan.MacroSystem
     {
         public bool SkipQualityIfMet { get; set; } = false;
 
-        public bool UpgradeActions { get; set; } = false;
+        public bool UpgradeQualityActions { get; set; } = false;
+
+        public bool UpgradeProgressActions { get; set; } = false;
     }
 
 

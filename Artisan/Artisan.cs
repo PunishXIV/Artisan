@@ -108,10 +108,7 @@ namespace Artisan
             }
             PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting] && !Service.Condition[ConditionFlag.PreparingToCraft];
             if (!PluginUi.CraftingVisible)
-            {
                 ActionWatching.TryDisable();
-                return;
-            }
             else
                 ActionWatching.TryEnable();
 
@@ -211,13 +208,15 @@ namespace Artisan
                                     }
                                 }
 
-                                if (macro.MacroOptions.UpgradeActions && ActionUpgradable(macro, out uint newAction))
+                                CurrentRecommendation = macro.MacroActions[MacroStep];
+
+                                if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(macro) && ActionUpgradable(macro, out uint newAction))
                                 {
                                     CurrentRecommendation = newAction;
                                 }
-                                else
+                                if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(macro) && ActionUpgradable(macro, out  newAction))
                                 {
-                                    CurrentRecommendation = macro.MacroActions[MacroStep];
+                                    CurrentRecommendation = newAction;
                                 }
                             }
                         }
@@ -236,13 +235,15 @@ namespace Artisan
                                     }
                                 }
 
-                                if (Service.Configuration.SetMacro.MacroOptions.UpgradeActions && ActionUpgradable(Service.Configuration.SetMacro, out uint newAction))
+                                CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep];
+
+                                if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out uint newAction))
                                 {
                                     CurrentRecommendation = newAction;
                                 }
-                                else
+                                if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out newAction))
                                 {
-                                    CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep];
+                                    CurrentRecommendation = newAction;
                                 }
                             }
                         }

@@ -110,15 +110,26 @@ namespace Artisan.MacroSystem
                     }
                     ImGuiComponents.HelpMarker("Once you're at 100% quality, the macro will skip over all actions relating to quality, including buffs.");
                     ImGui.SameLine();
-                    bool upgradeActions = selectedMacro.MacroOptions.UpgradeActions;
-                    if (ImGui.Checkbox("Upgrade actions", ref upgradeActions))
+                    bool upgradeQualityActions = selectedMacro.MacroOptions.UpgradeQualityActions;
+                    if (ImGui.Checkbox("Upgrade Quality Actions", ref upgradeQualityActions))
                     {
-                        selectedMacro.MacroOptions.UpgradeActions = upgradeActions;
+                        selectedMacro.MacroOptions.UpgradeQualityActions = upgradeQualityActions;
                         if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
                             Service.Configuration.SetMacro = selectedMacro;
                         Service.Configuration.Save();
                     }
-                    ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases quality or progress (not including Byregot's Blessing) then it will upgrade the action to either Precise Touch or Intensive Synthesis depending on what the original action would have increased.");
+                    ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases quality (not including Byregot's Blessing) then it will upgrade the action to Precise Touch.");
+
+                    ImGui.SameLine();
+                    bool upgradeProgressActions = selectedMacro.MacroOptions.UpgradeProgressActions;
+                    if (ImGui.Checkbox("Upgrade Progress Actions", ref upgradeProgressActions))
+                    {
+                        selectedMacro.MacroOptions.UpgradeProgressActions = upgradeProgressActions;
+                        if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
+                            Service.Configuration.SetMacro = selectedMacro;
+                        Service.Configuration.Save();
+                    }
+                    ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases progress then it will upgrade the action to Intensive Synthesis.");
 
                     ImGui.Columns(2, "actionColumns", false);
                     if (ImGui.Button("Insert New Action"))
