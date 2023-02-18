@@ -45,7 +45,7 @@ namespace ECommons.ImGuiMethods
             cur.X += size.X;
             ImGui.GetForegroundDrawList().PathLineTo(cur);
             ImGui.GetForegroundDrawList().PathStroke(ImGuiColors.DalamudWhite.ToUint());
-            ImGuiEx.Text(text);
+            Text(text);
         }
 
         public static float GetWindowContentRegionWidth()
@@ -131,7 +131,7 @@ namespace ECommons.ImGuiMethods
             {
                 var buttonSize = ImGuiHelpers.GetButtonSize("Add");
                 ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X - buttonSize.X - ImGui.GetStyle().ItemSpacing.X);
-                ImGuiEx.InputUint($"##{name.Replace("#", "_")}", ref InputListValuesUint[name].Value);
+                InputUint($"##{name.Replace("#", "_")}", ref InputListValuesUint[name].Value);
                 ImGui.SameLine();
                 if (ImGui.Button("Add"))
                 {
@@ -238,14 +238,14 @@ namespace ECommons.ImGuiMethods
         public static void TextWrapped(Vector4 col, string s)
         {
             ImGui.PushTextWrapPos(0);
-            ImGuiEx.Text(col, s);
+            Text(col, s);
             ImGui.PopTextWrapPos();
         }
 
         public static void TextWrapped(uint col, string s)
         {
             ImGui.PushTextWrapPos();
-            ImGuiEx.Text(col, s);
+            Text(col, s);
             ImGui.PopTextWrapPos();
         }
 
@@ -341,7 +341,7 @@ namespace ECommons.ImGuiMethods
                 {
                     if (!EnumComboSearch.ContainsKey(name)) EnumComboSearch.Add(name, new(""));
                     fltr = EnumComboSearch[name];
-                    ImGuiEx.SetNextItemFullWidth();
+                    SetNextItemFullWidth();
                     ImGui.InputTextWithHint($"##{name.Replace("#", "_")}", "Filter...", ref fltr.Value, 50);
                 }
                 foreach(var x in values)
@@ -374,7 +374,7 @@ namespace ECommons.ImGuiMethods
                 {
                     if (!ComboSearch.ContainsKey(name)) ComboSearch.Add(name, new(""));
                     fltr = ComboSearch[name];
-                    ImGuiEx.SetNextItemFullWidth();
+                    SetNextItemFullWidth();
                     ImGui.InputTextWithHint($"##{name}fltr", "Filter...", ref fltr.Value, 50);
                 }
                 foreach (var x in values)
@@ -474,7 +474,7 @@ namespace ECommons.ImGuiMethods
 
         public static void TextWrappedCopy(string text)
         {
-            ImGuiEx.TextWrapped(text);
+            TextWrapped(text);
             if (ImGui.IsItemHovered())
             {
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -488,7 +488,7 @@ namespace ECommons.ImGuiMethods
 
         public static void TextWrappedCopy(Vector4 col, string text)
         {
-            ImGuiEx.TextWrapped(col, text);
+            TextWrapped(col, text);
             if (ImGui.IsItemHovered())
             {
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);

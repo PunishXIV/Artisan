@@ -2,10 +2,12 @@
 using Artisan.CraftingLogic;
 using Artisan.RawInformation;
 using ClickLib.Clicks;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Environment;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +24,8 @@ namespace Artisan.CraftingLists
         public List<uint> Items { get; set; } = new();
 
         public Dictionary<uint, ListItemOptions> ListItemOptions { get; set; } = new();
+
+        public bool SkipIfEnough { get; set; } = false;
     }
 
     public class ListItemOptions
@@ -31,6 +35,9 @@ namespace Artisan.CraftingLists
     public static class CraftingListFunctions
     {
         public static int CurrentIndex = 0;
+
+        public static bool Paused { get; set; } = false;
+
         public static void SetID(this CraftingList list)
         {
             var rng = new Random();
@@ -99,6 +106,10 @@ namespace Artisan.CraftingLists
             var isCrafting = Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting];
             var preparing = Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft];
 
+            if (Paused)
+            {
+                return;
+            }
             if (CurrentIndex < selectedList.Items.Count)
             {
                 Dalamud.Logging.PluginLog.Verbose($"Current Item: {selectedList.Items[CurrentIndex]}");
@@ -117,6 +128,17 @@ namespace Artisan.CraftingLists
                 return;
             }
 
+            if (selectedList.SkipIfEnough && CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= selectedList.Items.Count(x => x == CraftingListUI.CurrentProcessedItem) && !isCrafting)
+            {
+                if (Throttler.Throttle(500))
+                {
+                    var currentRecipe = selectedList.Items[CurrentIndex];
+                    while (currentRecipe == selectedList.Items[CurrentIndex])
+                    {
+                        CurrentIndex++;
+                    }
+                }
+            }
 
             if (!HasItemsForRecipe(CraftingListUI.CurrentProcessedItem) && !isCrafting)
             {

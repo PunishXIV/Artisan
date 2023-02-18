@@ -96,7 +96,7 @@ namespace ECommons.MathHelpers
         {
             if (Vector.IsHardwareAccelerated)
             {
-                double ls = Vector2Double.Dot(this, this);
+                double ls = Dot(this, this);
                 return (double)Math.Sqrt(ls);
             }
             else
@@ -115,7 +115,7 @@ namespace ECommons.MathHelpers
         {
             if (Vector.IsHardwareAccelerated)
             {
-                return Vector2Double.Dot(this, this);
+                return Dot(this, this);
             }
             else
             {
@@ -137,8 +137,8 @@ namespace ECommons.MathHelpers
             if (Vector.IsHardwareAccelerated)
             {
                 Vector2Double difference = value1 - value2;
-                double ls = Vector2Double.Dot(difference, difference);
-                return (double)System.Math.Sqrt(ls);
+                double ls = Dot(difference, difference);
+                return (double)Math.Sqrt(ls);
             }
             else
             {
@@ -163,7 +163,7 @@ namespace ECommons.MathHelpers
             if (Vector.IsHardwareAccelerated)
             {
                 Vector2Double difference = value1 - value2;
-                return Vector2Double.Dot(difference, difference);
+                return Dot(difference, difference);
             }
             else
             {
@@ -209,7 +209,7 @@ namespace ECommons.MathHelpers
         {
             if (Vector.IsHardwareAccelerated)
             {
-                double dot = Vector2Double.Dot(vector, normal);
+                double dot = Dot(vector, normal);
                 return vector - (2 * dot * normal);
             }
             else

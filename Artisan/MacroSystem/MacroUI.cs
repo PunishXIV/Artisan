@@ -288,7 +288,7 @@ namespace Artisan.MacroSystem
         private static double GetMacroLength(Macro m)
         {
             double output = 0;
-            var delay = (double)Service.Configuration.AutoDelay;
+            var delay = (double)Service.Configuration.AutoDelay + (Service.Configuration.DelayRecommendation ? Service.Configuration.RecommendationDelay : 0);
             var delaySeconds = delay / 1000;
 
             foreach (var act in m.MacroActions)

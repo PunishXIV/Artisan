@@ -50,8 +50,8 @@ namespace ECommons.Interop
         {
             if (TryFindGameWindow(out var hwnd))
             {
-                User32.SendMessage(hwnd, WindowMessage.WM_KEYDOWN, (IntPtr)keycode, (IntPtr)0);
-                User32.SendMessage(hwnd, WindowMessage.WM_KEYUP, (IntPtr)keycode, (IntPtr)0);
+                SendMessage(hwnd, WindowMessage.WM_KEYDOWN, (IntPtr)keycode, (IntPtr)0);
+                SendMessage(hwnd, WindowMessage.WM_KEYUP, (IntPtr)keycode, (IntPtr)0);
                 return true;
             }
             return false;

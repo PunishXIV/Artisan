@@ -13,11 +13,10 @@ namespace Artisan
     public class Configuration : IPluginConfiguration
     {
         public int Version { get; set; } = 0;
-
-        //public bool AutoCraft { get; set; } = false;
         public bool AutoMode
         {
-            get => autoMode; set
+            get => autoMode; 
+            set
             {
                 if (value)
                 {
@@ -61,6 +60,9 @@ namespace Artisan
         public bool DisableMiniMenu { get; set; } = false;
         public bool Materia { get; set; } = false;
         public bool LockMiniMenu { get; set; } = false;
+        public bool DelayRecommendation { get; set; }
+
+        public int RecommendationDelay { get; set; } = 0;
 
         public int RepairPercent = 50;
 

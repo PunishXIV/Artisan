@@ -85,6 +85,8 @@ namespace Artisan
                 
                 }
                 CurrentRecommendation = 0;
+                Artisan.Tasks.Clear();
+
                 return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
             }
             catch (Exception ex)

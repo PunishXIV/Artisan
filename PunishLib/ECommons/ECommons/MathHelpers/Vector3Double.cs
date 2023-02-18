@@ -103,13 +103,13 @@ namespace ECommons.MathHelpers
         {
             if (Vector.IsHardwareAccelerated)
             {
-                double ls = Vector3Double.Dot(this, this);
-                return (double)System.Math.Sqrt(ls);
+                double ls = Dot(this, this);
+                return (double)Math.Sqrt(ls);
             }
             else
             {
                 double ls = X * X + Y * Y + Z * Z;
-                return (double)System.Math.Sqrt(ls);
+                return (double)Math.Sqrt(ls);
             }
         }
 
@@ -122,7 +122,7 @@ namespace ECommons.MathHelpers
         {
             if (Vector.IsHardwareAccelerated)
             {
-                return Vector3Double.Dot(this, this);
+                return Dot(this, this);
             }
             else
             {
@@ -144,8 +144,8 @@ namespace ECommons.MathHelpers
             if (Vector.IsHardwareAccelerated)
             {
                 Vector3Double difference = value1 - value2;
-                double ls = Vector3Double.Dot(difference, difference);
-                return (double)System.Math.Sqrt(ls);
+                double ls = Dot(difference, difference);
+                return (double)Math.Sqrt(ls);
             }
             else
             {
@@ -155,7 +155,7 @@ namespace ECommons.MathHelpers
 
                 double ls = dx * dx + dy * dy + dz * dz;
 
-                return (double)System.Math.Sqrt((double)ls);
+                return (double)Math.Sqrt((double)ls);
             }
         }
 
@@ -171,7 +171,7 @@ namespace ECommons.MathHelpers
             if (Vector.IsHardwareAccelerated)
             {
                 Vector3Double difference = value1 - value2;
-                return Vector3Double.Dot(difference, difference);
+                return Dot(difference, difference);
             }
             else
             {
@@ -199,7 +199,7 @@ namespace ECommons.MathHelpers
             else
             {
                 double ls = value.X * value.X + value.Y * value.Y + value.Z * value.Z;
-                double length = (double)System.Math.Sqrt(ls);
+                double length = (double)Math.Sqrt(ls);
                 return new Vector3Double(value.X / length, value.Y / length, value.Z / length);
             }
         }
@@ -230,7 +230,7 @@ namespace ECommons.MathHelpers
         {
             if (Vector.IsHardwareAccelerated)
             {
-                double dot = Vector3Double.Dot(vector, normal);
+                double dot = Dot(vector, normal);
                 Vector3Double temp = normal * dot * 2f;
                 return vector - temp;
             }

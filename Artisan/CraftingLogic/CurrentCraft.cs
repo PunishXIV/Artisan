@@ -1,7 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.RawInformation;
 using ClickLib.Clicks;
-using Dalamud.Utility.Signatures;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -9,7 +8,6 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 
 namespace Artisan.CraftingLogic
@@ -119,7 +117,6 @@ namespace Artisan.CraftingLogic
                 if (currentStep != value)
                 {
                     currentStep = value;
-                    Dalamud.Logging.PluginLog.Debug($"Benchmark: {RecommendationName} = {Artisan.Benchmark.ElapsedMilliseconds}ms");
                     StepChanged?.Invoke(currentStep, value);
                 }
 

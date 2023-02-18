@@ -48,11 +48,11 @@ namespace ECommons
 
         public static void Dispose()
         {
-            foreach(var x in ImGuiMethods.ThreadLoadImageHandler.CachedTextures)
+            foreach(var x in ThreadLoadImageHandler.CachedTextures)
             {
                 GenericHelpers.Safe(x.Value.texture.Dispose);
             }
-            GenericHelpers.Safe(ImGuiMethods.ThreadLoadImageHandler.CachedTextures.Clear);
+            GenericHelpers.Safe(ThreadLoadImageHandler.CachedTextures.Clear);
             GenericHelpers.Safe(ObjectLife.Dispose);
             GenericHelpers.Safe(DalamudReflector.Dispose);
             if(EzConfigGui.windowSystem != null)

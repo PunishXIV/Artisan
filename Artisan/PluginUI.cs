@@ -2,6 +2,7 @@
 using Artisan.CraftingLists;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
+using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Logging;
 using Dalamud.Plugin;
@@ -278,26 +279,20 @@ namespace Artisan
 #if DEBUG
                 ImGui.Checkbox("Trial Craft Repeat", ref repeatTrial);
 #endif
-                //bool failureCheck = Service.Configuration.DisableFailurePrediction;
 
-                //if (ImGui.Checkbox($"Disable Failure Prediction", ref failureCheck))
-                //{
-                //    Service.Configuration.DisableFailurePrediction = failureCheck;
-                //    Service.Configuration.Save();
-                //}
-                //ImGuiComponents.HelpMarker($"Disabling failure prediction may result in items failing to be crafted.\nUse at your own discretion.");
-
-                ImGui.Text("Semi-Manual Mode");
-
-                if (ImGui.Button("Execute recommended action"))
+                if (!Service.Configuration.AutoMode)
                 {
-                    Hotbars.ExecuteRecommended(CurrentRecommendation);
-                }
-                if (ImGui.Button("Fetch Recommendation"))
-                {
-                    Artisan.FetchRecommendation(CurrentStep);
-                }
+                    ImGui.Text("Semi-Manual Mode");
 
+                    if (ImGui.Button("Execute recommended action"))
+                    {
+                        Hotbars.ExecuteRecommended(CurrentRecommendation);
+                    }
+                    if (ImGui.Button("Fetch Recommendation"))
+                    {
+                        Artisan.FetchRecommendation(CurrentStep);
+                    }
+                }
 
 
             }
@@ -309,7 +304,7 @@ namespace Artisan
             ImGui.TextWrapped($"Here you can change some settings Artisan will use. Some of these can also be toggled during a craft.");
             ImGui.TextWrapped($"In order to use Artisan's manual highlight, please slot every crafting action you have unlocked to a visible hotbar.");
             bool autoEnabled = Service.Configuration.AutoMode;
-            //bool autoCraft = Service.Configuration.AutoCraft;
+            bool delayRec = Service.Configuration.DelayRecommendation;
             bool failureCheck = Service.Configuration.DisableFailurePrediction;
             int maxQuality = Service.Configuration.MaxPercentage;
             bool useTricksGood = Service.Configuration.UseTricksGood;
@@ -333,7 +328,7 @@ namespace Artisan
             {
                 var delay = Service.Configuration.AutoDelay;
                 ImGui.PushItemWidth(200);
-                if (ImGui.SliderInt("Set delay (ms)", ref delay, 0, 1000))
+                if (ImGui.SliderInt("Set delay (ms)###ActionDelay", ref delay, 0, 1000))
                 {
                     if (delay < 0) delay = 0;
                     if (delay > 1000) delay = 1000;
@@ -342,6 +337,28 @@ namespace Artisan
                     Service.Configuration.Save();
                 }
             }
+
+            if (ImGui.Checkbox("Delay Getting Recommendations", ref delayRec))
+            {
+                Service.Configuration.DelayRecommendation = delayRec;
+                Service.Configuration.Save();
+            }
+            ImGuiComponents.HelpMarker("Use this if you're having issues with Final Appraisal not triggering when it's supposed to.");
+
+            if (delayRec)
+            {
+                var delay = Service.Configuration.RecommendationDelay;
+                ImGui.PushItemWidth(200);
+                if (ImGui.SliderInt("Set delay (ms)###RecommendationDelay", ref delay, 0, 1000))
+                {
+                    if (delay < 0) delay = 0;
+                    if (delay > 1000) delay = 1000;
+
+                    Service.Configuration.RecommendationDelay = delay;
+                    Service.Configuration.Save();
+                }
+            }
+
 
             if (ImGui.Checkbox("Disable highlighting box", ref disableGlow))
             {

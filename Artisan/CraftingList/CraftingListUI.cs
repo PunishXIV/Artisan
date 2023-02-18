@@ -18,7 +18,7 @@ namespace Artisan.CraftingLists
     {
         internal static Recipe? SelectedRecipe = null;
         internal static string Search = "";
-        internal unsafe static InventoryManager* invManager = InventoryManager.Instance();
+        public unsafe static InventoryManager* invManager = InventoryManager.Instance();
         public static Dictionary<Recipe, bool> CraftableItems = new();
         internal static List<int> SelectedRecipeRawIngredients = new();
         internal static List<int> SelectedListMaterials = new();
@@ -118,7 +118,7 @@ namespace Artisan.CraftingLists
                         {
                             ImGui.Text($"Selected List: {selectedList.Name}");
                             ImGui.SameLine();
-                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.Pen))
+                            if (ImGuiComponents.IconButton(FontAwesomeIcon.Pen))
                             {
                                 renameMode = true;
                             }
@@ -144,6 +144,14 @@ namespace Artisan.CraftingLists
 
                             SelectedListMaterials.Clear();
                             listMaterials.Clear();
+                        }
+                        ImGui.SameLine();
+
+                        bool skipIfEnough = selectedList.SkipIfEnough;
+                        if (ImGui.Checkbox("Skip items you already have enough of", ref skipIfEnough))
+                        {
+                            selectedList.SkipIfEnough = skipIfEnough;
+                            Service.Configuration.Save();
                         }
 
                         if (selectedList.Items.Count > 0)
@@ -766,7 +774,7 @@ namespace Artisan.CraftingLists
 
         }
 
-        private unsafe static int NumberOfIngredient(uint ingredient)
+        public unsafe static int NumberOfIngredient(uint ingredient)
         {
             try
             {
@@ -890,8 +898,9 @@ namespace Artisan.CraftingLists
             {
                 Service.Framework.RunOnFrameworkThread(() => CraftingListFunctions.ProcessList(selectedList));
 
+                //ImGui.SetNextWindowSize(new Vector2(1000, 1000));
                 ImGui.SetNextWindowSize(new Vector2(375, 330), ImGuiCond.FirstUseEver);
-                if (ImGui.Begin("Processing Crafting List", ref Processing, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar))
+                if (ImGui.Begin("Processing Crafting List", ref Processing, ImGuiWindowFlags.AlwaysAutoResize))
                 {
                     ImGui.Text($"Now Processing: {selectedList.Name}");
                     ImGui.Separator();
@@ -902,6 +911,23 @@ namespace Artisan.CraftingLists
                         ImGuiEx.TextV($"Overall Progress: {CraftingListFunctions.CurrentIndex + 1} / {selectedList.Items.Count}");
                     }
 
+                    if (!CraftingListFunctions.Paused)
+                    {
+                        if (ImGui.Button("Pause"))
+                        {
+                            CraftingListFunctions.Paused = true;
+                        }
+                    }
+                    else
+                    {
+                        if (ImGui.Button("Resume"))
+                        {
+                            CraftingListFunctions.OpenCraftingMenu();
+                            CraftingListFunctions.Paused = false;
+                        }
+                    }
+
+                    ImGui.SameLine();
                     if (ImGui.Button("Cancel"))
                     {
                         Processing = false;

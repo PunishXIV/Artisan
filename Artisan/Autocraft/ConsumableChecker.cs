@@ -33,8 +33,10 @@ namespace Artisan.Autocraft
             Usables = Service.DataManager.GetExcelSheet<Item>().Where(i => i.ItemAction.Row > 0).ToDictionary(i => i.RowId, i => i.Name.ToString().ToLower())
             .Concat(Service.DataManager.GetExcelSheet<EventItem>().Where(i => i.Action.Row > 0).ToDictionary(i => i.RowId, i => i.Name.ToString().ToLower()))
             .ToDictionary(kv => kv.Key, kv => kv.Value);
-            Food = Service.DataManager.GetExcelSheet<Item>().Where(x => x.ItemUICategory.Value.RowId == 46 && IsCraftersAttribute(x)).Select(x => (x.RowId, x.Name.ToString())).ToArray();
-            Pots = Service.DataManager.GetExcelSheet<Item>().Where(x => !x.RowId.EqualsAny<uint>(4570) && x.ItemUICategory.Value.RowId == 44 && IsCraftersAttribute(x)).Select(x => (x.RowId, x.Name.ToString())).ToArray();
+            Food = Service.DataManager.GetExcelSheet<Item>().Where(x => (x.ItemUICategory.Value.RowId == 46 && IsCraftersAttribute(x)) || x.RowId == 10146).Select(x => (x.RowId, x.Name.ToString())).ToArray();
+            Pots = Service.DataManager.GetExcelSheet<Item>().Where(x => !x.RowId.EqualsAny<uint>(4570) && x.ItemUICategory.Value.RowId == 44 && (IsCraftersAttribute(x) || IsSpiritBondAttribute(x))).Select(x => (x.RowId, x.Name.ToString())).ToArray();
+            Manuals = Service.DataManager.GetExcelSheet<Item>().Where(x => !x.RowId.EqualsAny<uint>(4570) && x.ItemUICategory.Value.RowId == 63 && IsManualAttribute(x)).Select(x => (x.RowId, x.Name.ToString())).ToArray();
+            SquadronManuals = Service.DataManager.GetExcelSheet<Item>().Where(x => !x.RowId.EqualsAny<uint>(4570) && x.ItemUICategory.Value.RowId == 63 && IsSquadronManualAttribute(x)).Select(x => (x.RowId, x.Name.ToString())).ToArray();
         }
 
         internal static (uint Id, string Name)[] GetFood(bool inventoryOnly = false, bool hq = false)

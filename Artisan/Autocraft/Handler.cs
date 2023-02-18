@@ -219,7 +219,7 @@ namespace Artisan.Autocraft
             {
                 {
                     ImGuiEx.TextV("Food Usage:");
-                    ImGui.SameLine(150f.Scale());
+                    ImGui.SameLine(300f.Scale());
                     ImGuiEx.SetNextItemFullWidth();
                     if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == Service.Configuration.Food, out var item) ? $"{(Service.Configuration.FoodHQ ? " " : "")}{item.Name}" : $"{(Service.Configuration.Food == 0 ? "Disabled" : $"{(Service.Configuration.FoodHQ ? " " : "")}{Service.Configuration.Food}")}"))
                     {
@@ -249,7 +249,7 @@ namespace Artisan.Autocraft
 
                 {
                     ImGuiEx.TextV("Medicine Usage:");
-                    ImGui.SameLine(150f.Scale());
+                    ImGui.SameLine(300f.Scale());
                     ImGuiEx.SetNextItemFullWidth();
                     if (ImGui.BeginCombo("##potBuff", ConsumableChecker.Pots.TryGetFirst(x => x.Id == Service.Configuration.Potion, out var item) ? $"{(Service.Configuration.PotHQ ? " " : "")}{item.Name}" : $"{(Service.Configuration.Potion == 0 ? "Disabled" : $"{(Service.Configuration.PotHQ ? " " : "")}{Service.Configuration.Potion}")}"))
                     {
@@ -271,6 +271,48 @@ namespace Artisan.Autocraft
                             {
                                 Service.Configuration.Potion = x.Id;
                                 Service.Configuration.PotHQ = true;
+                            }
+                        }
+                        ImGui.EndCombo();
+                    }
+                }
+
+                {
+                    ImGuiEx.TextV("Manual Usage:");
+                    ImGui.SameLine(300f.Scale());
+                    ImGuiEx.SetNextItemFullWidth();
+                    if (ImGui.BeginCombo("##manualBuff", ConsumableChecker.Manuals.TryGetFirst(x => x.Id == Service.Configuration.Manual, out var item) ? $"{item.Name}" : $"{(Service.Configuration.Manual == 0 ? "Disabled" : $"{Service.Configuration.Manual}")}"))
+                    {
+                        if (ImGui.Selectable("Disable"))
+                        {
+                            Service.Configuration.Manual = 0;
+                        }
+                        foreach (var x in ConsumableChecker.GetManuals(true))
+                        {
+                            if (ImGui.Selectable($"{x.Name}"))
+                            {
+                                Service.Configuration.Manual = x.Id;
+                            }
+                        }
+                        ImGui.EndCombo();
+                    }
+                }
+
+                {
+                    ImGuiEx.TextV("Squadron Manual Usage:");
+                    ImGui.SameLine(300f.Scale());
+                    ImGuiEx.SetNextItemFullWidth();
+                    if (ImGui.BeginCombo("##squadronManualBuff", ConsumableChecker.SquadronManuals.TryGetFirst(x => x.Id == Service.Configuration.SquadronManual, out var item) ? $"{item.Name}" : $"{(Service.Configuration.SquadronManual == 0 ? "Disabled" : $"{Service.Configuration.SquadronManual}")}"))
+                    {
+                        if (ImGui.Selectable("Disable"))
+                        {
+                            Service.Configuration.SquadronManual = 0;
+                        }
+                        foreach (var x in ConsumableChecker.GetSquadronManuals(true))
+                        {
+                            if (ImGui.Selectable($"{x.Name}"))
+                            {
+                                Service.Configuration.SquadronManual = x.Id;
                             }
                         }
                         ImGui.EndCombo();
@@ -340,7 +382,7 @@ namespace Artisan.Autocraft
                     if (addon->UldManager.NodeList[49]->IsVisible)
                     {
                         var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
-                        var str = RawInformation.MemoryHelper.ReadSeString(&text);
+                        var str = MemoryHelper.ReadSeString(&text);
                         var rName = "";
 
                         /*

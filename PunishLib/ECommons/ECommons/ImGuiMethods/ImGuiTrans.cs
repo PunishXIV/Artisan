@@ -33,14 +33,14 @@ namespace ECommons.ImGuiMethods
 
         public static void WithTextColor(Vector4 col, Action func)
         {
-            ImGuiTrans.PushStyleColor(ImGuiCol.Text, col);
+            PushStyleColor(ImGuiCol.Text, col);
             GenericHelpers.Safe(func);
             ImGui.PopStyleColor();
         }
 
         public static void Text(Vector4 col, string s)
         {
-            ImGuiTrans.PushStyleColor(ImGuiCol.Text, col);
+            PushStyleColor(ImGuiCol.Text, col);
             ImGui.TextUnformatted(s);
             ImGui.PopStyleColor();
         }
@@ -48,7 +48,7 @@ namespace ECommons.ImGuiMethods
         public static void TextWrapped(Vector4 col, string s)
         {
             ImGui.PushTextWrapPos(0);
-            ImGuiTrans.Text(col, s);
+            Text(col, s);
             ImGui.PopTextWrapPos();
         }
     }
