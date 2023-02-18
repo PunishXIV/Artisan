@@ -51,6 +51,8 @@ namespace Artisan
 
         public uint Food = 0;
         public uint Potion = 0;
+        public uint Manual = 0;
+        public uint SquadronManual = 0;
         public bool AbortIfNoFoodPot { get; set; } = false;
         public bool FoodHQ = true;
         public bool PotHQ = true;
