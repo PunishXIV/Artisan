@@ -23,6 +23,10 @@ namespace Artisan.RawInformation
             .Where(x => x.GatheringLevel > 0)
             .ToDictionary(i => i.RowId, i => i);
 
+        public static Dictionary<uint, FishParameter>? FishParameterSheet = Service.DataManager?.GetExcelSheet<FishParameter>()?
+            .Where(x => x.GatheringItemLevel.Value.GatheringItemLevel > 0)
+            .ToDictionary(i => i.RowId, i => i);
+
         public static Dictionary<uint, ClassJob>? ClassJobSheet = Service.DataManager?.GetExcelSheet<ClassJob>()?
             .ToDictionary(i => i.RowId, i => i);
 

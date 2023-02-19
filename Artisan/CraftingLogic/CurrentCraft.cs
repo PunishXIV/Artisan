@@ -430,7 +430,7 @@ namespace Artisan.CraftingLogic
             if (CurrentDurability <= 10 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
             if (CurrentProgress < MaxProgress && !ExpertCraftOpenerFinish)
             {
-                if (CurrentStep > 1 && GetStatus(Buffs.MuscleMemory) is null && CanUse(Skills.Innovation)) { ExpertCraftOpenerFinish = true; return 0; }
+                if (CurrentStep > 1 && GetStatus(Buffs.MuscleMemory) is null && CanUse(Skills.Innovation)) { ExpertCraftOpenerFinish = true; return GetExpertRecommendation(); }
                 if (CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
                 if (CurrentStep == 2 && CanUse(Skills.Veneration)) return Skills.Veneration;
                 if (GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;

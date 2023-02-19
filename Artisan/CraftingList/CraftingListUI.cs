@@ -865,15 +865,23 @@ namespace Artisan.CraftingLists
                                     if (jobs.Any(x => x.Value.RowId is 2 or 3)) tempArray.Add(LuminaSheets.ClassJobSheet[17].Abbreviation.RawString);
                                     if (jobs.Any(x => x.Value.RowId is 4 or 5)) tempArray.Add(LuminaSheets.ClassJobSheet[18].Abbreviation.RawString);
                                     ImGui.Text($"{string.Join(", ", tempArray)}");
+                                    continue;
                                 }
-                                else
+
+                                var spearfish = LuminaSheets.SpearfishingItemSheet?.Where(x => x.Value.Item.Value.RowId == value.ItemIngredient).FirstOrDefault().Value;
+                                if (spearfish != null && spearfish.Item.Value.Name.RawString == ingredient)
                                 {
-                                    var spearfish = LuminaSheets.SpearfishingItemSheet?.Where(x => x.Value.Item.Value.RowId == value.ItemIngredient).FirstOrDefault();
-                                    if (spearfish != null && spearfish.Value.Value.Item.Value.Name.RawString == ingredient)
-                                    {
-                                        ImGui.Text($"{LuminaSheets.ClassJobSheet[18].Abbreviation.RawString}");
-                                    }
+                                    ImGui.Text($"{LuminaSheets.ClassJobSheet[18].Abbreviation.RawString}");
+                                    continue;
                                 }
+
+                                var fishSpot = LuminaSheets.FishParameterSheet?.Where(x => x.Value.Item == value.ItemIngredient).FirstOrDefault().Value;
+                                if (fishSpot != null)
+                                {
+                                    ImGui.Text($"{LuminaSheets.ClassJobSheet[18].Abbreviation.RawString}");
+                                    continue;
+                                }
+
 
                             }
                             catch (Exception ex)

@@ -81,7 +81,18 @@ namespace Artisan
         {
             if (e == 0)
             {
-
+                CurrentRecommendation = 0;
+                ManipulationUsed = false;
+                JustUsedObserve = false;
+                VenerationUsed = false;
+                InnovationUsed = false;
+                WasteNotUsed = false;
+                JustUsedFinalAppraisal = false;
+                BasicTouchUsed = false;
+                StandardTouchUsed = false;
+                AdvancedTouchUsed = false;
+                ExpertCraftOpenerFinish = false;
+                MacroStep = 0;
             }
             if (e > 0)
             Tasks.Clear();
@@ -237,11 +248,11 @@ namespace Artisan
 
                                 CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep];
 
-                                if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out uint newAction))
+                                if (Service.Configuration.SetMacro.MacroOptions.UpgradeQualityActions && ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out uint newAction))
                                 {
                                     CurrentRecommendation = newAction;
                                 }
-                                if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out newAction))
+                                if (Service.Configuration.SetMacro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out newAction))
                                 {
                                     CurrentRecommendation = newAction;
                                 }
