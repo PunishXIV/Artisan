@@ -1,4 +1,5 @@
-﻿using Artisan.RawInformation;
+﻿using Artisan.Autocraft;
+using Artisan.RawInformation;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
@@ -27,7 +28,7 @@ namespace Artisan.CraftingLists
         internal static string newListName = String.Empty;
         internal static CraftingList selectedList = new();
         public static Dictionary<uint, Recipe> FilteredList = LuminaSheets.RecipeSheet.Values
-                    .DistinctBy(x => x.ItemResult.Value.Name.RawString)
+                    .DistinctBy(x => x.RowId)
                     .OrderBy(x => x.RecipeLevelTable.Value.ClassJobLevel)
                     .ThenBy(x => x.ItemResult.Value.Name.RawString)
                     .ToDictionary(x => x.RowId, x => x);
@@ -63,6 +64,18 @@ namespace Artisan.CraftingLists
 
         private static void DrawListOptions()
         {
+            if (Handler.Enable)
+            {
+                Processing = false;
+                ImGui.Text("Endurance mode enabled...");
+                return;
+            }
+            if (Processing)
+            {
+                ImGui.Text("Currently processing list...");
+                return;
+            }
+
             if (ImGui.Button("New List"))
             {
                 keyboardFocus = true;
@@ -70,12 +83,6 @@ namespace Artisan.CraftingLists
             }
 
             DrawNewListPopup();
-
-            if (Processing)
-            {
-                ImGui.Text("Currently processing list...");
-                return;
-            }
 
             if (Service.Configuration.CraftingLists.Count > 0)
             {
@@ -333,6 +340,7 @@ namespace Artisan.CraftingLists
                             {
                                 CraftingListFunctions.CurrentIndex = 0;
                                 Processing = true;
+                                Handler.Enable = false;
                             }
                         }
                         ImGui.Spacing();
@@ -502,7 +510,7 @@ namespace Artisan.CraftingLists
                 CraftableItems.Clear();
             }
 
-            string preview = SelectedRecipe is null ? "" : SelectedRecipe.ItemResult.Value.Name.RawString;
+            string preview = SelectedRecipe is null ? "" : $"{SelectedRecipe.ItemResult.Value.Name.RawString} ({LuminaSheets.ClassJobSheet[SelectedRecipe.CraftType.Row + 8].Abbreviation.RawString})";
             if (ImGui.BeginCombo("Select Recipe", preview))
             {
                 DrawRecipes();
@@ -692,7 +700,7 @@ namespace Artisan.CraftingLists
                 foreach (var recipe in CraftableItems.Where(x => x.Value).Select(x => x.Key).Where(x => x.ItemResult.Value.Name.RawString.Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
                 {
                     ImGui.PushID((int)recipe.RowId);
-                    var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.RawString} ({recipe.RecipeLevelTable.Value.ClassJobLevel})", recipe.RowId == SelectedRecipe?.RowId);
+                    var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.RawString} ({LuminaSheets.ClassJobSheet[recipe.CraftType.Row + 8].Name.RawString} {recipe.RecipeLevelTable.Value.ClassJobLevel})", recipe.RowId == SelectedRecipe?.RowId);
 
                     if (selected)
                     {
@@ -713,7 +721,7 @@ namespace Artisan.CraftingLists
                         if (!recipe.ItemResult.Value.Name.RawString.Contains(Search, StringComparison.CurrentCultureIgnoreCase)) continue;
                         CheckForIngredients(recipe);
                         rawIngredientsList.Clear();
-                        var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.RawString} ({recipe.RecipeLevelTable.Value.ClassJobLevel})", recipe.RowId == SelectedRecipe?.RowId);
+                        var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.RawString} ({LuminaSheets.ClassJobSheet[recipe.CraftType.Row + 8].Abbreviation.RawString} {recipe.RecipeLevelTable.Value.ClassJobLevel})", recipe.RowId == SelectedRecipe?.RowId);
 
                         if (selected)
                         {

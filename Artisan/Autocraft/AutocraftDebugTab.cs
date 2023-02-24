@@ -128,11 +128,15 @@ namespace Artisan.Autocraft
                 ImGui.Text($"Current Quick Synth Step: {CurrentCraft.QuickSynthCurrent}");
                 ImGui.Text($"Max Quick Synth Step: {CurrentCraft.QuickSynthMax}");
                 ImGui.Text($"GS+ByregotCombo: {CurrentCraft.GreatStridesByregotCombo()}");
+                ImGui.Text($"Base Quality: {CurrentCraft.BaseQuality()}");
                 ImGui.Text($"Predicted Quality: {CurrentCraft.CalculateNewQuality(CurrentCraft.CurrentRecommendation)}");
+                ImGui.Text($"Predicted Progress: {CurrentCraft.CalculateNewProgress(CurrentCraft.CurrentRecommendation)}");
                 ImGui.Text($"Macro Step: {CurrentCraft.MacroStep}");
                 ImGui.Text($"Collectibility Low: {CurrentCraft.CollectabilityLow}");
                 ImGui.Text($"Collectibility Mid: {CurrentCraft.CollectabilityMid}");
                 ImGui.Text($"Collectibility High: {CurrentCraft.CollectabilityHigh}");
+                ImGui.Text($"Crafting State: {CurrentCraft.State}");
+                ImGui.Text($"Can Finish: {CurrentCraft.CanFinishCraft()}");
             }
 
             if (ImGui.CollapsingHeader("Spiritbonds"))
@@ -160,8 +164,6 @@ namespace Artisan.Autocraft
                 RepairManager.ProcessRepair();
             }
             ImGuiEx.Text($"Gear condition: {RepairManager.GetMinEquippedPercent()}");
-            ImGuiEx.Text($"Selected recipe: {AgentRecipeNote.Instance()->SelectedRecipeIndex}");
-            ImGuiEx.Text($"Insufficient Materials: {HQManager.InsufficientMaterials}");
 
             if (ImGui.Button($"Open Endurance Item"))
             {

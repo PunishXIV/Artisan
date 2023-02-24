@@ -1,4 +1,5 @@
-﻿using Artisan.CraftingLogic;
+﻿using Artisan.CraftingLists;
+using Artisan.CraftingLogic;
 using Artisan.RawInformation;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Components;
@@ -15,6 +16,7 @@ using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using static ECommons.GenericHelpers;
 
 namespace Artisan.Autocraft
@@ -92,7 +94,7 @@ namespace Artisan.Autocraft
                 {
                     Throttler.Rethrottle(1000);
                 }
-                if(AutocraftDebugTab.Debug) PluginLog.Verbose("Throttle success");
+                if (AutocraftDebugTab.Debug) PluginLog.Verbose("Throttle success");
                 if (HQData == null)
                 {
                     ECommons.Logging.DuoLog.Error("HQ data is null");
@@ -205,9 +207,14 @@ namespace Artisan.Autocraft
 
         internal static void Draw()
         {
+            if (CraftingListUI.Processing)
+            {
+                ImGui.TextWrapped("Processing list...");
+                return;
+            }
             ImGui.Checkbox("Enable Endurance Mode", ref Enable);
             ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe and NQ/HQ material distribution in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
-            ImGuiEx.Text($"Recipe: {RecipeName}\nHQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}");
+            ImGuiEx.Text($"Recipe: {RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.RecipeSheet[(uint)RecipeID].CraftType.Value.Name.RawString})" : "")}\nHQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}");
             bool requireFoodPot = Service.Configuration.AbortIfNoFoodPot;
             if (ImGui.Checkbox("Use Food, Manuals and/or Medicine", ref requireFoodPot))
             {
@@ -355,6 +362,20 @@ namespace Artisan.Autocraft
 
                 }
             }
+
+            bool stopIfFail = Service.Configuration.EnduranceStopFail;
+            if (ImGui.Checkbox("Disable Endurance Mode Upon Failed Craft", ref stopIfFail))
+            {
+                Service.Configuration.EnduranceStopFail = stopIfFail;
+                Service.Configuration.Save();
+            }
+
+            bool stopIfNQ = Service.Configuration.EnduranceStopNQ;
+            if (ImGui.Checkbox("Disable Endurance Mode Upon Crafting an NQ item", ref stopIfNQ))
+            {
+                Service.Configuration.EnduranceStopNQ = stopIfNQ;
+                Service.Configuration.Save();
+            }
         }
 
         internal static void DrawRecipeData()
@@ -382,6 +403,10 @@ namespace Artisan.Autocraft
                     if (addon->UldManager.NodeList[49]->IsVisible)
                     {
                         var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
+                        var jobText = addon->UldManager.NodeList[101]->GetAsAtkTextNode()->NodeText.ExtractText();
+                        uint jobTab = GetSelectedJobTab(addon);
+                        var firstCrystal = GetCrystal(addon, 1);
+                        var secondCrystal = GetCrystal(addon, 2);
                         var str = MemoryHelper.ReadSeString(&text);
                         var rName = "";
 
@@ -415,14 +440,17 @@ namespace Artisan.Autocraft
                         }
                         else
                         {
-                          
+
                             rName += str.ExtractText().Trim();
                         }
 
-                        if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == rName, out var id))
+                        if (firstCrystal > 0)
                         {
-                            RecipeID = (int)id.RowId;
-                            RecipeName = id.ItemResult.Value.Name;
+                            if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == rName && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
+                            {
+                                RecipeID = (int)id.RowId;
+                                RecipeName = id.ItemResult.Value.Name;
+                            }
                         }
                     }
 
@@ -434,6 +462,75 @@ namespace Artisan.Autocraft
                     RecipeName = "";
                 }
             }
+        }
+
+        private static uint GetSelectedJobTab(AtkUnitBase* addon)
+        {
+            for (int i = 91; i <= 98; i++)
+            {
+                if (addon->UldManager.NodeList[i]->GetComponent()->UldManager.NodeList[5]->IsVisible)
+                {
+                    return i switch
+                    {
+                        91 => 15,
+                        92 => 14,
+                        93 => 13,
+                        94 => 12,
+                        95 => 11,
+                        96 => 10,
+                        97 => 9,
+                        98 => 8
+                    };
+                }
+            }
+
+            return 0;
+        }
+
+        private static int GetCrystal(AtkUnitBase* addon, int slot)
+        {
+            try
+            {
+                var node = slot == 1 ? addon->UldManager.NodeList[29]->GetComponent()->UldManager.NodeList[1]->GetAsAtkImageNode() : addon->UldManager.NodeList[28]->GetComponent()->UldManager.NodeList[1]->GetAsAtkImageNode();
+                if (slot == 2 && !node->AtkResNode.IsVisible)
+                    return -1;
+
+                var texturePath = node->PartsList->Parts[node->PartId].UldAsset;
+
+                var texFileNameStdString = &texturePath->AtkTexture.Resource->TexFileResourceHandle->ResourceHandle.FileName;
+                var texString = texFileNameStdString->Length < 16
+                        ? Marshal.PtrToStringAnsi((IntPtr)texFileNameStdString->Buffer)
+                        : Marshal.PtrToStringAnsi((IntPtr)texFileNameStdString->BufferPtr);
+
+                if (texString.Contains("020001")) return 2;     //Fire shard
+                if (texString.Contains("020002")) return 7;     //Water shard
+                if (texString.Contains("020003")) return 3;     //Ice shard
+                if (texString.Contains("020004")) return 4;     //Wind shard
+                if (texString.Contains("020005")) return 6;     //Lightning shard
+                if (texString.Contains("020006")) return 5;     //Earth shard
+
+                if (texString.Contains("020007")) return 8;     //Fire crystal
+                if (texString.Contains("020008")) return 13;    //Water crystal
+                if (texString.Contains("020009")) return 9;     //Ice crystal
+                if (texString.Contains("020010")) return 10;    //Wind crystal
+                if (texString.Contains("020011")) return 12;    //Lightning crystal
+                if (texString.Contains("020012")) return 11;    //Earth crystal
+
+                if (texString.Contains("020013")) return 14;    //Fire cluster
+                if (texString.Contains("020014")) return 19;    //Water cluster
+                if (texString.Contains("020015")) return 15;    //Ice cluster
+                if (texString.Contains("020016")) return 16;    //Wind cluster
+                if (texString.Contains("020017")) return 18;    //Lightning cluster
+                if (texString.Contains("020018")) return 17;    //Earth cluster
+
+            }
+            catch
+            {
+
+            }
+
+            return -1;
+
         }
     }
 }

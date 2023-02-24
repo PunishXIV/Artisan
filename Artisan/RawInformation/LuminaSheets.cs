@@ -33,7 +33,7 @@ namespace Artisan.RawInformation
         public static Dictionary<uint, Item>? ItemSheet = Service.DataManager?.GetExcelSheet<Item>()?
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, Lumina.Excel.GeneratedSheets.Action>? ActionSheet = Service.DataManager?.GetExcelSheet<Lumina.Excel.GeneratedSheets.Action>()?
+        public static Dictionary<uint, Action>? ActionSheet = Service.DataManager?.GetExcelSheet<Action>()?
             .ToDictionary(i => i.RowId, i => i);
 
         public static Dictionary<uint, CraftAction>? CraftActions = Service.DataManager?.GetExcelSheet<CraftAction>()?
@@ -46,6 +46,12 @@ namespace Artisan.RawInformation
             .ToDictionary(i => i.RowId, i => i);
 
         public static Dictionary<uint, Addon>? AddonSheet = Service.DataManager?.GetExcelSheet<Addon>()?
+            .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, SpecialShop>? SpecialShopSheet = Service.DataManager?.GetExcelSheet<SpecialShop>()?
+            .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, LogMessage>? LogMessageSheet = Service.DataManager?.GetExcelSheet<LogMessage>()?
             .ToDictionary(i => i.RowId, i => i);
     }
 
