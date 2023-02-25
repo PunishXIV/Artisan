@@ -53,6 +53,9 @@ namespace Artisan.RawInformation
 
         public static Dictionary<uint, LogMessage>? LogMessageSheet = Service.DataManager?.GetExcelSheet<LogMessage>()?
             .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, ItemFood>? ItemFoodSheet = Service.DataManager?.GetExcelSheet<ItemFood>()?
+            .ToDictionary(i => i.RowId, i => i);
     }
 
     public static class SheetExtensions
