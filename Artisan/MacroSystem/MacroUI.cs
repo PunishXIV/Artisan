@@ -296,7 +296,7 @@ namespace Artisan.MacroSystem
             return output;
         }
 
-        private static double GetMacroLength(Macro m)
+        public static double GetMacroLength(Macro m)
         {
             double output = 0;
             var delay = (double)Service.Configuration.AutoDelay + (Service.Configuration.DelayRecommendation ? Service.Configuration.RecommendationDelay : 0);

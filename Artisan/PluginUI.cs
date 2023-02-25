@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using static Artisan.CraftingLogic.CurrentCraft;
+using static Artisan.MacroSystem.MacroUI;
 
 namespace Artisan
 {
@@ -274,6 +275,18 @@ namespace Artisan
                 if (Service.Configuration.CraftingX && Handler.Enable)
                 {
                     ImGui.Text($"Remaining Crafts: {Service.Configuration.CraftX}");
+                    if(Service.Configuration.IndividualMacros.TryGetValue((uint)Handler.RecipeID, out var prevMacro) && prevMacro != null)
+                    {
+                        Macro? macro = Service.Configuration.IndividualMacros[(uint)Handler.RecipeID];
+                        if (macro != null)
+                        {
+                            Double timeInSeconds = ((MacroUI.GetMacroLength(macro) * Service.Configuration.CraftX) + (Service.Configuration.CraftX * 2)); // Counting crafting duration + 2 seconds between crafts.
+                            TimeSpan t = TimeSpan.FromSeconds(timeInSeconds);
+                            string duration = string.Format("{0:D2}h {1:D2}m {2:D2}s", t.Hours, t.Minutes, t.Seconds);
+
+                            ImGui.Text($"Approximate Remaining Duration: {duration}");
+                        }
+                    }
                 }
 
 #if DEBUG

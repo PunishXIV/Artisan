@@ -29,6 +29,9 @@ namespace Artisan.RawInformation
         public static Dictionary<uint, Item>? ItemSheet = Service.DataManager?.GetExcelSheet<Item>()?
             .ToDictionary(i => i.RowId, i => i);
 
+        public static Dictionary<uint, ItemFood>? ItemFoodSheet = Service.DataManager?.GetExcelSheet<ItemFood>()?
+            .ToDictionary(i => i.RowId, i => i);
+
         public static Dictionary<uint, Lumina.Excel.GeneratedSheets.Action>? ActionSheet = Service.DataManager?.GetExcelSheet<Lumina.Excel.GeneratedSheets.Action>()?
             .ToDictionary(i => i.RowId, i => i);
 

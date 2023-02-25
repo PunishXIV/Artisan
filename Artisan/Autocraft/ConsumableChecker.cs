@@ -1,4 +1,5 @@
-﻿using Dalamud.Game.ClientState.Conditions;
+﻿using Artisan.RawInformation;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Utility.Signatures;
 using ECommons;
 using ECommons.DalamudServices;
@@ -13,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Artisan.CraftingLists;
 
 namespace Artisan.Autocraft
 {
@@ -126,14 +128,42 @@ namespace Artisan.Autocraft
         }
 
 
-        internal static bool IsFooded()
+        internal static bool IsFooded(ListItemOptions? listItemOptions = null)
         {
-            return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.StatusId == 48 && x.RemainingTime > 0f) == true;
+            if (Service.ClientState.LocalPlayer.StatusList.Any(x => x.StatusId == 48 & x.RemainingTime > 0f))
+            {
+                var configFood = listItemOptions != null ? listItemOptions.Food : Service.Configuration.Food;
+                var configFoodHQ = listItemOptions != null ? listItemOptions.FoodHQ : Service.Configuration.FoodHQ;
+
+                var foodBuff = Service.ClientState.LocalPlayer.StatusList.First(x => x.StatusId == 48 & x.RemainingTime > 0f);
+                var desiredFood = LuminaSheets.ItemSheet[configFood].ItemAction.Value;
+                var itemFood = LuminaSheets.ItemFoodSheet[configFoodHQ ? desiredFood.DataHQ[1] : desiredFood.Data[1]];
+                if (foodBuff.Param != (itemFood.RowId + (configFoodHQ ? 10000 : 0)))
+                {
+                    return false;
+                }
+                return true;
+            }
+            return false;
         }
 
-        internal static bool IsPotted()
+        internal static bool IsPotted(ListItemOptions? listItemOptions = null)
         {
-            return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.StatusId == 49 && x.RemainingTime > 0f) == true;
+            if (Service.ClientState.LocalPlayer.StatusList.Any(x => x.StatusId == 48 & x.RemainingTime > 0f))
+            {
+                var configPot = listItemOptions != null ? listItemOptions.Potion : Service.Configuration.Potion ;
+                var configPotHQ = listItemOptions != null ? listItemOptions.PotHQ : Service.Configuration.PotHQ;
+
+                var potBuff = Service.ClientState.LocalPlayer.StatusList.First(x => x.StatusId == 48 & x.RemainingTime > 0f);
+                var desiredPot = LuminaSheets.ItemSheet[configPot].ItemAction.Value;
+                var itemFood = LuminaSheets.ItemFoodSheet[configPotHQ ? desiredPot.DataHQ[1] : desiredPot.Data[1]];
+                if (potBuff.Param != (itemFood.RowId + (configPotHQ ? 10000 : 0)))
+                {
+                    return false;
+                }
+                return true;
+            }
+            return false;
         }
 
         internal static bool IsManualled()
@@ -179,14 +209,22 @@ namespace Artisan.Autocraft
             ActionManager.Instance() is not null && ActionManager.Instance()->UseAction(ActionType.Item, itemID, a4: 65535);
 
         internal static unsafe uint GetItemStatus(uint itemID) => ActionManager.Instance() is null ? uint.MaxValue : ActionManager.Instance()->GetActionStatus(ActionType.Item, itemID);
-        internal static bool CheckConsumables(bool use = true)
+        internal static bool CheckConsumables(bool use = true, ListItemOptions? listItemOptions = null)
         {
-            var fooded = IsFooded() || Service.Configuration.Food == 0;
+            uint desiredFood = listItemOptions != null ? listItemOptions.Food : Service.Configuration.Food;
+            bool desiredFoodHQ = listItemOptions != null ? listItemOptions.FoodHQ : Service.Configuration.FoodHQ;
+            if (listItemOptions != null)
+            {
+                desiredFood = listItemOptions.Food;
+                desiredFoodHQ = listItemOptions.FoodHQ;
+            }
+
+            var fooded = IsFooded(listItemOptions) || desiredFood == 0;
             if (!fooded)
             {
-                if (GetFood(true, Service.Configuration.FoodHQ).Any())
+                if (GetFood(true, desiredFoodHQ).Any())
                 {
-                    if(use) UseItem(Service.Configuration.Food, Service.Configuration.FoodHQ);
+                    if(use) UseItem(desiredFood, desiredFoodHQ);
                     return false;
                 }
                 else

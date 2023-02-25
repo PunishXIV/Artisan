@@ -1,7 +1,9 @@
-﻿using Artisan.RawInformation;
+﻿using Artisan.Autocraft;
+using Artisan.RawInformation;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
+using ECommons;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
@@ -244,6 +246,70 @@ namespace Artisan.CraftingLists
                                         Service.Configuration.IndividualMacros[(uint)selectedListItem] = null;
                                         Service.Configuration.Save();
                                     }
+
+                                    if (true)
+                                    {
+                                        ImGui.Spacing();
+                                        ImGui.Text($"Use a food item for this recipe (only when Macro mode is enabled)");
+                                        if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == options.Food, out var item) ? $"{(options.FoodHQ ? " " : "")}{item.Name}" : $"{(options.Food == 0 ? "Disabled" : $"{(options.FoodHQ ? " " : "")}{options.Food}")}"))
+                                        {
+                                            if (ImGui.Selectable("Disable"))
+                                            {
+                                                options.Food = 0;
+                                            }
+                                            foreach (var x in ConsumableChecker.GetFood(true))
+                                            {
+                                                if (ImGui.Selectable($"{x.Name}"))
+                                                {
+                                                    options.Food = x.Id;
+                                                    options.FoodHQ = false;
+                                                }
+                                            }
+                                            foreach (var x in ConsumableChecker.GetFood(true, true))
+                                            {
+                                                if (ImGui.Selectable($" {x.Name}"))
+                                                {
+                                                    options.Food = x.Id;
+                                                    options.FoodHQ = true;
+                                                }
+                                            }
+
+                                            ImGui.EndCombo();
+                                        }
+                                    }
+
+                                    if (true)
+                                    {
+                                        ImGui.Spacing();
+                                        ImGuiEx.SetNextItemFullWidth();
+                                        ImGui.Text($"Use a potion item for this recipe (only when Macro mode is enabled)");
+                                        if (ImGui.BeginCombo("##potBuff", ConsumableChecker.Pots.TryGetFirst(x => x.Id == options.Potion, out var item) ? $"{(options.PotHQ ? " " : "")}{item.Name}" : $"{(options.Potion == 0 ? "Disabled" : $"{(options.PotHQ ? " " : "")}{options.Potion}")}"))
+                                        {
+                                            if (ImGui.Selectable("Disable"))
+                                            {
+                                                options.Potion = 0;
+                                            }
+                                            foreach (var x in ConsumableChecker.GetPots(true))
+                                            {
+                                                if (ImGui.Selectable($"{x.Name}"))
+                                                {
+                                                    options.Potion = x.Id;
+                                                    options.PotHQ = false;
+                                                }
+                                            }
+                                            foreach (var x in ConsumableChecker.GetPots(true, true))
+                                            {
+                                                if (ImGui.Selectable($" {x.Name}"))
+                                                {
+                                                    options.Potion = x.Id;
+                                                    options.PotHQ = true;
+                                                }
+                                            }
+
+                                            ImGui.EndCombo();
+                                        }
+                                    }
+
 
                                     if (Service.Configuration.UserMacros.Count > 0)
                                     {

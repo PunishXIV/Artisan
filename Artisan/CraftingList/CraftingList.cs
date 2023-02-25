@@ -2,6 +2,8 @@
 using Artisan.CraftingLogic;
 using Artisan.RawInformation;
 using ClickLib.Clicks;
+using Dalamud.Game.ClientState.Conditions;
+using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Environment;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -31,6 +33,10 @@ namespace Artisan.CraftingLists
     public class ListItemOptions
     {
         public bool NQOnly { get; set; } = false;
+        public uint Food = 0;
+        public bool FoodHQ { get; set; } = false;
+        public uint Potion = 0;
+        public bool PotHQ { get; set; } = false;
     }
     public static class CraftingListFunctions
     {
@@ -101,7 +107,7 @@ namespace Artisan.CraftingLists
             return CraftingListUI.CheckForIngredients(recipe, false);
         }
 
-        internal static void ProcessList(CraftingList selectedList)
+        internal unsafe static void ProcessList(CraftingList selectedList)
         {
             var isCrafting = Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting];
             var preparing = Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft];
@@ -168,6 +174,65 @@ namespace Artisan.CraftingLists
             {
                 Service.ChatGui.PrintError("Insufficient level to craft this item. Moving on.");
                 CurrentIndex++;
+                return;
+            }
+            if (Svc.Condition[ConditionFlag.Occupied39])
+            {
+                Throttler.Rethrottle(1000);
+            }
+
+            if (Service.Configuration.Materia && Spiritbond.IsSpiritbondReadyAny())
+            {
+                if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
+                {
+                    if (Throttler.Throttle(1000))
+                    {
+                        CommandProcessor.ExecuteThrottled("/clog");
+                    }
+                }
+                if (!Spiritbond.IsMateriaMenuOpen() && !isCrafting && !preparing)
+                {
+                    Spiritbond.OpenMateriaMenu();
+                }
+                if (Spiritbond.IsMateriaMenuOpen() && !isCrafting && !preparing)
+                {
+                    Spiritbond.ExtractFirstMateria();
+                }
+            }
+            else
+            {
+                Spiritbond.CloseMateriaMenu();
+            }
+
+            if (Service.Configuration.Repair && !RepairManager.ProcessRepair(false) && ((Service.Configuration.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!Service.Configuration.Materia)))
+            {
+                if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
+                {
+                    if (Throttler.Throttle(1000))
+                    {
+                        CommandProcessor.ExecuteThrottled("/clog");
+                    }
+                }
+                else
+                {
+                    if (!Svc.Condition[ConditionFlag.Crafting]) RepairManager.ProcessRepair(true);
+                }
+            }
+
+
+            if (!ConsumableChecker.CheckConsumables(false))
+            {
+                if (TryGetAddonByName("RecipeNote", out AtkUnitBase* addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
+                {
+                    if (Throttler.Throttle(1000))
+                    {
+                        CommandProcessor.ExecuteThrottled("/clog");
+                    }
+                }
+                else
+                {
+                    ConsumableChecker.CheckConsumables(true);
+                }
                 return;
             }
 
