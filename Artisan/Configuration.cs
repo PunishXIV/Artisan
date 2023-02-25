@@ -6,6 +6,7 @@ using Dalamud.Configuration;
 using Dalamud.Plugin;
 using System;
 using System.Collections.Generic;
+using System.Windows.Forms.VisualStyles;
 
 namespace Artisan
 {
@@ -65,6 +66,8 @@ namespace Artisan
         public bool DelayRecommendation { get; set; }
 
         public int RecommendationDelay { get; set; } = 0;
+        public bool EnduranceStopFail { get; set; } = false;
+        public bool EnduranceStopNQ { get; set; } = false;
 
         public int RepairPercent = 50;
 

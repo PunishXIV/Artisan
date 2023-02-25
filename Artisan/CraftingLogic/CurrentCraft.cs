@@ -71,7 +71,7 @@ namespace Artisan.CraftingLogic
         public static class Multipliers
         {
             public const double
-                BasicSynthesis = 1.2,
+                BasicSynthesis = 1,
                 RapidSynthesis = 5,
                 MuscleMemory = 3,
                 CarefulSynthesis = 1.5,
@@ -108,6 +108,7 @@ namespace Artisan.CraftingLogic
         private static int observeCounter;
         private static int quickSynthCurrent = 0;
         private static int quickSynthMax = 0;
+        private static CraftingState state = CraftingState.NotCrafting;
 
         public static int CurrentStep
         {
@@ -155,6 +156,38 @@ namespace Artisan.CraftingLogic
         public static int QuickSynthCurrent { get => quickSynthCurrent; set { if (value != 0 && quickSynthCurrent != value) { CraftingLists.CraftingListFunctions.CurrentIndex++; } quickSynthCurrent = value; } }
         public static int QuickSynthMax { get => quickSynthMax; set => quickSynthMax = value; }
         public static int MacroStep { get; set; } = 0;
+
+        public static bool LastItemWasHQ = false;
+
+        public static CraftingState State
+        {
+            get { return state; }
+            set
+            {
+                if (value != state)
+                {
+                    if (state == CraftingState.Crafting)
+                    {
+                        bool wasSuccess = CheckForSuccess();
+                        if (!wasSuccess && Service.Configuration.EnduranceStopFail)
+                            Handler.Enable = false;
+
+                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ)
+                            Handler.Enable = false;
+                    }
+                }
+
+                state = value;
+            }
+        }
+
+        private static bool CheckForSuccess()
+        {
+            if (CurrentProgress < MaxProgress)
+                return false;
+
+            return true;
+        }
 
         public unsafe static bool GetCraft()
         {
@@ -329,6 +362,20 @@ namespace Artisan.CraftingLogic
 
         public static double GetMultiplier(uint id, bool isQuality = false)
         {
+            if (id == 0) return 1;
+
+            if (id < 100000)
+            {
+                var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == id.NameOfAction() && x.ClassJob.Row == 8).FirstOrDefault();
+                id = newAct.RowId;
+            }
+            else
+            {
+                var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == id.NameOfAction() && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
+                id = newAct.CRP.Row;
+            }
+
+
             double baseMultiplier = id switch
             {
                 Skills.BasicSynth => Multipliers.BasicSynthesis,
@@ -430,7 +477,7 @@ namespace Artisan.CraftingLogic
             if (CurrentDurability <= 10 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
             if (CurrentProgress < MaxProgress && !ExpertCraftOpenerFinish)
             {
-                if (CurrentStep > 1 && GetStatus(Buffs.MuscleMemory) is null && CanUse(Skills.Innovation)) { ExpertCraftOpenerFinish = true; return 0; }
+                if (CurrentStep > 1 && GetStatus(Buffs.MuscleMemory) is null && CanUse(Skills.Innovation)) { ExpertCraftOpenerFinish = true; return GetExpertRecommendation(); }
                 if (CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
                 if (CurrentStep == 2 && CanUse(Skills.Veneration)) return Skills.Veneration;
                 if (GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
@@ -516,7 +563,7 @@ namespace Artisan.CraftingLogic
             return CharacterInfo.HighestLevelSynth();
         }
 
-        private static bool CanFinishCraft()
+        public static bool CanFinishCraft()
         {
             var metMaxProg = CurrentQuality >= MaxQuality;
             var usingPercentage = HighQualityPercentage >= Service.Configuration.MaxPercentage && !Recipe.ItemResult.Value.IsCollectable && !Recipe.IsExpert;
@@ -845,6 +892,13 @@ namespace Artisan.CraftingLogic
             Malleable,
             Primed,
             Unknown
+        }
+
+        public enum CraftingState
+        {
+            PreparingToCraft,
+            Crafting,
+            NotCrafting
         }
     }
 }

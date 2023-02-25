@@ -9,11 +9,19 @@ using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.IoC;
 using Dalamud.Plugin;
+using Dalamud.Game.Text;
+using Dalamud.Game.Text.SeStringHandling;
+using ECommons.DalamudServices;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
+using ECommons;
+using Artisan.CraftingLogic;
+using System.Windows.Forms;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 
 namespace Artisan
 {
@@ -52,11 +60,44 @@ namespace Artisan
             Service.Framework.Update += FireBot;
             Service.ClientState.Logout += DisableEndurance;
             Service.ClientState.Login += DisableEndurance;
+            Service.Condition.ConditionChange += Condition_ConditionChange;
+            Service.ChatGui.ChatMessage += ScanForHQItems;
             ActionWatching.Enable();
             StepChanged += ResetRecommendation;
             ConsumableChecker.Init();
             Handler.Init();
             CleanUpIndividualMacros();
+        }
+
+        private void ScanForHQItems(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+        {
+            if (type == (XivChatType)2242 && Service.Condition[ConditionFlag.Crafting])
+            {
+                if (message.Payloads.Any(x => x.Type == PayloadType.Item))
+                {
+                    var item = (ItemPayload)message.Payloads.First(x => x.Type == PayloadType.Item);
+                    LastItemWasHQ = item.IsHQ;
+                }
+            }
+        }
+
+        private void Condition_ConditionChange(ConditionFlag flag, bool value)
+        {
+            if (Service.Condition[ConditionFlag.PreparingToCraft])
+            {
+                State = CraftingState.PreparingToCraft;
+                return;
+            }
+            if (Service.Condition[ConditionFlag.Crafting] && !Service.Condition[ConditionFlag.PreparingToCraft])
+            {
+                State = CraftingState.Crafting;
+                return;
+            }
+            if (!Service.Condition[ConditionFlag.Crafting] && !Service.Condition[ConditionFlag.PreparingToCraft])
+            {
+                State = CraftingState.NotCrafting;
+                return;
+            }
         }
 
         private void DisableEndurance(object? sender, EventArgs e)
@@ -79,14 +120,24 @@ namespace Artisan
 
         private void ResetRecommendation(object? sender, int e)
         {
+            CurrentRecommendation = 0;
+
             if (e == 0)
             {
-
+                ManipulationUsed = false;
+                JustUsedObserve = false;
+                VenerationUsed = false;
+                InnovationUsed = false;
+                WasteNotUsed = false;
+                JustUsedFinalAppraisal = false;
+                BasicTouchUsed = false;
+                StandardTouchUsed = false;
+                AdvancedTouchUsed = false;
+                ExpertCraftOpenerFinish = false;
+                MacroStep = 0;
             }
             if (e > 0)
             Tasks.Clear();
-
-            CurrentRecommendation = 0;
         }
 
         public static bool CheckIfCraftFinished()
@@ -113,7 +164,7 @@ namespace Artisan
                 ActionWatching.TryEnable();
 
             GetCraft();
-            if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0 && Tasks.Count == 0)
+            if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0 && Tasks.Count == 0 && CurrentStep >= 1)
             {
                 var delay = Service.Configuration.DelayRecommendation ? Service.Configuration.RecommendationDelay : 0;
                 Tasks.Add(Service.Framework.RunOnTick(() => FetchRecommendation(CurrentStep), TimeSpan.FromMilliseconds(delay)));
@@ -169,25 +220,6 @@ namespace Artisan
             {
                 try
                 {
-
-                    if (e == 0)
-                    {
-                        CurrentRecommendation = 0;
-                        ManipulationUsed = false;
-                        JustUsedObserve = false;
-                        VenerationUsed = false;
-                        InnovationUsed = false;
-                        WasteNotUsed = false;
-                        JustUsedFinalAppraisal = false;
-                        BasicTouchUsed = false;
-                        StandardTouchUsed = false;
-                        AdvancedTouchUsed = false;
-                        ExpertCraftOpenerFinish = false;
-                        MacroStep = 0;
-
-                        return;
-                    }
-
                     CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
 
                     if (Service.Configuration.UseMacroMode && Service.Configuration.UserMacros.Count > 0)
@@ -237,11 +269,11 @@ namespace Artisan
 
                                 CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep];
 
-                                if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out uint newAction))
+                                if (Service.Configuration.SetMacro.MacroOptions.UpgradeQualityActions && ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out uint newAction))
                                 {
                                     CurrentRecommendation = newAction;
                                 }
-                                if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out newAction))
+                                if (Service.Configuration.SetMacro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out newAction))
                                 {
                                     CurrentRecommendation = newAction;
                                 }
@@ -250,7 +282,7 @@ namespace Artisan
                     }
 
                     RecommendationName = CurrentRecommendation.NameOfAction();
-
+                    
                     if (CurrentRecommendation != 0)
                     {
                         if (LuminaSheets.ActionSheet.TryGetValue(CurrentRecommendation, out var normalAct))
@@ -382,7 +414,8 @@ namespace Artisan
             ECommons.ECommons.Dispose();
 
             Service.CommandManager.RemoveHandler(commandName);
-
+            Service.Condition.ConditionChange -= Condition_ConditionChange;
+            Service.ChatGui.ChatMessage -= ScanForHQItems;
             Service.Interface.UiBuilder.OpenConfigUi -= DrawConfigUI;
             Service.Interface.UiBuilder.Draw -= DrawUI;
             Service.Framework.Update -= FireBot;

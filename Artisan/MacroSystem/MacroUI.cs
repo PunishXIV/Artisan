@@ -99,7 +99,6 @@ namespace Artisan.MacroSystem
                         Artisan.CleanUpIndividualMacros();
                     }
                     ImGui.Spacing();
-                    ImGui.SameLine();
                     bool skipQuality = selectedMacro.MacroOptions.SkipQualityIfMet;
                     if (ImGui.Checkbox("Skip quality actions if at 100%", ref skipQuality))
                     {
@@ -109,7 +108,6 @@ namespace Artisan.MacroSystem
                         Service.Configuration.Save();
                     }
                     ImGuiComponents.HelpMarker("Once you're at 100% quality, the macro will skip over all actions relating to quality, including buffs.");
-                    ImGui.SameLine();
                     bool upgradeQualityActions = selectedMacro.MacroOptions.UpgradeQualityActions;
                     if (ImGui.Checkbox("Upgrade Quality Actions", ref upgradeQualityActions))
                     {
@@ -119,8 +117,8 @@ namespace Artisan.MacroSystem
                         Service.Configuration.Save();
                     }
                     ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases quality (not including Byregot's Blessing) then it will upgrade the action to Precise Touch.");
-
                     ImGui.SameLine();
+
                     bool upgradeProgressActions = selectedMacro.MacroOptions.UpgradeProgressActions;
                     if (ImGui.Checkbox("Upgrade Progress Actions", ref upgradeProgressActions))
                     {

@@ -1,4 +1,5 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game;
+﻿using Dalamud.Hooking;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using System;
 using System.Runtime.InteropServices;
@@ -184,6 +185,7 @@ namespace Artisan.RawInformation
                 Dalamud.Logging.PluginLog.Error(ex.Message);
             }
         }
+
 
         public unsafe static void FetchStats()
         {

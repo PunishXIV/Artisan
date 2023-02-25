@@ -7,6 +7,7 @@ using Dalamud.Interface.Components;
 using Dalamud.Logging;
 using Dalamud.Plugin;
 using ECommons.DalamudServices;
+using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Newtonsoft.Json;
@@ -168,8 +169,11 @@ namespace Artisan
             var baseX = addonPtr->X;
             var baseY = addonPtr->Y;
 
-            if (addonPtr->UldManager.NodeList[1]->IsVisible)
-            AtkResNodeFunctions.DrawOptions(addonPtr->UldManager.NodeList[1]);
+            if (addonPtr->UldManager.NodeListCount > 1)
+            {
+                if (addonPtr->UldManager.NodeList[1]->IsVisible)
+                    AtkResNodeFunctions.DrawOptions(addonPtr->UldManager.NodeList[1]);
+            }
         }
 
         private unsafe void DrawMacroChoiceOnRecipe()
@@ -331,62 +335,157 @@ namespace Artisan
             bool disableMini = Service.Configuration.DisableMiniMenu;
 
             ImGui.Separator();
-            if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
+            if (ImGui.CollapsingHeader("Mode Selections"))
             {
-                Service.Configuration.AutoMode = autoEnabled;
-                Service.Configuration.Save();
-            }
-            ImGuiComponents.HelpMarker($"Automatically use each recommended action.\nRequires the action to be on a visible hotbar.");
-            if (autoEnabled)
-            {
-                var delay = Service.Configuration.AutoDelay;
-                ImGui.PushItemWidth(200);
-                if (ImGui.SliderInt("Set delay (ms)###ActionDelay", ref delay, 0, 1000))
+                if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
                 {
-                    if (delay < 0) delay = 0;
-                    if (delay > 1000) delay = 1000;
+                    Service.Configuration.AutoMode = autoEnabled;
+                    Service.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker($"Automatically use each recommended action.");
+                if (autoEnabled)
+                {
+                    var delay = Service.Configuration.AutoDelay;
+                    ImGui.PushItemWidth(200);
+                    if (ImGui.SliderInt("Set delay (ms)###ActionDelay", ref delay, 0, 1000))
+                    {
+                        if (delay < 0) delay = 0;
+                        if (delay > 1000) delay = 1000;
 
-                    Service.Configuration.AutoDelay = delay;
+                        Service.Configuration.AutoDelay = delay;
+                        Service.Configuration.Save();
+                    }
+                }
+
+                if (Service.Configuration.UserMacros.Count > 0)
+                {
+                    if (ImGui.Checkbox("Macro Mode Enabled", ref useMacroMode))
+                    {
+                        Service.Configuration.UseMacroMode = useMacroMode;
+                        Service.Configuration.Save();
+                    }
+                    ImGuiComponents.HelpMarker($"Use a macro to craft instead of Artisan making its own decisions.\r\n" +
+                        $"Priority is individual recipe macros followed by the selected macro below.\r\n" +
+                        $"If you wish to only use individual recipe macros then leave below unset.\r\n" +
+                        $"If the macro ends before a craft is complete, Artisan will make its own suggestions until the end of the craft.");
+
+                    if (useMacroMode)
+                    {
+                        string preview = Service.Configuration.SetMacro == null ? "" : Service.Configuration.SetMacro.Name;
+                        if (ImGui.BeginCombo("Select Macro", preview))
+                        {
+                            if (ImGui.Selectable(""))
+                            {
+                                Service.Configuration.SetMacro = null;
+                                Service.Configuration.Save();
+                            }
+                            foreach (var macro in Service.Configuration.UserMacros)
+                            {
+                                bool selected = Service.Configuration.SetMacro == null ? false : Service.Configuration.SetMacro.ID == macro.ID;
+                                if (ImGui.Selectable(macro.Name, selected))
+                                {
+                                    Service.Configuration.SetMacro = macro;
+                                    Service.Configuration.Save();
+                                }
+                            }
+
+                            ImGui.EndCombo();
+                        }
+                    }
+                }
+                else
+                {
+                    useMacroMode = false;
+                }
+            }
+
+            if (ImGui.CollapsingHeader("Execution Settings"))
+            {
+                if (ImGui.Checkbox("Delay Getting Recommendations", ref delayRec))
+                {
+                    Service.Configuration.DelayRecommendation = delayRec;
+                    Service.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker("Use this if you're having issues with Final Appraisal not triggering when it's supposed to.");
+
+                if (delayRec)
+                {
+                    var delay = Service.Configuration.RecommendationDelay;
+                    ImGui.PushItemWidth(200);
+                    if (ImGui.SliderInt("Set delay (ms)###RecommendationDelay", ref delay, 0, 1000))
+                    {
+                        if (delay < 0) delay = 0;
+                        if (delay > 1000) delay = 1000;
+
+                        Service.Configuration.RecommendationDelay = delay;
+                        Service.Configuration.Save();
+                    }
+                }
+
+                if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[227].Text.RawString}", ref useTricksGood))
+                {
+                    Service.Configuration.UseTricksGood = useTricksGood;
+                    Service.Configuration.Save();
+                }
+                ImGui.SameLine();
+                if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[228].Text.RawString}", ref useTricksExcellent))
+                {
+                    Service.Configuration.UseTricksExcellent = useTricksExcellent;
+                    Service.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker($"These 2 options allow you to make Tricks of the Trade a priority when condition is Good or Excellent.\nOther skills that rely on these conditions will not be used.");
+                if (ImGui.Checkbox("Use Specialist Actions", ref useSpecialist))
+                {
+                    Service.Configuration.UseSpecialist = useSpecialist;
+                    Service.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker("If the current job is a specialist, spends any Crafter's Delineation you may have.\nCareful Observation replaces Observe.");
+                ImGui.TextWrapped("Max Quality%%");
+                ImGuiComponents.HelpMarker($"Once quality has reached the below percentage, Artisan will focus on progress only.");
+                if (ImGui.SliderInt("###SliderMaxQuality", ref maxQuality, 0, 100, $"{maxQuality}%%"))
+                {
+                    Service.Configuration.MaxPercentage = maxQuality;
                     Service.Configuration.Save();
                 }
             }
 
-            if (ImGui.Checkbox("Delay Getting Recommendations", ref delayRec))
+            if (ImGui.CollapsingHeader("UI Settings"))
             {
-                Service.Configuration.DelayRecommendation = delayRec;
-                Service.Configuration.Save();
-            }
-            ImGuiComponents.HelpMarker("Use this if you're having issues with Final Appraisal not triggering when it's supposed to.");
-
-            if (delayRec)
-            {
-                var delay = Service.Configuration.RecommendationDelay;
-                ImGui.PushItemWidth(200);
-                if (ImGui.SliderInt("Set delay (ms)###RecommendationDelay", ref delay, 0, 1000))
+                if (ImGui.Checkbox("Disable highlighting box", ref disableGlow))
                 {
-                    if (delay < 0) delay = 0;
-                    if (delay > 1000) delay = 1000;
-
-                    Service.Configuration.RecommendationDelay = delay;
+                    Service.Configuration.DisableHighlightedAction = disableGlow;
                     Service.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker("This is the box that highlights the actions on your hotbars for manual play.");
+
+                if (ImGui.Checkbox($"Disable recommendation toasts", ref disableToasts))
+                {
+                    Service.Configuration.DisableToasts = disableToasts;
+                    Service.Configuration.Save();
+                }
+
+                ImGuiComponents.HelpMarker("These are the pop-ups whenever a new action is recommended.");
+
+                if (ImGui.Checkbox("Disable Recipe List mini-menu", ref disableMini))
+                {
+                    Service.Configuration.DisableMiniMenu = disableMini;
+                    Service.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker("Hides the mini-menu for config settings in the recipe list. Still shows individual macro menu.");
+
+                bool lockMini = Service.Configuration.LockMiniMenu;
+                if (ImGui.Checkbox("Keep Recipe List mini-menu position attached to Recipe List.", ref lockMini))
+                {
+                    Service.Configuration.LockMiniMenu = lockMini;
+                    Service.Configuration.Save();
+                }
+                if (ImGui.Button("Reset Recipe List mini-menu position"))
+                {
+                    AtkResNodeFunctions.ResetPosition = true;
                 }
             }
 
 
-            if (ImGui.Checkbox("Disable highlighting box", ref disableGlow))
-            {
-                Service.Configuration.DisableHighlightedAction = disableGlow;
-                Service.Configuration.Save();
-            }
-            ImGuiComponents.HelpMarker("This is the box that highlights the actions on your hotbars for manual play.");
-
-            if (ImGui.Checkbox($"Disable recommendation toasts", ref disableToasts))
-            {
-                Service.Configuration.DisableToasts = disableToasts;
-                Service.Configuration.Save();
-            }
-
-            ImGuiComponents.HelpMarker("These are the pop-ups whenever a new action is recommended.");
 
             //if (ImGui.Checkbox($"Automatically Repeat Last Craft", ref autoCraft))
             //{
@@ -421,91 +520,6 @@ namespace Artisan
             //    ImGuiComponents.HelpMarker($"Set a starting quality as if you were using HQ items for calculating EHQ.");
             //    ImGui.Unindent();
             //}
-
-            if (Service.Configuration.UserMacros.Count > 0)
-            {
-                if (ImGui.Checkbox("Macro Mode Enabled", ref useMacroMode))
-                {
-                    Service.Configuration.UseMacroMode = useMacroMode;
-                    Service.Configuration.Save();
-                }
-                ImGuiComponents.HelpMarker($"Use a macro to craft instead of Artisan making its own decisions.\r\n" +
-                    $"Priority is individual recipe macros followed by the selected macro below.\r\n" +
-                    $"If you wish to only use individual recipe macros then leave below unset.\r\n" +
-                    $"If the macro ends before a craft is complete, Artisan will make its own suggestions until the end of the craft.");
-
-                if (useMacroMode)
-                {
-                    string preview = Service.Configuration.SetMacro == null ? "" : Service.Configuration.SetMacro.Name;
-                    if (ImGui.BeginCombo("Select Macro", preview))
-                    {
-                        if (ImGui.Selectable(""))
-                        {
-                            Service.Configuration.SetMacro = null;
-                            Service.Configuration.Save();
-                        }
-                        foreach (var macro in Service.Configuration.UserMacros)
-                        {
-                            bool selected = Service.Configuration.SetMacro == null ? false : Service.Configuration.SetMacro.ID == macro.ID;
-                            if (ImGui.Selectable(macro.Name, selected))
-                            {
-                                Service.Configuration.SetMacro = macro;
-                                Service.Configuration.Save();
-                            }
-                        }
-
-                        ImGui.EndCombo();
-                    }
-                }
-            }
-            else
-            {
-                useMacroMode = false;
-            }
-
-            if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[227].Text.RawString}", ref useTricksGood))
-            {
-                Service.Configuration.UseTricksGood = useTricksGood;
-                Service.Configuration.Save();
-            }
-            ImGui.SameLine();
-            if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[228].Text.RawString}", ref useTricksExcellent))
-            {
-                Service.Configuration.UseTricksExcellent = useTricksExcellent;
-                Service.Configuration.Save();
-            }
-            ImGuiComponents.HelpMarker($"These 2 options allow you to make Tricks of the Trade a priority when condition is Good or Excellent.\nOther skills that rely on these conditions will not be used.");
-            if (ImGui.Checkbox("Use Specialist Actions", ref useSpecialist))
-            {
-                Service.Configuration.UseSpecialist = useSpecialist;
-                Service.Configuration.Save();
-            }
-            ImGuiComponents.HelpMarker("If the current job is a specialist, spends any Crafter's Delineation you may have.\nCareful Observation replaces Observe.");
-            ImGui.TextWrapped("Max Quality%%");
-            ImGuiComponents.HelpMarker($"Once quality has reached the below percentage, Artisan will focus on progress only.");
-            if (ImGui.SliderInt("###SliderMaxQuality", ref maxQuality, 0, 100, $"{maxQuality}%%"))
-            {
-                Service.Configuration.MaxPercentage = maxQuality;
-                Service.Configuration.Save();
-            }
-
-            if (ImGui.Checkbox("Disable Recipe List mini-menu", ref disableMini))
-            {
-                Service.Configuration.DisableMiniMenu = disableMini;
-                Service.Configuration.Save();
-            }
-            ImGuiComponents.HelpMarker("Hides the mini-menu for config settings in the recipe list. Still shows individual macro menu.");
-
-            bool lockMini = Service.Configuration.LockMiniMenu;
-            if (ImGui.Checkbox("Keep Recipe List mini-menu position attached to Recipe List.", ref lockMini))
-            {
-                Service.Configuration.LockMiniMenu = lockMini;
-                Service.Configuration.Save();
-            }
-            if (ImGui.Button("Reset Recipe List mini-menu position"))
-            {
-                AtkResNodeFunctions.ResetPosition = true;
-            }
         }
     }
 }
