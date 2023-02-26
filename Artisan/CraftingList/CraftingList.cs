@@ -219,30 +219,32 @@ namespace Artisan.CraftingLists
                 }
             }
 
-
-            if (!ConsumableChecker.CheckConsumables(false))
+            if (selectedList.ListItemOptions.TryGetValue(CraftingListUI.CurrentProcessedItem, out var options) && (options.Food != 0 || options.Potion != 0))
             {
-                if (TryGetAddonByName("RecipeNote", out AtkUnitBase* addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
+                if (!ConsumableChecker.CheckConsumables(false, options))
                 {
-                    if (Throttler.Throttle(1000))
+                    if (TryGetAddonByName("RecipeNote", out AtkUnitBase* addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                     {
-                        CommandProcessor.ExecuteThrottled("/clog");
+                        if (Throttler.Throttle(1000))
+                        {
+                            CommandProcessor.ExecuteThrottled("/clog");
+                        }
                     }
+                    else
+                    {
+                        ConsumableChecker.CheckConsumables(true, options);
+                    }
+                    return;
                 }
-                else
-                {
-                    ConsumableChecker.CheckConsumables(true);
-                }
-                return;
             }
 
             if (!isCrafting)
             {
-                if (CurrentIndex == 0 || CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1])
+                //if (CurrentIndex == 0 || CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1])
                 OpenRecipeByID(CraftingListUI.CurrentProcessedItem);
                 SetIngredients(CraftingListUI.CurrentProcessedItem);
 
-                if (selectedList.ListItemOptions.TryGetValue(CraftingListUI.CurrentProcessedItem, out var options) && options.NQOnly)
+                if (options.NQOnly)
                 {
                     var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
                     var count = lastIndex - CurrentIndex + 1;
@@ -282,7 +284,7 @@ namespace Artisan.CraftingLists
 
             if (isCrafting)
             {
-                if (selectedList.ListItemOptions.TryGetValue(CraftingListUI.CurrentProcessedItem, out var options) && options.NQOnly)
+                if (options.NQOnly)
                 {
                     var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
                     var count = lastIndex - CurrentIndex + 1;

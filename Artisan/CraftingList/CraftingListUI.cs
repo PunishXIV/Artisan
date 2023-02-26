@@ -256,7 +256,7 @@ namespace Artisan.CraftingLists
                                     if (true)
                                     {
                                         ImGui.Spacing();
-                                        ImGui.Text($"Use a food item for this recipe (only when Macro mode is enabled)");
+                                        ImGui.Text($"Use a food item for this recipe");
                                         if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == options.Food, out var item) ? $"{(options.FoodHQ ? " " : "")}{item.Name}" : $"{(options.Food == 0 ? "Disabled" : $"{(options.FoodHQ ? " " : "")}{options.Food}")}"))
                                         {
                                             if (ImGui.Selectable("Disable"))
@@ -288,7 +288,7 @@ namespace Artisan.CraftingLists
                                     {
                                         ImGui.Spacing();
                                         ImGuiEx.SetNextItemFullWidth();
-                                        ImGui.Text($"Use a potion item for this recipe (only when Macro mode is enabled)");
+                                        ImGui.Text($"Use a potion item for this recipe");
                                         if (ImGui.BeginCombo("##potBuff", ConsumableChecker.Pots.TryGetFirst(x => x.Id == options.Potion, out var item) ? $"{(options.PotHQ ? " " : "")}{item.Name}" : $"{(options.Potion == 0 ? "Disabled" : $"{(options.PotHQ ? " " : "")}{options.Potion}")}"))
                                         {
                                             if (ImGui.Selectable("Disable"))
