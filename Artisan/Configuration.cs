@@ -72,9 +72,9 @@ namespace Artisan
         public int RepairPercent = 50;
 
         public bool CraftingX = false;
+
+        [NonSerialized]
         public int CraftX = 0;
-
-
 
         [NonSerialized]
         private DalamudPluginInterface? pluginInterface;
