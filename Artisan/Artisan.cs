@@ -76,7 +76,10 @@ namespace Artisan
                 if (message.Payloads.Any(x => x.Type == PayloadType.Item))
                 {
                     var item = (ItemPayload)message.Payloads.First(x => x.Type == PayloadType.Item);
+                    if (item.Item.CanBeHq)
                     LastItemWasHQ = item.IsHQ;
+
+                    LastCraftedItem = item.Item;
                 }
             }
         }

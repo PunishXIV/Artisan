@@ -76,7 +76,7 @@ namespace Artisan.MacroSystem
                     }
                     else
                     {
-                        renameMacro = selectedMacro.Name;
+                        renameMacro = selectedMacro.Name!;
                         if (ImGui.InputText("", ref renameMacro, 64, ImGuiInputTextFlags.EnterReturnsTrue))
                         {
                             selectedMacro.Name = renameMacro;
@@ -186,11 +186,11 @@ namespace Artisan.MacroSystem
 
                         if (ImGui.BeginCombo("###ReplaceAction", "Replace Action"))
                         {
-                            foreach(var constant in typeof(Skills).GetFields().OrderBy(x => GetActionName((uint)x.GetValue(null))))
+                            foreach(var constant in typeof(Skills).GetFields().OrderBy(x => GetActionName((uint)x.GetValue(null)!)))
                             {
-                                if (ImGui.Selectable($"{GetActionName((uint)constant.GetValue(null))}"))
+                                if (ImGui.Selectable($"{GetActionName((uint)constant.GetValue(null)!)}"))
                                 {
-                                    selectedMacro.MacroActions[selectedActionIndex] = (uint)constant.GetValue(null);
+                                    selectedMacro.MacroActions[selectedActionIndex] = (uint)constant.GetValue(null)!;
                                     if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
                                         Service.Configuration.SetMacro = selectedMacro;
 
@@ -440,7 +440,7 @@ namespace Artisan.MacroSystem
             using (System.IO.StringReader reader = new System.IO.StringReader(text))
             {
                 string line = "";
-                while ((line = reader.ReadLine()) != null)
+                while ((line = reader.ReadLine()!) != null)
                 {
                     var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length < 2) continue;

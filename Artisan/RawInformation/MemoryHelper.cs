@@ -35,7 +35,7 @@ namespace Artisan.RawInformation
         /// <param name="memoryAddress">The memory address to read from.</param>
         /// <param name="marshal">Set this to true to enable struct marshalling.</param>
         /// <returns>The read in struct.</returns>
-        public static T Read<T>(IntPtr memoryAddress, bool marshal)
+        public static T? Read<T>(IntPtr memoryAddress, bool marshal)
         {
             return marshal
                 ? Marshal.PtrToStructure<T>(memoryAddress)
@@ -125,7 +125,7 @@ namespace Artisan.RawInformation
         /// <param name="value">Local variable to receive the read in struct.</param>
         /// <param name="marshal">Set this to true to enable struct marshalling.</param>
         public static void Read<T>(IntPtr memoryAddress, out T value, bool marshal)
-            => value = Read<T>(memoryAddress, marshal);
+            => value = Read<T>(memoryAddress, marshal)!;
 
         /// <summary>
         /// Reads raw data from a specified memory address.
@@ -374,7 +374,7 @@ namespace Artisan.RawInformation
         public static void Write<T>(IntPtr memoryAddress, T item, bool marshal)
         {
             if (marshal)
-                Marshal.StructureToPtr(item, memoryAddress, false);
+                Marshal.StructureToPtr(item!, memoryAddress, false);
             else
                 Unsafe.Write((void*)memoryAddress, item);
         }

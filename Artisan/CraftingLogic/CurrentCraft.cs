@@ -102,10 +102,9 @@ namespace Artisan.CraftingLogic
         public static int CurrentQuality { get; set; } = 0;
         public static int MaxQuality { get; set; } = 0;
         public static int HighQualityPercentage { get; set; } = 0;
-        public static string RecommendationName { get; set; }
+        public static string? RecommendationName { get; set; }
         public static Condition CurrentCondition { get; set; }
         private static int currentStep = 0;
-        private static int observeCounter;
         private static int quickSynthCurrent = 0;
         private static int quickSynthMax = 0;
         private static CraftingState state = CraftingState.NotCrafting;
@@ -158,6 +157,7 @@ namespace Artisan.CraftingLogic
         public static int MacroStep { get; set; } = 0;
 
         public static bool LastItemWasHQ = false;
+        public static Item? LastCraftedItem;
 
         public static CraftingState State
         {
@@ -172,7 +172,7 @@ namespace Artisan.CraftingLogic
                         if (!wasSuccess && Service.Configuration.EnduranceStopFail)
                             Handler.Enable = false;
 
-                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ)
+                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ && !LastCraftedItem.IsCollectable)
                             Handler.Enable = false;
                     }
                 }
@@ -248,6 +248,7 @@ namespace Artisan.CraftingLogic
                 var collectMid = *craft.CollectabilityMid;
                 var collectHigh = *craft.CollectabilityHigh;
                 var item = *craft.ItemName;
+                
 
                 CharacterInfo.IsCrafting = true;
                 CurrentDurability = Convert.ToInt32(cd.NodeText.ToString());
@@ -262,7 +263,7 @@ namespace Artisan.CraftingLogic
                 {
                     ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
                 }
-                var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Equals(ItemName)).FirstOrDefault();
+                var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Equals(ItemName) && x.CraftType.Value.RowId == CharacterInfo.JobID() - 8).FirstOrDefault();
 
                 if (sheetItem != null)
                 {
@@ -304,12 +305,12 @@ namespace Artisan.CraftingLogic
             }
             catch (Exception ex)
             {
-                Dalamud.Logging.PluginLog.Error(ex, ex.StackTrace);
+                Dalamud.Logging.PluginLog.Error(ex, ex.StackTrace!);
                 return false;
             }
         }
 
-        public static double BaseQuality(Recipe recipe = null)
+        public static double BaseQuality(Recipe? recipe = null)
         {
             try
             {

@@ -161,10 +161,9 @@ namespace Artisan.RawInformation
 
     public unsafe static class CharacterStats
     {
-        private static IntPtr playerStaticAddress;
         private static IntPtr getBaseParamAddress;
         private unsafe delegate ulong GetBaseParam(PlayerState* playerAddress, uint baseParamId);
-        private static GetBaseParam getBaseParam;
+        private static GetBaseParam? getBaseParam;
 
         public static ulong Craftsmanship { get; set; }
         public static ulong Control { get; set; }
