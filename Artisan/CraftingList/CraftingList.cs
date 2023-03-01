@@ -28,6 +28,12 @@ namespace Artisan.CraftingLists
         public Dictionary<uint, ListItemOptions> ListItemOptions { get; set; } = new();
 
         public bool SkipIfEnough { get; set; } = false;
+
+        public bool Materia { get; set; } = false;
+
+        public bool Repair { get; set; } = false;
+
+        public int RepairPercent = 50;
     }
 
     public class ListItemOptions
@@ -181,7 +187,7 @@ namespace Artisan.CraftingLists
                 Throttler.Rethrottle(1000);
             }
 
-            if (Service.Configuration.Materia && Spiritbond.IsSpiritbondReadyAny())
+            if (selectedList.Materia && Spiritbond.IsSpiritbondReadyAny())
             {
                 if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                 {
@@ -204,7 +210,7 @@ namespace Artisan.CraftingLists
                 Spiritbond.CloseMateriaMenu();
             }
 
-            if (Service.Configuration.Repair && !RepairManager.ProcessRepair(false) && ((Service.Configuration.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!Service.Configuration.Materia)))
+            if (selectedList.Repair && !RepairManager.ProcessRepair(false, selectedList) && ((Service.Configuration.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!Service.Configuration.Materia)))
             {
                 if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                 {

@@ -153,13 +153,34 @@ namespace Artisan.CraftingLists
                             SelectedListMaterials.Clear();
                             listMaterials.Clear();
                         }
-                        ImGui.SameLine();
 
                         bool skipIfEnough = selectedList.SkipIfEnough;
                         if (ImGui.Checkbox("Skip items you already have enough of", ref skipIfEnough))
                         {
                             selectedList.SkipIfEnough = skipIfEnough;
                             Service.Configuration.Save();
+                        }
+
+                        bool materia = selectedList.Materia;
+                        if (ImGui.Checkbox("Automatically Extract Materia", ref materia))
+                        {
+                            selectedList.Materia = materia;
+                            Service.Configuration.Save();
+                        }
+                        ImGuiComponents.HelpMarker("Will automatically extract materia from any equipped gear once it's spiritbond is 100%");
+
+                        bool repair = selectedList.Repair;
+                        if (ImGui.Checkbox("Automatic Repairs", ref repair))
+                        {
+                            selectedList.Repair = repair;
+                            Service.Configuration.Save();
+                        }
+
+                        ImGuiComponents.HelpMarker("If enabled, Artisan will automatically repair your gear using Dark Matter when any piece reaches the configured repair threshold.");
+                        if (selectedList.Repair)
+                        {
+                            ImGui.PushItemWidth(200);
+                            ImGui.SliderInt("##repairp", ref selectedList.RepairPercent, 10, 100, $"{selectedList.RepairPercent}%%");
                         }
 
                         if (selectedList.Items.Count > 0)
@@ -199,7 +220,7 @@ namespace Artisan.CraftingLists
                                     ImGui.SameLine();
                                     var count = selectedList.Items.Count(x => x == selectedListItem);
 
-                                    ImGui.PushItemWidth(100);
+                                    ImGui.PushItemWidth(200);
                                     if (ImGui.InputInt("Adjust quantity", ref count))
                                     {
                                         if (count > 0)

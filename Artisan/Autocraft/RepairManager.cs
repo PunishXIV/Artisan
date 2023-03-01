@@ -1,4 +1,5 @@
-﻿using Artisan.RawInformation;
+﻿using Artisan.CraftingLists;
+using Artisan.RawInformation;
 using ClickLib.Clicks;
 using Dalamud.Logging;
 using ECommons;
@@ -49,9 +50,10 @@ namespace Artisan.Autocraft
             return (ret / 300);
         }
 
-        internal static bool ProcessRepair(bool use = true)
+        internal static bool ProcessRepair(bool use = true, CraftingList? CraftingList = null)
         {
-            if(GetMinEquippedPercent() >= Service.Configuration.RepairPercent)
+            int repairPercent = CraftingList != null ? CraftingList.RepairPercent : Service.Configuration.RepairPercent;
+            if (GetMinEquippedPercent() >= repairPercent)
             {
                 if (AutocraftDebugTab.Debug) PluginLog.Verbose("Condition good");
                 if (TryGetAddonByName<AddonRepair>("Repair", out var r) && r->AtkUnitBase.IsVisible)
