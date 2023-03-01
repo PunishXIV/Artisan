@@ -479,7 +479,8 @@ namespace Artisan.Autocraft
                         95 => 11,
                         96 => 10,
                         97 => 9,
-                        98 => 8
+                        98 => 8,
+                        _ => throw new NotImplementedException()
                     };
                 }
             }

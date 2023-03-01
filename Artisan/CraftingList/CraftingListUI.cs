@@ -42,7 +42,7 @@ namespace Artisan.CraftingLists
         public static bool Processing = false;
         public static uint CurrentProcessedItem;
         private static bool renameMode = false;
-        private static string renameList;
+        private static string? renameList;
 
         internal static void Draw()
         {
@@ -266,7 +266,7 @@ namespace Artisan.CraftingLists
                                         Service.Configuration.Save();
                                     }
 
-                                    string preview = Service.Configuration.IndividualMacros.TryGetValue((uint)selectedListItem, out var prevMacro) && prevMacro != null ? Service.Configuration.IndividualMacros[(uint)selectedListItem].Name : "";
+                                    string? preview = Service.Configuration.IndividualMacros.TryGetValue((uint)selectedListItem, out var prevMacro) && prevMacro != null ? Service.Configuration.IndividualMacros[(uint)selectedListItem].Name : "";
                                     if (prevMacro is not null && !Service.Configuration.UserMacros.Where(x => x.ID == prevMacro.ID).Any())
                                     {
                                         preview = "";
@@ -955,9 +955,9 @@ namespace Artisan.CraftingLists
                                 {
                                     var jobs = LuminaSheets.GatheringPointBaseSheet?.Values.Where(x => x.Item.Any(y => y == gatheringItem.RowId)).Select(x => x.GatheringType).ToList();
                                     List<string> tempArray = new();
-                                    if (jobs.Any(x => x.Value.RowId is 0 or 1)) tempArray.Add(LuminaSheets.ClassJobSheet[16].Abbreviation.RawString);
-                                    if (jobs.Any(x => x.Value.RowId is 2 or 3)) tempArray.Add(LuminaSheets.ClassJobSheet[17].Abbreviation.RawString);
-                                    if (jobs.Any(x => x.Value.RowId is 4 or 5)) tempArray.Add(LuminaSheets.ClassJobSheet[18].Abbreviation.RawString);
+                                    if (jobs!.Any(x => x.Value.RowId is 0 or 1)) tempArray.Add(LuminaSheets.ClassJobSheet[16].Abbreviation.RawString);
+                                    if (jobs!.Any(x => x.Value.RowId is 2 or 3)) tempArray.Add(LuminaSheets.ClassJobSheet[17].Abbreviation.RawString);
+                                    if (jobs!.Any(x => x.Value.RowId is 4 or 5)) tempArray.Add(LuminaSheets.ClassJobSheet[18].Abbreviation.RawString);
                                     ImGui.Text($"{string.Join(", ", tempArray)}");
                                     continue;
                                 }

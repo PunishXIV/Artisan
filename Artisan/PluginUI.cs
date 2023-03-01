@@ -52,7 +52,7 @@ namespace Artisan
             set { if (this.craftingVisible != value) CraftingWindowStateChanged?.Invoke(this, value); this.craftingVisible = value; }
         }
 
-        private static string? CurrentSelectedCraft;
+        private static readonly string? CurrentSelectedCraft;
 
         private readonly IDalamudPlugin Plugin;
         public PluginUI(Artisan plugin)
@@ -193,50 +193,50 @@ namespace Artisan
                 AtkResNodeFunctions.DrawMacroOptions(addonPtr->UldManager.NodeList[1]);
         }
 
-        private static string CalculateEstimate(string itemName)
-        {
-            var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Equals(itemName)).FirstOrDefault();
-            if (sheetItem == null)
-                return "Unknown Item - Check Selected Recipe Window";
-            var recipeTable = sheetItem.RecipeLevelTable.Value;
+        //private static string CalculateEstimate(string itemName)
+        //{
+        //    var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Equals(itemName)).FirstOrDefault();
+        //    if (sheetItem == null)
+        //        return "Unknown Item - Check Selected Recipe Window";
+        //    var recipeTable = sheetItem.RecipeLevelTable.Value;
 
-            if (!sheetItem.ItemResult.Value.CanBeHq && !sheetItem.IsExpert && !sheetItem.ItemResult.Value.IsCollectable)
-                return $"Item cannot be HQ.";
+        //    if (!sheetItem.ItemResult.Value.CanBeHq && !sheetItem.IsExpert && !sheetItem.ItemResult.Value.IsCollectable)
+        //        return $"Item cannot be HQ.";
 
-            if (CharacterInfo.Craftsmanship() < sheetItem.RequiredCraftsmanship || CharacterInfo.Control() < sheetItem.RequiredControl)
-                return "Unable to craft with current stats.";
+        //    if (CharacterInfo.Craftsmanship() < sheetItem.RequiredCraftsmanship || CharacterInfo.Control() < sheetItem.RequiredControl)
+        //        return "Unable to craft with current stats.";
 
-            if (CharacterInfo.CharacterLevel() >= 80 && CharacterInfo.CharacterLevel() >= sheetItem.RecipeLevelTable.Value.ClassJobLevel + 10 && !sheetItem.IsExpert)
-                return "EHQ: Guaranteed.";
+        //    if (CharacterInfo.CharacterLevel() >= 80 && CharacterInfo.CharacterLevel() >= sheetItem.RecipeLevelTable.Value.ClassJobLevel + 10 && !sheetItem.IsExpert)
+        //        return "EHQ: Guaranteed.";
 
-            var simulatedPercent = Service.Configuration.UseSimulatedStartingQuality && sheetItem.MaterialQualityFactor != 0 ? Math.Floor(((double)Service.Configuration.CurrentSimulated / ((double)sheetItem.RecipeLevelTable.Value.Quality * ((double)sheetItem.QualityFactor / 100))) * 100) : 0;
-            simulatedPercent = CurrentSelectedCraft is null || CurrentSelectedCraft != sheetItem.ItemResult.Value.Name!.RawString ? 0 : simulatedPercent;
-            var baseQual = BaseQuality(sheetItem);
-            var dur = recipeTable.Durability;
-            var baseSteps = baseQual * (dur / 10);
-            var maxQual = (double)recipeTable.Quality;
-            bool meetsRecCon = CharacterInfo.Control() >= recipeTable.SuggestedControl;
-            bool meetsRecCraft = CharacterInfo.Craftsmanship() >= recipeTable.SuggestedCraftsmanship;
-            var q1 = baseSteps / maxQual;
-            var q2 = CharacterInfo.MaxCP / sheetItem.QualityFactor / 1.5;
-            var q3 = CharacterInfo.IsManipulationUnlocked() ? 2 : 1;
-            var q4 = sheetItem.RecipeLevelTable.Value.Stars * 6;
-            var q5 = meetsRecCon && meetsRecCraft ? 3 : 1;
-            var q6 = Math.Floor((q1 * 100) + (q2 * 3 * q3 * q5) - q4 + simulatedPercent);
-            var chance = q6 > 100 ? 100 : q6;
-            chance = chance < 0 ? 0 : chance;
+        //    var simulatedPercent = Service.Configuration.UseSimulatedStartingQuality && sheetItem.MaterialQualityFactor != 0 ? Math.Floor(((double)Service.Configuration.CurrentSimulated / ((double)sheetItem.RecipeLevelTable.Value.Quality * ((double)sheetItem.QualityFactor / 100))) * 100) : 0;
+        //    simulatedPercent = CurrentSelectedCraft is null || CurrentSelectedCraft != sheetItem.ItemResult.Value.Name!.RawString ? 0 : simulatedPercent;
+        //    var baseQual = BaseQuality(sheetItem);
+        //    var dur = recipeTable.Durability;
+        //    var baseSteps = baseQual * (dur / 10);
+        //    var maxQual = (double)recipeTable.Quality;
+        //    bool meetsRecCon = CharacterInfo.Control() >= recipeTable.SuggestedControl;
+        //    bool meetsRecCraft = CharacterInfo.Craftsmanship() >= recipeTable.SuggestedCraftsmanship;
+        //    var q1 = baseSteps / maxQual;
+        //    var q2 = CharacterInfo.MaxCP / sheetItem.QualityFactor / 1.5;
+        //    var q3 = CharacterInfo.IsManipulationUnlocked() ? 2 : 1;
+        //    var q4 = sheetItem.RecipeLevelTable.Value.Stars * 6;
+        //    var q5 = meetsRecCon && meetsRecCraft ? 3 : 1;
+        //    var q6 = Math.Floor((q1 * 100) + (q2 * 3 * q3 * q5) - q4 + simulatedPercent);
+        //    var chance = q6 > 100 ? 100 : q6;
+        //    chance = chance < 0 ? 0 : chance;
 
-            return chance switch
-            {
-                < 20 => "EHQ: Do not attempt.",
-                < 40 => "EHQ: Very low chance.",
-                < 60 => "EHQ: Average chance.",
-                < 80 => "EHQ: Good chance.",
-                < 90 => "EHQ: High chance.",
-                < 100 => "EHQ: Very high chance.",
-                _ => "EHQ: Guaranteed.",
-            };
-        }
+        //    return chance switch
+        //    {
+        //        < 20 => "EHQ: Do not attempt.",
+        //        < 40 => "EHQ: Very low chance.",
+        //        < 60 => "EHQ: Average chance.",
+        //        < 80 => "EHQ: Good chance.",
+        //        < 90 => "EHQ: High chance.",
+        //        < 100 => "EHQ: Very high chance.",
+        //        _ => "EHQ: Guaranteed.",
+        //    };
+        //}
 
         public void DrawCraftingWindow()
         {
@@ -371,7 +371,7 @@ namespace Artisan
 
                     if (useMacroMode)
                     {
-                        string preview = Service.Configuration.SetMacro == null ? "" : Service.Configuration.SetMacro.Name;
+                        string preview = Service.Configuration.SetMacro == null ? "" : Service.Configuration.SetMacro.Name!;
                         if (ImGui.BeginCombo("Select Macro", preview))
                         {
                             if (ImGui.Selectable(""))

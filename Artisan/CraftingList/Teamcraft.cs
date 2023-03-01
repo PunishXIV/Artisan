@@ -167,7 +167,7 @@ namespace Artisan.CraftingLists
             using (System.IO.StringReader reader = new System.IO.StringReader(importListPreCraft))
             {
                 string line = "";
-                while ((line = reader.ReadLine()) != null)
+                while ((line = reader.ReadLine()!) != null)
                 {
                     var parts = line.Split(" ", StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length < 2)
@@ -200,7 +200,7 @@ namespace Artisan.CraftingLists
             using (System.IO.StringReader reader = new System.IO.StringReader(importListItems))
             {
                 string line = "";
-                while ((line = reader.ReadLine()) != null)
+                while ((line = reader.ReadLine()!) != null)
                 {
                     var parts = line.Split(" ", StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length < 2)

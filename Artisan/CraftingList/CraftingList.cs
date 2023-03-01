@@ -21,7 +21,7 @@ namespace Artisan.CraftingLists
     {
         public int ID { get; set; } = 0;
 
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         public List<uint> Items { get; set; } = new();
 
