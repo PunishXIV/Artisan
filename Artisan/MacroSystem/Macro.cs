@@ -15,6 +15,8 @@ namespace Artisan.MacroSystem
         public List<uint> MacroActions { get; set; } = new();
 
         public MacroOptions MacroOptions { get; set; } = new();
+
+        public List<MacroStepOptions> MacroStepOptions { get; set; }= new();
     }
 
     public class MacroOptions
@@ -26,7 +28,10 @@ namespace Artisan.MacroSystem
         public bool UpgradeProgressActions { get; set; } = false;
     }
 
-
+    public class MacroStepOptions
+    {
+        public bool ExcludeFromUpgrade { get; set; } = false;
+    }
     public static class MacroFunctions
     {
         public static void SetID(this Macro macro)

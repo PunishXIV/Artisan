@@ -273,7 +273,7 @@ namespace Artisan
                 }
 
 
-                if (Handler.RecipeID != 0)
+                if (Handler.RecipeID != 0 && !CraftingListUI.Processing)
                     ImGui.Checkbox("Endurance Mode Toggle", ref Handler.Enable);
 
                 if (Service.Configuration.CraftingX && Handler.Enable)

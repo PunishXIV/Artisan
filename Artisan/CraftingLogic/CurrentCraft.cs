@@ -172,7 +172,7 @@ namespace Artisan.CraftingLogic
                         if (!wasSuccess && Service.Configuration.EnduranceStopFail)
                             Handler.Enable = false;
 
-                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ && !LastCraftedItem.IsCollectable)
+                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable)
                             Handler.Enable = false;
                     }
                 }
@@ -506,6 +506,7 @@ namespace Artisan.CraftingLogic
         }
         public static uint GetRecommendation()
         {
+            if (CurrentStep == 1 && CalculateNewProgress(Skills.DelicateSynthesis) >= MaxProgress && CalculateNewQuality(Skills.DelicateSynthesis) >= MaxQuality && CanUse(Skills.DelicateSynthesis)) return Skills.DelicateSynthesis;
             if (CanFinishCraft()) return CharacterInfo.HighestLevelSynth();
 
             if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || Recipe.ItemResult.Value.IsCollectable) && Recipe.CanHq) return Skills.TrainedEye;

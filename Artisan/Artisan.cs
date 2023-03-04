@@ -245,13 +245,17 @@ namespace Artisan
 
                                 CurrentRecommendation = macro.MacroActions[MacroStep];
 
-                                if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(macro) && ActionUpgradable(macro, out uint newAction))
+                                Dalamud.Logging.PluginLog.Debug($"{macro.MacroStepOptions[MacroStep].ExcludeFromUpgrade}");
+                                if (!macro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
                                 {
-                                    CurrentRecommendation = newAction;
-                                }
-                                if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(macro) && ActionUpgradable(macro, out  newAction))
-                                {
-                                    CurrentRecommendation = newAction;
+                                    if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(macro) && ActionUpgradable(macro, out uint newAction))
+                                    {
+                                        CurrentRecommendation = newAction;
+                                    }
+                                    if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(macro) && ActionUpgradable(macro, out newAction))
+                                    {
+                                        CurrentRecommendation = newAction;
+                                    }
                                 }
                             }
                         }
@@ -272,13 +276,16 @@ namespace Artisan
 
                                 CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep];
 
-                                if (Service.Configuration.SetMacro.MacroOptions.UpgradeQualityActions && ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out uint newAction))
+                                if (!Service.Configuration.SetMacro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
                                 {
-                                    CurrentRecommendation = newAction;
-                                }
-                                if (Service.Configuration.SetMacro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out newAction))
-                                {
-                                    CurrentRecommendation = newAction;
+                                    if (Service.Configuration.SetMacro.MacroOptions.UpgradeQualityActions && ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out uint newAction))
+                                    {
+                                        CurrentRecommendation = newAction;
+                                    }
+                                    if (Service.Configuration.SetMacro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out newAction))
+                                    {
+                                        CurrentRecommendation = newAction;
+                                    }
                                 }
                             }
                         }

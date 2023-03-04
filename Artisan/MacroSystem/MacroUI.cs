@@ -63,6 +63,14 @@ namespace Artisan.MacroSystem
                 }
                 if (selectedMacro.ID != 0)
                 {
+                    if (selectedMacro.MacroStepOptions.Count == 0 && selectedMacro.MacroActions.Count > 0)
+                    {
+                        for (int i = 0; i < selectedMacro.MacroActions.Count; i++)
+                        {
+                            selectedMacro.MacroStepOptions.Add(new());
+                        }
+                    }
+
                     ImGui.SameLine();
                     ImGui.BeginChild("###selectedMacro", new Vector2(0, 0), false);
                     if (!renameMode)
@@ -133,9 +141,15 @@ namespace Artisan.MacroSystem
                     if (ImGui.Button("Insert New Action"))
                     {
                         if (selectedMacro.MacroActions.Count == 0)
+                        {
                             selectedMacro.MacroActions.Add(Skills.BasicSynth);
+                            selectedMacro.MacroStepOptions.Add(new());
+                        }
                         else
+                        {
                             selectedMacro.MacroActions.Insert(selectedActionIndex + 1, Skills.BasicSynth);
+                            selectedMacro.MacroStepOptions.Insert(selectedActionIndex + 1, new());
+                        }
 
                         Service.Configuration.Save();
                     }
@@ -174,10 +188,18 @@ namespace Artisan.MacroSystem
                             }
                         }
 
+                        bool skip = selectedMacro.MacroStepOptions[selectedActionIndex].ExcludeFromUpgrade;
+                        if (ImGui.Checkbox($"Skip Upgrades For This Action", ref skip))
+                        {
+                            selectedMacro.MacroStepOptions[selectedActionIndex].ExcludeFromUpgrade = skip;
+                            Service.Configuration.Save();
+                        }
 
                         if (ImGui.Button("Delete Action (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                         {
                             selectedMacro.MacroActions.RemoveAt(selectedActionIndex);
+                            selectedMacro.MacroStepOptions.RemoveAt(selectedActionIndex);
+
                             Service.Configuration.Save();
 
                             if (selectedActionIndex == selectedMacro.MacroActions.Count)
@@ -208,6 +230,7 @@ namespace Artisan.MacroSystem
                             if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowUp))
                             {
                                 selectedMacro.MacroActions.Reverse(selectedActionIndex -1, 2);
+                                selectedMacro.MacroStepOptions.Reverse(selectedActionIndex - 1, 2);
                                 selectedActionIndex--;
                                 if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
                                     Service.Configuration.SetMacro = selectedMacro;
@@ -228,6 +251,7 @@ namespace Artisan.MacroSystem
                             if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowDown))
                             {
                                 selectedMacro.MacroActions.Reverse(selectedActionIndex, 2);
+                                selectedMacro.MacroStepOptions.Reverse(selectedActionIndex, 2);
                                 selectedActionIndex++;
                                 if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
                                     Service.Configuration.SetMacro = selectedMacro;

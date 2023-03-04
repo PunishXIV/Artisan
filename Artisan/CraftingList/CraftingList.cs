@@ -115,8 +115,8 @@ namespace Artisan.CraftingLists
 
         internal unsafe static void ProcessList(CraftingList selectedList)
         {
-            var isCrafting = Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting];
-            var preparing = Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft];
+            var isCrafting = Service.Condition[ConditionFlag.Crafting];
+            var preparing = Service.Condition[ConditionFlag.PreparingToCraft];
 
             if (Paused)
             {
@@ -140,7 +140,7 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if (selectedList.SkipIfEnough && CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= selectedList.Items.Count(x => x == CraftingListUI.CurrentProcessedItem) && !isCrafting)
+            if (selectedList.SkipIfEnough && CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= (selectedList.Items.Count(x => x == CraftingListUI.CurrentProcessedItem) * recipe.AmountResult)  && !isCrafting)
             {
                 if (Throttler.Throttle(500))
                 {
@@ -152,7 +152,7 @@ namespace Artisan.CraftingLists
                 }
             }
 
-            if (!HasItemsForRecipe(CraftingListUI.CurrentProcessedItem) && !isCrafting)
+            if (!HasItemsForRecipe(CraftingListUI.CurrentProcessedItem) && (preparing || !isCrafting))
             {
                 if (Throttler.Throttle(500))
                 {
@@ -224,6 +224,8 @@ namespace Artisan.CraftingLists
                     if (!Svc.Condition[ConditionFlag.Crafting]) RepairManager.ProcessRepair(true);
                 }
             }
+
+            selectedList.ListItemOptions.TryAdd(CraftingListUI.CurrentProcessedItem, new ListItemOptions());
 
             if (selectedList.ListItemOptions.TryGetValue(CraftingListUI.CurrentProcessedItem, out var options) && (options.Food != 0 || options.Potion != 0))
             {
