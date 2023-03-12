@@ -1,6 +1,18 @@
-﻿using Lumina.Excel.GeneratedSheets;
+﻿using Artisan.QuestSync;
+using Dalamud;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Utility;
+using ECommons;
+using ECommons.DalamudServices;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using Lumina.Data;
+using Lumina.Excel.GeneratedSheets;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Permissions;
+using Action = Lumina.Excel.GeneratedSheets.Action;
 
 namespace Artisan.RawInformation
 {
@@ -56,6 +68,10 @@ namespace Artisan.RawInformation
 
         public static Dictionary<uint, ItemFood>? ItemFoodSheet = Service.DataManager?.GetExcelSheet<ItemFood>()?
             .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, Quest>? QuestSheet = Service.DataManager?.GetExcelSheet<Quest>()?
+            .Where(x => x.Id.ExtractText().Length > 0)
+            .ToDictionary(i => i.RowId, i => i);
     }
 
     public static class SheetExtensions
@@ -70,6 +86,95 @@ namespace Artisan.RawInformation
             {
                 return LuminaSheets.CraftActions[id].Name.RawString;
             }
+        }
+
+        public static string NameOfQuest(this ushort id)
+        {
+            if (id > 0)
+            {
+                var digits = id.ToString().Length;
+                if (LuminaSheets.QuestSheet!.Any(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id))
+                {
+                    return LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id).Value.Name.ExtractText();
+                }
+            }
+            return "";
+
+        }
+
+        public static unsafe string GetSequenceInfo(this ushort id)
+        {
+            if (id > 0)
+            {
+                var digits = id.ToString().Length;
+                if (LuminaSheets.QuestSheet!.Any(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id))
+                {
+                    var quest = LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id).Value;
+                    var sequence = QuestManager.GetQuestSequence(id);
+                    if (sequence == 255) return "NULL";
+
+                    var lang = Svc.ClientState.ClientLanguage switch
+                    {
+                        ClientLanguage.English => Language.English,
+                        ClientLanguage.Japanese => Language.Japanese,
+                        ClientLanguage.German => Language.German,
+                        ClientLanguage.French => Language.French,
+                        _ => Language.English,
+                    };
+
+                    var path = $"quest/{id.ToString("00000")[..3]}/{quest.Id.RawString}";
+                    // FIXME: this is gross, but lumina caches incorrectly
+                    Svc.Data.Excel.RemoveSheetFromCache<QuestData>();
+                    var sheet = Svc.Data.Excel.GetSheet<QuestData>(path);
+                    var seqPath = $"SEQ_{sequence.ToString("00")}";
+                    var firstData = sheet?.Where(x => x.Id.Contains(seqPath)).FirstOrDefault();
+                    if (firstData != null)
+                    {
+                        return firstData.Text.ExtractText();
+                    }
+                }
+            }
+            return "";
+        }
+
+        public static string GetToDoInfo(this ushort id)
+        {
+            if (id > 0)
+            {
+                var digits = id.ToString().Length;
+                if (LuminaSheets.QuestSheet!.Any(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id))
+                {
+                    var quest = LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id).Value;
+                   
+                    var lang = Svc.ClientState.ClientLanguage switch
+                    {
+                        ClientLanguage.English => Language.English,
+                        ClientLanguage.Japanese => Language.Japanese,
+                        ClientLanguage.German => Language.German,
+                        ClientLanguage.French => Language.French,
+                        _ => Language.English,
+                    };
+
+                    var path = $"quest/{id.ToString("00000")[..3]}/{quest.Id.RawString}";
+                    // FIXME: this is gross, but lumina caches incorrectly
+                    Svc.Data.Excel.RemoveSheetFromCache<QuestData>();
+                    var sheet = Svc.Data.Excel.GetSheet<QuestData>(path);
+                    var seqPath = $"TODO_";
+                    var firstData = sheet?.Where(x => x.Id.Contains(seqPath)).ToList();
+                    string output = "";
+                    foreach (var step in firstData.Where(x => x.Text.Payloads.Count > 0))
+                    {
+                        foreach (var payload in step.Text.ToDalamudString().Payloads.Where(x => x.Type == PayloadType.Unknown))
+                        {
+                            var line = step.Text.RawString[10..];
+                            output += line;
+                        }
+                    }
+                    return output;
+
+                }
+            }
+            return "";
         }
     }
 }

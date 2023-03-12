@@ -178,7 +178,7 @@ namespace Artisan.CraftingLogic
                         if (!wasSuccess && Service.Configuration.EnduranceStopFail)
                             Handler.Enable = false;
 
-                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && !LastCraftedItem.CanBeHq)
+                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && LastCraftedItem.CanBeHq)
                             Handler.Enable = false;
                     }
                 }

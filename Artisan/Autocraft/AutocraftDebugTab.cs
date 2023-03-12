@@ -1,6 +1,7 @@
 ﻿using Artisan.CraftingLogic;
 using Artisan.RawInformation;
 using ECommons.ImGuiMethods;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 using System;
@@ -156,6 +157,16 @@ namespace Artisan.Autocraft
                 ImGui.Text($"Ring 2 Spiritbond: {Spiritbond.Ring2}");
 
                 ImGui.Text($"Spiritbond Ready Any: {Spiritbond.IsSpiritbondReadyAny()}");
+
+            }
+
+            if (ImGui.CollapsingHeader("Quests"))
+            {
+                QuestManager* qm = QuestManager.Instance();
+                foreach (var quest in qm->DailyQuestsSpan)
+                {
+                    ImGui.TextWrapped($"Quest ID: {quest.QuestId}, Sequence: {QuestManager.GetQuestSequence(quest.QuestId)}, Name: {quest.QuestId.NameOfQuest()}");
+                }
 
             }
             ImGui.Separator();
