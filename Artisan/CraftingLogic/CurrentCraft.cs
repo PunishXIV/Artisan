@@ -1,14 +1,18 @@
 ﻿using Artisan.Autocraft;
 using Artisan.RawInformation;
 using ClickLib.Clicks;
+using Dalamud.Game.ClientState.Statuses;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
+using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan.CraftingLogic
 {
@@ -158,6 +162,8 @@ namespace Artisan.CraftingLogic
 
         public static bool LastItemWasHQ = false;
         public static Item? LastCraftedItem;
+        public static uint PreviousAction = 0;
+        public static bool PreviousActionSameAs(uint id) => PreviousAction.NameOfAction() == id.NameOfAction();
 
         public static CraftingState State
         {
@@ -172,7 +178,7 @@ namespace Artisan.CraftingLogic
                         if (!wasSuccess && Service.Configuration.EnduranceStopFail)
                             Handler.Enable = false;
 
-                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable)
+                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && !LastCraftedItem.CanBeHq)
                             Handler.Enable = false;
                     }
                 }
@@ -437,21 +443,62 @@ namespace Artisan.CraftingLogic
 
         public static uint CalculateNewQuality(uint id)
         {
-            double efficiency = GetMultiplier(id, true);
-            double IQStacks = GetStatus(Buffs.InnerQuiet) is null ? 1 : 1 + (GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
-            double innovation = GetStatus(Buffs.Innovation) is not null ? 0.5 : 0;
-            double greatStrides = GetStatus(Buffs.GreatStrides) is not null ? 1 : 0;
+            //double efficiency = GetMultiplier(id, true);
+            //double IQStacks = GetStatus(Buffs.InnerQuiet) is null ? 1 : 1 + (GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
+            //double innovation = GetStatus(Buffs.Innovation) is not null ? 0.5 : 0;
+            //double greatStrides = GetStatus(Buffs.GreatStrides) is not null ? 1 : 0;
 
-            return (uint)Math.Floor(CurrentQuality + (BaseQuality() * efficiency * IQStacks * (innovation + greatStrides + 1)));
+            var agentCraftActionSimulator = AgentModule.Instance()->GetAgentCraftActionSimulator();
+            var acts = agentCraftActionSimulator->Quality;
+            uint baseIncrease = id switch
+            {
+                Skills.BasicTouch => acts->BasicTouch.QualityIncrease,
+                Skills.HastyTouch => acts->HastyTouch.QualityIncrease,
+                Skills.StandardTouch => acts->StandardTouch.QualityIncrease,
+                Skills.ByregotsBlessing => acts->ByregotsBlessing.QualityIncrease,
+                Skills.PreciseTouch => acts->PreciseTouch.QualityIncrease,
+                Skills.PrudentTouch => acts->PrudentTouch.QualityIncrease,
+                Skills.FocusedTouch => acts->FocusedTouch.QualityIncrease,
+                Skills.Reflect => acts->Reflect.QualityIncrease,
+                Skills.PreparatoryTouch => acts->PreparatoryTouch.QualityIncrease,
+                Skills.DelicateSynthesis => acts->DelicateSynthesis.QualityIncrease,
+                Skills.TrainedEye => acts->TrainedEye.QualityIncrease,
+                Skills.AdvancedTouch => acts->AdvancedTouch.QualityIncrease,
+                Skills.TrainedFinesse => acts->TrainedFinesse.QualityIncrease,
+                _ => 0
+            };
+
+            return (uint)CurrentQuality + baseIncrease;
+
+            //return (uint)Math.Floor(CurrentQuality + (BaseQuality() * efficiency * IQStacks * (innovation + greatStrides + 1)));
 
         }
 
         public static uint CalculateNewProgress(uint id)
         {
-            var multiplier = GetMultiplier(id, false);
-            double veneration = GetStatus(Buffs.Veneration) != null ? 0.5 : 0;
-            double muscleMemory = GetStatus(Buffs.MuscleMemory) != null ? 1 : 0;
-            return (uint)Math.Floor(CurrentProgress + (BaseProgression() * multiplier * (veneration + muscleMemory + 1)));
+            //var multiplier = GetMultiplier(id, false);
+            //double veneration = GetStatus(Buffs.Veneration) != null ? 0.5 : 0;
+            //double muscleMemory = GetStatus(Buffs.MuscleMemory) != null ? 1 : 0;
+
+            var agentCraftActionSimulator = AgentModule.Instance()->GetAgentCraftActionSimulator();
+            var acts = agentCraftActionSimulator->Progress;
+            uint baseIncrease = id switch
+            {
+                Skills.BasicSynth => acts->BasicSynthesis.ProgressIncrease,
+                Skills.RapidSynthesis => acts->RapidSynthesis.ProgressIncrease,
+                Skills.MuscleMemory => acts->MuscleMemory.ProgressIncrease,
+                Skills.CarefulSynthesis => acts->CarefulSynthesis.ProgressIncrease,
+                Skills.FocusedSynthesis => acts->FocusedSynthesis.ProgressIncrease,
+                Skills.Groundwork => acts->Groundwork.ProgressIncrease,
+                Skills.DelicateSynthesis => acts->DelicateSynthesis.ProgressIncrease,
+                Skills.IntensiveSynthesis => acts->IntensiveSynthesis.ProgressIncrease,
+                Skills.PrudentSynthesis => acts->PrudentSynthesis.ProgressIncrease,
+                _ => 0
+            };
+
+            return (uint)CurrentProgress + baseIncrease;
+
+            //return (uint)Math.Floor(CurrentProgress + (BaseProgression() * multiplier * (veneration + muscleMemory + 1)));
 
         }
 
@@ -506,8 +553,9 @@ namespace Artisan.CraftingLogic
         }
         public static uint GetRecommendation()
         {
+            BestSynthesis(out var act, true);
             if (CurrentStep == 1 && CalculateNewProgress(Skills.DelicateSynthesis) >= MaxProgress && CalculateNewQuality(Skills.DelicateSynthesis) >= MaxQuality && CanUse(Skills.DelicateSynthesis)) return Skills.DelicateSynthesis;
-            if (CanFinishCraft()) return CharacterInfo.HighestLevelSynth();
+            if (CanFinishCraft()) return act;
 
             if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || Recipe.ItemResult.Value.IsCollectable) && Recipe.CanHq) return Skills.TrainedEye;
             if (CanUse(Skills.Tricks) && CurrentStep > 2 && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent))) return Skills.Tricks;
@@ -532,8 +580,9 @@ namespace Artisan.CraftingLogic
                         if (GetStatus(Buffs.MuscleMemory) != null) return CharacterInfo.HighestLevelSynth();
                         if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) return Skills.Manipulation;
                         if (!WasteNotUsed && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
+                        if (CalculateNewQuality(Skills.ByregotsBlessing) >= MaxQuality && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                         if (GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation)) return Skills.Innovation;
-                        if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
+                        if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides) && CurrentCondition != Condition.Excellent) return Skills.GreatStrides;
                         if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
                         if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe;
                         if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
@@ -551,7 +600,8 @@ namespace Artisan.CraftingLogic
                         if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) return Skills.Manipulation;
                         if (!WasteNotUsed && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
                         if (!InnovationUsed && CanUse(Skills.Innovation)) return Skills.Innovation;
-                        if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
+                        if (CalculateNewQuality(Skills.ByregotsBlessing) >= MaxQuality && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
+                        if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides) && CurrentCondition != Condition.Excellent) return Skills.GreatStrides;
                         if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
                         if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe;
                         if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
@@ -562,7 +612,219 @@ namespace Artisan.CraftingLogic
             }
 
             if (CanUse(Skills.Veneration) && GetStatus(Buffs.Veneration) == null && !VenerationUsed) return Skills.Veneration;
-            return CharacterInfo.HighestLevelSynth();
+            return act;
+        }
+
+        public static unsafe SynthesisAtkValues* Status(this AddonSynthesis addonSynthesis)
+        {
+            return (SynthesisAtkValues*)addonSynthesis.AtkUnitBase.AtkValues;
+        }
+
+        public static uint GetRecommendationNew()
+        {
+            GenericHelpers.TryGetAddonByName<AddonSynthesis>("Synthesis", out var synthesis);
+            if (synthesis == null) return 0;
+
+            var agentCraftActionSimulator = AgentModule.Instance()->GetAgentCraftActionSimulator();
+            var progressActions = agentCraftActionSimulator->Progress;
+            var qualityActions = agentCraftActionSimulator->Quality;
+            var status = synthesis->Status()->Status;
+            var statusList = Service.ClientState.LocalPlayer!.StatusList;
+            var remainingQuality = synthesis->Status()->MaxQuality - synthesis->Status()->Quality;
+            var remainingProgress = synthesis->Status()->MaxProgress - synthesis->Status()->Progress;
+
+            if (CurrentStep == 1)
+            {
+                if (CurrentStep == 1 && CalculateNewProgress(Skills.DelicateSynthesis) >= MaxProgress && CalculateNewQuality(Skills.DelicateSynthesis) >= MaxQuality && CanUse(Skills.DelicateSynthesis)) return Skills.DelicateSynthesis;
+                if (CanUse(Skills.TrainedEye) && Recipe.CanHq) return Skills.TrainedEye;
+                if (CanUse(Skills.MuscleMemory) && CalculateNewProgress(Skills.MuscleMemory) < MaxProgress) return Skills.MuscleMemory;
+                if (CanUse(Skills.Reflect) && Recipe.CanHq) return Skills.Reflect;
+            }
+
+            if (!Recipe.CanHq && BestSynthesis(out var action, true))
+                return action;
+
+            if (CurrentQuality >= MaxQuality && GetStatus(Buffs.Veneration) is null && CanUse(Skills.CarefulSynthesis) && RemainingProgress() <= Skills.CarefulSynthesis.ProgressIncrease() * 1.5 && CanUse(Skills.Veneration))
+                return Skills.Veneration;
+
+            if (CurrentCondition is Condition.Good or Condition.Excellent)
+            {
+                if (StepsLeft() == 1 && CanUse(Skills.Tricks))
+                    return Skills.Tricks;
+
+                if (CanUse(Skills.IntensiveSynthesis) && (IsMaxQuality() || (CurrentCondition == Condition.Good && RemainingProgress() > Skills.IntensiveSynthesis.ProgressIncrease())))
+                    return Skills.IntensiveSynthesis;
+
+                if (IsMaxQuality() && CanUse(Skills.Tricks))
+                    return Skills.Tricks;
+
+                if (CalculateNewQuality(Skills.ByregotsBlessing) >= MaxQuality && Skills.ByregotsBlessing.QualityIncrease() > Skills.PreciseTouch.QualityIncrease() && CanUse(Skills.ByregotsBlessing))
+                    return Skills.ByregotsBlessing;
+
+                return Skills.PreciseTouch;
+            }
+
+            if ((StepsLeft() < 2 || (StepsLeft() == 2 && MaxDurability >= CurrentDurability + 30)) && CanUse(Skills.MastersMend))
+                return Skills.MastersMend;
+
+            if (MaxDurability <= 35)
+            {
+                if (GetStatus(Buffs.MuscleMemory) is not null)
+                {
+                    if (CurrentDurability == 25 && CanUse(Skills.Groundwork))
+                    {
+                        if (GetStatus(Buffs.Veneration) is null &&
+                            Skills.Groundwork.ProgressIncrease() * 1.25 < RemainingProgress() &&
+                            GetStatus(Buffs.MuscleMemory).StackCount >= 2 &&
+                            CanUse(Skills.Veneration))
+                            return Skills.Veneration;
+
+                        if (Skills.Groundwork.ProgressIncrease() < RemainingProgress())
+                            return Skills.Groundwork;
+                    }
+
+                    if (BestSynthesis(out uint act, false) && CanUse(act))
+                        return act;
+                }
+
+                if (GetStatus(Buffs.Veneration) is not null && CurrentDurability == MaxDurability)
+                {
+                    if (!BestSynthesis(out var act, false) && CanUse(act))
+                        return act;
+                }
+            }
+
+            if (GetStatus(Buffs.Manipulation) is null && CurrentDurability < MaxDurability && !ManipulationUsed && CanUse(Skills.Manipulation))
+                return Skills.Manipulation;
+
+            if (MaxDurability <= 35 && !IsMaxQuality())
+            {
+                if (GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation))
+                    return Skills.Innovation;
+
+                if (GetStatus(Buffs.WasteNot2) is null && CharacterInfo.CurrentCP > 200 && CanUse(Skills.WasteNot2))
+                    return Skills.WasteNot2;
+
+                if (GetStatus(Buffs.WasteNot) is null && GetStatus(Buffs.WasteNot2) is null && CharacterInfo.CurrentCP > 200 && CanUse(Skills.WasteNot))
+                    return Skills.WasteNot;
+            }
+            else
+            {
+                if (GetStatus(Buffs.Manipulation) is not null &&
+                    GetStatus(Buffs.WasteNot) is null && GetStatus(Buffs.WasteNot2) is null &&
+                    CurrentStep < 6 && CanUse(Skills.WasteNot2))
+                    return Skills.WasteNot2;
+
+                if (GetStatus(Buffs.Manipulation) is not null &&
+                    GetStatus(Buffs.WasteNot) is null && GetStatus(Buffs.WasteNot2) is null &&
+                    CurrentStep < 6 && CanUse(Skills.WasteNot))
+                    return Skills.WasteNot;
+
+                if (GetStatus(Buffs.MuscleMemory) is not null)
+                {
+                    if (!BestSynthesis(out action, false) && CanUse(action))
+                        return action;
+                }
+            }
+
+            if (IsMaxQuality())
+            {
+                if (!BestSynthesis(out action))
+                    if (GetStatus(Buffs.Veneration) is not null && RemainingProgress() > Skills.CarefulSynthesis.ProgressIncrease() * 2 && CanUse(Skills.Veneration))
+                        return Skills.Veneration;
+
+                return action;
+            }
+
+            if (qualityActions->ByregotsBlessing.CanComplete(remainingQuality) && CanUse(Skills.ByregotsBlessing))
+                return Skills.ByregotsBlessing;
+
+            if (!statusList.HasStatus(out _, CraftingPlayerStatuses.GreatStrides)
+                && ((!statusList.HasStatus(out var innovationStack, CraftingPlayerStatuses.Innovation) && remainingQuality <= qualityActions->ByregotsBlessing.QualityIncrease * 2)
+                || (innovationStack > 2 && remainingQuality <= qualityActions->ByregotsBlessing.QualityIncrease * 1.6)) && CanUse(Skills.GreatStrides))
+                return Skills.GreatStrides;
+
+            // Is this good?
+            if (statusList.HasStatus(out var innerQuiteStack, CraftingPlayerStatuses.InnerQuiet) && innerQuiteStack >= 8 && !statusList.HasStatus(out _, CraftingPlayerStatuses.Innovation) && CanUse(Skills.Innovation))
+                return Skills.Innovation;
+
+            // If status is poor and can't complete, greatest available progress
+            // else maybe observe?
+
+            if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe))
+                return Skills.Observe;
+
+            // HastyTouch(100/60, 0)?
+
+            // Basic(100)->Standard(125)->Advanced(150)
+            // Precise(150, 18) > Focused(150, 18) > Prudent(100, 25, 1/2)
+            // Preparatory(200, 40, 2x), not worth it compared to Basic x2
+            // TrainedFinesse, when available, 32cp, no durability
+
+            // Status.Improved should already have been handled
+
+            if (statusList.HasStatus(out _, CraftingPlayerStatuses.Manipulation)
+                && statusList.HasStatus(out _, CraftingPlayerStatuses.WasteNot, CraftingPlayerStatuses.WasteNot2)
+                && synthesis->Status()->Durability > 10
+                // Do I want a test for InnerQuiet <= 8?
+                && qualityActions->PreparatoryTouch.IsAvailable())
+                return Skills.PreparatoryTouch;
+
+            if (statusList.HasStatus(out _, CraftingPlayerStatuses.Manipulation) && qualityActions->PrudentTouch.IsAvailable())
+                return Skills.PrudentTouch;
+
+            if (PreviousActionSameAs(Skills.Observe) && qualityActions->FocusedTouch.IsAvailable())
+                return Skills.FocusedTouch;
+
+            if (PreviousActionSameAs(Skills.StandardTouch) && qualityActions->AdvancedTouch.IsAvailable())
+                return Skills.AdvancedTouch;
+
+            if (PreviousActionSameAs(Skills.BasicTouch) && qualityActions->StandardTouch.IsAvailable())
+                return Skills.StandardTouch;
+
+            if (CanUse(Skills.BasicTouch))
+                return Skills.BasicTouch;
+
+            return Skills.BasicSynth;
+        }
+
+        private static bool IsMaxQuality()
+        {
+            return CurrentQuality == MaxQuality;
+        }
+
+        public static unsafe int StepsLeft()
+        {
+            if (GetStatus(Buffs.WasteNot) is not null || GetStatus(Buffs.WasteNot2) is not null)
+            {
+                if (CurrentDurability <= 5)
+                    return 1;
+                if (CurrentDurability <= 10)
+                    return 2;
+            }
+            else if (GetStatus(Buffs.Manipulation) is not null)
+            {
+                if (CurrentDurability <= 10)
+                    return 1;
+
+                if (CurrentDurability <= 15)
+                    return 2;
+            }
+            else
+            {
+                if (CurrentDurability <= 10)
+                    return 1;
+
+                if (CurrentDurability <= 20)
+                    return 2;
+            }
+
+            return 3;
+        }
+
+        public static int RemainingProgress()
+        {
+            return MaxProgress - CurrentProgress;
         }
 
         public static bool CanFinishCraft()
@@ -902,5 +1164,198 @@ namespace Artisan.CraftingLogic
             Crafting,
             NotCrafting
         }
+
+        public enum CraftingPlayerStatuses : uint
+        {
+            InnerQuiet = 251,
+            WasteNot = 252,
+            GreatStrides = 254,
+            WasteNot2 = 257,
+            Manipulation = 1164, // 258
+            Innovation = 2189, // 259
+            FinalAppraisal = 2190,
+            MuscleMemory = 2191,
+            Veneration = 2226,
+        }
+
+        private static unsafe bool BestSynthesis(out uint action, bool allowComplete = true)
+        {
+            var lastActionId = PreviousAction;
+            var agentCraftActionSimulator = AgentModule.Instance()->GetAgentCraftActionSimulator();
+            var remainingProgress = (uint)RemainingProgress();
+            var progressActions = agentCraftActionSimulator->Progress;
+            var statusList = Service.ClientState.LocalPlayer!.StatusList;
+
+            // Need to take into account MP
+            // Rapid(500/50, 0)?
+            // Intensive(400, 6) > Groundwork(300, 18) > Focused(200, 5) > Prudent(180, 18) > Careful(150, 7) > Groundwork(150, 18) > Basic(120, 0)
+            if (CalculateNewProgress(Skills.BasicSynth) >= MaxProgress)
+            {
+                action = Skills.BasicSynth;
+                return true;
+            }
+
+            if (allowComplete)
+            {
+                if (CanUse(Skills.IntensiveSynthesis))
+                {
+                    action = Skills.IntensiveSynthesis;
+                    return progressActions->IntensiveSynthesis.CanComplete(remainingProgress)!.Value;
+                }
+
+                // Only use Groundwork to speed up if it'll complete
+                if (progressActions->Groundwork.CanComplete(remainingProgress) == true)
+                {
+                    action = Skills.Groundwork;
+                    return true;
+                }
+
+                if (PreviousActionSameAs(Skills.Observe) && progressActions->FocusedSynthesis.IsAvailable())
+                {
+                    action = Skills.FocusedSynthesis;
+                    return progressActions->FocusedSynthesis.CanComplete(remainingProgress)!.Value;
+                }
+
+                // Prudent:
+                // Not MP efficient unless we're intentionally conserving Durability
+                //if (progressActions->PrudentSynthesis.CanComplete(remainingProgress) == allowComplete)
+                //    return ActionId.PrudentSynthesis;
+
+                if (progressActions->CarefulSynthesis.IsAvailable())
+                {
+                    action = Skills.CarefulSynthesis;
+                    return progressActions->CarefulSynthesis.CanComplete(remainingProgress)!.Value;
+                }
+            }
+            else
+            {
+                // Technically this path is only used near the beginning
+
+                if (progressActions->IntensiveSynthesis.CanComplete(remainingProgress) == false)
+                {
+                    action = Skills.IntensiveSynthesis;
+                    return false;
+                }
+
+                // Use groundwork if we have any buff up to help with durability, maybe not optimal, but helps preserve buffs
+                if (progressActions->Groundwork.CanComplete(remainingProgress) == false &&
+                    (
+                    (statusList.HasStatus(out _, CraftingPlayerStatuses.WasteNot, CraftingPlayerStatuses.WasteNot2) && CurrentDurability > 10) ||
+                    (statusList.HasStatus(out _, CraftingPlayerStatuses.Manipulation) && CurrentDurability > 20)
+                    ))
+                {
+                    action = Skills.Groundwork;
+                    return false;
+                }
+
+                if (PreviousActionSameAs(Skills.Observe) && progressActions->FocusedSynthesis.CanComplete(remainingProgress) == false)
+                {
+                    action = Skills.FocusedSynthesis;
+                    return false;
+                }
+
+                // Prudent:
+                // Not MP efficient unless we're intentionally conserving Durability
+                //if (progressActions->PrudentSynthesis.CanComplete(remainingProgress) == allowComplete)
+                //    return ActionId.PrudentSynthesis;
+
+                if (progressActions->CarefulSynthesis.CanComplete(remainingProgress) == false)
+                {
+                    action = Skills.CarefulSynthesis;
+                    return allowComplete;
+                }
+            }
+
+            action = Skills.BasicSynth;
+            return progressActions->BasicSynthesis.CanComplete(remainingProgress)!.Value;
+        }
+    }
+
+    
+
+    public static class CraftingActionExtensions
+    {
+        public static int ProgressIncrease(this uint Id)
+        {
+            var multiplier = GetMultiplier(Id, false);
+            double veneration = GetStatus(Buffs.Veneration) != null ? 0.5 : 0;
+            double muscleMemory = GetStatus(Buffs.MuscleMemory) != null ? 1 : 0;
+            return (int)Math.Floor(BaseProgression() * multiplier * (veneration + muscleMemory + 1));
+        }
+
+        public static int QualityIncrease(this uint id)
+        {
+            double efficiency = GetMultiplier(id, true);
+            double IQStacks = GetStatus(Buffs.InnerQuiet) is null ? 1 : 1 + (GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
+            double innovation = GetStatus(Buffs.Innovation) is not null ? 0.5 : 0;
+            double greatStrides = GetStatus(Buffs.GreatStrides) is not null ? 1 : 0;
+
+            return (int)Math.Floor(BaseQuality() * efficiency * IQStacks * (innovation + greatStrides + 1));
+
+        }
+
+        public static bool IsAvailable(this ProgressEfficiencyCalculation progressActionInfo)
+    => progressActionInfo.Status == ActionStatus.Available;
+
+        public static bool IsAvailable(this QualityEfficiencyCalculation progressActionInfo)
+            => progressActionInfo.Status == ActionStatus.Available;
+
+        public static bool? CanComplete(this ProgressEfficiencyCalculation progressActionInfo, uint remainingProgress)
+        {
+            if (!progressActionInfo.IsAvailable())
+                return null;
+
+            return progressActionInfo.ProgressIncrease >= remainingProgress;
+        }
+
+        public static bool CanComplete(this QualityEfficiencyCalculation qualityActionInfo, uint remainingQuality)
+            => qualityActionInfo.IsAvailable() && qualityActionInfo.QualityIncrease >= remainingQuality;
+
+        public static bool HasStatus(this StatusList? statusList, out int stack, params CraftingPlayerStatuses[] elligable)
+        {
+            stack = 0;
+
+            var status = statusList?.FirstOrDefault(buff => elligable.Any(s => buff.StatusId == (uint)s));
+            if (status == null)
+                return false;
+
+            stack = status.StackCount;
+            return true;
+        }
+    }
+
+    public enum SynthesisStatus : uint
+    {
+        Normal = 0,
+        Poor = 1,
+        Good = 2,
+        Excellent = 3,
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 0x200)]
+    public struct SynthesisAtkValues
+    {
+        // Confirm these are all UInt (based on the AtkValue 1st byte)
+        [FieldOffset(0x058)] public uint Progress;
+        [FieldOffset(0x068)] public uint MaxProgress;
+        [FieldOffset(0x078)] public uint Durability;
+        [FieldOffset(0x088)] public uint MaxDurability;
+        [FieldOffset(0x098)] public uint Quality;
+        [FieldOffset(0x0A8)] public uint HqChance; // Does this make sense for Collectables?
+
+        [FieldOffset(0x0C8)] public SynthesisStatus Status;
+
+
+        [FieldOffset(0x0F8)] public uint Step;
+
+        [FieldOffset(0x118)] public uint MaxQuality;
+
+
+        [FieldOffset(0x148)] public uint Collectability;
+
+        [FieldOffset(0x168)] public uint CollectabilityLow;
+        [FieldOffset(0x178)] public uint CollectabilityMedium;
+        [FieldOffset(0x188)] public uint CollectabilityHigh;
+        // Last one?
     }
 }

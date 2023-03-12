@@ -248,8 +248,13 @@ namespace Artisan
             CraftingVisible = craftingVisible;
 
             ImGui.SetNextWindowSize(new Vector2(375, 330), ImGuiCond.FirstUseEver);
-            if (ImGui.Begin("Artisan Crafting Window", ref this.craftingVisible, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar))
+            if (ImGui.Begin("Artisan Crafting Window", ref this.craftingVisible, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.AlwaysAutoResize))
             {
+                if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
+                {
+                    visible = true;
+                }
+
                 bool autoMode = Service.Configuration.AutoMode;
 
                 if (ImGui.Checkbox("Auto Mode", ref autoMode))
@@ -447,6 +452,14 @@ namespace Artisan
                     Service.Configuration.MaxPercentage = maxQuality;
                     Service.Configuration.Save();
                 }
+
+                //bool useExperimental = Service.Configuration.UseExperminentalRotation;
+                //if (ImGui.Checkbox("Use Experimental Rotation (non-expert crafts)", ref useExperimental))
+                //{
+                //    Service.Configuration.UseExperminentalRotation = useExperimental;
+                //    Service.Configuration.Save();
+                //}
+                //ImGuiComponents.HelpMarker($"This is a new experimental rotation which currently doesn't work with many settings. It also hasn't been tweaked for lower level use, so your mileage may vary.");
             }
 
             if (ImGui.CollapsingHeader("UI Settings"))

@@ -1,7 +1,10 @@
 ﻿using Artisan.Autocraft;
+using ClickLib.Clicks;
 using ClickLib.Enums;
 using ClickLib.Structures;
 using Dalamud.Interface;
+using ECommons.DalamudServices;
+using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using System;
@@ -65,6 +68,11 @@ namespace Artisan.RawInformation
 
         private static void DrawCopyOfCraftMenu()
         {
+            if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
+            {
+                Artisan.PluginUi.Visible = true;
+            }
+
             bool autoMode = Service.Configuration.AutoMode;
 
             if (ImGui.Checkbox("Auto Mode", ref autoMode))

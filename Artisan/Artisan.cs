@@ -1,5 +1,4 @@
-﻿using Accessibility;
-using Artisan.Autocraft;
+﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
@@ -7,21 +6,16 @@ using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Toast;
-using Dalamud.IoC;
-using Dalamud.Plugin;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
-using ECommons.DalamudServices;
-using FFXIVClientStructs.FFXIV.Client.Game;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.IoC;
+using Dalamud.Plugin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
-using ECommons;
-using Artisan.CraftingLogic;
-using System.Windows.Forms;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 
 namespace Artisan
 {
@@ -77,7 +71,7 @@ namespace Artisan
                 {
                     var item = (ItemPayload)message.Payloads.First(x => x.Type == PayloadType.Item);
                     if (item.Item.CanBeHq)
-                    LastItemWasHQ = item.IsHQ;
+                        LastItemWasHQ = item.IsHQ;
 
                     LastCraftedItem = item.Item;
                 }
@@ -140,7 +134,7 @@ namespace Artisan
                 MacroStep = 0;
             }
             if (e > 0)
-            Tasks.Clear();
+                Tasks.Clear();
         }
 
         public static bool CheckIfCraftFinished()
@@ -223,6 +217,7 @@ namespace Artisan
             {
                 try
                 {
+
                     CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
 
                     if (Service.Configuration.UseMacroMode && Service.Configuration.UserMacros.Count > 0)
@@ -243,10 +238,9 @@ namespace Artisan
                                     }
                                 }
 
-                                CurrentRecommendation = macro.MacroActions[MacroStep];
+                                CurrentRecommendation = macro.MacroActions[MacroStep] == 0 ? CurrentRecommendation : macro.MacroActions[MacroStep];
 
-                                Dalamud.Logging.PluginLog.Debug($"{macro.MacroStepOptions[MacroStep].ExcludeFromUpgrade}");
-                                if (!macro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
+                                if (macro.MacroStepOptions[MacroStep] != null && !macro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
                                 {
                                     if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(macro) && ActionUpgradable(macro, out uint newAction))
                                     {
@@ -274,9 +268,9 @@ namespace Artisan
                                     }
                                 }
 
-                                CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep];
+                                CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep] == 0 ? CurrentRecommendation : Service.Configuration.SetMacro.MacroActions[MacroStep];
 
-                                if (!Service.Configuration.SetMacro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
+                                if (Service.Configuration.SetMacro.MacroStepOptions[MacroStep] != null && !Service.Configuration.SetMacro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
                                 {
                                     if (Service.Configuration.SetMacro.MacroOptions.UpgradeQualityActions && ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out uint newAction))
                                     {
@@ -292,7 +286,7 @@ namespace Artisan
                     }
 
                     RecommendationName = CurrentRecommendation.NameOfAction();
-                    
+
                     if (CurrentRecommendation != 0)
                     {
                         if (LuminaSheets.ActionSheet.TryGetValue(CurrentRecommendation, out var normalAct))

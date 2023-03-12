@@ -1,4 +1,5 @@
 ﻿using Artisan.RawInformation;
+using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
@@ -20,20 +21,34 @@ namespace Artisan.MacroSystem
         private static Macro selectedMacro = new();
         private static int selectedActionIndex = -1;
         private static bool renameMode = false;
+        private static bool Minimized = false;
 
         internal static void Draw()
         {
             ImGui.TextWrapped("This tab will allow you to add macros that Artisan can use instead of its own decisions.");
             ImGui.Separator();
-            ImGui.Spacing();
-            if (ImGui.Button("Import Macro From Clipboard"))
-                OpenMacroNamePopup(MacroNameUse.FromClipboard);
 
-            if (ImGui.Button("New Macro"))
-                OpenMacroNamePopup(MacroNameUse.NewMacro);
+            if (Minimized)
+            {
+                if (ImGuiEx.IconButton(FontAwesomeIcon.ArrowRight, "Maximize", new Vector2(80f, 0)))
+                {
+                    Minimized = false;
+                }
+                ImGui.Spacing();
+            }
 
-            DrawMacroNamePopup(MacroNameUse.FromClipboard);
-            DrawMacroNamePopup(MacroNameUse.NewMacro);
+            if (!Minimized)
+            {
+                ImGui.Spacing();
+                if (ImGui.Button("Import Macro From Clipboard"))
+                    OpenMacroNamePopup(MacroNameUse.FromClipboard);
+
+                if (ImGui.Button("New Macro"))
+                    OpenMacroNamePopup(MacroNameUse.NewMacro);
+
+                DrawMacroNamePopup(MacroNameUse.FromClipboard);
+                DrawMacroNamePopup(MacroNameUse.NewMacro);
+            }
 
             if (Service.Configuration.UserMacros.Count > 0)
             {
@@ -43,24 +58,41 @@ namespace Artisan.MacroSystem
                 {
                     if (ImGui.CalcTextSize($"{macro.Name} (CP Cost: {GetCPCost(macro)})").Length() > longestName)
                         longestName = ImGui.CalcTextSize($"{macro.Name} (CP Cost: {GetCPCost(macro)})").Length();
+
+                    if (macro.MacroStepOptions.Count == 0 && macro.MacroActions.Count > 0)
+                    {
+                        for (int i = 0; i < macro.MacroActions.Count; i++)
+                        {
+                            macro.MacroStepOptions.Add(new());
+                        }
+                    }
                 }
 
                 longestName = Math.Max(150, longestName);
-                ImGui.Text("Macro List");
-                if (ImGui.BeginChild("##selector", new Vector2(longestName + 40, 0), true))
+                if (!Minimized)
                 {
-                    foreach (Macro m in Service.Configuration.UserMacros)
+                    if (ImGui.BeginChild("##selector", new Vector2(longestName + 40, 0), true))
                     {
-                        uint cpCost = GetCPCost(m);
-                        var selected = ImGui.Selectable($"{m.Name} (CP Cost: {cpCost})###{m.ID}", m.ID == selectedMacro.ID);
-
-                        if (selected)
+                        if (ImGuiEx.IconButton(FontAwesomeIcon.ArrowLeft, "MinimizeButton", new Vector2(longestName + 20, 0)))
                         {
-                            selectedMacro = m;
+                            Minimized = true;
                         }
+                        ImGui.Separator();
+
+                        foreach (Macro m in Service.Configuration.UserMacros)
+                        {
+                            uint cpCost = GetCPCost(m);
+                            var selected = ImGui.Selectable($"{m.Name} (CP Cost: {cpCost})###{m.ID}", m.ID == selectedMacro.ID);
+
+                            if (selected)
+                            {
+                                selectedMacro = m;
+                            }
+                        }
+                        ImGui.EndChild();
                     }
-                    ImGui.EndChild();
                 }
+
                 if (selectedMacro.ID != 0)
                 {
                     if (selectedMacro.MacroStepOptions.Count == 0 && selectedMacro.MacroActions.Count > 0)
@@ -71,6 +103,7 @@ namespace Artisan.MacroSystem
                         }
                     }
 
+                    if (!Minimized)
                     ImGui.SameLine();
                     ImGui.BeginChild("###selectedMacro", new Vector2(0, 0), false);
                     if (!renameMode)
@@ -157,7 +190,7 @@ namespace Artisan.MacroSystem
                     ImGui.Indent();
                     for (int i = 0; i < selectedMacro.MacroActions.Count(); i++)
                     {
-                        var selectedAction = ImGui.Selectable($"{i+1}. {GetActionName(selectedMacro.MacroActions[i])}###selectedAction{i}", i == selectedActionIndex);
+                        var selectedAction = ImGui.Selectable($"{i+1}. {(selectedMacro.MacroActions[i] == 0 ? $"Artisan Recommendation###selectedAction{i}" :  GetActionName(selectedMacro.MacroActions[i]))}###selectedAction{i}", i == selectedActionIndex);
 
                         if (selectedAction)
                             selectedActionIndex = i;
@@ -169,7 +202,7 @@ namespace Artisan.MacroSystem
                             return;
 
                         ImGui.NextColumn();
-                        ImGui.Text($"Selected Action: {GetActionName(selectedMacro.MacroActions[selectedActionIndex])}");
+                        ImGui.Text($"Selected Action: {(selectedMacro.MacroActions[selectedActionIndex] == 0 ? "Artisan Recommendation" : GetActionName(selectedMacro.MacroActions[selectedActionIndex]))}");
                         if (selectedActionIndex > 0)
                         {
                             ImGui.SameLine();
@@ -208,6 +241,15 @@ namespace Artisan.MacroSystem
 
                         if (ImGui.BeginCombo("###ReplaceAction", "Replace Action"))
                         {
+                            if (ImGui.Selectable($"Artisan Recommendation"))
+                            {
+                                selectedMacro.MacroActions[selectedActionIndex] = 0;
+                                if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
+                                    Service.Configuration.SetMacro = selectedMacro;
+
+                                Service.Configuration.Save();
+                            }
+
                             foreach(var constant in typeof(Skills).GetFields().OrderBy(x => GetActionName((uint)x.GetValue(null)!)))
                             {
                                 if (ImGui.Selectable($"{GetActionName((uint)constant.GetValue(null)!)}"))

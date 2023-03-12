@@ -137,6 +137,7 @@ namespace Artisan.Autocraft
                 ImGui.Text($"Collectibility High: {CurrentCraft.CollectabilityHigh}");
                 ImGui.Text($"Crafting State: {CurrentCraft.State}");
                 ImGui.Text($"Can Finish: {CurrentCraft.CanFinishCraft()}");
+                ImGui.Text($"Previous Action: {CurrentCraft.PreviousAction.NameOfAction()}");
             }
 
             if (ImGui.CollapsingHeader("Spiritbonds"))

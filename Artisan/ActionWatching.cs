@@ -2,10 +2,7 @@
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan
@@ -19,74 +16,77 @@ namespace Artisan
         {
             try
             {
-                if (LuminaSheets.ActionSheet.TryGetValue(actionID, out var act1))
+                if (CanUse(Skills.BasicSynth))
                 {
-                    string skillName = act1.Name;
-                    var allOfSameName = LuminaSheets.ActionSheet.Where(x => x.Value.Name == skillName).Select(x => x.Key);
+                    PreviousAction = actionID;
 
-                    if (allOfSameName.Any(x => x == Skills.Manipulation))
-                        ManipulationUsed = true;
+                    if (LuminaSheets.ActionSheet.TryGetValue(actionID, out var act1))
+                    {
+                        string skillName = act1.Name;
+                        var allOfSameName = LuminaSheets.ActionSheet.Where(x => x.Value.Name == skillName).Select(x => x.Key);
 
-                    if (allOfSameName.Any(x => x == Skills.WasteNot || x == Skills.WasteNot2))
-                        WasteNotUsed = true;
+                        if (allOfSameName.Any(x => x == Skills.Manipulation))
+                            ManipulationUsed = true;
 
-                    if (allOfSameName.Any(x => x == Skills.FinalAppraisal))
-                        JustUsedFinalAppraisal = true;
-                    else
-                        JustUsedFinalAppraisal = false;
+                        if (allOfSameName.Any(x => x == Skills.WasteNot || x == Skills.WasteNot2))
+                            WasteNotUsed = true;
 
-                    if (allOfSameName.Any(x => x == Skills.GreatStrides))
-                        JustUsedGreatStrides = true;
-                    else
-                        JustUsedGreatStrides = false;
+                        if (allOfSameName.Any(x => x == Skills.FinalAppraisal))
+                            JustUsedFinalAppraisal = true;
+                        else
+                            JustUsedFinalAppraisal = false;
 
-                    if (allOfSameName.Any(x => x == Skills.Innovation))
-                        InnovationUsed = true;
+                        if (allOfSameName.Any(x => x == Skills.GreatStrides))
+                            JustUsedGreatStrides = true;
+                        else
+                            JustUsedGreatStrides = false;
 
-                    if (allOfSameName.Any(x => x == Skills.Veneration))
-                        VenerationUsed = true;
+                        if (allOfSameName.Any(x => x == Skills.Innovation))
+                            InnovationUsed = true;
 
-                    JustUsedObserve = false;
-                    BasicTouchUsed = false;
-                    StandardTouchUsed = false;
-                    AdvancedTouchUsed = false;
+                        if (allOfSameName.Any(x => x == Skills.Veneration))
+                            VenerationUsed = true;
 
-                }
-                if (LuminaSheets.CraftActions.TryGetValue(actionID, out var act2))
-                {
-                    string skillName = act2.Name;
-                    var allOfSameName = LuminaSheets.CraftActions.Where(x => x.Value.Name == skillName).Select(x => x.Key);
-
-                    if (allOfSameName.Any(x => x == Skills.Observe))
-                        JustUsedObserve = true;
-                    else
                         JustUsedObserve = false;
-
-                    if (allOfSameName.Any(x => x == Skills.BasicTouch))
-                        BasicTouchUsed = true;
-                    else
                         BasicTouchUsed = false;
-
-                    if (allOfSameName.Any(x => x == Skills.StandardTouch))
-                        StandardTouchUsed = true;
-                    else
                         StandardTouchUsed = false;
-
-                    if (allOfSameName.Any(x => x == Skills.AdvancedTouch))
-                        AdvancedTouchUsed = true;
-                    else
                         AdvancedTouchUsed = false;
 
-                    JustUsedFinalAppraisal = false;
-                }
-                if (Service.Configuration.UseMacroMode)
-                {
-                    MacroStep++;
-                
-                }
-                CurrentRecommendation = 0;
-                Artisan.Tasks.Clear();
+                    }
+                    if (LuminaSheets.CraftActions.TryGetValue(actionID, out var act2))
+                    {
+                        string skillName = act2.Name;
+                        var allOfSameName = LuminaSheets.CraftActions.Where(x => x.Value.Name == skillName).Select(x => x.Key);
 
+                        if (allOfSameName.Any(x => x == Skills.Observe))
+                            JustUsedObserve = true;
+                        else
+                            JustUsedObserve = false;
+
+                        if (allOfSameName.Any(x => x == Skills.BasicTouch))
+                            BasicTouchUsed = true;
+                        else
+                            BasicTouchUsed = false;
+
+                        if (allOfSameName.Any(x => x == Skills.StandardTouch))
+                            StandardTouchUsed = true;
+                        else
+                            StandardTouchUsed = false;
+
+                        if (allOfSameName.Any(x => x == Skills.AdvancedTouch))
+                            AdvancedTouchUsed = true;
+                        else
+                            AdvancedTouchUsed = false;
+
+                        JustUsedFinalAppraisal = false;
+                    }
+                    if (Service.Configuration.UseMacroMode)
+                    {
+                        MacroStep++;
+                    }
+                    CurrentRecommendation = 0;
+                    Artisan.Tasks.Clear();
+                }
                 return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
             }
             catch (Exception ex)
