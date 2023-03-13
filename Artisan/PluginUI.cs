@@ -1,6 +1,7 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.MacroSystem;
+using Artisan.QuestSync;
 using Artisan.RawInformation;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
@@ -83,6 +84,8 @@ namespace Artisan
             }
             DrawMacroChoiceOnRecipe();
 
+            if (!Service.Configuration.HideQuestHelper)
+                DrawQuestHelperWindow();
 
             if (!Service.Configuration.DisableHighlightedAction)
                 Hotbars.MakeButtonsGlow(CurrentRecommendation);
@@ -136,6 +139,41 @@ namespace Artisan
                 {
                     Service.Configuration.Save();
                     PluginLog.Information("Configuration saved");
+                }
+            }
+        }
+
+        private void DrawQuestHelperWindow()
+        {
+            bool hasIngredientsAny = QuestList.HasIngredientsForAny();
+            if (hasIngredientsAny)
+            {
+                ImGui.SetNextWindowSize(new Vector2(375, 330), ImGuiCond.FirstUseEver);
+                if (ImGui.Begin("Quest Helper", ref hasIngredientsAny, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar))
+                {
+                    ImGui.Text($"Quest Helper (click to open recipe)");
+                    foreach (var quest in QuestList.Quests)
+                    {
+                        if (QuestList.IsOnQuest((ushort)quest.Key))
+                        {
+                            var hasIngredients = CraftingListFunctions.HasItemsForRecipe(QuestList.GetRecipeForQuest((ushort)quest.Key));
+                            if (hasIngredients)
+                            {
+                                if (ImGui.Button($"{((ushort)quest.Key).NameOfQuest()}"))
+                                {
+                                    if (CraftingListFunctions.RecipeWindowOpen())
+                                    {
+                                        CraftingListFunctions.CloseCraftingMenu();
+                                        Service.Framework.RunOnTick(() => CraftingListFunctions.OpenRecipeByID(QuestList.GetRecipeForQuest((ushort)quest.Key), true), TimeSpan.FromSeconds(0.5));
+                                    }
+                                    else
+                                    {
+                                        CraftingListFunctions.OpenRecipeByID(QuestList.GetRecipeForQuest((ushort)quest.Key));
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -496,6 +534,14 @@ namespace Artisan
                 {
                     AtkResNodeFunctions.ResetPosition = true;
                 }
+
+                bool hideQuestHelper = Service.Configuration.HideQuestHelper;
+                if (ImGui.Checkbox($"Hide Quest Helper", ref hideQuestHelper))
+                {
+                    Service.Configuration.HideQuestHelper = hideQuestHelper;
+                    Service.Configuration.Save();
+                }
+
             }
 
 

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Authors></Authors>
     <Company></Company>
-    <Version>1.7.1.0</Version>
+    <Version>1.7.1.1</Version>
     <Description>A 'simple' crafting plugin.</Description>
     <Copyright>Taurenkey</Copyright>
   </PropertyGroup>
@@ -61,6 +61,7 @@
   <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="2.1.8" />
     <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
+    <!--<ProjectReference Include="..\FFXIVClientStructs\FFXIVClientStructs\FFXIVClientStructs.csproj" />-->
     <ProjectReference Include="..\PunishLib\ECommons\ECommons\ECommons.csproj" />
     <ProjectReference Include="..\PunishLib\PunishLib\PunishLib.csproj" />
     <Reference Include="Newtonsoft.Json">

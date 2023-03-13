@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLogic;
+using Artisan.QuestSync;
 using Artisan.RawInformation;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -165,6 +166,7 @@ namespace Artisan.Autocraft
                 QuestManager* qm = QuestManager.Instance();
                 foreach (var quest in qm->DailyQuestsSpan)
                 {
+                    if (!quest.IsCompleted && quest.QuestId > 0)
                     ImGui.TextWrapped($"Quest ID: {quest.QuestId}, Sequence: {QuestManager.GetQuestSequence(quest.QuestId)}, Name: {quest.QuestId.NameOfQuest()}");
                 }
 
