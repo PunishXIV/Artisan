@@ -8,6 +8,48 @@ namespace Artisan.QuestSync
     {
         public static readonly Dictionary<uint, RecipeConverter> Quests = new()
         {
+            //Ixal Quests
+            { 1494, new() { CRP = 30511, BSM = 30550, ARM = 30589, GSM = 30628, LTW = 30667, WVR = 30706, ALC = 30745, CUL = 30784 } },
+            { 1495, new() { CRP = 30512, BSM = 30551, ARM = 30590, GSM = 30629, LTW = 30668, WVR = 30707, ALC = 30746, CUL = 30785 } },
+            { 1496, new() { CRP = 30513, BSM = 30552, ARM = 30591, GSM = 30630, LTW = 30669, WVR = 30708, ALC = 30747, CUL = 30786 } },
+            { 1497, new() { CRP = 30514, BSM = 30553, ARM = 30592, GSM = 30631, LTW = 30670, WVR = 30709, ALC = 30748, CUL = 30787 } },
+            { 1504, new() { CRP = 30515, BSM = 30554, ARM = 30593, GSM = 30632, LTW = 30671, WVR = 30710, ALC = 30749, CUL = 30788 } },
+            { 1505, new() { CRP = 30516, BSM = 30555, ARM = 30594, GSM = 30633, LTW = 30672, WVR = 30711, ALC = 30750, CUL = 30789 } },
+            { 1506, new() { CRP = 30517, BSM = 30556, ARM = 30595, GSM = 30634, LTW = 30673, WVR = 30712, ALC = 30751, CUL = 30790 } },
+            { 1507, new() { CRP = 30518, BSM = 30557, ARM = 30596, GSM = 30635, LTW = 30674, WVR = 30713, ALC = 30752, CUL = 30791 } },
+            { 1508, new() { CRP = 30519, BSM = 30558, ARM = 30597, GSM = 30636, LTW = 30675, WVR = 30714, ALC = 30753, CUL = 30792 } },
+            { 1514, new() { CRP = 30520, BSM = 30559, ARM = 30598, GSM = 30637, LTW = 30676, WVR = 30715, ALC = 30754, CUL = 30793 } },
+            { 1515, new() { CRP = 30521, BSM = 30560, ARM = 30599, GSM = 30638, LTW = 30677, WVR = 30716, ALC = 30755, CUL = 30794 } },
+            { 1516, new() { CRP = 30522, BSM = 30561, ARM = 30600, GSM = 30639, LTW = 30678, WVR = 30717, ALC = 30756, CUL = 30795 } },
+            { 1517, new() { CRP = 30523, BSM = 30562, ARM = 30601, GSM = 30640, LTW = 30679, WVR = 30718, ALC = 30757, CUL = 30796 } },
+            { 1518, new() { CRP = 30524, BSM = 30563, ARM = 30602, GSM = 30641, LTW = 30680, WVR = 30719, ALC = 30758, CUL = 30797 } },
+            { 1498, new() { CRP = 30525, BSM = 30564, ARM = 30603, GSM = 30642, LTW = 30681, WVR = 30720, ALC = 30759, CUL = 30798 } },
+            { 1499, new() { CRP = 30526, BSM = 30565, ARM = 30604, GSM = 30643, LTW = 30682, WVR = 30721, ALC = 30760, CUL = 30799 } },
+            { 1500, new() { CRP = 30527, BSM = 30566, ARM = 30605, GSM = 30644, LTW = 30683, WVR = 30722, ALC = 30761, CUL = 30800 } },
+            { 1501, new() { CRP = 30528, BSM = 30567, ARM = 30606, GSM = 30645, LTW = 30684, WVR = 30723, ALC = 30762, CUL = 30801 } },
+            { 1502, new() { CRP = 30529, BSM = 30568, ARM = 30607, GSM = 30646, LTW = 30685, WVR = 30724, ALC = 30763, CUL = 30802 } },
+            { 1503, new() { CRP = 30530, BSM = 30569, ARM = 30608, GSM = 30647, LTW = 30686, WVR = 30725, ALC = 30764, CUL = 30803 } },
+            { 1509, new() { CRP = 30531, BSM = 30570, ARM = 30609, GSM = 30648, LTW = 30687, WVR = 30726, ALC = 30765, CUL = 30804 } },
+            { 1510, new() { CRP = 30532, BSM = 30571, ARM = 30610, GSM = 30649, LTW = 30688, WVR = 30727, ALC = 30766, CUL = 30805 } },
+            { 1511, new() { CRP = 30533, BSM = 30572, ARM = 30611, GSM = 30650, LTW = 30689, WVR = 30728, ALC = 30767, CUL = 30806 } },
+            { 1512, new() { CRP = 30534, BSM = 30573, ARM = 30612, GSM = 30651, LTW = 30690, WVR = 30729, ALC = 30768, CUL = 30807 } },
+            { 1513, new() { CRP = 30535, BSM = 30574, ARM = 30613, GSM = 30652, LTW = 30691, WVR = 30730, ALC = 30769, CUL = 30808 } },
+            { 1519, new() { CRP = 30536, BSM = 30575, ARM = 30614, GSM = 30653, LTW = 30692, WVR = 30731, ALC = 30770, CUL = 30809 } },
+            { 1520, new() { CRP = 30537, BSM = 30576, ARM = 30615, GSM = 30654, LTW = 30693, WVR = 30732, ALC = 30771, CUL = 30810 } },
+            { 1521, new() { CRP = 30538, BSM = 30577, ARM = 30616, GSM = 30655, LTW = 30694, WVR = 30733, ALC = 30772, CUL = 30811 } },
+            { 1522, new() { CRP = 30539, BSM = 30578, ARM = 30617, GSM = 30656, LTW = 30695, WVR = 30734, ALC = 30773, CUL = 30812 } },
+            { 1523, new() { CRP = 30540, BSM = 30579, ARM = 30618, GSM = 30657, LTW = 30696, WVR = 30735, ALC = 30774, CUL = 30813 } },
+            { 1566, new() { CRP = 30541, BSM = 30580, ARM = 30619, GSM = 30658, LTW = 30697, WVR = 30736, ALC = 30775, CUL = 30814 } },
+            { 1567, new() { CRP = 30542, BSM = 30581, ARM = 30620, GSM = 30659, LTW = 30698, WVR = 30737, ALC = 30776, CUL = 30815 } },
+            { 1568, new() { CRP = 30543, BSM = 30582, ARM = 30621, GSM = 30660, LTW = 30699, WVR = 30738, ALC = 30777, CUL = 30816 } },
+            { 1487, new() { CRP = 30544, BSM = 30583, ARM = 30622, GSM = 30661, LTW = 30700, WVR = 30739, ALC = 30778, CUL = 30817 } },
+            { 1488, new() { CRP = 30545, BSM = 30584, ARM = 30623, GSM = 30662, LTW = 30701, WVR = 30740, ALC = 30779, CUL = 30818 } },
+            { 1489, new() { CRP = 30546, BSM = 30585, ARM = 30624, GSM = 30663, LTW = 30702, WVR = 30741, ALC = 30780, CUL = 30819 } },
+            { 1491, new() { CRP = 30547, BSM = 30586, ARM = 30625, GSM = 30664, LTW = 30703, WVR = 30742, ALC = 30781, CUL = 30820 } },
+            { 9998, new() { CRP = 30548, BSM = 30587, ARM = 30626, GSM = 30665, LTW = 30704, WVR = 30743, ALC = 30782, CUL = 30821 } }, //Exception required for these last 2
+            { 9999, new() { CRP = 30549, BSM = 30588, ARM = 30627, GSM = 30666, LTW = 30705, WVR = 30744, ALC = 30783, CUL = 30822 } },
+
+
             //Moogle Quests
             { 2320, new() { CRP = 31591, BSM = 31617, ARM = 31643, GSM = 31669, LTW = 31695, WVR = 31721, ALC = 31747, CUL = 31773 } },
             { 2322, new() { CRP = 31592, BSM = 31618, ARM = 31644, GSM = 31670, LTW = 31696, WVR = 31722, ALC = 31748, CUL = 31774 } },
@@ -138,6 +180,18 @@ namespace Artisan.QuestSync
             QuestManager* qm = QuestManager.Instance();
             foreach (var quest in qm->DailyQuestsSpan)
             {
+                if (quest.QuestId == 1493)
+                {
+                    var step1 = Quests[9998];
+                    var step2 = Quests[9999];
+
+                    if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(step1.CRP))
+                        return true;
+
+                    if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(step2.CRP))
+                        return true;
+                }
+
                 if (Quests.TryGetValue(quest.QuestId, out var recipe))
                 {
                     if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(GetRecipeForQuest(quest.QuestId)))
@@ -180,6 +234,58 @@ namespace Artisan.QuestSync
             QuestManager* qm = QuestManager.Instance();
             foreach (var quest in qm->DailyQuestsSpan)
             {
+                if (quest.QuestId == 1493)
+                {
+                    var step1 = Quests[9998];
+                    var step2 = Quests[9999];
+
+                    if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(step1.CRP))
+                    {
+                        switch (CharacterInfo.JobID())
+                        {
+                            case 8:
+                                return step1.CRP;
+                            case 9:
+                                return step1.BSM;
+                            case 10:   
+                                return step1.ARM;
+                            case 11:   
+                                return step1.GSM;
+                            case 12:   
+                                return step1.LTW;
+                            case 13:   
+                                return step1.WVR;
+                            case 14:   
+                                return step1.ALC;
+                            case 15:   
+                                return step1.CUL;
+                        }
+                    }
+
+                    if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(step2.CRP))
+                    {
+                        switch (CharacterInfo.JobID())
+                        {
+                            case 8:
+                                return step2.CRP;
+                            case 9:
+                                return step2.BSM;
+                            case 10:
+                                return step2.ARM;
+                            case 11:
+                                return step2.GSM;
+                            case 12:
+                                return step2.LTW;
+                            case 13:
+                                return step2.WVR;
+                            case 14:
+                                return step2.ALC;
+                            case 15:
+                                return step2.CUL;
+                        }
+                    }
+                }
+
                 if (quest.QuestId > 0 && !quest.IsCompleted)
                 {
                     if (Quests.TryGetValue(questId, out var dict))
