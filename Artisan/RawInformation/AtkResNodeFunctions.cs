@@ -40,7 +40,7 @@ namespace Artisan.RawInformation
                 var scale = GetNodeScale(node);
                 var size = new Vector2(node->Width, node->Height) * scale;
                 var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
-                position += ImGuiHelpers.MainViewport.Pos;
+                //position += ImGuiHelpers.MainViewport.Pos;
 
                 ImGuiHelpers.ForceNextWindowMainViewport();
 
@@ -104,7 +104,7 @@ namespace Artisan.RawInformation
             var scale = GetNodeScale(node);
             var size = new Vector2(node->Width, node->Height) * scale;
             var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
-            position += ImGuiHelpers.MainViewport.Pos;
+            //position += ImGuiHelpers.MainViewport.Pos;
 
             ImGuiHelpers.ForceNextWindowMainViewport();
             if ((ResetPosition && position.X != 0) || Service.Configuration.LockMiniMenu)
@@ -163,7 +163,7 @@ namespace Artisan.RawInformation
             var scale = GetNodeScale(node);
             var size = new Vector2(node->Width, node->Height) * scale;
             var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
-            position += ImGuiHelpers.MainViewport.Pos;
+            //position += ImGuiHelpers.MainViewport.Pos;
             var textHeight = ImGui.CalcTextSize("Craft X Times:");
 
             ImGuiHelpers.ForceNextWindowMainViewport();
@@ -186,10 +186,20 @@ namespace Artisan.RawInformation
 
             }
             ImGui.SameLine();
-            if (ImGui.Button("Craft") && Service.Configuration.CraftX > 0)
+            if (Service.Configuration.CraftX > 0)
             {
-                Service.Configuration.CraftingX = true;
-                Handler.Enable = true;
+                if (ImGui.Button($"Craft {Service.Configuration.CraftX}"))
+                {
+                    Service.Configuration.CraftingX = true;
+                    Handler.Enable = true;
+                }
+            }
+            else
+            {
+                if (ImGui.Button("Craft All"))
+                {
+                    Handler.Enable = true;
+                }
             }
 
             ImGui.End();

@@ -3,6 +3,7 @@ using Artisan.RawInformation;
 using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Statuses;
 using ECommons;
+using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -176,10 +177,16 @@ namespace Artisan.CraftingLogic
                     {
                         bool wasSuccess = CheckForSuccess();
                         if (!wasSuccess && Service.Configuration.EnduranceStopFail)
+                        {
                             Handler.Enable = false;
+                            DuoLog.Error("You failed a craft. Disabling Endurance.");
+                        }
 
-                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && !LastCraftedItem.CanBeHq)
+                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && LastCraftedItem.CanBeHq)
+                        {
                             Handler.Enable = false;
+                            DuoLog.Error("You crafted a non-HQ item. Disabling Endurance.");
+                        }
                     }
                 }
 

@@ -74,6 +74,7 @@ namespace Artisan
         public bool CraftingX = false;
 
         public bool UseExperminentalRotation { get; set; } = false;
+        public bool HideQuestHelper { get; set; } = false;
 
         [NonSerialized]
         public int CraftX = 0;

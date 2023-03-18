@@ -1,6 +1,9 @@
 ﻿using Artisan.CraftingLogic;
+using Artisan.QuestSync;
 using Artisan.RawInformation;
+using ECommons;
 using ECommons.ImGuiMethods;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 using System;
@@ -156,6 +159,36 @@ namespace Artisan.Autocraft
                 ImGui.Text($"Ring 2 Spiritbond: {Spiritbond.Ring2}");
 
                 ImGui.Text($"Spiritbond Ready Any: {Spiritbond.IsSpiritbondReadyAny()}");
+
+            }
+
+            if (ImGui.CollapsingHeader("Quests"))
+            {
+                QuestManager* qm = QuestManager.Instance();
+                foreach (var quest in qm->DailyQuestsSpan)
+                {
+                    if (!quest.IsCompleted && quest.QuestId > 0)
+                    ImGui.TextWrapped($"Quest ID: {quest.QuestId}, Sequence: {QuestManager.GetQuestSequence(quest.QuestId)}, Name: {quest.QuestId.NameOfQuest()}");
+                }
+
+            }
+
+            if (ImGui.CollapsingHeader("Satisfaction Agent"))
+            {
+                var ag = (CustomDeliveries.AgentSatisfactionSupply*)AgentModule.Instance()->GetAgentByInternalID((uint)AgentId.SatisfactionSupply);
+
+                ImGui.Text($"{ag->NpcInfo.SatisfactionRank}");
+                ImGui.Text($"{ag->RemainingAllowances}");
+
+                if (!ag->AgentInterface.IsAgentActive())
+                {
+                    
+                }
+
+                foreach (var i in ag->DeliveryInfoSpan)
+                {
+                    ImGui.Text($"{i.ItemName}");
+                }
 
             }
             ImGui.Separator();

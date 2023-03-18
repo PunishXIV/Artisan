@@ -95,19 +95,20 @@ namespace Artisan.CraftingLists
             }
         }
 
-        public unsafe static void OpenRecipeByID(uint recipeID)
+        public unsafe static void OpenRecipeByID(uint recipeID, bool skipThrottle = false)
         {
             if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
             {
-                if (Throttler.Throttle(500))
+                if (Throttler.Throttle(500) || skipThrottle)
                 {
                     AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal(recipeID);
                 }
             }
         }
 
-        private static bool HasItemsForRecipe(uint currentProcessedItem)
+        public static bool HasItemsForRecipe(uint currentProcessedItem)
         {
+            if (currentProcessedItem == 0) return false;
             var recipe = CraftingListUI.FilteredList[currentProcessedItem];
             if (recipe.RowId == 0) return false;
 

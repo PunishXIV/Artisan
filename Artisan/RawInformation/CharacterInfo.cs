@@ -1,6 +1,7 @@
 ﻿using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.Havok;
 using System;
 using System.Runtime.InteropServices;
 using static Artisan.CraftingLogic.CurrentCraft;
@@ -9,11 +10,11 @@ namespace Artisan.RawInformation
 {
     public static class CharacterInfo
     {
-        public static byte CharacterLevel()
-            => Service.ClientState.LocalPlayer.Level;
+        public static byte? CharacterLevel()
+            => Service.ClientState.LocalPlayer?.Level;
 
-        public static uint JobID()
-            => Service.ClientState.LocalPlayer.ClassJob.Id;
+        public static uint? JobID()
+            => Service.ClientState.LocalPlayer?.ClassJob.Id;
 
         public static bool IsCrafting { get; set; }
 
@@ -109,54 +110,51 @@ namespace Artisan.RawInformation
             return QuestManager.IsQuestComplete((uint)v);
         }
 
-        internal static uint CraftLevel()
+        internal static uint CraftLevel() => CharacterLevel() switch
         {
-            return CharacterLevel() switch
-            {
-                <= 50 => CharacterLevel(),
-                51 => 120,
-                52 => 125,
-                53 => 130,
-                54 => 133,
-                55 => 136,
-                56 => 139,
-                57 => 142,
-                58 => 145,
-                59 => 148,
-                60 => 150,
-                61 => 260,
-                62 => 265,
-                63 => 270,
-                64 => 273,
-                65 => 276,
-                66 => 279,
-                67 => 282,
-                68 => 285,
-                69 => 288,
-                70 => 290,
-                71 => 390,
-                72 => 395,
-                73 => 400,
-                74 => 403,
-                75 => 406,
-                76 => 409,
-                77 => 412,
-                78 => 415,
-                79 => 418,
-                80 => 420,
-                81 => 517,
-                82 => 520,
-                83 => 525,
-                84 => 530,
-                85 => 535,
-                86 => 540,
-                87 => 545,
-                88 => 550,
-                89 => 555,
-                90 => 560,
-                _ => 0,
-            };
-        }
+            <= 50 => (uint)CharacterLevel(),
+            51 => 120,
+            52 => 125,
+            53 => 130,
+            54 => 133,
+            55 => 136,
+            56 => 139,
+            57 => 142,
+            58 => 145,
+            59 => 148,
+            60 => 150,
+            61 => 260,
+            62 => 265,
+            63 => 270,
+            64 => 273,
+            65 => 276,
+            66 => 279,
+            67 => 282,
+            68 => 285,
+            69 => 288,
+            70 => 290,
+            71 => 390,
+            72 => 395,
+            73 => 400,
+            74 => 403,
+            75 => 406,
+            76 => 409,
+            77 => 412,
+            78 => 415,
+            79 => 418,
+            80 => 420,
+            81 => 517,
+            82 => 520,
+            83 => 525,
+            84 => 530,
+            85 => 535,
+            86 => 540,
+            87 => 545,
+            88 => 550,
+            89 => 555,
+            90 => 560,
+            _ => 0,
+        };
     }
 
     public unsafe static class CharacterStats
