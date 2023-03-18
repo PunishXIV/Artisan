@@ -11,6 +11,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.IoC;
 using Dalamud.Plugin;
+using ECommons.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -184,6 +185,8 @@ namespace Artisan
                     {
                         Service.Configuration.CraftingX = false;
                         Handler.Enable = false;
+                        DuoLog.Information("Craft X has completed.");
+
                     }
                 }
 
@@ -239,17 +242,21 @@ namespace Artisan
 
                                 CurrentRecommendation = macro.MacroActions[MacroStep] == 0 ? CurrentRecommendation : macro.MacroActions[MacroStep];
 
-                                if (macro.MacroStepOptions[MacroStep] != null && !macro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
+                                try
                                 {
-                                    if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(macro) && ActionUpgradable(macro, out uint newAction))
+                                    if (macro.MacroStepOptions.Count == 0 || !macro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
                                     {
-                                        CurrentRecommendation = newAction;
-                                    }
-                                    if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(macro) && ActionUpgradable(macro, out newAction))
-                                    {
-                                        CurrentRecommendation = newAction;
+                                        if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(macro) && ActionUpgradable(macro, out uint newAction))
+                                        {
+                                            CurrentRecommendation = newAction;
+                                        }
+                                        if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(macro) && ActionUpgradable(macro, out newAction))
+                                        {
+                                            CurrentRecommendation = newAction;
+                                        }
                                     }
                                 }
+                                catch {}
                             }
                         }
                         else
@@ -269,17 +276,21 @@ namespace Artisan
 
                                 CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep] == 0 ? CurrentRecommendation : Service.Configuration.SetMacro.MacroActions[MacroStep];
 
-                                if (Service.Configuration.SetMacro.MacroStepOptions[MacroStep] != null && !Service.Configuration.SetMacro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
+                                try
                                 {
-                                    if (Service.Configuration.SetMacro.MacroOptions.UpgradeQualityActions && ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out uint newAction))
+                                    if (Service.Configuration.SetMacro.MacroStepOptions.Count == 0 || !Service.Configuration.SetMacro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
                                     {
-                                        CurrentRecommendation = newAction;
-                                    }
-                                    if (Service.Configuration.SetMacro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out newAction))
-                                    {
-                                        CurrentRecommendation = newAction;
+                                        if (Service.Configuration.SetMacro.MacroOptions.UpgradeQualityActions && ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out uint newAction))
+                                        {
+                                            CurrentRecommendation = newAction;
+                                        }
+                                        if (Service.Configuration.SetMacro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out newAction))
+                                        {
+                                            CurrentRecommendation = newAction;
+                                        }
                                     }
                                 }
+                                catch { }
                             }
                         }
                     }

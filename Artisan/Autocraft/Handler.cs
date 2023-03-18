@@ -9,6 +9,7 @@ using ECommons;
 using ECommons.CircularBuffers;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
+using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -18,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using static ECommons.GenericHelpers;
+using PluginLog = Dalamud.Logging.PluginLog;
 
 namespace Artisan.Autocraft
 {
@@ -60,6 +62,7 @@ namespace Artisan.Autocraft
                 if (Errors.Count() >= 5 && Errors.All(x => x > Environment.TickCount64 - 30 * 1000))
                 {
                     //Svc.Chat.Print($"{Errors.Select(x => x.ToString()).Join(",")}");
+                    DuoLog.Error("Endurance has been disabled due to too many errors in succession.");
                     Enable = false;
                 }
             }
@@ -88,6 +91,7 @@ namespace Artisan.Autocraft
                 {
                     Enable = false;
                     Service.Configuration.CraftingX = false;
+                    DuoLog.Information("Craft X has completed.");
                     return;
                 }
                 if (Svc.Condition[ConditionFlag.Occupied39])
@@ -97,7 +101,7 @@ namespace Artisan.Autocraft
                 if (AutocraftDebugTab.Debug) PluginLog.Verbose("Throttle success");
                 if (HQData == null)
                 {
-                    ECommons.Logging.DuoLog.Error("HQ data is null");
+                    DuoLog.Error("HQ data is null");
                     Enable = false;
                     return;
                 }
@@ -160,7 +164,7 @@ namespace Artisan.Autocraft
                     }
                     else
                     {
-                        if (!Svc.Condition[ConditionFlag.Crafting]) ConsumableChecker.CheckConsumables(true);
+                        if (!Svc.Condition[ConditionFlag.Crafting] && Enable) ConsumableChecker.CheckConsumables(true);
                     }
                     return;
                 }

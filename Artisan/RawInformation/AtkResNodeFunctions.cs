@@ -186,10 +186,20 @@ namespace Artisan.RawInformation
 
             }
             ImGui.SameLine();
-            if (ImGui.Button("Craft") && Service.Configuration.CraftX > 0)
+            if (Service.Configuration.CraftX > 0)
             {
-                Service.Configuration.CraftingX = true;
-                Handler.Enable = true;
+                if (ImGui.Button($"Craft {Service.Configuration.CraftX}"))
+                {
+                    Service.Configuration.CraftingX = true;
+                    Handler.Enable = true;
+                }
+            }
+            else
+            {
+                if (ImGui.Button("Craft All"))
+                {
+                    Handler.Enable = true;
+                }
             }
 
             ImGui.End();

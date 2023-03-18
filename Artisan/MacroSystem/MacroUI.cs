@@ -2,6 +2,7 @@
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using ECommons.ImGuiMethods;
+using ECommons.Logging;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,8 @@ namespace Artisan.MacroSystem
         private static int selectedActionIndex = -1;
         private static bool renameMode = false;
         private static bool Minimized = false;
+        private static bool Raweditor = false;
+        private static string _rawMacro = string.Empty;
 
         internal static void Draw()
         {
@@ -87,6 +90,7 @@ namespace Artisan.MacroSystem
                             if (selected)
                             {
                                 selectedMacro = m;
+                                _rawMacro = string.Join("\r\n", m.MacroActions.Select(x => $"{x.NameOfAction()}"));
                             }
                         }
                         ImGui.EndChild();
@@ -139,6 +143,12 @@ namespace Artisan.MacroSystem
 
                         Artisan.CleanUpIndividualMacros();
                     }
+                    ImGui.SameLine();
+                    if (ImGui.Button("Raw Editor"))
+                    {
+                        Raweditor = !Raweditor;
+                    }
+
                     ImGui.Spacing();
                     bool skipQuality = selectedMacro.MacroOptions.SkipQualityIfMet;
                     if (ImGui.Checkbox("Skip quality actions if at 100%", ref skipQuality))
@@ -170,91 +180,112 @@ namespace Artisan.MacroSystem
                     }
                     ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases progress then it will upgrade the action to Intensive Synthesis.");
 
-                    ImGui.Columns(2, "actionColumns", false);
-                    if (ImGui.Button("Insert New Action"))
+                    if (!Raweditor)
                     {
-                        if (selectedMacro.MacroActions.Count == 0)
+                        ImGui.Columns(2, "actionColumns", false);
+                        if (ImGui.Button("Insert New Action"))
                         {
-                            selectedMacro.MacroActions.Add(Skills.BasicSynth);
-                            selectedMacro.MacroStepOptions.Add(new());
-                        }
-                        else
-                        {
-                            selectedMacro.MacroActions.Insert(selectedActionIndex + 1, Skills.BasicSynth);
-                            selectedMacro.MacroStepOptions.Insert(selectedActionIndex + 1, new());
-                        }
-
-                        Service.Configuration.Save();
-                    }
-                    ImGui.TextWrapped("Macro Actions");
-                    ImGui.Indent();
-                    for (int i = 0; i < selectedMacro.MacroActions.Count(); i++)
-                    {
-                        var selectedAction = ImGui.Selectable($"{i+1}. {(selectedMacro.MacroActions[i] == 0 ? $"Artisan Recommendation###selectedAction{i}" :  GetActionName(selectedMacro.MacroActions[i]))}###selectedAction{i}", i == selectedActionIndex);
-
-                        if (selectedAction)
-                            selectedActionIndex = i;
-                    }
-                    ImGui.Unindent();
-                    if (selectedActionIndex != -1)
-                    {
-                        if (selectedActionIndex >= selectedMacro.MacroActions.Count)
-                            return;
-
-                        ImGui.NextColumn();
-                        ImGui.Text($"Selected Action: {(selectedMacro.MacroActions[selectedActionIndex] == 0 ? "Artisan Recommendation" : GetActionName(selectedMacro.MacroActions[selectedActionIndex]))}");
-                        if (selectedActionIndex > 0)
-                        {
-                            ImGui.SameLine();
-                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowLeft))
+                            if (selectedMacro.MacroActions.Count == 0)
                             {
-                                selectedActionIndex--;
+                                selectedMacro.MacroActions.Add(Skills.BasicSynth);
+                                selectedMacro.MacroStepOptions.Add(new());
                             }
-                        }
-
-                        if (selectedActionIndex < selectedMacro.MacroActions.Count - 1)
-                        {
-                            ImGui.SameLine();
-                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowRight))
+                            else
                             {
-                                selectedActionIndex++;
+                                selectedMacro.MacroActions.Insert(selectedActionIndex + 1, Skills.BasicSynth);
+                                selectedMacro.MacroStepOptions.Insert(selectedActionIndex + 1, new());
                             }
-                        }
 
-                        bool skip = selectedMacro.MacroStepOptions[selectedActionIndex].ExcludeFromUpgrade;
-                        if (ImGui.Checkbox($"Skip Upgrades For This Action", ref skip))
-                        {
-                            selectedMacro.MacroStepOptions[selectedActionIndex].ExcludeFromUpgrade = skip;
                             Service.Configuration.Save();
                         }
-
-                        if (ImGui.Button("Delete Action (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
+                        ImGui.TextWrapped("Macro Actions");
+                        ImGui.Indent();
+                        for (int i = 0; i < selectedMacro.MacroActions.Count(); i++)
                         {
-                            selectedMacro.MacroActions.RemoveAt(selectedActionIndex);
-                            selectedMacro.MacroStepOptions.RemoveAt(selectedActionIndex);
+                            var selectedAction = ImGui.Selectable($"{i + 1}. {(selectedMacro.MacroActions[i] == 0 ? $"Artisan Recommendation###selectedAction{i}" : GetActionName(selectedMacro.MacroActions[i]))}###selectedAction{i}", i == selectedActionIndex);
 
-                            Service.Configuration.Save();
-
-                            if (selectedActionIndex == selectedMacro.MacroActions.Count)
-                                selectedActionIndex--;
+                            if (selectedAction)
+                                selectedActionIndex = i;
                         }
-
-                        if (ImGui.BeginCombo("###ReplaceAction", "Replace Action"))
+                        ImGui.Unindent();
+                        if (selectedActionIndex != -1)
                         {
-                            if (ImGui.Selectable($"Artisan Recommendation"))
-                            {
-                                selectedMacro.MacroActions[selectedActionIndex] = 0;
-                                if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
-                                    Service.Configuration.SetMacro = selectedMacro;
+                            if (selectedActionIndex >= selectedMacro.MacroActions.Count)
+                                return;
 
+                            ImGui.NextColumn();
+                            ImGui.Text($"Selected Action: {(selectedMacro.MacroActions[selectedActionIndex] == 0 ? "Artisan Recommendation" : GetActionName(selectedMacro.MacroActions[selectedActionIndex]))}");
+                            if (selectedActionIndex > 0)
+                            {
+                                ImGui.SameLine();
+                                if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowLeft))
+                                {
+                                    selectedActionIndex--;
+                                }
+                            }
+
+                            if (selectedActionIndex < selectedMacro.MacroActions.Count - 1)
+                            {
+                                ImGui.SameLine();
+                                if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowRight))
+                                {
+                                    selectedActionIndex++;
+                                }
+                            }
+
+                            bool skip = selectedMacro.MacroStepOptions[selectedActionIndex].ExcludeFromUpgrade;
+                            if (ImGui.Checkbox($"Skip Upgrades For This Action", ref skip))
+                            {
+                                selectedMacro.MacroStepOptions[selectedActionIndex].ExcludeFromUpgrade = skip;
                                 Service.Configuration.Save();
                             }
 
-                            foreach(var constant in typeof(Skills).GetFields().OrderBy(x => GetActionName((uint)x.GetValue(null)!)))
+                            if (ImGui.Button("Delete Action (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                             {
-                                if (ImGui.Selectable($"{GetActionName((uint)constant.GetValue(null)!)}"))
+                                selectedMacro.MacroActions.RemoveAt(selectedActionIndex);
+                                selectedMacro.MacroStepOptions.RemoveAt(selectedActionIndex);
+
+                                Service.Configuration.Save();
+
+                                if (selectedActionIndex == selectedMacro.MacroActions.Count)
+                                    selectedActionIndex--;
+                            }
+
+                            if (ImGui.BeginCombo("###ReplaceAction", "Replace Action"))
+                            {
+                                if (ImGui.Selectable($"Artisan Recommendation"))
                                 {
-                                    selectedMacro.MacroActions[selectedActionIndex] = (uint)constant.GetValue(null)!;
+                                    selectedMacro.MacroActions[selectedActionIndex] = 0;
+                                    if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
+                                        Service.Configuration.SetMacro = selectedMacro;
+
+                                    Service.Configuration.Save();
+                                }
+
+                                foreach (var constant in typeof(Skills).GetFields().OrderBy(x => GetActionName((uint)x.GetValue(null)!)))
+                                {
+                                    if (ImGui.Selectable($"{GetActionName((uint)constant.GetValue(null)!)}"))
+                                    {
+                                        selectedMacro.MacroActions[selectedActionIndex] = (uint)constant.GetValue(null)!;
+                                        if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
+                                            Service.Configuration.SetMacro = selectedMacro;
+
+                                        Service.Configuration.Save();
+                                    }
+                                }
+
+                                ImGui.EndCombo();
+                            }
+
+                            ImGui.Text("Re-order Action");
+                            if (selectedActionIndex > 0)
+                            {
+                                ImGui.SameLine();
+                                if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowUp))
+                                {
+                                    selectedMacro.MacroActions.Reverse(selectedActionIndex - 1, 2);
+                                    selectedMacro.MacroStepOptions.Reverse(selectedActionIndex - 1, 2);
+                                    selectedActionIndex--;
                                     if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
                                         Service.Configuration.SetMacro = selectedMacro;
 
@@ -262,48 +293,68 @@ namespace Artisan.MacroSystem
                                 }
                             }
 
-                            ImGui.EndCombo();
-                        }
-
-                        ImGui.Text("Re-order Action");
-                        if (selectedActionIndex > 0)
-                        {
-                            ImGui.SameLine();
-                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowUp))
+                            if (selectedActionIndex < selectedMacro.MacroActions.Count - 1)
                             {
-                                selectedMacro.MacroActions.Reverse(selectedActionIndex -1, 2);
-                                selectedMacro.MacroStepOptions.Reverse(selectedActionIndex - 1, 2);
-                                selectedActionIndex--;
-                                if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
-                                    Service.Configuration.SetMacro = selectedMacro;
-
-                                Service.Configuration.Save();
-                            }
-                        }
-
-                        if (selectedActionIndex < selectedMacro.MacroActions.Count - 1)
-                        {
-                            ImGui.SameLine();
-                            if (selectedActionIndex == 0)
-                            {
-                                ImGui.Dummy(new Vector2(22));
                                 ImGui.SameLine();
+                                if (selectedActionIndex == 0)
+                                {
+                                    ImGui.Dummy(new Vector2(22));
+                                    ImGui.SameLine();
+                                }
+
+                                if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowDown))
+                                {
+                                    selectedMacro.MacroActions.Reverse(selectedActionIndex, 2);
+                                    selectedMacro.MacroStepOptions.Reverse(selectedActionIndex, 2);
+                                    selectedActionIndex++;
+                                    if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
+                                        Service.Configuration.SetMacro = selectedMacro;
+
+                                    Service.Configuration.Save();
+                                }
                             }
 
-                            if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowDown))
+                        }
+                        ImGui.Columns(1);
+                    }
+                    else
+                    {
+                        ImGui.Text($"Macro Actions (line per action)");
+                        ImGuiComponents.HelpMarker("You can either copy/paste macros directly as you would a normal game macro, or list each action on its own per line.\nFor example:\n/ac Muscle Memory\n\nis the same as\n\nMuscle Memory\n\nYou can also use * (asterisk) or 'Artisan Recommendation' to insert Artisan's recommendation as a step.");
+                        ImGui.InputTextMultiline("###MacroEditor", ref _rawMacro, 10000000, new Vector2(ImGui.GetContentRegionAvail().X - 30f, ImGui.GetContentRegionAvail().Y - 30f));
+                        if (ImGui.Button("Save"))
+                        {
+                            ParseMacro(_rawMacro, out Macro updated);
+                            if (updated.ID != 0 && !selectedMacro.MacroActions.SequenceEqual(updated.MacroActions))
                             {
-                                selectedMacro.MacroActions.Reverse(selectedActionIndex, 2);
-                                selectedMacro.MacroStepOptions.Reverse(selectedActionIndex, 2);
-                                selectedActionIndex++;
-                                if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
-                                    Service.Configuration.SetMacro = selectedMacro;
-
+                                selectedMacro.MacroActions = updated.MacroActions;
+                                selectedMacro.MacroStepOptions = updated.MacroStepOptions;
                                 Service.Configuration.Save();
+
+                                DuoLog.Information($"Macro Updated");
                             }
                         }
+                        ImGui.SameLine();
+                        if (ImGui.Button("Save and Close"))
+                        {
+                            ParseMacro(_rawMacro, out Macro updated);
+                            if (updated.ID != 0 && !selectedMacro.MacroActions.SequenceEqual(updated.MacroActions))
+                            {
+                                selectedMacro.MacroActions = updated.MacroActions;
+                                selectedMacro.MacroStepOptions = updated.MacroStepOptions;
+                                Service.Configuration.Save();
 
+                                DuoLog.Information($"Macro Updated");
+                            }
+
+                            Raweditor = !Raweditor;
+                        }
+                        ImGui.SameLine();
+                        if (ImGui.Button("Close"))
+                        {
+                            Raweditor = !Raweditor;
+                        }
                     }
-                    ImGui.Columns(1);
                     ImGuiEx.ImGuiLineCentered("MTimeHead", delegate
                     {
                         ImGuiEx.TextUnderlined($"Estimated Macro Length");
@@ -503,13 +554,19 @@ namespace Artisan.MacroSystem
         {
             macro = new();
             macro.Name = _newMacroName;
+            if (string.IsNullOrWhiteSpace(text)) 
+            {
+                macro.ID = 1;
+                return;
+            };
+
             using (System.IO.StringReader reader = new System.IO.StringReader(text))
             {
                 string line = "";
                 while ((line = reader.ReadLine()!) != null)
                 {
                     var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length < 2) continue;
+                    if (parts.Length < 1) continue;
 
                     if (parts[0].Equals("/ac", StringComparison.CurrentCultureIgnoreCase) || parts[0].Equals("/action", StringComparison.CurrentCultureIgnoreCase))
                     {
@@ -524,6 +581,13 @@ namespace Artisan.MacroSystem
                         action = action.Replace("\"", "");
                         if (string.IsNullOrEmpty(action)) continue;
 
+                        if (action.Equals("Artisan Recommendation", StringComparison.CurrentCultureIgnoreCase) || action.Equals("*"))
+                        {
+                            macro.MacroActions.Add(0);
+                            macro.MacroStepOptions.Add(new());
+                            continue;
+                        }
+
                         if (LuminaSheets.CraftActions.Values.Any(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0))
                         {
                             var act = LuminaSheets.CraftActions.Values.FirstOrDefault(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0);
@@ -532,6 +596,7 @@ namespace Artisan.MacroSystem
                                 Service.ChatGui.PrintError($"Unable to parse action: {action}");
                             }
                             macro.MacroActions.Add(act.RowId);
+                            macro.MacroStepOptions.Add(new());
                             continue;
 
                         }
@@ -543,6 +608,55 @@ namespace Artisan.MacroSystem
                                 Service.ChatGui.PrintError($"Unable to parse action: {action}");
                             }
                             macro.MacroActions.Add(act.RowId);
+                            macro.MacroStepOptions.Add(new());
+                            continue;
+
+                        }
+                    }
+                    else
+                    {
+                        if (parts[0].Contains("/", StringComparison.CurrentCultureIgnoreCase))
+                            continue;
+
+                        var builder = new StringBuilder();
+                        for (int i = 0; i < parts.Length; i++)
+                        {
+                            if (parts[i].Contains("<")) continue;
+                            builder.Append(parts[i]);
+                            builder.Append(" ");
+                        }
+                        var action = builder.ToString().Trim();
+                        action = action.Replace("\"", "");
+                        if (string.IsNullOrEmpty(action)) continue;
+
+                        if (action.Equals("Artisan Recommendation", StringComparison.CurrentCultureIgnoreCase) || action == "*")
+                        {
+                            macro.MacroActions.Add(0);
+                            macro.MacroStepOptions.Add(new());
+                            continue;
+                        }
+
+                        if (LuminaSheets.CraftActions.Values.Any(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0))
+                        {
+                            var act = LuminaSheets.CraftActions.Values.FirstOrDefault(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0);
+                            if (act == null)
+                            {
+                                Service.ChatGui.PrintError($"Unable to parse action: {action}");
+                            }
+                            macro.MacroActions.Add(act.RowId);
+                            macro.MacroStepOptions.Add(new());
+                            continue;
+
+                        }
+                        else
+                        {
+                            var act = LuminaSheets.ActionSheet.Values.FirstOrDefault(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0);
+                            if (act == null)
+                            {
+                                Service.ChatGui.PrintError($"Unable to parse action: {action}");
+                            }
+                            macro.MacroActions.Add(act.RowId);
+                            macro.MacroStepOptions.Add(new());
                             continue;
 
                         }

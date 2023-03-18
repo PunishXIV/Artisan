@@ -78,6 +78,8 @@ namespace Artisan.RawInformation
     {
         public static string NameOfAction(this uint id)
         {
+            if (id == 0) return "Artisan Recommendation";
+
             if (id < 100000)
             {
                 return LuminaSheets.ActionSheet[id].Name.RawString;

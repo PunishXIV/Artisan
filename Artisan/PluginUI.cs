@@ -191,6 +191,7 @@ namespace Artisan
             var baseX = addonPtr->X;
             var baseY = addonPtr->Y;
 
+            if (addonPtr->UldManager.NodeListCount >= 5)
             AtkResNodeFunctions.DrawEnduranceCounter(addonPtr->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[4]);
         }
 
@@ -227,7 +228,7 @@ namespace Artisan
             var baseX = addonPtr->X;
             var baseY = addonPtr->Y;
 
-            if (addonPtr->UldManager.NodeList[1]->IsVisible)
+            if (addonPtr->UldManager.NodeListCount >= 2 && addonPtr->UldManager.NodeList[1]->IsVisible)
                 AtkResNodeFunctions.DrawMacroOptions(addonPtr->UldManager.NodeList[1]);
         }
 
