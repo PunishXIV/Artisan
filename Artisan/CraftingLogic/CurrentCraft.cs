@@ -176,13 +176,13 @@ namespace Artisan.CraftingLogic
                     if (state == CraftingState.Crafting)
                     {
                         bool wasSuccess = CheckForSuccess();
-                        if (!wasSuccess && Service.Configuration.EnduranceStopFail)
+                        if (!wasSuccess && Service.Configuration.EnduranceStopFail && Handler.Enable)
                         {
                             Handler.Enable = false;
                             DuoLog.Error("You failed a craft. Disabling Endurance.");
                         }
 
-                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && LastCraftedItem.CanBeHq)
+                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && LastCraftedItem.CanBeHq && Handler.Enable)
                         {
                             Handler.Enable = false;
                             DuoLog.Error("You crafted a non-HQ item. Disabling Endurance.");
@@ -276,8 +276,7 @@ namespace Artisan.CraftingLogic
                 {
                     ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
                 }
-                var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Equals(ItemName) && x.CraftType.Value.RowId == CharacterInfo.JobID() - 8).FirstOrDefault();
-
+                var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.ExtractText().Equals(ItemName) && x.CraftType.Value.RowId == CharacterInfo.JobID() - 8).FirstOrDefault();
                 if (sheetItem != null)
                 {
                     Recipe = sheetItem;

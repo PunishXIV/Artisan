@@ -1,7 +1,9 @@
 ﻿using FFXIVClientStructs.Attributes;
 using FFXIVClientStructs.FFXIV.Client.System.String;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using FFXIVClientStructs.Interop;
 using FFXIVClientStructs.Interop.Attributes;
 using System;
 using System.Drawing;
@@ -66,6 +68,10 @@ public unsafe partial struct AgentSatisfactionSupply
     {
         [FieldOffset(0x00)] public uint Id;
         [FieldOffset(0x04)] public uint SatisfactionRank;
+        [FieldOffset(0x10)] public bool AgentOpen;
+        [FieldOffset(0x11)] public bool Unk11;
+        [FieldOffset(0x12)] public bool Unk12;
+        [FieldOffset(0x13)] public bool Unk13;
         [FieldOffset(0x14)] public ushort SelectedItemIndex;
         [FieldOffset(0x19)] public byte IsQuestSomething;
     }

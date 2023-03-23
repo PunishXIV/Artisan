@@ -155,7 +155,7 @@ namespace Artisan.Autocraft
                 var configPot = listItemOptions != null ? listItemOptions.Potion : Service.Configuration.Potion ;
                 var configPotHQ = listItemOptions != null ? listItemOptions.PotHQ : Service.Configuration.PotHQ;
 
-                var potBuff = Service.ClientState.LocalPlayer.StatusList.First(x => x.StatusId == 49 & x.RemainingTime > 0f);
+                var potBuff = Service.ClientState.LocalPlayer.StatusList.First(x => x.StatusId == 49);
                 var desiredPot = LuminaSheets.ItemSheet[configPot].ItemAction.Value;
                 var itemFood = LuminaSheets.ItemFoodSheet[configPotHQ ? desiredPot.DataHQ[1] : desiredPot.Data[1]];
                 if (potBuff.Param != (itemFood.RowId + (configPotHQ ? 10000 : 0)))

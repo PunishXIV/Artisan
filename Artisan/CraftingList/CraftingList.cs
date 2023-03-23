@@ -158,7 +158,7 @@ namespace Artisan.CraftingLists
             {
                 if (Throttler.Throttle(500))
                 {
-                    Service.ChatGui.PrintError("Insufficient materials for recipe. Moving on.");
+                    Service.ChatGui.PrintError($"Insufficient materials for {recipe.ItemResult.Value.Name.ExtractText()}. Moving on.");
                     var currentRecipe = selectedList.Items[CurrentIndex];
                     
                     while (currentRecipe == selectedList.Items[CurrentIndex])

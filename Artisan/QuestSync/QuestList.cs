@@ -180,6 +180,17 @@ namespace Artisan.QuestSync
             QuestManager* qm = QuestManager.Instance();
             foreach (var quest in qm->DailyQuestsSpan)
             {
+                if (quest.IsCompleted) continue;
+
+                if (Quests.TryGetValue(quest.QuestId, out var recipe))
+                {
+                    if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(GetRecipeForQuest(quest.QuestId)))
+                        return true;
+                }
+            }
+
+            foreach (var quest in qm->NormalQuestsSpan)
+            {
                 if (quest.QuestId == 1493)
                 {
                     var step1 = Quests[9998];
@@ -199,20 +210,14 @@ namespace Artisan.QuestSync
                 }
             }
 
-            foreach (var quest in qm->NormalQuestsSpan)
-            {
-                if (Quests.TryGetValue(quest.QuestId, out var recipe))
-                {
-                    if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(GetRecipeForQuest(quest.QuestId)))
-                        return true;
-                }
-            }
-
             return false;
         }
 
         public unsafe static bool IsOnQuest(ushort questId)
         {
+            if (questId == 9999 || questId == 9998)
+                questId = 1493;
+
             QuestManager* qm = QuestManager.Instance();
             foreach (var quest in qm->DailyQuestsSpan)
             {
@@ -234,58 +239,6 @@ namespace Artisan.QuestSync
             QuestManager* qm = QuestManager.Instance();
             foreach (var quest in qm->DailyQuestsSpan)
             {
-                if (quest.QuestId == 1493)
-                {
-                    var step1 = Quests[9998];
-                    var step2 = Quests[9999];
-
-                    if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(step1.CRP))
-                    {
-                        switch (CharacterInfo.JobID())
-                        {
-                            case 8:
-                                return step1.CRP;
-                            case 9:
-                                return step1.BSM;
-                            case 10:   
-                                return step1.ARM;
-                            case 11:   
-                                return step1.GSM;
-                            case 12:   
-                                return step1.LTW;
-                            case 13:   
-                                return step1.WVR;
-                            case 14:   
-                                return step1.ALC;
-                            case 15:   
-                                return step1.CUL;
-                        }
-                    }
-
-                    if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(step2.CRP))
-                    {
-                        switch (CharacterInfo.JobID())
-                        {
-                            case 8:
-                                return step2.CRP;
-                            case 9:
-                                return step2.BSM;
-                            case 10:
-                                return step2.ARM;
-                            case 11:
-                                return step2.GSM;
-                            case 12:
-                                return step2.LTW;
-                            case 13:
-                                return step2.WVR;
-                            case 14:
-                                return step2.ALC;
-                            case 15:
-                                return step2.CUL;
-                        }
-                    }
-                }
-
                 if (quest.QuestId > 0 && !quest.IsCompleted)
                 {
                     if (Quests.TryGetValue(questId, out var dict))
@@ -315,6 +268,58 @@ namespace Artisan.QuestSync
 
             foreach (var quest in qm->NormalQuestsSpan)
             {
+                if (quest.QuestId == 1493)
+                {
+                    var step1 = Quests[9998];
+                    var step2 = Quests[9999];
+
+                    if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(step1.CRP))
+                    {
+                        switch (CharacterInfo.JobID())
+                        {
+                            case 8:
+                                return step1.CRP;
+                            case 9:
+                                return step1.BSM;
+                            case 10:
+                                return step1.ARM;
+                            case 11:
+                                return step1.GSM;
+                            case 12:
+                                return step1.LTW;
+                            case 13:
+                                return step1.WVR;
+                            case 14:
+                                return step1.ALC;
+                            case 15:
+                                return step1.CUL;
+                        }
+                    }
+
+                    if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(step2.CRP))
+                    {
+                        switch (CharacterInfo.JobID())
+                        {
+                            case 8:
+                                return step2.CRP;
+                            case 9:
+                                return step2.BSM;
+                            case 10:
+                                return step2.ARM;
+                            case 11:
+                                return step2.GSM;
+                            case 12:
+                                return step2.LTW;
+                            case 13:
+                                return step2.WVR;
+                            case 14:
+                                return step2.ALC;
+                            case 15:
+                                return step2.CUL;
+                        }
+                    }
+                }
+
                 if (quest.QuestId > 0)
                 {
                     if (Quests.TryGetValue(questId, out var dict))

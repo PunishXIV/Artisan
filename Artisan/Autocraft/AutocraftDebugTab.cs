@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLogic;
+using Artisan.CustomDeliveries;
 using Artisan.QuestSync;
 using Artisan.RawInformation;
 using ECommons;
@@ -175,17 +176,14 @@ namespace Artisan.Autocraft
 
             if (ImGui.CollapsingHeader("Satisfaction Agent"))
             {
-                var ag = (CustomDeliveries.AgentSatisfactionSupply*)AgentModule.Instance()->GetAgentByInternalID((uint)AgentId.SatisfactionSupply);
-
-                ImGui.Text($"{ag->NpcInfo.SatisfactionRank}");
-                ImGui.Text($"{ag->RemainingAllowances}");
-
-                if (!ag->AgentInterface.IsAgentActive())
+                if (ImGui.Button($"Update Ameliance"))
                 {
-                    
+                    SatisfactionManagerHelper.UpdateByNPCId(1042241, 8);
                 }
 
-                foreach (var i in ag->DeliveryInfoSpan)
+                ImGui.Text($"{SatisfactionManagerHelper.Agent->NpcInfo.AgentOpen}, {SatisfactionManagerHelper.Agent->NpcInfo.Unk11}, {SatisfactionManagerHelper.Agent->NpcInfo.Unk12}, {SatisfactionManagerHelper.Agent->NpcInfo.Unk13}");
+                ImGui.Text($"{SatisfactionManagerHelper.Agent->NpcId} {SatisfactionManagerHelper.Agent->NpcInfo.Id}");
+                foreach (var i in SatisfactionManagerHelper.Agent->DeliveryInfoSpan)
                 {
                     ImGui.Text($"{i.ItemName}");
                 }

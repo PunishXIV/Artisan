@@ -450,10 +450,13 @@ namespace Artisan.Autocraft
 
                         if (firstCrystal > 0)
                         {
-                            if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value.Name.RawString == rName && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
+                            if (RecipeName != rName)
                             {
-                                RecipeID = (int)id.RowId;
-                                RecipeName = id.ItemResult.Value.Name;
+                                if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value?.Name!.ExtractText() == rName && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
+                                {
+                                    RecipeID = (int)id.RowId;
+                                    RecipeName = id.ItemResult.Value.Name.ExtractText();
+                                }
                             }
                         }
                     }

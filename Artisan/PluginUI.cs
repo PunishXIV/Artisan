@@ -11,13 +11,9 @@ using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
-using Newtonsoft.Json;
 using System;
-using System.IO;
-using System.Linq;
 using System.Numerics;
 using static Artisan.CraftingLogic.CurrentCraft;
-using static Artisan.MacroSystem.MacroUI;
 
 namespace Artisan
 {
@@ -77,7 +73,7 @@ namespace Artisan
             if (!Service.Configuration.DisableMiniMenu)
             {
                 if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] || Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
-                ShowConfigOnRecipeWindow();
+                    ShowConfigOnRecipeWindow();
 
                 DrawEnduranceModeCounterOnRecipe();
 
@@ -173,6 +169,7 @@ namespace Artisan
                                 }
                             }
                         }
+
                     }
                 }
             }
@@ -192,7 +189,7 @@ namespace Artisan
             var baseY = addonPtr->Y;
 
             if (addonPtr->UldManager.NodeListCount >= 5)
-            AtkResNodeFunctions.DrawEnduranceCounter(addonPtr->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[4]);
+                AtkResNodeFunctions.DrawEnduranceCounter(addonPtr->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[4]);
         }
 
         private unsafe void ShowConfigOnRecipeWindow()
@@ -323,7 +320,7 @@ namespace Artisan
                 if (Service.Configuration.CraftingX && Handler.Enable)
                 {
                     ImGui.Text($"Remaining Crafts: {Service.Configuration.CraftX}");
-                    if(Service.Configuration.IndividualMacros.TryGetValue((uint)Handler.RecipeID, out var prevMacro) && prevMacro != null)
+                    if (Service.Configuration.IndividualMacros.TryGetValue((uint)Handler.RecipeID, out var prevMacro) && prevMacro != null)
                     {
                         Macro? macro = Service.Configuration.IndividualMacros[(uint)Handler.RecipeID];
                         if (macro != null)

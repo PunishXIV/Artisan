@@ -92,6 +92,9 @@ namespace Artisan.RawInformation
 
         public static string NameOfQuest(this ushort id)
         {
+            if (id == 9998 || id == 9999)
+                id = 1493;
+
             if (id > 0)
             {
                 var digits = id.ToString().Length;

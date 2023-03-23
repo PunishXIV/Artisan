@@ -45,6 +45,7 @@ namespace Artisan.CraftingLists
         private static bool renameMode = false;
         private static string? renameList;
         public static bool Minimized = false;
+        private static int timesToAdd = 1;
 
         internal static void Draw()
         {
@@ -644,8 +645,15 @@ namespace Artisan.CraftingLists
                 {
                     ImGui.Text($"Raw Ingredients Required");
                     DrawRecipeSubTable();
+
                 }
+
+                ImGui.PushItemWidth(ImGui.GetContentRegionAvail().Length() / 2f);
+                ImGui.TextWrapped("Number of times to add");
+                ImGui.SameLine();
+                ImGui.InputInt("###TimesToAdd", ref timesToAdd, 1, 5);
                 ImGui.PushItemWidth(-1f);
+
                 if (ImGui.Button("Add to List", new Vector2(ImGui.GetContentRegionAvail().X / 2, 30)))
                 {
                     SelectedListMateralsNew.Clear();

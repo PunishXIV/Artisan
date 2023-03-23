@@ -1,5 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.CustomDeliveries;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Game;
@@ -28,6 +29,7 @@ namespace Artisan
         public static bool currentCraftFinished = false;
         public static readonly object _lockObj = new();
         public static List<Task> Tasks = new();
+        public static bool warningMessage = false;
 
         public Artisan(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
@@ -60,6 +62,7 @@ namespace Artisan
             StepChanged += ResetRecommendation;
             ConsumableChecker.Init();
             Handler.Init();
+            //SatisfactionManagerHelper.Enable();
             CleanUpIndividualMacros();
         }
 
@@ -163,6 +166,19 @@ namespace Artisan
             GetCraft();
             if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0 && Tasks.Count == 0 && CurrentStep >= 1)
             {
+                if (Recipe is null && !warningMessage)
+                {
+                    DuoLog.Error("Warning: Your recipe cannot be parsed in Artisan. Please report this to the Discord with the recipe name and client language.");
+                    warningMessage = true;
+                }
+                else
+                {
+                    warningMessage = false;
+                }
+
+                if (warningMessage)
+                    return;
+
                 var delay = Service.Configuration.DelayRecommendation ? Service.Configuration.RecommendationDelay : 0;
                 Tasks.Add(Service.Framework.RunOnTick(() => FetchRecommendation(CurrentStep), TimeSpan.FromMilliseconds(delay)));
             }
@@ -435,6 +451,7 @@ namespace Artisan
             Service.Framework.Update -= FireBot;
 
             ActionWatching.Dispose();
+            SatisfactionManagerHelper.Dispose();
             Service.Plugin = null!;
         }
 

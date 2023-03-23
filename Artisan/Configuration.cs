@@ -71,6 +71,7 @@ namespace Artisan
 
         public int RepairPercent = 50;
 
+        [NonSerialized]
         public bool CraftingX = false;
 
         public bool UseExperminentalRotation { get; set; } = false;
