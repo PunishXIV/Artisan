@@ -34,6 +34,7 @@ public unsafe class Artisan : IDalamudPlugin
     internal PluginUI PluginUi;
     internal WindowSystem ws;
     internal Configuration config;
+    internal CraftingWindow cw;
 
     public static bool currentCraftFinished = false;
     public static readonly object _lockObj = new();
@@ -54,6 +55,7 @@ public unsafe class Artisan : IDalamudPlugin
         ECommonsMain.Init(pluginInterface, this, Module.DalamudReflector);
         P = this;
         ws = new();
+        cw = new();
         PluginUi = new();
         config = Service.Configuration;
 
@@ -76,6 +78,10 @@ public unsafe class Artisan : IDalamudPlugin
         Handler.Init();
 
         ws.AddWindow(new RecipeWindowUI());
+        ws.AddWindow(new ProcessingWindow());
+        ws.AddWindow(new QuestHelper());
+        ws.AddWindow(cw);
+
         Style = StyleModel.Deserialize("DS1H4sIAAAAAAAACqVYS3ObOhT+L6w9HZ4CvGuS22bRdDJNOu29OxkrNjUxFGP3kcl/75F0jiSwO3MBb4Swvu+8jyRePO4tgzf+wlt5yxfvq7fM5ORfNb4uvMJb+vLFGkeBq3xc5b9JYNUTcCy8Db7eImOJc77Ch28IZggOlYgd/lvh+IyrYlzF1Kr9AKvf1hffNvg2wreRevsd1FLGtfAAohfegR46NPuIKpxw/IHjTxx/GesTx/rfZz6R4ji/qEVRg50v3qP42RlY5kd5GDAEZ3KSpAvvPznLE5axMAV5X5RbgUJib8oDX1VibThY4ueZHyMHS7M4CmLkUJMojR2OL+V+Xf+42ljVmfqlZIGZKobAT7IsjBKX4npbVuuJDNpF93VzbFyGjLAZouSDWp7HsP6qbteitcvzOAhSRqGwUy0wVh7RjoNA+UHO/MywPGw5OGCG8u9a/iwc5QMZNZYRg5Qm/Y4MoSYkcxKtqqW5rU+idcIZpkok2Rb24hklIdgaIldsWd4WXXmyJRoZFyiSyKSSYokpzxQLQ4Eyv8quErNSAxkG6kzmua6rijcHxz3jqe7E/njFWzdgVCzGr4ELeChaELvqQcZniWF538o2OD5XgnOayblygWtyxlAPEMXujre7v/ShLJdlFyCeyS4UMleXqoRa7PlmrDWGYaYpV8euq2mXgQWhkhUi3KxX6CRM4tx3C1Cjh5GJQQEAEkkCNR+nxhuyBcRUf7lW13INzEnkWp/2CEYcWkB0TnIruNsrR3WnSJJEeWRoZnSnzJDMjM+DaHjLu3qiTbb/G6IZVtGO6tLNaL5O3D6JQ/lbvG/LZnq3sBwzW4Ulmhm8x2nND9IHW6rmmBMxWT5JrnlmhKrH83n/VBdHd2MaZVyeyj4yoJrp6Zu62JX7zX0rTqWw55tYNizQBmlSfeQ0h8xeP0tNqSDZP89N98vZBqmfhWSWI/++qrsP5V4c7I4QUNOyne8SYBjcnOKne6f2A2nMdF4kA6Lb8tDVGzgMWZZe38yk82LyHqPZZY4zhfrndHST2RLk8dOtQghqJXTr6x0TTWpc8J7C4AG1a+u9xUXkRfmA+X0Z+KHcbO3dQu4NOlgmCc9wnybfBPwByduKJKsbIBCoEZBq1AiGd5gHUYmiE+4dYkyaRnppKPO05Zubtm4eebsR3ejYw0qT8h/56RYcWPWcmMCxBUSbwEsXUJuxWWGcChz6fgW1MyT7u1/SAfKmfHY8Q1cjyjfqIdL8u3rNK437f6AoeZVXargzeEvvmndNcyyKcu/BPV9fT/nkKlyNObEE9I1h7HlJA9fjT2saaNtrxqIwN+0arEkZ1Ukegzj3RvA09cK+mdpCthMKQyNLG4aeS/tFkOk90sHRJxrJKTcy6Q0dPwkzoUhVHji43cSGWxmcqSptoNn2tIFmHzVI2+IJQxXpxmw/8WJST639xhqkdTafZEi+Rp67Ar5PTcsSeyI2XtK43tkj143b1dXu0WOCBkDYF+Gf1z+6Z+sXPRQAAA==");
         CleanUpIndividualMacros();
     }
@@ -177,6 +183,9 @@ public unsafe class Artisan : IDalamudPlugin
         else
             ActionWatching.TryEnable();
 
+        if (!Handler.Enable)
+            Handler.DrawRecipeData();
+
         GetCraft();
         if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0 && Tasks.Count == 0 && CurrentStep >= 1)
         {
@@ -221,13 +230,13 @@ public unsafe class Artisan : IDalamudPlugin
             }
 
 #if DEBUG
-            if (PluginUi.repeatTrial && Service.Configuration.CraftingX && Service.Configuration.CraftX > 0)
+            if (cw.repeatTrial && Service.Configuration.CraftingX && Service.Configuration.CraftX > 0)
             {
                 Service.Configuration.CraftX -= 1;
                 if (Service.Configuration.CraftX == 0)
                 {
                     Service.Configuration.CraftingX = false;
-                    PluginUi.repeatTrial = false;
+                    cw.repeatTrial = false;
                 }
             }
 #endif
@@ -235,7 +244,7 @@ public unsafe class Artisan : IDalamudPlugin
 
 
 #if DEBUG
-        if (PluginUi.repeatTrial)
+        if (cw.repeatTrial)
         {
             RepeatTrialCraft();
         }

@@ -14,9 +14,9 @@ namespace Artisan
 {
     internal class RecipeWindowUI : Window
     {
-        public RecipeWindowUI() : base($"###RecipeWindow")
+        public RecipeWindowUI() : base($"###RecipeWindow", ImGuiWindowFlags.ChildWindow)
         {
-           IsOpen = true;
+            IsOpen = true;
             ShowCloseButton = false;
             RespectCloseHotkey = false;
         }
@@ -32,6 +32,24 @@ namespace Artisan
 
             }
             DrawMacroOptions();
+        }
+
+        public override void PreDraw()
+        {
+            if (!P.config.DisableTheme)
+            {
+                P.Style.Push();
+                P.StylePushed = true;
+            }
+        }
+
+        public override void PostDraw()
+        {
+            if (P.StylePushed)
+            {
+                P.Style.Pop();
+                P.StylePushed = false;
+            }
         }
 
 

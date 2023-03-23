@@ -1061,55 +1061,7 @@ namespace Artisan.CraftingLists
 
         }
 
-        public unsafe static void DrawProcessingWindow()
-        {
-            if (Processing)
-            {
-                Service.Framework.RunOnFrameworkThread(() => CraftingListFunctions.ProcessList(selectedList));
-                //ImGui.SetNextWindowSize(new Vector2(1000, 1000));
-                ImGui.SetNextWindowSize(new Vector2(375, 330), ImGuiCond.FirstUseEver);
-                if (ImGui.Begin("Processing List", ref Processing, ImGuiWindowFlags.AlwaysAutoResize))
-                {
-                    if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
-                    {
-                        P.PluginUi.Visible = true;
-                    }
-
-                    ImGui.Text($"Now Processing: {selectedList.Name}");
-                    ImGui.Separator();
-                    ImGui.Spacing();
-                    if (CurrentProcessedItem != 0)
-                    {
-                        ImGuiEx.TextV($"Trying to craft: {FilteredList[CurrentProcessedItem].ItemResult.Value.Name.RawString}");
-                        ImGuiEx.TextV($"Overall Progress: {CraftingListFunctions.CurrentIndex + 1} / {selectedList.Items.Count}");
-                    }
-
-                    if (!CraftingListFunctions.Paused)
-                    {
-                        if (ImGui.Button("Pause"))
-                        {
-                            CraftingListFunctions.Paused = true;
-                        }
-                    }
-                    else
-                    {
-                        if (ImGui.Button("Resume"))
-                        {
-                            CraftingListFunctions.OpenCraftingMenu();
-                            CraftingListFunctions.Paused = false;
-                        }
-                    }
-
-                    ImGui.SameLine();
-                    if (ImGui.Button("Cancel"))
-                    {
-                        Processing = false;
-                    }
-
-
-                }
-            }
-        }
+        
 
         public static Recipe? GetIngredientRecipe(string ingredient)
         {
