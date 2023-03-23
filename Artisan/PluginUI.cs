@@ -3,23 +3,22 @@ using Artisan.CraftingLists;
 using Artisan.MacroSystem;
 using Artisan.QuestSync;
 using Artisan.RawInformation;
-using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using Dalamud.Plugin;
 using ECommons.DalamudServices;
-using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using System;
 using System.Numerics;
 using static Artisan.CraftingLogic.CurrentCraft;
 
-namespace Artisan
+namespace Artisan.UI
 {
     // It is good to have this be disposable in general, in case you ever need it
     // to do any cleanup
-    public class PluginUI : IDisposable
+    unsafe internal class PluginUI : Window
     {
         public event EventHandler<bool>? CraftingWindowStateChanged;
 
@@ -52,9 +51,33 @@ namespace Artisan
         private static readonly string? CurrentSelectedCraft;
 
         private readonly IDalamudPlugin Plugin;
-        public PluginUI(Artisan plugin)
+
+        public PluginUI() : base($"{P.Name} {P.GetType().Assembly.GetName().Version}###Artisan")
         {
-            Plugin = plugin;
+            this.SizeConstraints = new()
+            {
+                MinimumSize = new(250, 100),
+                MaximumSize = new(9999, 9999)
+            };
+            P.ws.AddWindow(this);
+        }
+
+        public override void PreDraw()
+        {
+            if (!P.config.DisableTheme)
+            {
+                P.Style.Push();
+                P.StylePushed = true;
+            }
+        }
+
+        public override void PostDraw()
+        {
+            if (P.StylePushed)
+            {
+                P.Style.Pop();
+                P.StylePushed = false;
+            }
         }
 
         public void Dispose()
@@ -62,7 +85,7 @@ namespace Artisan
 
         }
 
-        public void Draw()
+        public override void Draw()
         {
             DrawCraftingWindow();
             CraftingListUI.DrawProcessingWindow();
@@ -70,73 +93,56 @@ namespace Artisan
             if (!Handler.Enable)
                 Handler.DrawRecipeData();
 
-            if (!Service.Configuration.DisableMiniMenu)
-            {
-                if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] || Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
-                    ShowConfigOnRecipeWindow();
-
-                DrawEnduranceModeCounterOnRecipe();
-
-            }
-            DrawMacroChoiceOnRecipe();
-
             if (!Service.Configuration.HideQuestHelper)
                 DrawQuestHelperWindow();
 
             if (!Service.Configuration.DisableHighlightedAction)
                 Hotbars.MakeButtonsGlow(CurrentRecommendation);
 
-            if (!Visible)
-            {
-                return;
-            }
 
-            ImGui.SetWindowSize(new Vector2(500, 500), ImGuiCond.FirstUseEver);
-            if (ImGui.Begin("Artisan", ref visible, ImGuiWindowFlags.AlwaysUseWindowPadding))
+            if (ImGui.BeginTabBar("TabBar"))
             {
-                if (ImGui.BeginTabBar("TabBar"))
+                if (ImGui.BeginTabItem("Settings"))
                 {
-                    if (ImGui.BeginTabItem("Settings"))
-                    {
-                        DrawMainWindow();
-                        ImGui.EndTabItem();
-                    }
-                    if (ImGui.BeginTabItem("Endurance/Auto-Repeat Mode"))
-                    {
-                        Handler.Draw();
-                        ImGui.EndTabItem();
-                    }
-                    if (ImGui.BeginTabItem("Macros"))
-                    {
-                        MacroUI.Draw();
-                        ImGui.EndTabItem();
-                    }
-                    if (ImGui.BeginTabItem("Crafting List (BETA)"))
-                    {
-                        CraftingListUI.Draw();
-                        ImGui.EndTabItem();
-                    }
+                    DrawMainWindow();
+                    ImGui.EndTabItem();
+                }
+                if (ImGui.BeginTabItem("Endurance/Auto-Repeat Mode"))
+                {
+                    Handler.Draw();
+                    ImGui.EndTabItem();
+                }
+                if (ImGui.BeginTabItem("Macros"))
+                {
+                    MacroUI.Draw();
+                    ImGui.EndTabItem();
+                }
+                if (ImGui.BeginTabItem("Crafting List (BETA)"))
+                {
+                    CraftingListUI.Draw();
+                    ImGui.EndTabItem();
+                }
 
-                    if (ImGui.BeginTabItem("About"))
-                    {
-                        PunishLib.ImGuiMethods.AboutTab.Draw(Plugin);
-                        ImGui.EndTabItem();
-                    }
+                if (ImGui.BeginTabItem("About"))
+                {
+                    PunishLib.ImGuiMethods.AboutTab.Draw(P);
+                    ImGui.EndTabItem();
+                }
 #if DEBUG
-                    if (ImGui.BeginTabItem("Debug"))
-                    {
-                        AutocraftDebugTab.Draw();
-                        ImGui.EndTabItem();
-                    }
-#endif
-                    ImGui.EndTabBar();
-                }
-                if (!visible)
+                if (ImGui.BeginTabItem("Debug"))
                 {
-                    Service.Configuration.Save();
-                    PluginLog.Information("Configuration saved");
+                    AutocraftDebugTab.Draw();
+                    ImGui.EndTabItem();
                 }
+#endif
+                ImGui.EndTabBar();
             }
+            if (!visible)
+            {
+                Service.Configuration.Save();
+                PluginLog.Information("Configuration saved");
+            }
+
         }
 
         private void DrawQuestHelperWindow()
@@ -177,56 +183,12 @@ namespace Artisan
 
         private unsafe void DrawEnduranceModeCounterOnRecipe()
         {
-            var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
-            if (recipeWindow == IntPtr.Zero)
-                return;
 
-            var addonPtr = (AtkUnitBase*)recipeWindow;
-            if (addonPtr == null)
-                return;
-
-            var baseX = addonPtr->X;
-            var baseY = addonPtr->Y;
-
-            if (addonPtr->UldManager.NodeListCount >= 5)
-                AtkResNodeFunctions.DrawEnduranceCounter(addonPtr->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[4]);
-        }
-
-        private unsafe void ShowConfigOnRecipeWindow()
-        {
-            var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
-            if (recipeWindow == IntPtr.Zero)
-                return;
-
-            var addonPtr = (AtkUnitBase*)recipeWindow;
-            if (addonPtr == null)
-                return;
-
-            var baseX = addonPtr->X;
-            var baseY = addonPtr->Y;
-
-            if (addonPtr->UldManager.NodeListCount > 1)
-            {
-                if (addonPtr->UldManager.NodeList[1]->IsVisible)
-                    AtkResNodeFunctions.DrawOptions(addonPtr->UldManager.NodeList[1]);
-            }
         }
 
         private unsafe void DrawMacroChoiceOnRecipe()
         {
-            var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
-            if (recipeWindow == IntPtr.Zero)
-                return;
 
-            var addonPtr = (AtkUnitBase*)recipeWindow;
-            if (addonPtr == null)
-                return;
-
-            var baseX = addonPtr->X;
-            var baseY = addonPtr->Y;
-
-            if (addonPtr->UldManager.NodeListCount >= 2 && addonPtr->UldManager.NodeList[1]->IsVisible)
-                AtkResNodeFunctions.DrawMacroOptions(addonPtr->UldManager.NodeList[1]);
         }
 
         //private static string CalculateEstimate(string itemName)
@@ -286,10 +248,10 @@ namespace Artisan
             ImGui.SetNextWindowSize(new Vector2(375, 330), ImGuiCond.FirstUseEver);
             if (ImGui.Begin("Artisan Crafting Window", ref this.craftingVisible, ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.AlwaysAutoResize))
             {
-                if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
-                {
-                    visible = true;
-                }
+                //if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
+                //{
+                //    visible = true;
+                //}
 
                 bool autoMode = Service.Configuration.AutoMode;
 
@@ -537,6 +499,13 @@ namespace Artisan
                 if (ImGui.Checkbox($"Hide Quest Helper", ref hideQuestHelper))
                 {
                     Service.Configuration.HideQuestHelper = hideQuestHelper;
+                    Service.Configuration.Save();
+                }
+
+                bool hideTheme = Service.Configuration.DisableTheme;
+                if (ImGui.Checkbox("Disable Custom Theme", ref hideTheme))
+                {
+                    Service.Configuration.DisableTheme = hideTheme;
                     Service.Configuration.Save();
                 }
 

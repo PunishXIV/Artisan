@@ -1072,7 +1072,7 @@ namespace Artisan.CraftingLists
                 {
                     if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
                     {
-                        Artisan.PluginUi.Visible = true;
+                        P.PluginUi.Visible = true;
                     }
 
                     ImGui.Text($"Now Processing: {selectedList.Name}");

@@ -11,7 +11,6 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 using static Artisan.CraftingLogic.CurrentCraft;
 
@@ -261,7 +260,7 @@ namespace Artisan.CraftingLogic
                 var collectMid = *craft.CollectabilityMid;
                 var collectHigh = *craft.CollectabilityHigh;
                 var item = *craft.ItemName;
-                
+
 
                 CharacterInfo.IsCrafting = true;
                 CurrentDurability = Convert.ToInt32(cd.NodeText.ToString());
@@ -276,12 +275,18 @@ namespace Artisan.CraftingLogic
                 {
                     ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
                 }
-                var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.ExtractText().Equals(ItemName) && x.CraftType.Value.RowId == CharacterInfo.JobID() - 8).FirstOrDefault();
-                if (sheetItem != null)
+                if (Recipe?.ItemResult.Value.Name.ExtractText() != ItemName)
                 {
-                    Recipe = sheetItem;
+                    var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.ExtractText().Equals(ItemName) && x.CraftType.Value.RowId == CharacterInfo.JobID() - 8).FirstOrDefault();
+                    if (sheetItem != null)
+                    {
+                        Recipe = sheetItem;
+                    }
+                }
 
-                    if (sheetItem.CanHq)
+                if (Recipe is not null)
+                {
+                    if (Recipe.CanHq)
                     {
                         CanHQ = true;
                         HighQualityPercentage = Convert.ToInt32(hqp.NodeText.ToString());
@@ -1277,7 +1282,7 @@ namespace Artisan.CraftingLogic
         }
     }
 
-    
+
 
     public static class CraftingActionExtensions
     {
