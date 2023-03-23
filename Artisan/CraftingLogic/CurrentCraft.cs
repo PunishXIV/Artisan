@@ -276,12 +276,18 @@ namespace Artisan.CraftingLogic
                 {
                     ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
                 }
-                var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.ExtractText().Equals(ItemName) && x.CraftType.Value.RowId == CharacterInfo.JobID() - 8).FirstOrDefault();
-                if (sheetItem != null)
-                {
-                    Recipe = sheetItem;
 
-                    if (sheetItem.CanHq)
+                if (Recipe is null || Recipe.ItemResult.Value.Name.ExtractText() == ItemName)
+                {
+                    var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.ExtractText().Equals(ItemName) && x.CraftType.Value.RowId == CharacterInfo.JobID() - 8).FirstOrDefault();
+                    if (sheetItem != null)
+                    {
+                        Recipe = sheetItem;
+                    }
+                }
+                if (Recipe != null)
+                {
+                    if (Recipe.CanHq)
                     {
                         CanHQ = true;
                         HighQualityPercentage = Convert.ToInt32(hqp.NodeText.ToString());
