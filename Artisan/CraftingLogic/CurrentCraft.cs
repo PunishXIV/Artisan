@@ -277,7 +277,7 @@ namespace Artisan.CraftingLogic
                     ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
                 }
 
-                if (Recipe is null || Recipe.ItemResult.Value.Name.ExtractText() == ItemName)
+                if (Recipe is null || Recipe.ItemResult.Value.Name.ExtractText() != ItemName)
                 {
                     var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.ExtractText().Equals(ItemName) && x.CraftType.Value.RowId == CharacterInfo.JobID() - 8).FirstOrDefault();
                     if (sheetItem != null)
