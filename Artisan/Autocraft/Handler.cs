@@ -3,7 +3,6 @@ using Artisan.CraftingLogic;
 using Artisan.RawInformation;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Components;
-using Dalamud.Logging;
 using Dalamud.Utility.Signatures;
 using ECommons;
 using ECommons.CircularBuffers;
@@ -18,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using static ECommons.GenericHelpers;
 using PluginLog = Dalamud.Logging.PluginLog;
 
@@ -35,7 +35,7 @@ namespace Artisan.Autocraft
         internal static string RecipeName { get => recipeName; set { if (value != recipeName) PluginLog.Verbose($"{value}"); recipeName = value; } }
         internal static CircularBuffer<long> Errors = new(5);
         private static string recipeName = "";
-
+        public static List<Task> Tasks = new();
 
 
         internal static void Init()
@@ -170,27 +170,30 @@ namespace Artisan.Autocraft
                 }
                 if (AutocraftDebugTab.Debug) PluginLog.Verbose("Consumables success");
                 {
-                    if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
+                    if (CraftingListFunctions.RecipeWindowOpen())
                     {
                         if (AutocraftDebugTab.Debug) PluginLog.Verbose("Addon visible");
-                        if (addon->UldManager.NodeListCount >= 88 && !addon->UldManager.NodeList[88]->GetAsAtkTextNode()->AtkResNode.IsVisible)
+
+                        if (AutocraftDebugTab.Debug) PluginLog.Verbose("Error text not visible");
+                        if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
                         {
-                            if (AutocraftDebugTab.Debug) PluginLog.Verbose("Error text not visible");
-                            if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
-                            {
-                                if (AutocraftDebugTab.Debug) PluginLog.Verbose("HQ data finalised");
-                                return;
-                            }
-                            if (AutocraftDebugTab.Debug) PluginLog.Verbose("HQ data restored");
-                            CurrentCraft.RepeatActualCraft();
+                            if (AutocraftDebugTab.Debug) PluginLog.Verbose("HQ data finalised");
+                            return;
                         }
+                        if (AutocraftDebugTab.Debug) PluginLog.Verbose("HQ data restored");
+
+                        if (Tasks.Count == 0)
+                        {
+                            Tasks.Add(Service.Framework.RunOnTick(CurrentCraft.RepeatActualCraft, TimeSpan.FromMilliseconds(300)));
+                        }
+
                     }
                     else
                     {
                         if (!Svc.Condition[ConditionFlag.Crafting])
                         {
                             if (AutocraftDebugTab.Debug) PluginLog.Verbose("Addon invisible");
-                            if (Throttler.Throttle(1000))
+                            if (Tasks.Count == 0 && !Svc.Condition[ConditionFlag.Crafting40])
                             {
                                 if (AutocraftDebugTab.Debug) PluginLog.Verbose("Opening crafting log");
                                 if (RecipeID == 0)
@@ -205,6 +208,7 @@ namespace Artisan.Autocraft
                             }
                         }
                     }
+
                 }
             }
         }

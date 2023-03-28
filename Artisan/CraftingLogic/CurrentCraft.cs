@@ -261,7 +261,7 @@ namespace Artisan.CraftingLogic
                 var collectMid = *craft.CollectabilityMid;
                 var collectHigh = *craft.CollectabilityHigh;
                 var item = *craft.ItemName;
-                
+
 
                 CharacterInfo.IsCrafting = true;
                 CurrentDurability = Convert.ToInt32(cd.NodeText.ToString());
@@ -904,17 +904,8 @@ namespace Artisan.CraftingLogic
                     return;
 
                 var synthButton = addonPtr->TrialSynthesisButton;
-
-                if (synthButton != null && !synthButton->IsEnabled)
-                {
-                    synthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
-                }
-                else
-                {
-                    return;
-                }
-
                 ClickRecipeNote.Using(recipeWindow).TrialSynthesis();
+                Handler.Tasks.Clear();
             }
             catch (Exception ex)
             {
@@ -1069,6 +1060,8 @@ namespace Artisan.CraftingLogic
                     {
                         Dalamud.Logging.PluginLog.Verbose("AddonRecipeNote: Selecting synth");
                         ClickRecipeNote.Using(recipeWindow).Synthesize();
+
+                        Handler.Tasks.Clear();
                     }
                     catch (Exception e)
                     {
@@ -1113,7 +1106,7 @@ namespace Artisan.CraftingLogic
         {
             ActionManager* actionManager = ActionManager.Instance();
             if (actionManager == null)
-                return 0;
+                return 1;
 
             if (LuminaSheets.ActionSheet.TryGetValue(id, out var act1))
             {
@@ -1126,7 +1119,7 @@ namespace Artisan.CraftingLogic
                 return canUse;
             }
 
-            return 0;
+            return 1;
         }
 
         internal static bool CanUse(uint id)
@@ -1283,7 +1276,7 @@ namespace Artisan.CraftingLogic
         }
     }
 
-    
+
 
     public static class CraftingActionExtensions
     {

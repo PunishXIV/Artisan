@@ -120,8 +120,6 @@ namespace Artisan
 
         private void ResetRecommendation(object? sender, int e)
         {
-            CurrentRecommendation = 0;
-
             if (e == 0)
             {
                 ManipulationUsed = false;
@@ -235,7 +233,6 @@ namespace Artisan
             {
                 try
                 {
-
                     CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
 
                     if (Service.Configuration.UseMacroMode && Service.Configuration.UserMacros.Count > 0)

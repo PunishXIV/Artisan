@@ -648,6 +648,7 @@ namespace Artisan.CraftingLists
 
                 }
 
+                ImGui.Spacing();
                 ImGui.PushItemWidth(ImGui.GetContentRegionAvail().Length() / 2f);
                 ImGui.TextWrapped("Number of times to add");
                 ImGui.SameLine();
@@ -659,14 +660,17 @@ namespace Artisan.CraftingLists
                     SelectedListMateralsNew.Clear();
                     listMaterialsNew.Clear();
 
-                    if (selectedList.Items.IndexOf(SelectedRecipe.RowId) == -1)
+                    for (int i = 0; i < timesToAdd; i++)
                     {
-                        selectedList.Items.Add(SelectedRecipe.RowId);
-                    }
-                    else
-                    {
-                        var indexOfLast = selectedList.Items.IndexOf(SelectedRecipe.RowId);
-                        selectedList.Items.Insert(indexOfLast, SelectedRecipe.RowId);
+                        if (selectedList.Items.IndexOf(SelectedRecipe.RowId) == -1)
+                        {
+                            selectedList.Items.Add(SelectedRecipe.RowId);
+                        }
+                        else
+                        {
+                            var indexOfLast = selectedList.Items.IndexOf(SelectedRecipe.RowId);
+                            selectedList.Items.Insert(indexOfLast, SelectedRecipe.RowId);
+                        }
                     }
                     Service.Configuration.Save();
                 }
@@ -676,56 +680,57 @@ namespace Artisan.CraftingLists
                     SelectedListMateralsNew.Clear();
                     listMaterialsNew.Clear();
 
-                    foreach (var subItem in SelectedRecipe.UnkData5)
-                    {
-                        var subRecipe = GetIngredientRecipe(subItem.ItemIngredient);
-                        if (subRecipe.RowId != 0)
+                    for (int p = 0; p < timesToAdd; p++) {
+                        foreach (var subItem in SelectedRecipe.UnkData5)
                         {
-                            foreach (var subsubItem in subRecipe.UnkData5)
+                            var subRecipe = GetIngredientRecipe(subItem.ItemIngredient);
+                            if (subRecipe.RowId != 0)
                             {
-                                var subsubRecipe = GetIngredientRecipe(subsubItem.ItemIngredient);
-                                if (subsubRecipe.RowId != 0)
+                                foreach (var subsubItem in subRecipe.UnkData5)
                                 {
-                                    for (int i = 1; i <= Math.Ceiling((double)subsubItem.AmountIngredient / (double)subsubRecipe.AmountResult); i++)
+                                    var subsubRecipe = GetIngredientRecipe(subsubItem.ItemIngredient);
+                                    if (subsubRecipe.RowId != 0)
                                     {
-                                        if (selectedList.Items.IndexOf(subsubRecipe.RowId) == -1)
+                                        for (int i = 1; i <= Math.Ceiling((double)subsubItem.AmountIngredient / (double)subsubRecipe.AmountResult); i++)
                                         {
-                                            selectedList.Items.Add(subsubRecipe.RowId);
-                                        }
-                                        else
-                                        {
-                                            var indexOfLast = selectedList.Items.IndexOf(subsubRecipe.RowId);
-                                            selectedList.Items.Insert(indexOfLast, subsubRecipe.RowId);
-                                        }
+                                            if (selectedList.Items.IndexOf(subsubRecipe.RowId) == -1)
+                                            {
+                                                selectedList.Items.Add(subsubRecipe.RowId);
+                                            }
+                                            else
+                                            {
+                                                var indexOfLast = selectedList.Items.IndexOf(subsubRecipe.RowId);
+                                                selectedList.Items.Insert(indexOfLast, subsubRecipe.RowId);
+                                            }
 
+                                        }
+                                    }
+                                }
+                                for (int i = 1; i <= Math.Ceiling((double)subItem.AmountIngredient / (double)subRecipe.AmountResult); i++)
+                                {
+                                    if (selectedList.Items.IndexOf(subRecipe.RowId) == -1)
+                                    {
+                                        selectedList.Items.Add(subRecipe.RowId);
+                                    }
+                                    else
+                                    {
+                                        var indexOfLast = selectedList.Items.IndexOf(subRecipe.RowId);
+                                        selectedList.Items.Insert(indexOfLast, subRecipe.RowId);
                                     }
                                 }
                             }
-                            for (int i = 1; i <= Math.Ceiling((double)subItem.AmountIngredient / (double)subRecipe.AmountResult); i++)
-                            {
-                                if (selectedList.Items.IndexOf(subRecipe.RowId) == -1)
-                                {
-                                    selectedList.Items.Add(subRecipe.RowId);
-                                }
-                                else
-                                {
-                                    var indexOfLast = selectedList.Items.IndexOf(subRecipe.RowId);
-                                    selectedList.Items.Insert(indexOfLast, subRecipe.RowId);
-                                }
-                            }
+                        }
+
+                        if (selectedList.Items.IndexOf(SelectedRecipe.RowId) == -1)
+                        {
+                            selectedList.Items.Add(SelectedRecipe.RowId);
+                        }
+                        else
+                        {
+                            var indexOfLast = selectedList.Items.IndexOf(SelectedRecipe.RowId);
+                            selectedList.Items.Insert(indexOfLast, SelectedRecipe.RowId);
                         }
                     }
-
-                    if (selectedList.Items.IndexOf(SelectedRecipe.RowId) == -1)
-                    {
-                        selectedList.Items.Add(SelectedRecipe.RowId);
-                    }
-                    else
-                    {
-                        var indexOfLast = selectedList.Items.IndexOf(SelectedRecipe.RowId);
-                        selectedList.Items.Insert(indexOfLast, SelectedRecipe.RowId);
-                    }
-
                     Service.Configuration.Save();
                 }
             }
@@ -853,7 +858,7 @@ namespace Artisan.CraftingLists
                 foreach (var recipe in CraftableItems.Where(x => x.Value).Select(x => x.Key).Where(x => x.ItemResult.Value.Name.RawString.Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
                 {
                     ImGui.PushID((int)recipe.RowId);
-                    var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.RawString} ({LuminaSheets.ClassJobSheet[recipe.CraftType.Row + 8].Name.RawString} {recipe.RecipeLevelTable.Value.ClassJobLevel})", recipe.RowId == SelectedRecipe?.RowId);
+                    var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.RawString} ({LuminaSheets.ClassJobSheet[recipe.CraftType.Row + 8].Abbreviation.RawString} {recipe.RecipeLevelTable.Value.ClassJobLevel})", recipe.RowId == SelectedRecipe?.RowId);
 
                     if (selected)
                     {
