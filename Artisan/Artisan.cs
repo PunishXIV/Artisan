@@ -82,7 +82,7 @@ public unsafe class Artisan : IDalamudPlugin
         ws.AddWindow(new QuestHelper());
         ws.AddWindow(cw);
 
-        Style = StyleModel.Deserialize("DS1H4sIAAAAAAAACqVYS3ObOhT+L6w9HZ4CvGuS22bRdDJNOu29OxkrNjUxFGP3kcl/75F0jiSwO3MBb4Swvu+8jyRePO4tgzf+wlt5yxfvq7fM5ORfNb4uvMJb+vLFGkeBq3xc5b9JYNUTcCy8Db7eImOJc77Ch28IZggOlYgd/lvh+IyrYlzF1Kr9AKvf1hffNvg2wreRevsd1FLGtfAAohfegR46NPuIKpxw/IHjTxx/GesTx/rfZz6R4ji/qEVRg50v3qP42RlY5kd5GDAEZ3KSpAvvPznLE5axMAV5X5RbgUJib8oDX1VibThY4ueZHyMHS7M4CmLkUJMojR2OL+V+Xf+42ljVmfqlZIGZKobAT7IsjBKX4npbVuuJDNpF93VzbFyGjLAZouSDWp7HsP6qbteitcvzOAhSRqGwUy0wVh7RjoNA+UHO/MywPGw5OGCG8u9a/iwc5QMZNZYRg5Qm/Y4MoSYkcxKtqqW5rU+idcIZpkok2Rb24hklIdgaIldsWd4WXXmyJRoZFyiSyKSSYokpzxQLQ4Eyv8quErNSAxkG6kzmua6rijcHxz3jqe7E/njFWzdgVCzGr4ELeChaELvqQcZniWF538o2OD5XgnOayblygWtyxlAPEMXujre7v/ShLJdlFyCeyS4UMleXqoRa7PlmrDWGYaYpV8euq2mXgQWhkhUi3KxX6CRM4tx3C1Cjh5GJQQEAEkkCNR+nxhuyBcRUf7lW13INzEnkWp/2CEYcWkB0TnIruNsrR3WnSJJEeWRoZnSnzJDMjM+DaHjLu3qiTbb/G6IZVtGO6tLNaL5O3D6JQ/lbvG/LZnq3sBwzW4Ulmhm8x2nND9IHW6rmmBMxWT5JrnlmhKrH83n/VBdHd2MaZVyeyj4yoJrp6Zu62JX7zX0rTqWw55tYNizQBmlSfeQ0h8xeP0tNqSDZP89N98vZBqmfhWSWI/++qrsP5V4c7I4QUNOyne8SYBjcnOKne6f2A2nMdF4kA6Lb8tDVGzgMWZZe38yk82LyHqPZZY4zhfrndHST2RLk8dOtQghqJXTr6x0TTWpc8J7C4AG1a+u9xUXkRfmA+X0Z+KHcbO3dQu4NOlgmCc9wnybfBPwByduKJKsbIBCoEZBq1AiGd5gHUYmiE+4dYkyaRnppKPO05Zubtm4eebsR3ejYw0qT8h/56RYcWPWcmMCxBUSbwEsXUJuxWWGcChz6fgW1MyT7u1/SAfKmfHY8Q1cjyjfqIdL8u3rNK437f6AoeZVXargzeEvvmndNcyyKcu/BPV9fT/nkKlyNObEE9I1h7HlJA9fjT2saaNtrxqIwN+0arEkZ1Ukegzj3RvA09cK+mdpCthMKQyNLG4aeS/tFkOk90sHRJxrJKTcy6Q0dPwkzoUhVHji43cSGWxmcqSptoNn2tIFmHzVI2+IJQxXpxmw/8WJST639xhqkdTafZEi+Rp67Ar5PTcsSeyI2XtK43tkj143b1dXu0WOCBkDYF+Gf1z+6Z+sXPRQAAA==");
+        Style = StyleModel.Deserialize("DS1H4sIAAAAAAAACq1YS3PbNhD+Kx2eNR6AAAFQt9hu40Pc8cTuuM2NlmiJFS2qFOU8PPnvXTwWAEHJddPqQgDcb9+7WOolq7I5PSOz7CGbv2S/Z/Ncb/7I5uUZ+T7LFvDWnCwdWe3IyFlhyOAJZI/wdpatkHjtiBv9Hp7Vg1v86dDmLaCFEbLJ5koftO7Fk6NSjio3VFt3yt0pN6ddcsrM6c5raU+JOf0LWBkBPQgC0bNsjxoPsADoLDsYFrPs2bH87J5fHLOvR+3/dlReVbljNlJu0YGhL9ld/WVI3GGen9zz3jyBXhNeNvvqoa2XbwLcN9tl9/l85ZXKJaE8z51qtGCCFUwZJHFIclYygF6sm3YZIYkQPCdCcjQr7C047A0TLf6m2x12MQ+FYC9SoUwO9Oddv6x7T86ZI9eLT87T9+hpS3y7rsDCqdMTk7Q2v/TVUx37oiBlnmPwcsK5KIV0QJorcFUpUCAPDK6657r3AdDvMP7oC70wsAj1bjE0z6FmBIIEggSChNShboZ2pKwkhVJeW1rkJac0jVxRSloIHvCJVKZKykngQkoKfAXa7LeGmcoVKTgLzC66tq12+8j0H+R3XW8P51UfmUfRHXphwTzK49tFD7IfRpDXQu3p3/e646C2BSkKhsr6nUH73VSm5pHGnFNMTeoY6MVxbBKDAqF6YdMlhl6s68Xmuuo3IVV04FnhE5WZ2Odp0Zr8YEJLbxuojJHpJ3PU6esRaZpKTFMsDL3wuPPDMHTYjnX6cVIWpddUlUIprF2ak0LmpZrqa7mkLmaCQ/KUGGWpOKNMYryivesfUM2KcM8uMYQrTgXUtM9UIiVUi89U3KbMruoqbklCkIIK4UPBSsUkm4SCg+Kk8PCxadiyddLxnEM4T4fS4tOg/OuEqHdVXw3dW1urp/9vMZG24nnMMW1IPxrkj/W++Va/75twwUtkoxcGrxcGmBcjSGqWxHtJLyxSxc04IP8v9e/i2ixM88EKZRTiSwSGM2xtExUWPbmEIA8p8WFlhElO/OUctjYwVm3LKS0UWQomdZm6iwZsyLnvyn47ZfTb9rFbHOLrgQjPBu5S+KF7KVcEfgwdI3Oe8Ei0oqxweJvywrDDiwaqKGpKl91i02xXN3393NRhNMixanW8DMz3IhlQPz/thq/xvYsSHSaPBN203fCh2db7kEgCxiuJgrgghJrAWi39dsrhVIfw5Tm6mjTsqtkP3QpmCy/cp/+oERxBnBKG7hyNnHrYtF0ovq5Rll5M/GIwbjwb+m4bcAzvPr2Y2hUBPzSrNQ7FusX5XofyJriPo0H3tekgkL9r/2nw1knsJu/buq0XQx0Pxa/kFNMt57KvVpd9t7ur+lV9SlTUsgHya/V8Bba3Y/tPybH2A8ZO+pDAKfi0YTJBXjZPkWlYaliyaFeu57duWbUW9zYQOEN/t8EgnM2z877b1NufrrvDdqiabQaflPY7qJpk5NhB1tjQOGWS8PFkAp+rb6CK+ic6eHQdWqr6Td9aj8EL/j4xK+sJd6NY2tXEUkkwsjHP9SSfxRHJzYTK91lmfhEtfndriXo+8J9zR6RvTiZs3MPawDF1dSliN4ZOhUJ9Z4yowjRJqeWX1omlw8/9YDRn1oVj54T5QOj37lvPazhyDvwtkISlINioYp5hjlLKN3vPE+7riDZcDspfXxgew91RAil0ZTj9/jfcHqYJihEAAA==");
         CleanUpIndividualMacros();
     }
 
@@ -138,27 +138,25 @@ public unsafe class Artisan : IDalamudPlugin
         }
     }
 
-    private void ResetRecommendation(object? sender, int e)
-    {
-        CurrentRecommendation = 0;
-
-        if (e == 0)
+        private void ResetRecommendation(object? sender, int e)
         {
-            ManipulationUsed = false;
-            JustUsedObserve = false;
-            VenerationUsed = false;
-            InnovationUsed = false;
-            WasteNotUsed = false;
-            JustUsedFinalAppraisal = false;
-            BasicTouchUsed = false;
-            StandardTouchUsed = false;
-            AdvancedTouchUsed = false;
-            ExpertCraftOpenerFinish = false;
-            MacroStep = 0;
+            if (e == 0)
+            {
+                ManipulationUsed = false;
+                JustUsedObserve = false;
+                VenerationUsed = false;
+                InnovationUsed = false;
+                WasteNotUsed = false;
+                JustUsedFinalAppraisal = false;
+                BasicTouchUsed = false;
+                StandardTouchUsed = false;
+                AdvancedTouchUsed = false;
+                ExpertCraftOpenerFinish = false;
+                MacroStep = 0;
+            }
+            if (e > 0)
+                Tasks.Clear();
         }
-        if (e > 0)
-            Tasks.Clear();
-    }
 
     public static bool CheckIfCraftFinished()
     {
@@ -252,14 +250,13 @@ public unsafe class Artisan : IDalamudPlugin
 
     }
 
-    public static void FetchRecommendation(int e)
-    {
-        lock (_lockObj)
+        public static void FetchRecommendation(int e)
         {
-            try
+            lock (_lockObj)
             {
-
-                CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
+                try
+                {
+                    CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
 
                 if (Service.Configuration.UseMacroMode && Service.Configuration.UserMacros.Count > 0)
                 {

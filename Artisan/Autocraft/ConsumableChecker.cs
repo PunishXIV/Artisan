@@ -219,16 +219,16 @@ namespace Artisan.Autocraft
             var fooded = IsFooded(listItemOptions) || desiredFood == 0;
             if (!fooded)
             {
-                if (GetFood(true, desiredFoodHQ).Any())
+                if (GetFood(true, desiredFoodHQ).Any(x => x.Id == desiredFood))
                 {
-                    if(use) UseItem(desiredFood, desiredFoodHQ);
+                    if (use) UseItem(desiredFood, desiredFoodHQ);
                     return false;
                 }
                 else
                 {
                     if (Handler.Enable)
                     {
-                        DuoLog.Information("Food not found. Disabling Endurance.");
+                        DuoLog.Error("Food not found. Disabling Endurance.");
                         Handler.Enable = false;
                     }
                     fooded = !Service.Configuration.AbortIfNoFoodPot;
@@ -237,7 +237,7 @@ namespace Artisan.Autocraft
             var potted = IsPotted(listItemOptions) || Service.Configuration.Potion == 0;
             if (!potted)
             {
-                if (GetPots(true, desiredPotHQ).Any())
+                if (GetPots(true, desiredPotHQ).Any(x => x.Id == desiredPot))
                 {
                     if (use) UseItem(desiredPot, desiredPotHQ);
                     return false;
@@ -246,7 +246,7 @@ namespace Artisan.Autocraft
                 {
                     if (Handler.Enable)
                     {
-                        DuoLog.Information("Potion not found. Disabling Endurance.");
+                        DuoLog.Error("Potion not found. Disabling Endurance.");
                         Handler.Enable = false;
                     }
                     potted = !Service.Configuration.AbortIfNoFoodPot;
@@ -257,7 +257,7 @@ namespace Artisan.Autocraft
                 var manualed = IsManualled() || Service.Configuration.Manual == 0;
                 if (!manualed)
                 {
-                    if (GetManuals(true).Any())
+                    if (GetManuals(true).Any(x => x.Id == Service.Configuration.Manual))
                     {
                         if (use) UseItem(Service.Configuration.Manual);
                         return false;
@@ -266,7 +266,7 @@ namespace Artisan.Autocraft
                     {
                         if (Handler.Enable)
                         {
-                            DuoLog.Information("Manual not found. Disabling Endurance.");
+                            DuoLog.Error("Manual not found. Disabling Endurance.");
                             Handler.Enable = false;
                         }
                         manualed = !Service.Configuration.AbortIfNoFoodPot;
@@ -275,7 +275,7 @@ namespace Artisan.Autocraft
                 var squadronManualed = IsSquadronManualled() || Service.Configuration.SquadronManual == 0;
                 if (!squadronManualed)
                 {
-                    if (GetSquadronManuals(true).Any())
+                    if (GetSquadronManuals(true).Any(x => x.Id == Service.Configuration.SquadronManual))
                     {
                         if (use) UseItem(Service.Configuration.SquadronManual);
                         return false;
@@ -284,7 +284,7 @@ namespace Artisan.Autocraft
                     {
                         if (Handler.Enable)
                         {
-                            DuoLog.Information("Squadron Manual not found. Disabling Endurance.");
+                            DuoLog.Error("Squadron Manual not found. Disabling Endurance.");
                             Handler.Enable = false;
                         }
                         squadronManualed = !Service.Configuration.AbortIfNoFoodPot;

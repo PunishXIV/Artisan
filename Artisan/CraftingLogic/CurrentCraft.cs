@@ -275,7 +275,8 @@ namespace Artisan.CraftingLogic
                 {
                     ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
                 }
-                if (Recipe is null || Recipe?.ItemResult.Value.Name.ExtractText() != ItemName)
+
+                if (Recipe is null || Recipe.ItemResult.Value.Name.ExtractText() != ItemName)
                 {
                     var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.ExtractText().Equals(ItemName) && x.CraftType.Value.RowId == CharacterInfo.JobID() - 8).FirstOrDefault();
                     if (sheetItem != null)
@@ -283,8 +284,7 @@ namespace Artisan.CraftingLogic
                         Recipe = sheetItem;
                     }
                 }
-
-                if (Recipe is not null)
+                if (Recipe != null)
                 {
                     if (Recipe.CanHq)
                     {
@@ -903,17 +903,8 @@ namespace Artisan.CraftingLogic
                     return;
 
                 var synthButton = addonPtr->TrialSynthesisButton;
-
-                if (synthButton != null && !synthButton->IsEnabled)
-                {
-                    synthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
-                }
-                else
-                {
-                    return;
-                }
-
                 ClickRecipeNote.Using(recipeWindow).TrialSynthesis();
+                Handler.Tasks.Clear();
             }
             catch (Exception ex)
             {
@@ -1068,6 +1059,8 @@ namespace Artisan.CraftingLogic
                     {
                         Dalamud.Logging.PluginLog.Verbose("AddonRecipeNote: Selecting synth");
                         ClickRecipeNote.Using(recipeWindow).Synthesize();
+
+                        Handler.Tasks.Clear();
                     }
                     catch (Exception e)
                     {
@@ -1112,7 +1105,7 @@ namespace Artisan.CraftingLogic
         {
             ActionManager* actionManager = ActionManager.Instance();
             if (actionManager == null)
-                return 0;
+                return 1;
 
             if (LuminaSheets.ActionSheet.TryGetValue(id, out var act1))
             {
@@ -1125,7 +1118,7 @@ namespace Artisan.CraftingLogic
                 return canUse;
             }
 
-            return 0;
+            return 1;
         }
 
         internal static bool CanUse(uint id)

@@ -1,17 +1,12 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
-using Artisan.MacroSystem;
-using Artisan.QuestSync;
 using Artisan.RawInformation;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
-using Dalamud.Plugin;
-using ECommons.DalamudServices;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+using ECommons.ImGuiMethods;
+using ECommons.Reflection;
 using ImGuiNET;
 using System;
-using System.Numerics;
 using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan.UI
@@ -24,7 +19,7 @@ namespace Artisan.UI
 
         // this extra bool exists for ImGui, since you can't ref a property
         private bool visible = false;
-
+        public OpenWindow OpenWindow { get; private set; } = OpenWindow.None;
 
         public bool Visible
         {
@@ -45,10 +40,6 @@ namespace Artisan.UI
             get { return this.craftingVisible; }
             set { if (this.craftingVisible != value) CraftingWindowStateChanged?.Invoke(this, value); this.craftingVisible = value; }
         }
-
-        private static readonly string? CurrentSelectedCraft;
-
-        private readonly IDalamudPlugin Plugin;
 
         public PluginUI() : base($"{P.Name} {P.GetType().Assembly.GetName().Version}###Artisan")
         {
@@ -86,48 +77,120 @@ namespace Artisan.UI
 
         public override void Draw()
         {
-            if (ImGui.BeginTabBar("TabBar"))
-            {
-                if (ImGui.BeginTabItem("Settings"))
-                {
-                    DrawMainWindow();
-                    ImGui.EndTabItem();
-                }
-                if (ImGui.BeginTabItem("Endurance/Auto-Repeat Mode"))
-                {
-                    Handler.Draw();
-                    ImGui.EndTabItem();
-                }
-                if (ImGui.BeginTabItem("Macros"))
-                {
-                    MacroUI.Draw();
-                    ImGui.EndTabItem();
-                }
-                if (ImGui.BeginTabItem("Crafting List (BETA)"))
-                {
-                    CraftingListUI.Draw();
-                    ImGui.EndTabItem();
-                }
 
-                if (ImGui.BeginTabItem("About"))
-                {
-                    PunishLib.ImGuiMethods.AboutTab.Draw(P);
-                    ImGui.EndTabItem();
-                }
-#if DEBUG
-                if (ImGui.BeginTabItem("Debug"))
-                {
-                    AutocraftDebugTab.Draw();
-                    ImGui.EndTabItem();
-                }
-#endif
-                ImGui.EndTabBar();
-            }
-            if (!visible)
+            ImGui.Columns(2, "###MainWindow", false);
+            ImGui.SetColumnWidth(0, ImGui.GetContentRegionAvail().Length() / 3);
+
+            if (ThreadLoadImageHandler.TryGetTextureWrap("https://love.puni.sh/resources/artisan.png", out var logo))
             {
-                Service.Configuration.Save();
-                PluginLog.Information("Configuration saved");
+                ImGui.Image(logo.ImGuiHandle, new(ImGui.GetContentRegionAvail().X - 30f.Scale(), ImGui.GetContentRegionAvail().X - 30f.Scale()));
             }
+
+            if (ImGui.Selectable("Settings"))
+            {
+                OpenWindow = OpenWindow.Main;
+            }
+
+            if (ImGui.Selectable("Endurance"))
+            {
+                OpenWindow = OpenWindow.Endurance;
+            }
+
+            if (ImGui.Selectable("Crafting Lists"))
+            {
+                OpenWindow = OpenWindow.Lists;
+            }
+
+            if (ImGui.Selectable("About"))
+            {
+                OpenWindow = OpenWindow.About;
+            }
+
+            if (ImGui.Selectable("DEBUG"))
+            {
+                OpenWindow = OpenWindow.Debug;
+            }
+
+            if (OpenWindow == OpenWindow.Main)
+            {
+                ImGui.NextColumn();
+                DrawMainWindow();
+                ImGui.NextColumn();
+            }
+
+            if (OpenWindow == OpenWindow.Endurance)
+            {
+                ImGui.NextColumn();
+                Handler.Draw();
+                ImGui.NextColumn();
+            }
+
+            if (OpenWindow == OpenWindow.Lists)
+            {
+                ImGui.NextColumn();
+                CraftingListUI.Draw();
+                ImGui.NextColumn();
+            }
+
+            if (OpenWindow == OpenWindow.About)
+            {
+                ImGui.NextColumn();
+                PunishLib.ImGuiMethods.AboutTab.Draw(P);
+                ImGui.NextColumn();
+            }
+
+            if (OpenWindow == OpenWindow.Debug)
+            {
+                ImGui.NextColumn();
+                AutocraftDebugTab.Draw();
+                ImGui.NextColumn();
+            }
+
+            ImGui.Columns(1);
+
+
+            //            if (ImGui.BeginTabBar("TabBar"))
+            //            {
+            //                if (ImGui.BeginTabItem("Settings"))
+            //                {
+            //                    DrawMainWindow();
+            //                    ImGui.EndTabItem();
+            //                }
+            //                if (ImGui.BeginTabItem("Endurance/Auto-Repeat Mode"))
+            //                {
+            //                    Handler.Draw();
+            //                    ImGui.EndTabItem();
+            //                }
+            //                if (ImGui.BeginTabItem("Macros"))
+            //                {
+            //                    MacroUI.Draw();
+            //                    ImGui.EndTabItem();
+            //                }
+            //                if (ImGui.BeginTabItem("Crafting List (BETA)"))
+            //                {
+            //                    CraftingListUI.Draw();
+            //                    ImGui.EndTabItem();
+            //                }
+
+            //                if (ImGui.BeginTabItem("About"))
+            //                {
+            //                    PunishLib.ImGuiMethods.AboutTab.Draw(P);
+            //                    ImGui.EndTabItem();
+            //                }
+            //#if DEBUG
+            //                if (ImGui.BeginTabItem("Debug"))
+            //                {
+            //                    AutocraftDebugTab.Draw();
+            //                    ImGui.EndTabItem();
+            //                }
+            //#endif
+            //                ImGui.EndTabBar();
+            //            }
+            //            if (!visible)
+            //            {
+            //                Service.Configuration.Save();
+            //                PluginLog.Information("Configuration saved");
+            //            }
 
         }
 
@@ -194,7 +257,7 @@ namespace Artisan.UI
             bool disableToasts = Service.Configuration.DisableToasts;
             bool disableMini = Service.Configuration.DisableMiniMenu;
 
-            ImGui.Separator();
+            //ImGui.Separator();
             if (ImGui.CollapsingHeader("Mode Selections"))
             {
                 if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
@@ -367,42 +430,17 @@ namespace Artisan.UI
                 }
 
             }
-
-
-
-            //if (ImGui.Checkbox($"Automatically Repeat Last Craft", ref autoCraft))
-            //{
-            //    Service.Configuration.AutoCraft = autoCraft;
-            //    Service.Configuration.Save();
-            //}
-            //ImGuiComponents.HelpMarker($"Repeats the currently selected craft in your recipe list.\nWill only work whilst you have the items.\nThis will repeat using your set item quality settings.");
-
-            //if (ImGui.Checkbox($"Disable Failure Prediction", ref failureCheck))
-            //{
-            //    Service.Configuration.DisableFailurePrediction = failureCheck;
-            //    Service.Configuration.Save();
-            //}
-            //ImGuiComponents.HelpMarker($"Disabling failure prediction may result in items failing to be crafted.\nUse at your own discretion.");
-
-            //if (ImGui.Checkbox("Show Estimated HQ on Recipe (EHQ)", ref showEHQ))
-            //{
-            //    Service.Configuration.ShowEHQ = showEHQ;
-            //    Service.Configuration.Save();
-
-            //}
-            //ImGuiComponents.HelpMarker($"This will mark in the crafting list an estimated HQ chance based on your current stats.\nThis does not factor in any HQ items used as materials.\nIt is also only a rough estimate due to the nature of crafting.");
-
-            //if (showEHQ)
-            //{
-            //    ImGui.Indent();
-            //    if (ImGui.Checkbox("Use Simulated Starting Quality in Estimates", ref useSimulated))
-            //    {
-            //        Service.Configuration.UseSimulatedStartingQuality = useSimulated;
-            //        Service.Configuration.Save();
-            //    }
-            //    ImGuiComponents.HelpMarker($"Set a starting quality as if you were using HQ items for calculating EHQ.");
-            //    ImGui.Unindent();
-            //}
         }
+    }
+
+    public enum OpenWindow
+    {
+        None = 0,
+        Main = 1,
+        Endurance = 2,
+        Macro = 3,
+        Lists = 4,
+        About = 5,
+        Debug = 6
     }
 }
