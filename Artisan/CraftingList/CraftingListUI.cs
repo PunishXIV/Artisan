@@ -101,7 +101,6 @@ namespace Artisan.CraftingLists
 
                 if (Service.Configuration.CraftingLists.Count > 0)
                 {
-                    ImGui.BeginGroup();
                     float longestName = 0;
                     foreach (var list in Service.Configuration.CraftingLists)
                     {
@@ -132,9 +131,10 @@ namespace Artisan.CraftingLists
 
                         Teamcraft.DrawTeamCraftListButtons();
 
-                        ImGui.EndChild();
+                        
 
                     }
+                    ImGui.EndChild();
                 }
                 else
                 {
@@ -466,8 +466,10 @@ namespace Artisan.CraftingLists
 
                     DrawRecipeData();
 
-                    ImGui.EndChild();
+                   
                 }
+
+                ImGui.EndChild();
             }
 
 

@@ -93,8 +93,9 @@ namespace Artisan.MacroSystem
                                 _rawMacro = string.Join("\r\n", m.MacroActions.Select(x => $"{x.NameOfAction()}"));
                             }
                         }
-                        ImGui.EndChild();
+                        
                     }
+                    ImGui.EndChild();
                 }
 
                 if (selectedMacro.ID != 0)

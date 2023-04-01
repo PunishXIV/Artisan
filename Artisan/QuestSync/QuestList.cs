@@ -1,6 +1,12 @@
-﻿using Artisan.RawInformation;
+﻿using Artisan.Autocraft;
+using Artisan.RawInformation;
+using Dalamud.Game.ClientState.Objects;
+using Dalamud.Game.ClientState.Objects.Types;
+using ECommons.DalamudServices;
+using ECommons.GameFunctions;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Artisan.QuestSync
 {
@@ -162,18 +168,13 @@ namespace Artisan.QuestSync
 
         };
 
-        public unsafe static bool IsOnQuest()
+        public static readonly Dictionary<uint, EmoteConverter> EmoteQuests = new Dictionary<uint, EmoteConverter>()
         {
-            QuestManager* qm = QuestManager.Instance();
-            foreach (var quest in qm->DailyQuestsSpan)
-            {
-                if (quest.QuestId > 0 && !quest.IsCompleted)
-                    return true;
-            }
-
-            return false;
-
-        }
+            { 3919, new() { NPCDataId = 1033697, Emote = "/psych" } },
+            { 4690, new() { NPCDataId = 1044568, Emote = "/dance" } },
+            { 9998, new() { NPCDataId = 1017624, Emote = "/psych" } }, //2318
+            { 9999, new() { NPCDataId = 1017625, Emote = "/slap" } }, //2318
+        };
 
         public unsafe static bool HasIngredientsForAny()
         {
@@ -349,6 +350,196 @@ namespace Artisan.QuestSync
 
             return 0;
         }
+
+        internal unsafe static bool IsOnSayQuest()
+        {
+            QuestManager* qm = QuestManager.Instance();
+            foreach (var quest in qm->DailyQuestsSpan)
+            {
+                if (!quest.IsCompleted)
+                {
+                    if (quest.QuestId == 2295) return true;
+                    if (quest.QuestId == 3909) return true;
+                    if (quest.QuestId == 4700) return true;
+                    if (quest.QuestId == 1497) return true;
+                    if (quest.QuestId == 3104) return true;
+                    if (quest.QuestId == 1515) return true;
+                    if (quest.QuestId == 1507) return true;
+                    if (quest.QuestId == 1501) return true;
+                    if (quest.QuestId == 1568) return true;
+                }
+            }
+
+            return false;
+        }
+        internal unsafe static bool IsOnEmoteQuest()
+        {
+            QuestManager* qm = QuestManager.Instance();
+            foreach (var quest in qm->DailyQuestsSpan)
+            {
+                if (!quest.IsCompleted)
+                {
+                    if (quest.QuestId == 4690) return true;
+                    if (quest.QuestId == 3919) return true;
+                    if (quest.QuestId == 2318) return true;
+                }
+            }
+
+            return false;
+        }
+
+        internal unsafe static void DoEmoteQuest(ushort questId)
+        {
+            if (EmoteQuests.TryGetValue(questId, out var data))
+            {
+                if (Svc.Objects.Any(x => x.DataId == data.NPCDataId))
+                {
+                    var npc = Svc.Objects.First(x => x.DataId == data.NPCDataId);
+                    Svc.Targets.Target = npc;
+                }
+                if (Svc.Targets.Target != null && Svc.Targets.Target.DataId == data.NPCDataId)
+                {
+                    CommandProcessor.ExecuteThrottled(data.Emote!);
+                }
+            }
+        }
+
+        internal unsafe static string GetSayQuestString(ushort questId)
+        {
+            foreach (var quest in QuestManager.Instance()->DailyQuestsSpan)
+            {
+                if (quest.IsCompleted && quest.QuestId == questId) return "";
+            }
+            if (questId == 2295)
+            {
+                switch (Svc.ClientState.ClientLanguage)
+                {
+                    case Dalamud.ClientLanguage.English:
+                        return "free kupo nuts";
+                    case Dalamud.ClientLanguage.French:
+                        return "Je sais où trouver des noix de kupo";
+                    case Dalamud.ClientLanguage.German:
+                        return "Kupo-Nüsse für alle Helfer!";
+                    case Dalamud.ClientLanguage.Japanese:
+                        return "クポの実あるよ";
+                }
+
+            }
+            if (questId == 3909)
+            {
+                switch (Svc.ClientState.ClientLanguage)
+                {
+                    case Dalamud.ClientLanguage.French:
+                    case Dalamud.ClientLanguage.English:
+                        return "lali-ho";
+                    case Dalamud.ClientLanguage.German:
+                        return "Holladrio";
+                    case Dalamud.ClientLanguage.Japanese:
+                        return "ラリホー";
+                }
+            }
+            if (questId == 4700)
+            {
+                switch (Svc.ClientState.ClientLanguage)
+                {
+                    case Dalamud.ClientLanguage.English:
+                        return "dream bigger";
+                    case Dalamud.ClientLanguage.Japanese:
+                        return "ドリームマシマシ";
+                    case Dalamud.ClientLanguage.German:
+                        return "Traummaschine";
+                    case Dalamud.ClientLanguage.French:
+                        return "rêves à gogo";
+                }
+            }
+            if (questId == 1497)
+            {
+                switch (Svc.ClientState.ClientLanguage)
+                {
+                    case Dalamud.ClientLanguage.English:
+                        return "With the Wind";
+                    case Dalamud.ClientLanguage.French:
+                        return "Tel le vent";
+                    case Dalamud.ClientLanguage.German:
+                        return "Sei eins mit dem Wind!";
+                    case Dalamud.ClientLanguage.Japanese:
+                        return "風のごとく！";
+                }
+            }
+            if (questId == 3104)
+            {
+                switch (Svc.ClientState.ClientLanguage)
+                {
+                    case Dalamud.ClientLanguage.English:
+                        return "his whiskers";
+                    case Dalamud.ClientLanguage.French:
+                        return "la gloire de la grande frairie";
+                    case Dalamud.ClientLanguage.German:
+                        return "Große Flosse";
+                    case Dalamud.ClientLanguage.Japanese:
+                        return "おおなまずのまにまに";
+                }
+            }
+            if (questId == 1515)
+            {
+                switch (Svc.ClientState.ClientLanguage)
+                {
+                    case Dalamud.ClientLanguage.English:
+                        return "Now Fall";
+                    case Dalamud.ClientLanguage.French:
+                        return "Nous nous envolerons";
+                    case Dalamud.ClientLanguage.German:
+                        return "Ab durch die Wolken!";
+                    case Dalamud.ClientLanguage.Japanese:
+                        return "天を翔ける！";
+                }
+            }
+            if (questId == 1507)
+            {
+                switch (Svc.ClientState.ClientLanguage)
+                {
+                    case Dalamud.ClientLanguage.English:
+                        return "High as Honor";
+                    case Dalamud.ClientLanguage.French:
+                        return "Haut dans le ciel";
+                    case Dalamud.ClientLanguage.German:
+                        return "Hoch hinaus!";
+                    case Dalamud.ClientLanguage.Japanese:
+                        return "もっと高く！";
+                }
+            }
+            if (questId == 1501)
+            {
+                switch (Svc.ClientState.ClientLanguage)
+                {
+                    case Dalamud.ClientLanguage.English:
+                        return "Wings Unbending";
+                    case Dalamud.ClientLanguage.French:
+                        return "Ayatlan, terre sacrée";
+                    case Dalamud.ClientLanguage.German:
+                        return "Mögen deine Schwingen nie brechen!";
+                    case Dalamud.ClientLanguage.Japanese:
+                        return "折れぬ翼を！";
+                }
+            }
+            if (questId == 1568)
+            {
+                switch (Svc.ClientState.ClientLanguage)
+                {
+                    case Dalamud.ClientLanguage.English:
+                        return "Amid the Flowers";
+                    case Dalamud.ClientLanguage.French:
+                        return "Bientôt nous retrouverons";
+                    case Dalamud.ClientLanguage.German:
+                        return "Der unerfüllte Traum der Ixal!";
+                    case Dalamud.ClientLanguage.Japanese:
+                        return "果てぬ夢を！";
+                }
+            }
+
+
+            return "";
+        }
     }
 
     public class RecipeConverter
@@ -361,5 +552,11 @@ namespace Artisan.QuestSync
         public uint WVR;
         public uint ALC;
         public uint CUL;
+    }
+
+    public class EmoteConverter
+    {
+        public uint NPCDataId;
+        public string? Emote;
     }
 }

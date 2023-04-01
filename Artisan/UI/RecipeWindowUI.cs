@@ -1,6 +1,7 @@
 ﻿using Artisan.Autocraft;
 using Artisan.RawInformation;
 using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
@@ -39,6 +40,7 @@ namespace Artisan
             if (!P.config.DisableTheme)
             {
                 P.Style.Push();
+                ImGui.PushFont(P.CustomFont);
                 P.StylePushed = true;
             }
         }
@@ -48,6 +50,7 @@ namespace Artisan
             if (P.StylePushed)
             {
                 P.Style.Pop();
+                ImGui.PopFont();
                 P.StylePushed = false;
             }
         }
@@ -125,7 +128,11 @@ namespace Artisan
                 Service.Configuration.Save();
             }
 
-            ImGui.Checkbox("Endurance Mode Toggle", ref Handler.Enable);
+            bool enable = Handler.Enable;
+            if (ImGui.Checkbox("Endurance Mode Toggle", ref enable))
+            {
+                Handler.Enable = enable;
+            }
 
             bool macroMode = Service.Configuration.UseMacroMode;
             if (ImGui.Checkbox("Macro Mode", ref macroMode))
@@ -232,7 +239,8 @@ namespace Artisan
 
             if (addonPtr->UldManager.NodeListCount >= 5)
             {
-                var node = addonPtr->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[4];
+                //var node = addonPtr->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[4];
+                var node = addonPtr->UldManager.NodeList[8];
 
                 var position = AtkResNodeFunctions.GetNodePosition(node);
                 var scale = AtkResNodeFunctions.GetNodeScale(node);
@@ -242,18 +250,23 @@ namespace Artisan
                 var textHeight = ImGui.CalcTextSize("Craft X Times:");
 
                 ImGuiHelpers.ForceNextWindowMainViewport();
-                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 11f, position.Y + size.Y - (textHeight.Y * 2) - 3f));
-                //Dalamud.Logging.PluginLog.Debug($"Length: {size.Length()}, Width: {node->Width}, Scale: {scale.X}");
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2((position.X + 4f.Scale()), position.Y - textHeight.Y - 15f));
+                
+                //Dalamud.Logging.PluginLog.Debug($"Length: {size.Length()}, Width: {node->Width}, Scale: {scale.Y}");
 
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(7f, 7f));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
+                ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f.Scale());
+                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(5f.Scale(), 2.5f.Scale()));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f.Scale(), 3f.Scale()));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f.Scale(), 0f.Scale()));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f.Scale());
                 ImGui.Begin($"###Repeat{node->NodeID}", ImGuiWindowFlags.NoScrollbar
                     | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
                     | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
 
                 ImGui.Text("Craft X Times:");
                 ImGui.SameLine();
-                ImGui.PushItemWidth(100);
+                ImGui.PushItemWidth(110f.Scale());
                 if (ImGui.InputInt($"###TimesRepeat{node->NodeID}", ref Service.Configuration.CraftX))
                 {
                     if (Service.Configuration.CraftX < 0)
@@ -278,7 +291,8 @@ namespace Artisan
                 }
 
                 ImGui.End();
-                ImGui.PopStyleVar(2);
+                ImGui.PopStyleVar(5);
+                ImGui.PopStyleColor();
             }
         }
     }

@@ -168,8 +168,7 @@ namespace Artisan.Autocraft
                 QuestManager* qm = QuestManager.Instance();
                 foreach (var quest in qm->DailyQuestsSpan)
                 {
-                    if (!quest.IsCompleted && quest.QuestId > 0)
-                    ImGui.TextWrapped($"Quest ID: {quest.QuestId}, Sequence: {QuestManager.GetQuestSequence(quest.QuestId)}, Name: {quest.QuestId.NameOfQuest()}");
+                    ImGui.TextWrapped($"Quest ID: {quest.QuestId}, Sequence: {QuestManager.GetQuestSequence(quest.QuestId)}, Name: {quest.QuestId.NameOfQuest()}, Flags: {quest.Flags}");
                 }
 
             }

@@ -1,12 +1,18 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.MacroSystem;
 using Artisan.RawInformation;
+using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
+using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
-using ECommons.Reflection;
 using ImGuiNET;
+using PunishLib.ImGuiMethods;
 using System;
+using System.IO;
+using System.Numerics;
+using System.Windows.Forms;
 using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan.UI
@@ -56,6 +62,7 @@ namespace Artisan.UI
             if (!P.config.DisableTheme)
             {
                 P.Style.Push();
+                ImGui.PushFont(P.CustomFont);
                 P.StylePushed = true;
             }
 
@@ -66,6 +73,7 @@ namespace Artisan.UI
             if (P.StylePushed)
             {
                 P.Style.Pop();
+                ImGui.PopFont();
                 P.StylePushed = false;
             }
         }
@@ -77,167 +85,109 @@ namespace Artisan.UI
 
         public override void Draw()
         {
+            var region = ImGui.GetContentRegionAvail();
+            var itemSpacing = ImGui.GetStyle().ItemSpacing;
 
-            ImGui.Columns(2, "###MainWindow", false);
-            ImGui.SetColumnWidth(0, ImGui.GetContentRegionAvail().Length() / 3);
+            var topLeftSideHeight = region.Y;
 
-            if (ThreadLoadImageHandler.TryGetTextureWrap("https://love.puni.sh/resources/artisan.png", out var logo))
+            if (ImGui.BeginTable($"ArtisanTableContainer", 2, ImGuiTableFlags.Resizable))
             {
-                ImGui.Image(logo.ImGuiHandle, new(ImGui.GetContentRegionAvail().X - 30f.Scale(), ImGui.GetContentRegionAvail().X - 30f.Scale()));
+                ImGui.TableSetupColumn("##LeftColumn", ImGuiTableColumnFlags.WidthFixed, ImGui.GetWindowWidth() / 2);
+
+                ImGui.TableNextColumn();
+
+                var regionSize = ImGui.GetContentRegionAvail();
+
+                ImGui.PushStyleVar(ImGuiStyleVar.SelectableTextAlign, new Vector2(0.5f, 0.5f));
+                if (ImGui.BeginChild($"###ArtisanLeftSide", regionSize with { Y = topLeftSideHeight }, false, ImGuiWindowFlags.NoDecoration))
+                {
+                    var imagePath = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "artisan-icon.png");
+
+                    if (ThreadLoadImageHandler.TryGetTextureWrap(imagePath, out var logo))
+                    {
+                        ImGui.Image(logo.ImGuiHandle, new(125f.Scale(), 125f.Scale()));
+                    }
+                    ImGui.Spacing();
+                    ImGui.Separator();
+                    if (ImGui.Selectable("Settings", OpenWindow == OpenWindow.Main))
+                    {
+                        OpenWindow = OpenWindow.Main;
+                    }
+                    ImGui.Spacing();
+                    if (ImGui.Selectable("Endurance", OpenWindow == OpenWindow.Endurance))
+                    {
+                        OpenWindow = OpenWindow.Endurance;
+                    }
+                    ImGui.Spacing();
+                    if (ImGui.Selectable("Macros", OpenWindow == OpenWindow.Macro))
+                    {
+                        OpenWindow = OpenWindow.Macro;
+                    }
+                    ImGui.Spacing();
+                    if (ImGui.Selectable("Crafting Lists", OpenWindow == OpenWindow.Lists))
+                    {
+                        OpenWindow = OpenWindow.Lists;
+                    }
+                    ImGui.Spacing();
+                    if (ImGui.Selectable("About", OpenWindow == OpenWindow.About))
+                    {
+                        OpenWindow = OpenWindow.About;
+                    }
+
+
+#if DEBUG
+                    ImGui.Spacing();
+                    if (ImGui.Selectable("DEBUG", OpenWindow == OpenWindow.Debug))
+                    {
+                        OpenWindow = OpenWindow.Debug;
+                    }
+                    ImGui.Spacing();
+#endif
+
+                }
+                ImGui.EndChild();
+                ImGui.PopStyleVar();
+                ImGui.TableNextColumn();
+                if (ImGui.BeginChild($"###ArtisanRightSide", Vector2.Zero, false, (false ? ImGuiWindowFlags.AlwaysVerticalScrollbar : ImGuiWindowFlags.None) | ImGuiWindowFlags.NoDecoration))
+                {
+
+                    if (OpenWindow == OpenWindow.Main)
+                    {
+                        DrawMainWindow();
+                    }
+
+                    if (OpenWindow == OpenWindow.Endurance)
+                    {
+                        Handler.Draw();
+                    }
+
+                    if (OpenWindow == OpenWindow.Lists)
+                    {
+                        CraftingListUI.Draw();
+                    }
+
+                    if (OpenWindow == OpenWindow.About)
+                    {
+                        PunishLib.ImGuiMethods.AboutTab.Draw(P);
+                    }
+
+                    if (OpenWindow == OpenWindow.Debug)
+                    {
+                        AutocraftDebugTab.Draw();
+                    }
+
+                    if (OpenWindow == OpenWindow.Macro)
+                    {
+                        MacroUI.Draw();
+                    }
+
+                   
+                }
+                ImGui.EndChild();
+                ImGui.EndTable();
             }
-
-            if (ImGui.Selectable("Settings"))
-            {
-                OpenWindow = OpenWindow.Main;
-            }
-
-            if (ImGui.Selectable("Endurance"))
-            {
-                OpenWindow = OpenWindow.Endurance;
-            }
-
-            if (ImGui.Selectable("Crafting Lists"))
-            {
-                OpenWindow = OpenWindow.Lists;
-            }
-
-            if (ImGui.Selectable("About"))
-            {
-                OpenWindow = OpenWindow.About;
-            }
-
-            if (ImGui.Selectable("DEBUG"))
-            {
-                OpenWindow = OpenWindow.Debug;
-            }
-
-            if (OpenWindow == OpenWindow.Main)
-            {
-                ImGui.NextColumn();
-                DrawMainWindow();
-                ImGui.NextColumn();
-            }
-
-            if (OpenWindow == OpenWindow.Endurance)
-            {
-                ImGui.NextColumn();
-                Handler.Draw();
-                ImGui.NextColumn();
-            }
-
-            if (OpenWindow == OpenWindow.Lists)
-            {
-                ImGui.NextColumn();
-                CraftingListUI.Draw();
-                ImGui.NextColumn();
-            }
-
-            if (OpenWindow == OpenWindow.About)
-            {
-                ImGui.NextColumn();
-                PunishLib.ImGuiMethods.AboutTab.Draw(P);
-                ImGui.NextColumn();
-            }
-
-            if (OpenWindow == OpenWindow.Debug)
-            {
-                ImGui.NextColumn();
-                AutocraftDebugTab.Draw();
-                ImGui.NextColumn();
-            }
-
-            ImGui.Columns(1);
-
-
-            //            if (ImGui.BeginTabBar("TabBar"))
-            //            {
-            //                if (ImGui.BeginTabItem("Settings"))
-            //                {
-            //                    DrawMainWindow();
-            //                    ImGui.EndTabItem();
-            //                }
-            //                if (ImGui.BeginTabItem("Endurance/Auto-Repeat Mode"))
-            //                {
-            //                    Handler.Draw();
-            //                    ImGui.EndTabItem();
-            //                }
-            //                if (ImGui.BeginTabItem("Macros"))
-            //                {
-            //                    MacroUI.Draw();
-            //                    ImGui.EndTabItem();
-            //                }
-            //                if (ImGui.BeginTabItem("Crafting List (BETA)"))
-            //                {
-            //                    CraftingListUI.Draw();
-            //                    ImGui.EndTabItem();
-            //                }
-
-            //                if (ImGui.BeginTabItem("About"))
-            //                {
-            //                    PunishLib.ImGuiMethods.AboutTab.Draw(P);
-            //                    ImGui.EndTabItem();
-            //                }
-            //#if DEBUG
-            //                if (ImGui.BeginTabItem("Debug"))
-            //                {
-            //                    AutocraftDebugTab.Draw();
-            //                    ImGui.EndTabItem();
-            //                }
-            //#endif
-            //                ImGui.EndTabBar();
-            //            }
-            //            if (!visible)
-            //            {
-            //                Service.Configuration.Save();
-            //                PluginLog.Information("Configuration saved");
-            //            }
 
         }
-
-        //private static string CalculateEstimate(string itemName)
-        //{
-        //    var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Equals(itemName)).FirstOrDefault();
-        //    if (sheetItem == null)
-        //        return "Unknown Item - Check Selected Recipe Window";
-        //    var recipeTable = sheetItem.RecipeLevelTable.Value;
-
-        //    if (!sheetItem.ItemResult.Value.CanBeHq && !sheetItem.IsExpert && !sheetItem.ItemResult.Value.IsCollectable)
-        //        return $"Item cannot be HQ.";
-
-        //    if (CharacterInfo.Craftsmanship() < sheetItem.RequiredCraftsmanship || CharacterInfo.Control() < sheetItem.RequiredControl)
-        //        return "Unable to craft with current stats.";
-
-        //    if (CharacterInfo.CharacterLevel() >= 80 && CharacterInfo.CharacterLevel() >= sheetItem.RecipeLevelTable.Value.ClassJobLevel + 10 && !sheetItem.IsExpert)
-        //        return "EHQ: Guaranteed.";
-
-        //    var simulatedPercent = Service.Configuration.UseSimulatedStartingQuality && sheetItem.MaterialQualityFactor != 0 ? Math.Floor(((double)Service.Configuration.CurrentSimulated / ((double)sheetItem.RecipeLevelTable.Value.Quality * ((double)sheetItem.QualityFactor / 100))) * 100) : 0;
-        //    simulatedPercent = CurrentSelectedCraft is null || CurrentSelectedCraft != sheetItem.ItemResult.Value.Name!.RawString ? 0 : simulatedPercent;
-        //    var baseQual = BaseQuality(sheetItem);
-        //    var dur = recipeTable.Durability;
-        //    var baseSteps = baseQual * (dur / 10);
-        //    var maxQual = (double)recipeTable.Quality;
-        //    bool meetsRecCon = CharacterInfo.Control() >= recipeTable.SuggestedControl;
-        //    bool meetsRecCraft = CharacterInfo.Craftsmanship() >= recipeTable.SuggestedCraftsmanship;
-        //    var q1 = baseSteps / maxQual;
-        //    var q2 = CharacterInfo.MaxCP / sheetItem.QualityFactor / 1.5;
-        //    var q3 = CharacterInfo.IsManipulationUnlocked() ? 2 : 1;
-        //    var q4 = sheetItem.RecipeLevelTable.Value.Stars * 6;
-        //    var q5 = meetsRecCon && meetsRecCraft ? 3 : 1;
-        //    var q6 = Math.Floor((q1 * 100) + (q2 * 3 * q3 * q5) - q4 + simulatedPercent);
-        //    var chance = q6 > 100 ? 100 : q6;
-        //    chance = chance < 0 ? 0 : chance;
-
-        //    return chance switch
-        //    {
-        //        < 20 => "EHQ: Do not attempt.",
-        //        < 40 => "EHQ: Very low chance.",
-        //        < 60 => "EHQ: Average chance.",
-        //        < 80 => "EHQ: Good chance.",
-        //        < 90 => "EHQ: High chance.",
-        //        < 100 => "EHQ: Very high chance.",
-        //        _ => "EHQ: Guaranteed.",
-        //    };
-        //}
 
         public static void DrawMainWindow()
         {
@@ -257,7 +207,7 @@ namespace Artisan.UI
             bool disableToasts = Service.Configuration.DisableToasts;
             bool disableMini = Service.Configuration.DisableMiniMenu;
 
-            //ImGui.Separator();
+            ImGui.Separator();
             if (ImGui.CollapsingHeader("Mode Selections"))
             {
                 if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
@@ -428,7 +378,15 @@ namespace Artisan.UI
                     Service.Configuration.DisableTheme = hideTheme;
                     Service.Configuration.Save();
                 }
-
+                ImGui.SameLine();
+                if (IconButtons.IconTextButton(FontAwesomeIcon.Clipboard, "Copy Theme"))
+                {
+                    Clipboard.SetText("DS1H4sIAAAAAAAACq1YS3PbNhD+Kx2ePR6AeJG+xXYbH+KOJ3bHbW60REusaFGlKOXhyX/v4rEACEqumlY+ECD32/cuFn7NquyCnpOz7Cm7eM1+zy5yvfnDPL+fZTP4at7MHVntyMi5MGTwBLJn+HqWLZB46Ygbx64C5kQv/nRo8xXQ3AhZZRdCv2jdhxdHxUeqrJO3Ftslb5l5u/Fa2rfEvP0LWBkBPQiSerF1Cg7wApBn2c5wOMv2juNn9/zieH09aP63g+Kqyr1mI91mHdj5mj3UX4bEG+b5yT0fzRPoNeF1s62e2np+EuCxWc+7z5cLr1SuuCBlkTvdqBCEKmaQxCHJeZmXnFKlgMHVsmnnEZ5IyXMiFUfjwt6yCHvDSitx1212m4gHV0QURY4saMEYl6Q4rsRl18/rPuCZQ+rFJxeARwyAJb5fVmD4NBaJEK3eL331UscuAgflOcY0J5zLUioHpHmhCC0lCuSBwU23r3sfF/0N0wKdoxcGFqHezYZmHypJIkgiSCJIalc8NEM7Utb6ErWlwngt9aUoFRWSB3wilRUl5SRwISUFvhJt9lvDrMgLIjgLzK66tq0228j0H+R3W693l1UfmUd9kqA79MKn9/2sB9lPI8hbofb073vdh1BbQYRgqKzfGbTfTWVqHmnMOcXUpI6BXhzGJjEQCNULmy4x9GpZz1a3Vb8KqaIDz4RPVGZin6dlZPKDSS29baAyRqYfzVGnr0ekaaowTbEw9MLjLnfD0GGT1unHSSlKr2lRyqLA2qU5ESovi6m+lkvqYiZ1/ygxyqrgjDKF8Yr2lp1pd4R7dokhvOBUQk37TCVKQbX4TMVtyuymruKWJCURVEofClYWbNpWCQfFifDwsWnYyXXS8ZxDOI+H0uLToPzrhKg3VV8N3amt1dP/t5goW/E85pg2pB8N8sd623yr3/dNOPYVstELg9cLA8zFCJKapQpEYkPVi9CMA/L/Uv8hrk1hmg9WKKMQXyIxnGFrm6i06MkhBHlIiQ8rI0xx4k/rsLWBsWpbTmmhqFIypcvUHTRgQ859V/bbKaPf1s/dbBcfD0R6NnCWwg/dS3lB4MfQMSrnCY9EK8qEw9uUl4YdHjRQRVFTuu5mq2a9uOvrfVOH0SDHqtXxMjDfi1RA/fyyGb7G5y5KdJg8EnTXdsOHZl1vQyJJQrlCQTDsEBi80HdhO+VwrEP48hwdTRp202yHbgGzhRfu03/UCA4gjglDd44mUT2D2i4UH9coSy8mfjEYN54NfbcOOIZnn15M7YqAH5rFEmdl3eJ8r0N5E9zH0fz71nQQyN+1/zSP6yR2A/l93dazoY6n5DdyiumWc91Xi+u+2zxU/aI+Jipq2QD5tdrfgO3t2P5jcqz9gLEXAEjgFHzcMJUgr5uXyDQsNSxZtCvX81s3r1qLOw0EztC3ORiEs4vssu9W9fqn2263HqpmncFF016PqklGjh1kjQ2NUyUJH08mcIk9gSrqn+jg0XFoqeqTrmDPwQv+PDEr6wl3oljaxcRSRTCyMc/lJJ/lAcnNhMr3WWZ+ES3exrXE+HJ2yNOrowkb97A2cExdXcrYjaFToVDfGSMqnCaDa0pi/vzNMyLG/wQEyzmzfhx7KAwJUn93Fz6v5shD8B+DRAG4Oh+QHYapovAd3/OEQzuiDSdE4c8wjJHh7iiBFFozvP3+NxT8RWGlEQAA");
+                }
+                if (ImGui.IsItemHovered())
+                {
+                    
+                }
             }
         }
     }

@@ -42,8 +42,9 @@ namespace Artisan.CraftingLists
                         ExportSelectedListToTC();
                     }
                 }
-                ImGui.EndChild();
+                
             }
+            ImGui.EndChild();
         }
 
         private static void ExportSelectedListToTC()

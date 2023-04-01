@@ -1,7 +1,11 @@
-﻿using Artisan.CraftingLists;
+﻿using Artisan.Autocraft;
+using Artisan.CraftingLists;
 using Artisan.QuestSync;
 using Artisan.RawInformation;
+using Dalamud.Game.Gui;
 using Dalamud.Interface.Windowing;
+using ECommons;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 using System;
 
@@ -17,7 +21,7 @@ namespace Artisan.UI
         }
         public override bool DrawConditions()
         {
-            if (Service.Configuration.HideQuestHelper || !QuestList.HasIngredientsForAny())
+            if (Service.Configuration.HideQuestHelper || (!QuestList.HasIngredientsForAny() && !QuestList.IsOnSayQuest() && !QuestList.IsOnEmoteQuest()))
                 return false;
 
             return true;
@@ -28,6 +32,7 @@ namespace Artisan.UI
             if (!P.config.DisableTheme)
             {
                 P.Style.Push();
+                ImGui.PushFont(P.CustomFont);
                 P.StylePushed = true;
             }
         }
@@ -37,11 +42,12 @@ namespace Artisan.UI
             if (P.StylePushed)
             {
                 P.Style.Pop();
+                ImGui.PopFont();
                 P.StylePushed = false;
             }
         }
 
-        public override void Draw()
+        public unsafe override void Draw()
         {
             bool hasIngredientsAny = QuestList.HasIngredientsForAny();
             if (hasIngredientsAny)
@@ -71,6 +77,60 @@ namespace Artisan.UI
 
                 }
 
+            }
+            bool isOnSayQuest = QuestList.IsOnSayQuest();
+            if (isOnSayQuest)
+            {
+                ImGui.Text($"Quest Helper (click to say)");
+                foreach (var quest in QuestManager.Instance()->DailyQuestsSpan)
+                {
+                    string message = QuestList.GetSayQuestString(quest.QuestId);
+                    if (message != "")
+                    {
+                        if (ImGui.Button($@"Say ""{message}"""))
+                        {
+                            CommandProcessor.ExecuteThrottled($"/say {message}");
+                        }
+                    }
+                }
+            }
+            bool isOnEmoteQuest = QuestList.IsOnEmoteQuest();
+            if (isOnEmoteQuest)
+            {
+                ImGui.Text("Quest Helper (click to target and emote)");
+                foreach (var quest in QuestManager.Instance()->DailyQuestsSpan)
+                {
+                    if (quest.IsCompleted) continue;
+
+                    if (QuestList.EmoteQuests.TryGetValue(quest.QuestId, out var data))
+                    {
+                        if (ImGui.Button($@"Target {LuminaSheets.ENPCResidentSheet[data.NPCDataId].Singular.ExtractText()} and do {data.Emote}"))
+                        {
+                            QuestList.DoEmoteQuest(quest.QuestId);
+                        }
+                    }
+
+                    if (quest.QuestId == 2318)
+                    {
+                        {
+                            if (QuestList.EmoteQuests.TryGetValue(9998, out var npc1))
+                            {
+                                if (ImGui.Button($@"Target {LuminaSheets.ENPCResidentSheet[npc1.NPCDataId].Singular.ExtractText()} and do {npc1.Emote}"))
+                                {
+                                    QuestList.DoEmoteQuest(9998);
+                                }
+                            }
+
+                            if (QuestList.EmoteQuests.TryGetValue(9999, out var npc2))
+                            {
+                                if (ImGui.Button($@"Target {LuminaSheets.ENPCResidentSheet[npc2.NPCDataId].Singular.ExtractText()} and do {npc2.Emote}"))
+                                {
+                                    QuestList.DoEmoteQuest(9999);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }

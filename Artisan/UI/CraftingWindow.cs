@@ -38,6 +38,7 @@ namespace Artisan.UI
             if (!P.config.DisableTheme)
             {
                 P.Style.Push();
+                ImGui.PushFont(P.CustomFont);
                 P.StylePushed = true;
             }
         }
@@ -47,6 +48,7 @@ namespace Artisan.UI
             if (P.StylePushed)
             {
                 P.Style.Pop();
+                ImGui.PopFont();
                 P.StylePushed = false;
             }
         }
@@ -85,7 +87,13 @@ namespace Artisan.UI
 
 
             if (Handler.RecipeID != 0 && !CraftingListUI.Processing)
-                ImGui.Checkbox("Endurance Mode Toggle", ref Handler.Enable);
+            {
+                bool enable = Handler.Enable;
+                if (ImGui.Checkbox("Endurance Mode Toggle", ref enable))
+                {
+                    Handler.Enable = enable;
+                }
+            }
 
             if (Service.Configuration.CraftingX && Handler.Enable)
             {

@@ -69,6 +69,10 @@ namespace Artisan.RawInformation
         public static Dictionary<uint, ItemFood>? ItemFoodSheet = Service.DataManager?.GetExcelSheet<ItemFood>()?
             .ToDictionary(i => i.RowId, i => i);
 
+        public static Dictionary<uint, ENpcResident>? ENPCResidentSheet = Service.DataManager?.GetExcelSheet<ENpcResident>()?
+            .Where(x => x.Singular.ExtractText().Length > 0)
+            .ToDictionary(i => i.RowId, i => i);
+
         public static Dictionary<uint, Quest>? QuestSheet = Service.DataManager?.GetExcelSheet<Quest>()?
             .Where(x => x.Id.ExtractText().Length > 0)
             .ToDictionary(i => i.RowId, i => i);
@@ -100,7 +104,7 @@ namespace Artisan.RawInformation
                 var digits = id.ToString().Length;
                 if (LuminaSheets.QuestSheet!.Any(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id))
                 {
-                    return LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id).Value.Name.ExtractText();
+                    return LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id).Value.Name.ExtractText().Replace("", "").Trim();
                 }
             }
             return "";

@@ -13,13 +13,14 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Style;
 using Dalamud.Interface.Windowing;
-using Dalamud.IoC;
 using Dalamud.Plugin;
 using ECommons;
+using ECommons.DalamudServices;
 using ECommons.Logging;
-using ECommons.Configuration;
+using ImGuiNET;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
@@ -42,6 +43,7 @@ public unsafe class Artisan : IDalamudPlugin
     public static bool warningMessage = false;
 
     internal StyleModel Style;
+    internal ImFontPtr CustomFont;
     internal bool StylePushed = false;
 
     public Artisan(DalamudPluginInterface pluginInterface)
@@ -61,7 +63,8 @@ public unsafe class Artisan : IDalamudPlugin
 
         Service.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "Opens the Artisan menu."
+            HelpMessage = "Opens the Artisan menu.",
+            ShowInHelp = true,
         });
 
         Service.Interface.UiBuilder.Draw += ws.Draw;
@@ -82,8 +85,22 @@ public unsafe class Artisan : IDalamudPlugin
         ws.AddWindow(new QuestHelper());
         ws.AddWindow(cw);
 
-        Style = StyleModel.Deserialize("DS1H4sIAAAAAAAACq1YS3PbNhD+Kx2eNR6AAAFQt9hu40Pc8cTuuM2NlmiJFS2qFOU8PPnvXTwWAEHJddPqQgDcb9+7WOolq7I5PSOz7CGbv2S/Z/Ncb/7I5uUZ+T7LFvDWnCwdWe3IyFlhyOAJZI/wdpatkHjtiBv9Hp7Vg1v86dDmLaCFEbLJ5koftO7Fk6NSjio3VFt3yt0pN6ddcsrM6c5raU+JOf0LWBkBPQgC0bNsjxoPsADoLDsYFrPs2bH87J5fHLOvR+3/dlReVbljNlJu0YGhL9ld/WVI3GGen9zz3jyBXhNeNvvqoa2XbwLcN9tl9/l85ZXKJaE8z51qtGCCFUwZJHFIclYygF6sm3YZIYkQPCdCcjQr7C047A0TLf6m2x12MQ+FYC9SoUwO9Oddv6x7T86ZI9eLT87T9+hpS3y7rsDCqdMTk7Q2v/TVUx37oiBlnmPwcsK5KIV0QJorcFUpUCAPDK6657r3AdDvMP7oC70wsAj1bjE0z6FmBIIEggSChNShboZ2pKwkhVJeW1rkJac0jVxRSloIHvCJVKZKykngQkoKfAXa7LeGmcoVKTgLzC66tq12+8j0H+R3XW8P51UfmUfRHXphwTzK49tFD7IfRpDXQu3p3/e646C2BSkKhsr6nUH73VSm5pHGnFNMTeoY6MVxbBKDAqF6YdMlhl6s68Xmuuo3IVV04FnhE5WZ2Odp0Zr8YEJLbxuojJHpJ3PU6esRaZpKTFMsDL3wuPPDMHTYjnX6cVIWpddUlUIprF2ak0LmpZrqa7mkLmaCQ/KUGGWpOKNMYryivesfUM2KcM8uMYQrTgXUtM9UIiVUi89U3KbMruoqbklCkIIK4UPBSsUkm4SCg+Kk8PCxadiyddLxnEM4T4fS4tOg/OuEqHdVXw3dW1urp/9vMZG24nnMMW1IPxrkj/W++Va/75twwUtkoxcGrxcGmBcjSGqWxHtJLyxSxc04IP8v9e/i2ixM88EKZRTiSwSGM2xtExUWPbmEIA8p8WFlhElO/OUctjYwVm3LKS0UWQomdZm6iwZsyLnvyn47ZfTb9rFbHOLrgQjPBu5S+KF7KVcEfgwdI3Oe8Ei0oqxweJvywrDDiwaqKGpKl91i02xXN3393NRhNMixanW8DMz3IhlQPz/thq/xvYsSHSaPBN203fCh2db7kEgCxiuJgrgghJrAWi39dsrhVIfw5Tm6mjTsqtkP3QpmCy/cp/+oERxBnBKG7hyNnHrYtF0ovq5Rll5M/GIwbjwb+m4bcAzvPr2Y2hUBPzSrNQ7FusX5XofyJriPo0H3tekgkL9r/2nw1knsJu/buq0XQx0Pxa/kFNMt57KvVpd9t7ur+lV9SlTUsgHya/V8Bba3Y/tPybH2A8ZO+pDAKfi0YTJBXjZPkWlYaliyaFeu57duWbUW9zYQOEN/t8EgnM2z877b1NufrrvDdqiabQaflPY7qJpk5NhB1tjQOGWS8PFkAp+rb6CK+ic6eHQdWqr6Td9aj8EL/j4xK+sJd6NY2tXEUkkwsjHP9SSfxRHJzYTK91lmfhEtfndriXo+8J9zR6RvTiZs3MPawDF1dSliN4ZOhUJ9Z4yowjRJqeWX1omlw8/9YDRn1oVj54T5QOj37lvPazhyDvwtkISlINioYp5hjlLKN3vPE+7riDZcDspfXxgew91RAil0ZTj9/jfcHqYJihEAAA==");
+        Svc.PluginInterface.UiBuilder.BuildFonts += AddCustomFont;
+        Svc.PluginInterface.UiBuilder.RebuildFonts();
+        Style = StyleModel.Deserialize("DS1H4sIAAAAAAAACq1YS3PbNhD+Kx2ePR6AeJG+xXYbH+KOJ3bHbW60REusaFGlKOXhyX/v4rEACEqumlY+ECD32/cuFn7NquyCnpOz7Cm7eM1+zy5yvfnDPL+fZTP4at7MHVntyMi5MGTwBLJn+HqWLZB46Ygbx64C5kQv/nRo8xXQ3AhZZRdCv2jdhxdHxUeqrJO3Ftslb5l5u/Fa2rfEvP0LWBkBPQiSerF1Cg7wApBn2c5wOMv2juNn9/zieH09aP63g+Kqyr1mI91mHdj5mj3UX4bEG+b5yT0fzRPoNeF1s62e2np+EuCxWc+7z5cLr1SuuCBlkTvdqBCEKmaQxCHJeZmXnFKlgMHVsmnnEZ5IyXMiFUfjwt6yCHvDSitx1212m4gHV0QURY4saMEYl6Q4rsRl18/rPuCZQ+rFJxeARwyAJb5fVmD4NBaJEK3eL331UscuAgflOcY0J5zLUioHpHmhCC0lCuSBwU23r3sfF/0N0wKdoxcGFqHezYZmHypJIkgiSCJIalc8NEM7Utb6ErWlwngt9aUoFRWSB3wilRUl5SRwISUFvhJt9lvDrMgLIjgLzK66tq0228j0H+R3W693l1UfmUd9kqA79MKn9/2sB9lPI8hbofb073vdh1BbQYRgqKzfGbTfTWVqHmnMOcXUpI6BXhzGJjEQCNULmy4x9GpZz1a3Vb8KqaIDz4RPVGZin6dlZPKDSS29baAyRqYfzVGnr0ekaaowTbEw9MLjLnfD0GGT1unHSSlKr2lRyqLA2qU5ESovi6m+lkvqYiZ1/ygxyqrgjDKF8Yr2lp1pd4R7dokhvOBUQk37TCVKQbX4TMVtyuymruKWJCURVEofClYWbNpWCQfFifDwsWnYyXXS8ZxDOI+H0uLToPzrhKg3VV8N3amt1dP/t5goW/E85pg2pB8N8sd623yr3/dNOPYVstELg9cLA8zFCJKapQpEYkPVi9CMA/L/Uv8hrk1hmg9WKKMQXyIxnGFrm6i06MkhBHlIiQ8rI0xx4k/rsLWBsWpbTmmhqFIypcvUHTRgQ859V/bbKaPf1s/dbBcfD0R6NnCWwg/dS3lB4MfQMSrnCY9EK8qEw9uUl4YdHjRQRVFTuu5mq2a9uOvrfVOH0SDHqtXxMjDfi1RA/fyyGb7G5y5KdJg8EnTXdsOHZl1vQyJJQrlCQTDsEBi80HdhO+VwrEP48hwdTRp202yHbgGzhRfu03/UCA4gjglDd44mUT2D2i4UH9coSy8mfjEYN54NfbcOOIZnn15M7YqAH5rFEmdl3eJ8r0N5E9zH0fz71nQQyN+1/zSP6yR2A/l93dazoY6n5DdyiumWc91Xi+u+2zxU/aI+Jipq2QD5tdrfgO3t2P5jcqz9gLEXAEjgFHzcMJUgr5uXyDQsNSxZtCvX81s3r1qLOw0EztC3ORiEs4vssu9W9fqn2263HqpmncFF016PqklGjh1kjQ2NUyUJH08mcIk9gSrqn+jg0XFoqeqTrmDPwQv+PDEr6wl3oljaxcRSRTCyMc/lJJ/lAcnNhMr3WWZ+ES3exrXE+HJ2yNOrowkb97A2cExdXcrYjaFToVDfGSMqnCaDa0pi/vzNMyLG/wQEyzmzfhx7KAwJUn93Fz6v5shD8B+DRAG4Oh+QHYapovAd3/OEQzuiDSdE4c8wjJHh7iiBFFozvP3+NxT8RWGlEQAA")!;
         CleanUpIndividualMacros();
+    }
+
+    private void AddCustomFont()
+    {
+        if (Svc.ClientState.ClientLanguage == Dalamud.ClientLanguage.Japanese) return;
+
+        string path = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Fonts", "CaviarDreams.ttf");
+        if (File.Exists(path))
+        {
+            CustomFont = ImGui.GetIO().Fonts.AddFontFromFileTTF(path, ImGui.GetFontSize());
+        }
+
     }
 
     private void ScanForHQItems(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
@@ -103,6 +120,7 @@ public unsafe class Artisan : IDalamudPlugin
 
     private void Condition_ConditionChange(ConditionFlag flag, bool value)
     {
+        Handler.Tasks.Clear();
         if (Service.Condition[ConditionFlag.PreparingToCraft])
         {
             State = CraftingState.PreparingToCraft;
@@ -138,25 +156,26 @@ public unsafe class Artisan : IDalamudPlugin
         }
     }
 
-        private void ResetRecommendation(object? sender, int e)
+    private void ResetRecommendation(object? sender, int e)
+    {
+        CurrentRecommendation = 0;
+        if (e == 0)
         {
-            if (e == 0)
-            {
-                ManipulationUsed = false;
-                JustUsedObserve = false;
-                VenerationUsed = false;
-                InnovationUsed = false;
-                WasteNotUsed = false;
-                JustUsedFinalAppraisal = false;
-                BasicTouchUsed = false;
-                StandardTouchUsed = false;
-                AdvancedTouchUsed = false;
-                ExpertCraftOpenerFinish = false;
-                MacroStep = 0;
-            }
-            if (e > 0)
-                Tasks.Clear();
+            ManipulationUsed = false;
+            JustUsedObserve = false;
+            VenerationUsed = false;
+            InnovationUsed = false;
+            WasteNotUsed = false;
+            JustUsedFinalAppraisal = false;
+            BasicTouchUsed = false;
+            StandardTouchUsed = false;
+            AdvancedTouchUsed = false;
+            ExpertCraftOpenerFinish = false;
+            MacroStep = 0;
         }
+        if (e > 0)
+            Tasks.Clear();
+    }
 
     public static bool CheckIfCraftFinished()
     {
@@ -250,13 +269,13 @@ public unsafe class Artisan : IDalamudPlugin
 
     }
 
-        public static void FetchRecommendation(int e)
+    public static void FetchRecommendation(int e)
+    {
+        lock (_lockObj)
         {
-            lock (_lockObj)
+            try
             {
-                try
-                {
-                    CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
+                CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
 
                 if (Service.Configuration.UseMacroMode && Service.Configuration.UserMacros.Count > 0)
                 {
@@ -469,10 +488,15 @@ public unsafe class Artisan : IDalamudPlugin
         Service.Interface.UiBuilder.OpenConfigUi -= DrawConfigUI;
         Service.Interface.UiBuilder.Draw -= ws.Draw;
         Service.Framework.Update -= FireBot;
+        StepChanged -= ResetRecommendation;
 
+        Svc.PluginInterface.UiBuilder.BuildFonts -= AddCustomFont;
         ActionWatching.Dispose();
         SatisfactionManagerHelper.Dispose();
         Service.Plugin = null!;
+        ws.RemoveAllWindows();
+        ws = null!;
+        
     }
 
     private void OnCommand(string command, string args)
