@@ -1,8 +1,10 @@
 ﻿using Artisan.CraftingLogic;
 using Artisan.CustomDeliveries;
+using Artisan.IPC;
 using Artisan.QuestSync;
 using Artisan.RawInformation;
 using ECommons;
+using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -173,20 +175,37 @@ namespace Artisan.Autocraft
 
             }
 
-            if (ImGui.CollapsingHeader("Satisfaction Agent"))
+            if (ImGui.CollapsingHeader("IPC"))
             {
-                if (ImGui.Button($"Update Ameliance"))
+                ImGui.Text($"AutoRetainer: {AutoRetainer.IsEnabled()}");
+                if (ImGui.Button("Suppress"))
                 {
-                    SatisfactionManagerHelper.UpdateByNPCId(1042241, 8);
+                    AutoRetainer.Suppress();
+                }
+                if (ImGui.Button("Unsuppress"))
+                {
+                    AutoRetainer.Unsuppress();
                 }
 
-                ImGui.Text($"{SatisfactionManagerHelper.Agent->NpcInfo.AgentOpen}, {SatisfactionManagerHelper.Agent->NpcInfo.Unk11}, {SatisfactionManagerHelper.Agent->NpcInfo.Unk12}, {SatisfactionManagerHelper.Agent->NpcInfo.Unk13}");
-                ImGui.Text($"{SatisfactionManagerHelper.Agent->NpcId} {SatisfactionManagerHelper.Agent->NpcInfo.Id}");
-                foreach (var i in SatisfactionManagerHelper.Agent->DeliveryInfoSpan)
+                ImGui.Text($"Endurance IPC: {Svc.PluginInterface.GetIpcSubscriber<bool>("Artisan.GetEnduranceStatus").InvokeFunc()}");
+                if (ImGui.Button("Enable"))
                 {
-                    ImGui.Text($"{i.ItemName}");
+                    Svc.PluginInterface.GetIpcSubscriber<bool, object>("Artisan.SetEnduranceStatus").InvokeAction(true);
+                }
+                if (ImGui.Button("Disable"))
+                {
+                    Svc.PluginInterface.GetIpcSubscriber<bool, object>("Artisan.SetEnduranceStatus").InvokeAction(false);
                 }
 
+                if (ImGui.Button("Send Stop Request (true)"))
+                {
+                    Svc.PluginInterface.GetIpcSubscriber<bool, object>("Artisan.SetStopRequest").InvokeAction(true);   
+                }
+
+                if (ImGui.Button("Send Stop Request (false)"))
+                {
+                    Svc.PluginInterface.GetIpcSubscriber<bool, object>("Artisan.SetStopRequest").InvokeAction(false);
+                }
             }
             ImGui.Separator();
 

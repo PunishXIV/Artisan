@@ -79,6 +79,8 @@ public unsafe class Artisan : IDalamudPlugin
         StepChanged += ResetRecommendation;
         ConsumableChecker.Init();
         Handler.Init();
+        IPC.IPC.Init();
+
 
         ws.AddWindow(new RecipeWindowUI());
         ws.AddWindow(new ProcessingWindow());
@@ -124,6 +126,10 @@ public unsafe class Artisan : IDalamudPlugin
         if (Service.Condition[ConditionFlag.PreparingToCraft])
         {
             State = CraftingState.PreparingToCraft;
+            if (IPC.IPC.StopCraftingRequest)
+            {
+                Svc.Framework.RunOnTick(CraftingListFunctions.CloseCraftingMenu, TimeSpan.FromSeconds(1));
+            }
             return;
         }
         if (Service.Condition[ConditionFlag.Crafting] && !Service.Condition[ConditionFlag.PreparingToCraft])
@@ -481,6 +487,7 @@ public unsafe class Artisan : IDalamudPlugin
         PluginUi.Dispose();
         Handler.Dispose();
         ECommonsMain.Dispose();
+        IPC.IPC.Dispose();
 
         Service.CommandManager.RemoveHandler(commandName);
         Service.Condition.ConditionChange -= Condition_ConditionChange;
@@ -496,7 +503,7 @@ public unsafe class Artisan : IDalamudPlugin
         Service.Plugin = null!;
         ws.RemoveAllWindows();
         ws = null!;
-        
+
     }
 
     private void OnCommand(string command, string args)
@@ -507,6 +514,53 @@ public unsafe class Artisan : IDalamudPlugin
     private void DrawConfigUI()
     {
         PluginUi.IsOpen = true;
+    }
+
+    internal static void StopCrafting()
+    {
+        SetMode();
+
+        switch (IPC.IPC.CurrentMode)
+        {
+            case IPC.IPC.ArtisanMode.Endurance:
+                Handler.Enable = false;
+                break;
+            case IPC.IPC.ArtisanMode.Lists:
+                CraftingListFunctions.Paused = true;
+                break;
+        }
+
+        
+    }
+
+    private static void SetMode()
+    {
+        if (Handler.Enable)
+        {
+            IPC.IPC.CurrentMode = IPC.IPC.ArtisanMode.Endurance;
+            return;
+        }
+
+        if (CraftingListUI.Processing)
+        {
+            IPC.IPC.CurrentMode = IPC.IPC.ArtisanMode.Lists;
+            return;
+        }
+
+        IPC.IPC.CurrentMode = IPC.IPC.ArtisanMode.None;
+    }
+
+    internal static void ResumeCrafting()
+    {
+        switch (IPC.IPC.CurrentMode)
+        {
+            case IPC.IPC.ArtisanMode.Endurance:
+                Handler.Enable = true;
+                break;
+            case IPC.IPC.ArtisanMode.Lists:
+                CraftingListFunctions.Paused = false;
+                break;
+        }
     }
 }
 
