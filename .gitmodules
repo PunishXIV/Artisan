@@ -7,3 +7,6 @@
 [submodule "PunishLib"]
 	path = PunishLib
 	url = https://github.com/Taurenkey/PunishLib.git
+[submodule "ClickLib"]
+	path = ClickLib
+	url = https://github.com/daemitus/ClickLib.git
