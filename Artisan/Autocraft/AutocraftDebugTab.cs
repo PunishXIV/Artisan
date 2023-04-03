@@ -119,7 +119,7 @@ namespace Artisan.Autocraft
 
             if (ImGui.CollapsingHeader("Crafting Stats"))
             {
-
+                CurrentCraft.BestSynthesis(out var act, true);
                 ImGui.Text($"Control: {CharacterInfo.Control()}");
                 ImGui.Text($"Craftsmanship: {CharacterInfo.Craftsmanship()}");
                 ImGui.Text($"Current Durability: {CurrentCraft.CurrentDurability}");
@@ -142,7 +142,7 @@ namespace Artisan.Autocraft
                 ImGui.Text($"Collectibility Mid: {CurrentCraft.CollectabilityMid}");
                 ImGui.Text($"Collectibility High: {CurrentCraft.CollectabilityHigh}");
                 ImGui.Text($"Crafting State: {CurrentCraft.State}");
-                ImGui.Text($"Can Finish: {CurrentCraft.CanFinishCraft()}");
+                ImGui.Text($"Can Finish: {CurrentCraft.CanFinishCraft(act)}");
                 ImGui.Text($"Current Rec: {CurrentCraft.RecommendationName}");
                 ImGui.Text($"Previous Action: {CurrentCraft.PreviousAction.NameOfAction()}");
                 ImGui.Text($"Tasks?: {Artisan.Tasks.Count}");

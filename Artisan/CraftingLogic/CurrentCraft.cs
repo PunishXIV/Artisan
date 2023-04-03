@@ -566,7 +566,7 @@ namespace Artisan.CraftingLogic
         {
             BestSynthesis(out var act, true);
             if (CurrentStep == 1 && CalculateNewProgress(Skills.DelicateSynthesis) >= MaxProgress && CalculateNewQuality(Skills.DelicateSynthesis) >= MaxQuality && CanUse(Skills.DelicateSynthesis)) return Skills.DelicateSynthesis;
-            if (CanFinishCraft()) return act;
+            if (CanFinishCraft(act)) return act;
 
             if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || Recipe.ItemResult.Value.IsCollectable) && Recipe.CanHq) return Skills.TrainedEye;
             if (CanUse(Skills.Tricks) && CurrentStep > 2 && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent))) return Skills.Tricks;
@@ -574,8 +574,9 @@ namespace Artisan.CraftingLogic
             if (MaxQuality == 0 || Service.Configuration.MaxPercentage == 0 || !Recipe.CanHq)
             {
                 if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
-                if (CalculateNewProgress(CharacterInfo.HighestLevelSynth()) >= MaxProgress) return CharacterInfo.HighestLevelSynth();
+                if (CalculateNewProgress(act) >= MaxProgress) return act;
                 if (GetStatus(Buffs.Veneration) == null && CanUse(Skills.Veneration)) return Skills.Veneration;
+                return act;
             }
 
             if (CurrentDurability <= 10 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
@@ -838,11 +839,14 @@ namespace Artisan.CraftingLogic
             return MaxProgress - CurrentProgress;
         }
 
-        public static bool CanFinishCraft()
+        public static bool CanFinishCraft(uint act)
         {
+            if (!Recipe.CanHq)
+                return CalculateNewProgress(act) >= MaxProgress;
+
             var metMaxProg = CurrentQuality >= MaxQuality;
             var usingPercentage = HighQualityPercentage >= Service.Configuration.MaxPercentage && !Recipe.ItemResult.Value.IsCollectable && !Recipe.IsExpert;
-            return CalculateNewProgress(CharacterInfo.HighestLevelSynth()) >= MaxProgress && (metMaxProg || usingPercentage);
+            return CalculateNewProgress(act) >= MaxProgress && (metMaxProg || usingPercentage);
         }
 
         private static bool PredictFailureSynth(uint highestLevelSynth)
@@ -1182,7 +1186,7 @@ namespace Artisan.CraftingLogic
             Veneration = 2226,
         }
 
-        private static unsafe bool BestSynthesis(out uint action, bool allowComplete = true)
+        public static unsafe bool BestSynthesis(out uint action, bool allowComplete = true)
         {
             var lastActionId = PreviousAction;
             var agentCraftActionSimulator = AgentModule.Instance()->GetAgentCraftActionSimulator();
