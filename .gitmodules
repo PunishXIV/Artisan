@@ -4,3 +4,6 @@
 [submodule "ECommons"]
 	path = ECommons
 	url = https://github.com/Taurenkey/ECommons.git
+[submodule "PunishLib"]
+	path = PunishLib
+	url = https://github.com/Taurenkey/PunishLib.git

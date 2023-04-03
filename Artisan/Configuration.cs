@@ -6,7 +6,6 @@ using Dalamud.Configuration;
 using Dalamud.Plugin;
 using System;
 using System.Collections.Generic;
-using System.Windows.Forms.VisualStyles;
 
 namespace Artisan
 {

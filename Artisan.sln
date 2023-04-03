@@ -15,6 +15,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClickLib", "ClickLib\ClickL
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommons", "ECommons\ECommons\ECommons.csproj", "{F6BDC376-868D-488C-A180-830B344EDC34}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PunishLib", "PunishLib\PunishLib\PunishLib.csproj", "{E5D45810-C52E-4DE1-B208-D8FAD50CF3FF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,14 @@ Global
 		{F6BDC376-868D-488C-A180-830B344EDC34}.Release|Any CPU.Build.0 = Release|x64
 		{F6BDC376-868D-488C-A180-830B344EDC34}.Release|x64.ActiveCfg = Release|x64
 		{F6BDC376-868D-488C-A180-830B344EDC34}.Release|x64.Build.0 = Release|x64
+		{E5D45810-C52E-4DE1-B208-D8FAD50CF3FF}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{E5D45810-C52E-4DE1-B208-D8FAD50CF3FF}.Debug|Any CPU.Build.0 = Debug|x64
+		{E5D45810-C52E-4DE1-B208-D8FAD50CF3FF}.Debug|x64.ActiveCfg = Debug|x64
+		{E5D45810-C52E-4DE1-B208-D8FAD50CF3FF}.Debug|x64.Build.0 = Debug|x64
+		{E5D45810-C52E-4DE1-B208-D8FAD50CF3FF}.Release|Any CPU.ActiveCfg = Release|x64
+		{E5D45810-C52E-4DE1-B208-D8FAD50CF3FF}.Release|Any CPU.Build.0 = Release|x64
+		{E5D45810-C52E-4DE1-B208-D8FAD50CF3FF}.Release|x64.ActiveCfg = Release|x64
+		{E5D45810-C52E-4DE1-B208-D8FAD50CF3FF}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
