@@ -250,11 +250,14 @@ namespace Artisan
                 var textHeight = ImGui.CalcTextSize("Craft X Times:");
 
                 ImGuiHelpers.ForceNextWindowMainViewport();
-                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2((position.X + 4f.Scale()), position.Y - textHeight.Y - 15f));
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + (4f * scale.X), position.Y - textHeight.Y - (17f * scale.Y)));
                 
                 //Dalamud.Logging.PluginLog.Debug($"Length: {size.Length()}, Width: {node->Width}, Scale: {scale.Y}");
 
                 ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
+                float oldSize = ImGui.GetFont().Scale;
+                ImGui.GetFont().Scale *= scale.X;
+                ImGui.PushFont(ImGui.GetFont());
                 ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f.Scale());
                 ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(5f.Scale(), 2.5f.Scale()));
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f.Scale(), 3f.Scale()));
@@ -266,7 +269,7 @@ namespace Artisan
 
                 ImGui.Text("Craft X Times:");
                 ImGui.SameLine();
-                ImGui.PushItemWidth(110f.Scale());
+                ImGui.PushItemWidth(110f.Scale() * scale.X);
                 if (ImGui.InputInt($"###TimesRepeat{node->NodeID}", ref Service.Configuration.CraftX))
                 {
                     if (Service.Configuration.CraftX < 0)
@@ -292,6 +295,8 @@ namespace Artisan
 
                 ImGui.End();
                 ImGui.PopStyleVar(5);
+                ImGui.GetFont().Scale = oldSize;
+                ImGui.PopFont();
                 ImGui.PopStyleColor();
             }
         }

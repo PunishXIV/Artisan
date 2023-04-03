@@ -44,6 +44,7 @@ public unsafe class Artisan : IDalamudPlugin
 
     internal StyleModel Style;
     internal ImFontPtr CustomFont;
+    internal ImFontPtr ScaledFont;
     internal bool StylePushed = false;
 
     public Artisan(DalamudPluginInterface pluginInterface)
@@ -80,8 +81,7 @@ public unsafe class Artisan : IDalamudPlugin
         ConsumableChecker.Init();
         Handler.Init();
         IPC.IPC.Init();
-
-
+        
         ws.AddWindow(new RecipeWindowUI());
         ws.AddWindow(new ProcessingWindow());
         ws.AddWindow(new QuestHelper());
@@ -123,6 +123,22 @@ public unsafe class Artisan : IDalamudPlugin
     private void Condition_ConditionChange(ConditionFlag flag, bool value)
     {
         Handler.Tasks.Clear();
+
+        if (Service.Configuration.RequestToStopDuty)
+        {
+            if (flag == ConditionFlag.WaitingForDutyFinder && value)
+            {
+                IPC.IPC.StopCraftingRequest = true;
+            }
+
+            if (flag == ConditionFlag.BoundByDuty && !value && IPC.IPC.StopCraftingRequest && Service.Configuration.RequestToResumeDuty)
+            {
+                var resumeDelay = Service.Configuration.RequestToResumeDelay;
+                Svc.Framework.RunOnTick(() => { IPC.IPC.StopCraftingRequest = false; }, TimeSpan.FromSeconds(resumeDelay));
+            }
+        }
+
+
         if (Service.Condition[ConditionFlag.PreparingToCraft])
         {
             State = CraftingState.PreparingToCraft;
@@ -277,6 +293,9 @@ public unsafe class Artisan : IDalamudPlugin
 
     public static void FetchRecommendation(int e)
     {
+        if (Tasks.Count > 1)
+            return;
+
         lock (_lockObj)
         {
             try
@@ -530,7 +549,7 @@ public unsafe class Artisan : IDalamudPlugin
                 break;
         }
 
-        
+
     }
 
     private static void SetMode()

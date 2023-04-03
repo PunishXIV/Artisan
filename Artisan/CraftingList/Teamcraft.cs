@@ -111,7 +111,7 @@ namespace Artisan.CraftingLists
 
 
             ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0.2f, 0.1f, 0.2f, 1f));
-            if (ImGui.Begin("Teamcraft Import", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysAutoResize))
+            if (ImGui.Begin("Teamcraft Import###TCImport", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysAutoResize))
             {
                 ImGui.Text("List Name");
                 ImGui.SameLine();
@@ -123,9 +123,9 @@ namespace Artisan.CraftingLists
                     "Step 5. Give your list a name and click import.");
                 ImGui.InputText("###ImportListName", ref importListName, 50);
                 ImGui.Text("Pre-craft Items");
-                ImGui.InputTextMultiline("###PrecraftItems", ref importListPreCraft, 10000000, new Vector2(ImGui.GetContentRegionAvail().X, 100));
+                ImGui.InputTextMultiline("###PrecraftItems", ref importListPreCraft, 5000000, new Vector2(ImGui.GetContentRegionAvail().X, 100));
                 ImGui.Text("Final Items");
-                ImGui.InputTextMultiline("###FinalItems", ref importListItems, 10000000, new Vector2(ImGui.GetContentRegionAvail().X, 100));
+                ImGui.InputTextMultiline("###FinalItems", ref importListItems, 5000000, new Vector2(ImGui.GetContentRegionAvail().X, 100));
 
 
                 if (ImGui.Button("Import"))

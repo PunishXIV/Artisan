@@ -1,5 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.FCWorkshops;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Interface;
@@ -129,6 +130,11 @@ namespace Artisan.UI
                         OpenWindow = OpenWindow.Lists;
                     }
                     ImGui.Spacing();
+                    if (ImGui.Selectable("FC Workshops", OpenWindow == OpenWindow.FCWorkshop))
+                    {
+                        OpenWindow = OpenWindow.FCWorkshop;
+                    }
+                    ImGui.Spacing();
                     if (ImGui.Selectable("About", OpenWindow == OpenWindow.About))
                     {
                         OpenWindow = OpenWindow.About;
@@ -179,6 +185,11 @@ namespace Artisan.UI
                     if (OpenWindow == OpenWindow.Macro)
                     {
                         MacroUI.Draw();
+                    }
+
+                    if (OpenWindow == OpenWindow.FCWorkshop)
+                    {
+                        FCWorkshopUI.Draw();
                     }
 
                    
@@ -315,11 +326,39 @@ namespace Artisan.UI
                 ImGuiComponents.HelpMarker("If the current job is a specialist, spends any Crafter's Delineation you may have.\nCareful Observation replaces Observe.");
                 ImGui.TextWrapped("Max Quality%%");
                 ImGuiComponents.HelpMarker($"Once quality has reached the below percentage, Artisan will focus on progress only.");
-                if (ImGui.SliderInt("###SliderMaxQuality", ref maxQuality, 0, 100, $"{maxQuality}%%"))
+                if (ImGui.SliderInt("###SliderMaxQuality", ref maxQuality, 0, 100, $"%d%%"))
                 {
                     Service.Configuration.MaxPercentage = maxQuality;
                     Service.Configuration.Save();
                 }
+
+                bool requestStop = Service.Configuration.RequestToStopDuty;
+                bool requestResume = Service.Configuration.RequestToResumeDuty;
+                int resumeDelay = Service.Configuration.RequestToResumeDelay;
+
+                if (ImGui.Checkbox("Have Artisan turn off Endurance / pause lists when Duty Finder is ready", ref requestStop))
+                {
+                    Service.Configuration.RequestToStopDuty = requestStop;
+                    Service.Configuration.Save();
+                }
+
+                if (requestStop)
+                {
+                    if (ImGui.Checkbox("Have Artisan resume Endurance / unpause lists after leaving Duty", ref requestResume))
+                    {
+                        Service.Configuration.RequestToResumeDuty = requestResume;
+                        Service.Configuration.Save();
+                    }
+
+                    if (requestResume)
+                    {
+                        if (ImGui.SliderInt("Delay to resume (seconds)", ref resumeDelay, 5, 60))
+                        {
+                            Service.Configuration.RequestToResumeDelay = resumeDelay;
+                        }
+                    }
+                }
+
 
                 //bool useExperimental = Service.Configuration.UseExperminentalRotation;
                 //if (ImGui.Checkbox("Use Experimental Rotation (non-expert crafts)", ref useExperimental))
@@ -399,6 +438,7 @@ namespace Artisan.UI
         Macro = 3,
         Lists = 4,
         About = 5,
-        Debug = 6
+        Debug = 6,
+        FCWorkshop = 7,
     }
 }

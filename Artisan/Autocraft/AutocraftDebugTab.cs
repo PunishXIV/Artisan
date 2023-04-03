@@ -143,7 +143,9 @@ namespace Artisan.Autocraft
                 ImGui.Text($"Collectibility High: {CurrentCraft.CollectabilityHigh}");
                 ImGui.Text($"Crafting State: {CurrentCraft.State}");
                 ImGui.Text($"Can Finish: {CurrentCraft.CanFinishCraft()}");
+                ImGui.Text($"Current Rec: {CurrentCraft.RecommendationName}");
                 ImGui.Text($"Previous Action: {CurrentCraft.PreviousAction.NameOfAction()}");
+                ImGui.Text($"Tasks?: {Artisan.Tasks.Count}");
             }
 
             if (ImGui.CollapsingHeader("Spiritbonds"))
@@ -215,6 +217,7 @@ namespace Artisan.Autocraft
             }
             ImGuiEx.Text($"Gear condition: {RepairManager.GetMinEquippedPercent()}");
 
+            ImGui.Text($"Endurance Item: {Handler.RecipeID} {Handler.RecipeName}");
             if (ImGui.Button($"Open Endurance Item"))
             {
                 CraftingLists.CraftingListFunctions.OpenRecipeByID((uint)Handler.RecipeID);

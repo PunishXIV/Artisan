@@ -32,7 +32,11 @@ namespace Artisan
                             WasteNotUsed = true;
 
                         if (allOfSameName.Any(x => x == Skills.FinalAppraisal))
+                        {
                             JustUsedFinalAppraisal = true;
+                            CurrentRecommendation = 0;
+                            Artisan.Tasks.Clear();
+                        }
                         else
                             JustUsedFinalAppraisal = false;
 
@@ -84,8 +88,6 @@ namespace Artisan
                     {
                         MacroStep++;
                     }
-                    CurrentRecommendation = 0;
-                    Artisan.Tasks.Clear();
                 }
                 return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
             }

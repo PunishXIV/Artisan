@@ -206,7 +206,7 @@ namespace Artisan.CraftingLists
                     if (selectedList.Repair)
                     {
                         ImGui.PushItemWidth(200);
-                        if (ImGui.SliderInt("##repairp", ref selectedList.RepairPercent, 10, 100, $"{selectedList.RepairPercent}%%"))
+                        if (ImGui.SliderInt("##repairp", ref selectedList.RepairPercent, 10, 100, $"%d%%"))
                         {
                             Service.Configuration.Save();
                         }

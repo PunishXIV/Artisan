@@ -76,6 +76,9 @@ namespace Artisan.RawInformation
         public static Dictionary<uint, Quest>? QuestSheet = Service.DataManager?.GetExcelSheet<Quest>()?
             .Where(x => x.Id.ExtractText().Length > 0)
             .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, CompanyCraftPart>? WorkshopPartSheet = Service.DataManager?.GetExcelSheet<CompanyCraftPart>()?
+            .ToDictionary( i=> i.RowId, i => i);
     }
 
     public static class SheetExtensions

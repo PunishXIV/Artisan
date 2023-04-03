@@ -359,7 +359,12 @@ namespace Artisan.Autocraft
             {
                 //ImGui.SameLine();
                 ImGui.PushItemWidth(200);
-                ImGui.SliderInt("##repairp", ref Service.Configuration.RepairPercent, 10, 100, $"{Service.Configuration.RepairPercent}%%");
+                int percent = Service.Configuration.RepairPercent;
+                if (ImGui.SliderInt("##repairp", ref percent, 10, 100, $"%d%%"))
+                {
+                    Service.Configuration.RepairPercent = percent;
+                    Service.Configuration.Save();
+                }
             }
 
             bool materia = Service.Configuration.Materia;
@@ -469,7 +474,7 @@ namespace Artisan.Autocraft
                         {
                             if (RecipeName != rName)
                             {
-                                if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value?.Name!.ExtractText() == rName && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
+                                if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.ExtractText() == rName && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
                                 {
                                     RecipeID = (int)id.RowId;
                                     RecipeName = id.ItemResult.Value.Name.ExtractText();

@@ -77,6 +77,9 @@ namespace Artisan
         public bool UseExperminentalRotation { get; set; } = false;
         public bool HideQuestHelper { get; set; } = false;
         public bool DisableTheme { get; set; } = false;
+        public bool RequestToStopDuty { get; set; } = false;
+        public bool RequestToResumeDuty { get; set; } = false;
+        public int RequestToResumeDelay { get; set; } = 5;
 
         [NonSerialized]
         public int CraftX = 0;
