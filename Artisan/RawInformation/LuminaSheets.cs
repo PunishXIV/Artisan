@@ -1,7 +1,6 @@
 ﻿using Artisan.QuestSync;
 using Dalamud;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Utility;
 using ECommons;
 using ECommons.DalamudServices;
@@ -11,7 +10,6 @@ using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Permissions;
 using Action = Lumina.Excel.GeneratedSheets.Action;
 
 namespace Artisan.RawInformation
@@ -78,7 +76,16 @@ namespace Artisan.RawInformation
             .ToDictionary(i => i.RowId, i => i);
 
         public static Dictionary<uint, CompanyCraftPart>? WorkshopPartSheet = Service.DataManager?.GetExcelSheet<CompanyCraftPart>()?
-            .ToDictionary( i=> i.RowId, i => i);
+            .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, CompanyCraftProcess>? WorkshopProcessSheet = Service.DataManager?.GetExcelSheet<CompanyCraftProcess>()?
+            .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, CompanyCraftSequence>? WorkshopSequenceSheet = Service.DataManager?.GetExcelSheet<CompanyCraftSequence>()?
+            .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, CompanyCraftSupplyItem>? WorkshopSupplyItemSheet = Service.DataManager?.GetExcelSheet<CompanyCraftSupplyItem>()?
+            .ToDictionary(i => i.RowId, i => i);
     }
 
     public static class SheetExtensions
@@ -157,7 +164,7 @@ namespace Artisan.RawInformation
                 if (LuminaSheets.QuestSheet!.Any(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id))
                 {
                     var quest = LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id).Value;
-                   
+
                     var lang = Svc.ClientState.ClientLanguage switch
                     {
                         ClientLanguage.English => Language.English,

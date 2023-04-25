@@ -1,8 +1,9 @@
 ﻿using Artisan.Autocraft;
+using Artisan.FCWorkshops;
 using Artisan.RawInformation;
 using Dalamud.Interface;
-using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
+using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -15,11 +16,17 @@ namespace Artisan
 {
     internal class RecipeWindowUI : Window
     {
-        public RecipeWindowUI() : base($"###RecipeWindow", ImGuiWindowFlags.ChildWindow)
+        public RecipeWindowUI() : base($"###RecipeWindow", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoNavInputs)
         {
+            this.Size = new Vector2(0, 0);
+            this.Position = new Vector2(0, 0);
             IsOpen = true;
             ShowCloseButton = false;
             RespectCloseHotkey = false;
+            this.SizeConstraints = new WindowSizeConstraints()
+            {
+                MaximumSize = new Vector2(0,0),
+            };
         }
 
         public override void Draw()
@@ -31,8 +38,133 @@ namespace Artisan
 
                 DrawEnduranceCounter();
 
+                DrawWorkshopOverlay();
+
             }
             DrawMacroOptions();
+        }
+
+        private unsafe void DrawWorkshopOverlay()
+        {
+            try
+            {
+                var subWindow = Service.GameGui.GetAddonByName("SubmarinePartsMenu", 1);
+                if (subWindow == IntPtr.Zero)
+                    return;
+
+                var addonPtr = (AtkUnitBase*)subWindow;
+                if (addonPtr == null)
+                    return;
+
+                if (addonPtr->UldManager.NodeListCount < 38)
+                    return;
+
+                var node = addonPtr->UldManager.NodeList[2];
+
+                if (!node->IsVisible)
+                    return;
+
+                var position = AtkResNodeFunctions.GetNodePosition(node);
+                var scale = AtkResNodeFunctions.GetNodeScale(node);
+                var size = new Vector2(node->Width, node->Height) * scale;
+                var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
+                var textSize = ImGui.CalcTextSize("Create crafting list for this phase");
+
+                ImGuiHelpers.ForceNextWindowMainViewport();
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + (4f * scale.X), position.Y + size.Y - textSize.Y - (34f * scale.Y)));
+
+                ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
+                float oldSize = ImGui.GetFont().Scale;
+                ImGui.GetFont().Scale *= scale.X;
+                ImGui.PushFont(ImGui.GetFont());
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f.Scale());
+                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(10f.Scale(), 5f.Scale()));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f.Scale(), 3f.Scale()));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f.Scale(), 0f.Scale()));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f.Scale());
+                ImGui.Begin($"###WorkshopButton{node->NodeID}", ImGuiWindowFlags.NoScrollbar
+                    | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
+                    | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
+
+
+                if (ImGui.Button("Create crafting list for this phase"))
+                {
+                    var itemNameNode = addonPtr->UldManager.NodeList[37]->GetAsAtkTextNode();
+                    var phaseProgress = addonPtr->UldManager.NodeList[26]->GetAsAtkTextNode();
+
+                    if (LuminaSheets.WorkshopSequenceSheet.Values.Any(x => x.ResultItem.Value.Name.ExtractText() == itemNameNode->NodeText.ExtractText()))
+                    {
+                        var project = LuminaSheets.WorkshopSequenceSheet.Values.First(x => x.ResultItem.Value.Name.ExtractText() == itemNameNode->NodeText.ExtractText());
+                        var phaseNum = Convert.ToInt32(phaseProgress->NodeText.ToString().First().ToString());
+
+                        if (project.CompanyCraftPart.Count(x => x.Row > 0) == 1)
+                        {
+                            var part = project.CompanyCraftPart.First(x => x.Row > 0).Value;
+                            var phase = part.CompanyCraftProcess[phaseNum - 1];
+
+                            FCWorkshopUI.CreatePhaseList(phase.Value!, part.CompanyCraftType.Value.Name.ExtractText(), phaseNum, false, null, project);
+                            Notify.Success("FC Workshop List Created");
+                        }
+                        else
+                        {
+                            var currentPartNode = addonPtr->UldManager.NodeList[28]->GetAsAtkTextNode();
+                            string partStep = currentPartNode->NodeText.ExtractText().Split(":").Last();
+
+                            if (project.CompanyCraftPart.Any(x => x.Value.CompanyCraftType.Value.Name.ExtractText() == partStep))
+                            {
+                                var part = project.CompanyCraftPart.First(x => x.Value.CompanyCraftType.Value.Name.ExtractText() == partStep).Value;
+                                var phase = part.CompanyCraftProcess[phaseNum - 1];
+
+                                FCWorkshopUI.CreatePhaseList(phase.Value!, part.CompanyCraftType.Value.Name.ExtractText(), phaseNum, false, null, project);
+                                Notify.Success("FC Workshop List Created");
+                            }
+                        }
+                    }
+                }
+
+                if (ImGui.Button("Create crafting list for this phase (including precrafts)"))
+                {
+                    var itemNameNode = addonPtr->UldManager.NodeList[37]->GetAsAtkTextNode();
+                    var phaseProgress = addonPtr->UldManager.NodeList[26]->GetAsAtkTextNode();
+
+                    if (LuminaSheets.WorkshopSequenceSheet.Values.Any(x => x.ResultItem.Value.Name.ExtractText() == itemNameNode->NodeText.ExtractText()))
+                    {
+                        var project = LuminaSheets.WorkshopSequenceSheet.Values.First(x => x.ResultItem.Value.Name.ExtractText() == itemNameNode->NodeText.ExtractText());
+                        var phaseNum = Convert.ToInt32(phaseProgress->NodeText.ToString().First().ToString());
+
+                        if (project.CompanyCraftPart.Count(x => x.Row > 0) == 1)
+                        {
+                            var part = project.CompanyCraftPart.First(x => x.Row > 0).Value;
+                            var phase = part.CompanyCraftProcess[phaseNum - 1];
+
+                            FCWorkshopUI.CreatePhaseList(phase.Value!, part.CompanyCraftType.Value.Name.ExtractText(), phaseNum, true, null, project);
+                            Notify.Success("FC Workshop List Created");
+                        }
+                        else
+                        {
+                            var currentPartNode = addonPtr->UldManager.NodeList[28]->GetAsAtkTextNode();
+                            string partStep = currentPartNode->NodeText.ExtractText().Split(":").Last();
+
+                            if (project.CompanyCraftPart.Any(x => x.Value.CompanyCraftType.Value.Name.ExtractText() == partStep))
+                            {
+                                var part = project.CompanyCraftPart.First(x => x.Value.CompanyCraftType.Value.Name.ExtractText() == partStep).Value;
+                                var phase = part.CompanyCraftProcess[phaseNum - 1];
+
+                                FCWorkshopUI.CreatePhaseList(phase.Value!, part.CompanyCraftType.Value.Name.ExtractText(), phaseNum, true, null, project);
+                                Notify.Success("FC Workshop List Created");
+                            }
+                        }
+                    }
+                }
+
+                ImGui.End();
+                ImGui.PopStyleVar(5);
+                ImGui.GetFont().Scale = oldSize;
+                ImGui.PopFont();
+                ImGui.PopStyleColor();
+
+            }
+            catch { }
         }
 
         public override void PreDraw()
@@ -175,7 +307,7 @@ namespace Artisan
                 ImGuiHelpers.ForceNextWindowMainViewport();
                 if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || Service.Configuration.LockMiniMenu)
                 {
-                    ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.Always);
+                    ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.FirstUseEver);
                     AtkResNodeFunctions.ResetPosition = false;
                 }
                 else
@@ -226,6 +358,9 @@ namespace Artisan
 
         internal static unsafe void DrawEnduranceCounter()
         {
+            if (Handler.RecipeID == 0)
+                return;
+
             var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
             if (recipeWindow == IntPtr.Zero)
                 return;
@@ -251,7 +386,7 @@ namespace Artisan
 
                 ImGuiHelpers.ForceNextWindowMainViewport();
                 ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + (4f * scale.X), position.Y - textHeight.Y - (17f * scale.Y)));
-                
+
                 //Dalamud.Logging.PluginLog.Debug($"Length: {size.Length()}, Width: {node->Width}, Scale: {scale.Y}");
 
                 ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);

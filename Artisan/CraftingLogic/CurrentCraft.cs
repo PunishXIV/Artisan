@@ -598,7 +598,12 @@ namespace Artisan.CraftingLogic
                         if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
                         if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe;
                         if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
-                        //if (PredictFailureTouch(CharacterInfo.HighestLevelTouch())) return CharacterInfo.HighestLevelSynth();
+                        if (Skills.AdvancedTouch.LevelChecked() && Service.Configuration.UseAlternativeRotation)
+                        {
+                            if (PreviousActionSameAs(Skills.BasicTouch) && CanUse(Skills.StandardTouch) && GetStatus(Buffs.Innovation).StackCount >= 1) return Skills.StandardTouch;
+                            if (PreviousActionSameAs(Skills.StandardTouch) && CanUse(Skills.AdvancedTouch) && GetStatus(Buffs.Innovation).StackCount >= 2) return Skills.AdvancedTouch;
+                            if (CanUse(Skills.BasicTouch) && GetStatus(Buffs.Innovation).StackCount >= 3) return Skills.BasicTouch;
+                        }
                         if (CharacterInfo.HighestLevelTouch() != 0) return CharacterInfo.HighestLevelTouch();
 
                     }
@@ -617,7 +622,12 @@ namespace Artisan.CraftingLogic
                         if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
                         if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe;
                         if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
-                        //if (PredictFailureTouch(CharacterInfo.HighestLevelTouch())) return CharacterInfo.HighestLevelSynth();
+                        if (Skills.AdvancedTouch.LevelChecked() && Service.Configuration.UseAlternativeRotation)
+                        {
+                            if (PreviousActionSameAs(Skills.BasicTouch) && CanUse(Skills.StandardTouch)) return Skills.StandardTouch;
+                            if (PreviousActionSameAs(Skills.StandardTouch) && CanUse(Skills.AdvancedTouch)) return Skills.AdvancedTouch;
+                            if (CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
+                        }
                         if (CharacterInfo.HighestLevelTouch() != 0) return CharacterInfo.HighestLevelTouch();
                     }
                 }

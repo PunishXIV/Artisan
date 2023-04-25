@@ -181,6 +181,15 @@ namespace Artisan.MacroSystem
                     }
                     ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases progress then it will upgrade the action to Intensive Synthesis.");
 
+                    bool skipObserves = selectedMacro.MacroOptions.SkipObservesIfNotPoor;
+                    if (ImGui.Checkbox("Skip Observes If Not Poor", ref skipObserves))
+                    {
+                        selectedMacro.MacroOptions.SkipObservesIfNotPoor = skipObserves;
+                        if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
+                            Service.Configuration.SetMacro = selectedMacro;
+                        Service.Configuration.Save();
+                    }
+
                     if (!Raweditor)
                     {
                         ImGui.Columns(2, "actionColumns", false);

@@ -83,6 +83,18 @@ namespace Artisan
                             AdvancedTouchUsed = false;
 
                         JustUsedFinalAppraisal = false;
+
+                        if (allOfSameName.Any(x => x == Skills.HeartAndSoul))
+                        {
+                            CurrentRecommendation = 0;
+                            Artisan.Tasks.Clear();
+                        }
+
+                        if (allOfSameName.Any(x => x == Skills.CarefulObservation))
+                        {
+                            CurrentRecommendation = 0;
+                            Artisan.Tasks.Clear();
+                        }
                     }
                     if (Service.Configuration.UseMacroMode)
                     {

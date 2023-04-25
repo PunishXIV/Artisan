@@ -320,6 +320,14 @@ public unsafe class Artisan : IDalamudPlugin
                                 }
                             }
 
+                            if (macro.MacroOptions.SkipObservesIfNotPoor && CurrentCondition != CraftingLogic.CurrentCraft.Condition.Poor)
+                            {
+                                while (macro.MacroActions[MacroStep] == Skills.Observe || macro.MacroActions[MacroStep] == Skills.CarefulObservation)
+                                {
+                                    MacroStep++;
+                                }
+                            }
+
                             CurrentRecommendation = macro.MacroActions[MacroStep] == 0 ? CurrentRecommendation : macro.MacroActions[MacroStep];
 
                             try
@@ -351,6 +359,14 @@ public unsafe class Artisan : IDalamudPlugin
                                     {
                                         MacroStep++;
                                     }
+                                }
+                            }
+
+                            if (Service.Configuration.SetMacro.MacroOptions.SkipObservesIfNotPoor && CurrentCondition != CraftingLogic.CurrentCraft.Condition.Poor)
+                            {
+                                while (Service.Configuration.SetMacro.MacroActions[MacroStep] == Skills.Observe || Service.Configuration.SetMacro.MacroActions[MacroStep] == Skills.CarefulObservation)
+                                {
+                                    MacroStep++;
                                 }
                             }
 

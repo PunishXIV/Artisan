@@ -23,7 +23,7 @@ namespace Artisan.CraftingLists
 
         internal static void DrawTeamCraftListButtons()
         {
-            ImGui.SetCursorPosY(ImGui.GetContentRegionMax().Y - 90);
+            ImGui.SetCursorPosY(ImGui.GetWindowSize().Y - 90);
             if (ImGui.BeginChild("###TeamCraftSection", new Vector2(0, 0), false))
             {
                 string labelText = "Teamcraft Lists";

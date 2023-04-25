@@ -26,6 +26,8 @@ namespace Artisan.MacroSystem
         public bool UpgradeQualityActions { get; set; } = false;
 
         public bool UpgradeProgressActions { get; set; } = false;
+
+        public bool SkipObservesIfNotPoor { get; set; } = false;
     }
 
     public class MacroStepOptions

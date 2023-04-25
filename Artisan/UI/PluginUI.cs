@@ -98,7 +98,7 @@ namespace Artisan.UI
                 ImGui.TableNextColumn();
 
                 var regionSize = ImGui.GetContentRegionAvail();
-
+                
                 ImGui.PushStyleVar(ImGuiStyleVar.SelectableTextAlign, new Vector2(0.5f, 0.5f));
                 if (ImGui.BeginChild($"###ArtisanLeftSide", regionSize with { Y = topLeftSideHeight }, false, ImGuiWindowFlags.NoDecoration))
                 {
@@ -217,6 +217,7 @@ namespace Artisan.UI
             bool disableGlow = Service.Configuration.DisableHighlightedAction;
             bool disableToasts = Service.Configuration.DisableToasts;
             bool disableMini = Service.Configuration.DisableMiniMenu;
+            bool useAlternative = Service.Configuration.UseAlternativeRotation;
 
             ImGui.Separator();
             if (ImGui.CollapsingHeader("Mode Selections"))
@@ -359,14 +360,12 @@ namespace Artisan.UI
                     }
                 }
 
-
-                //bool useExperimental = Service.Configuration.UseExperminentalRotation;
-                //if (ImGui.Checkbox("Use Experimental Rotation (non-expert crafts)", ref useExperimental))
-                //{
-                //    Service.Configuration.UseExperminentalRotation = useExperimental;
-                //    Service.Configuration.Save();
-                //}
-                //ImGuiComponents.HelpMarker($"This is a new experimental rotation which currently doesn't work with many settings. It also hasn't been tweaked for lower level use, so your mileage may vary.");
+                if (ImGui.Checkbox("Use Alternative Quality Rotation (Level 84+)", ref useAlternative))
+                {
+                    Service.Configuration.UseAlternativeRotation = useAlternative;
+                    Service.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker("Switches to Basic -> Standard -> Advanced touch instead of highest level touch.");
             }
 
             if (ImGui.CollapsingHeader("UI Settings"))

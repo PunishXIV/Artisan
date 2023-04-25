@@ -254,6 +254,7 @@ namespace Artisan.Autocraft
                         if (ImGui.Selectable("Disable"))
                         {
                             Service.Configuration.Food = 0;
+                            Service.Configuration.Save();
                         }
                         foreach (var x in ConsumableChecker.GetFood(true))
                         {
@@ -261,6 +262,7 @@ namespace Artisan.Autocraft
                             {
                                 Service.Configuration.Food = x.Id;
                                 Service.Configuration.FoodHQ = false;
+                                Service.Configuration.Save();
                             }
                         }
                         foreach (var x in ConsumableChecker.GetFood(true, true))
@@ -269,6 +271,7 @@ namespace Artisan.Autocraft
                             {
                                 Service.Configuration.Food = x.Id;
                                 Service.Configuration.FoodHQ = true;
+                                Service.Configuration.Save();
                             }
                         }
                         ImGui.EndCombo();
@@ -284,6 +287,7 @@ namespace Artisan.Autocraft
                         if (ImGui.Selectable("Disable"))
                         {
                             Service.Configuration.Potion = 0;
+                            Service.Configuration.Save();
                         }
                         foreach (var x in ConsumableChecker.GetPots(true))
                         {
@@ -291,6 +295,7 @@ namespace Artisan.Autocraft
                             {
                                 Service.Configuration.Potion = x.Id;
                                 Service.Configuration.PotHQ = false;
+                                Service.Configuration.Save();
                             }
                         }
                         foreach (var x in ConsumableChecker.GetPots(true, true))
@@ -299,6 +304,7 @@ namespace Artisan.Autocraft
                             {
                                 Service.Configuration.Potion = x.Id;
                                 Service.Configuration.PotHQ = true;
+                                Service.Configuration.Save();
                             }
                         }
                         ImGui.EndCombo();
@@ -314,12 +320,14 @@ namespace Artisan.Autocraft
                         if (ImGui.Selectable("Disable"))
                         {
                             Service.Configuration.Manual = 0;
+                            Service.Configuration.Save();
                         }
                         foreach (var x in ConsumableChecker.GetManuals(true))
                         {
                             if (ImGui.Selectable($"{x.Name}"))
                             {
                                 Service.Configuration.Manual = x.Id;
+                                Service.Configuration.Save();
                             }
                         }
                         ImGui.EndCombo();
@@ -335,12 +343,14 @@ namespace Artisan.Autocraft
                         if (ImGui.Selectable("Disable"))
                         {
                             Service.Configuration.SquadronManual = 0;
+                            Service.Configuration.Save();
                         }
                         foreach (var x in ConsumableChecker.GetSquadronManuals(true))
                         {
                             if (ImGui.Selectable($"{x.Name}"))
                             {
                                 Service.Configuration.SquadronManual = x.Id;
+                                Service.Configuration.Save();
                             }
                         }
                         ImGui.EndCombo();
@@ -426,6 +436,13 @@ namespace Artisan.Autocraft
             {
                 try
                 {
+                    if (addon->UldManager.NodeList[88]->IsVisible)
+                    {
+                        RecipeID = 0;
+                        RecipeName = "";
+                        return;
+                    }
+
                     if (addon->UldManager.NodeList[49]->IsVisible)
                     {
                         var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
@@ -482,7 +499,6 @@ namespace Artisan.Autocraft
                             }
                         }
                     }
-
                 }
                 catch (Exception ex)
                 {

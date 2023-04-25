@@ -3,9 +3,13 @@ using Artisan.RawInformation;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
+using Dalamud.Logging;
 using ECommons;
+using ECommons.Automation;
 using ECommons.ImGuiMethods;
+using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using System;
@@ -46,7 +50,7 @@ namespace Artisan.CraftingLists
         private static string? renameList;
         public static bool Minimized = false;
         private static int timesToAdd = 1;
-
+        private static bool GatherBuddy => DalamudReflector.TryGetDalamudPlugin("GatherBuddy", out var gb, false, true);
         internal static void Draw()
         {
             string hoverText = "!! HOVER FOR INFORMATION !!";
@@ -70,7 +74,7 @@ namespace Artisan.CraftingLists
                 }
                 ImGui.Spacing();
             }
-            
+
             DrawListOptions();
             ImGui.Spacing();
         }
@@ -117,22 +121,22 @@ namespace Artisan.CraftingLists
                         }
 
                         ImGui.Separator();
-                        foreach (CraftingList l in Service.Configuration.CraftingLists)
+                        if (ImGui.BeginChild("###craftingLists", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 90)))
                         {
-                            var selected = ImGui.Selectable($"{l.Name}###list{l.ID}", l.ID == selectedList.ID);
-
-                            if (selected)
+                            foreach (CraftingList l in Service.Configuration.CraftingLists)
                             {
-                                selectedList = l;
-                                SelectedListMateralsNew.Clear();
-                                listMaterialsNew.Clear();
+                                var selected = ImGui.Selectable($"{l.Name}###list{l.ID}", l.ID == selectedList.ID);
+
+                                if (selected)
+                                {
+                                    selectedList = l;
+                                    SelectedListMateralsNew.Clear();
+                                    listMaterialsNew.Clear();
+                                }
                             }
                         }
-
+                        ImGui.EndChild();
                         Teamcraft.DrawTeamCraftListButtons();
-
-                        
-
                     }
                     ImGui.EndChild();
                 }
@@ -140,12 +144,14 @@ namespace Artisan.CraftingLists
                 {
                     Teamcraft.DrawTeamCraftListButtons();
                 }
+
+
             }
 
             if (selectedList.ID != 0)
             {
                 if (!Minimized)
-                ImGui.SameLine();
+                    ImGui.SameLine();
                 if (ImGui.BeginChild("###selectedList", new Vector2(0, ImGui.GetContentRegionAvail().Y), false))
                 {
                     if (!renameMode)
@@ -312,6 +318,7 @@ namespace Artisan.CraftingLists
                                         if (ImGui.Selectable("Disable"))
                                         {
                                             options.Food = 0;
+                                            Service.Configuration.Save();
                                         }
                                         foreach (var x in ConsumableChecker.GetFood(true))
                                         {
@@ -319,6 +326,7 @@ namespace Artisan.CraftingLists
                                             {
                                                 options.Food = x.Id;
                                                 options.FoodHQ = false;
+                                                Service.Configuration.Save();
                                             }
                                         }
                                         foreach (var x in ConsumableChecker.GetFood(true, true))
@@ -327,6 +335,7 @@ namespace Artisan.CraftingLists
                                             {
                                                 options.Food = x.Id;
                                                 options.FoodHQ = true;
+                                                Service.Configuration.Save();
                                             }
                                         }
 
@@ -344,6 +353,7 @@ namespace Artisan.CraftingLists
                                         if (ImGui.Selectable("Disable"))
                                         {
                                             options.Potion = 0;
+                                            Service.Configuration.Save();
                                         }
                                         foreach (var x in ConsumableChecker.GetPots(true))
                                         {
@@ -351,6 +361,7 @@ namespace Artisan.CraftingLists
                                             {
                                                 options.Potion = x.Id;
                                                 options.PotHQ = false;
+                                                Service.Configuration.Save();
                                             }
                                         }
                                         foreach (var x in ConsumableChecker.GetPots(true, true))
@@ -359,6 +370,7 @@ namespace Artisan.CraftingLists
                                             {
                                                 options.Potion = x.Id;
                                                 options.PotHQ = true;
+                                                Service.Configuration.Save();
                                             }
                                         }
 
@@ -449,6 +461,17 @@ namespace Artisan.CraftingLists
                         ImGui.Columns(1, null, false);
                         if (ImGui.CollapsingHeader("Total Ingredients"))
                         {
+                            if (GatherBuddy)
+                            {
+                                ImGui.TextWrapped($"Click the item name to copy to clipboard.\nHold shift and click the item name to perform a GatherBuddy gather command for the item.\nHold ctrl and click the item name to perform an Item Search command for the item.");
+                            }
+                            else
+                            {
+                                ImGui.TextWrapped($"Click the item name to copy to clipboard.\nHold ctrl and click the item name to perform an Item Search command for the item.\nInstall GatherBuddy for more functionality.");
+                            }
+                            
+                            ImGui.Spacing();
+                            ImGui.Separator();
                             DrawTotalIngredientsTable();
                         }
                         if (ImGui.Button("Start Crafting List", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
@@ -466,7 +489,7 @@ namespace Artisan.CraftingLists
 
                     DrawRecipeData();
 
-                   
+
                 }
 
                 ImGui.EndChild();
@@ -477,7 +500,7 @@ namespace Artisan.CraftingLists
 
 
 
-        private static void DrawTotalIngredientsTable()
+        private unsafe static void DrawTotalIngredientsTable()
         {
             if (ImGui.BeginTable("###ListMaterialTableRaw", 3, ImGuiTableFlags.Borders))
             {
@@ -510,7 +533,20 @@ namespace Artisan.CraftingLists
                             var count = item.Value;
                             ImGui.TableNextRow();
                             ImGui.TableNextColumn();
-                            ImGui.Text($"{name}");
+                            ImGui.Text($"{name}"); 
+                            if (GatherBuddy && ImGui.IsItemClicked() && ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl)
+                            {
+                                Chat.Instance.SendMessage($"/gather {name}");
+                            }
+                            if (ImGui.IsItemClicked() && ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift)
+                            {
+                                ItemFinderModule.Instance()->SearchForItem((uint)item.Key);
+                            }
+                            if (ImGui.IsItemClicked() && !ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl)
+                            {
+                                ImGui.SetClipboardText(name);
+                                Notify.Success("Name copied to clipboard");
+                            }
                             ImGui.TableNextColumn();
                             ImGui.Text($"{count}");
                             ImGui.TableNextColumn();
@@ -566,6 +602,15 @@ namespace Artisan.CraftingLists
                                 ImGui.TableNextRow();
                                 ImGui.TableNextColumn();
                                 ImGui.Text($"{name}");
+                                if (ImGui.IsItemClicked() && ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift)
+                                {
+                                    ItemFinderModule.Instance()->SearchForItem((uint)item.Key);
+                                }
+                                if (ImGui.IsItemClicked() && !ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl)
+                                {
+                                    ImGui.SetClipboardText(name);
+                                    Notify.Success("Name copied to clipboard");
+                                }
                                 ImGui.TableNextColumn();
                                 ImGui.Text($"{count}");
                                 ImGui.TableNextColumn();
@@ -682,47 +727,11 @@ namespace Artisan.CraftingLists
                     SelectedListMateralsNew.Clear();
                     listMaterialsNew.Clear();
 
-                    for (int p = 0; p < timesToAdd; p++) {
-                        foreach (var subItem in SelectedRecipe.UnkData5)
-                        {
-                            var subRecipe = GetIngredientRecipe(subItem.ItemIngredient);
-                            if (subRecipe.RowId != 0)
-                            {
-                                foreach (var subsubItem in subRecipe.UnkData5)
-                                {
-                                    var subsubRecipe = GetIngredientRecipe(subsubItem.ItemIngredient);
-                                    if (subsubRecipe.RowId != 0)
-                                    {
-                                        for (int i = 1; i <= Math.Ceiling((double)subsubItem.AmountIngredient / (double)subsubRecipe.AmountResult); i++)
-                                        {
-                                            if (selectedList.Items.IndexOf(subsubRecipe.RowId) == -1)
-                                            {
-                                                selectedList.Items.Add(subsubRecipe.RowId);
-                                            }
-                                            else
-                                            {
-                                                var indexOfLast = selectedList.Items.IndexOf(subsubRecipe.RowId);
-                                                selectedList.Items.Insert(indexOfLast, subsubRecipe.RowId);
-                                            }
+                    AddAllSubcrafts(SelectedRecipe, selectedList);
 
-                                        }
-                                    }
-                                }
-                                for (int i = 1; i <= Math.Ceiling((double)subItem.AmountIngredient / (double)subRecipe.AmountResult); i++)
-                                {
-                                    if (selectedList.Items.IndexOf(subRecipe.RowId) == -1)
-                                    {
-                                        selectedList.Items.Add(subRecipe.RowId);
-                                    }
-                                    else
-                                    {
-                                        var indexOfLast = selectedList.Items.IndexOf(subRecipe.RowId);
-                                        selectedList.Items.Insert(indexOfLast, subRecipe.RowId);
-                                    }
-                                }
-                            }
-                        }
-
+                    PluginLog.Debug($"Adding: {SelectedRecipe.ItemResult.Value.Name.RawString} {timesToAdd} times");
+                    for (int i = 1; i <= timesToAdd; i++)
+                    {
                         if (selectedList.Items.IndexOf(SelectedRecipe.RowId) == -1)
                         {
                             selectedList.Items.Add(SelectedRecipe.RowId);
@@ -733,7 +742,39 @@ namespace Artisan.CraftingLists
                             selectedList.Items.Insert(indexOfLast, SelectedRecipe.RowId);
                         }
                     }
+
                     Service.Configuration.Save();
+                }
+            }
+        }
+
+        public static void AddAllSubcrafts(Recipe selectedRecipe, CraftingList selectedList, int amounts = 1)
+        {
+            PluginLog.Debug($"Processing: {selectedRecipe.ItemResult.Value.Name.RawString}");
+            foreach (var subItem in selectedRecipe.UnkData5.Where(x => x.AmountIngredient > 0))
+            {
+                PluginLog.Debug($"Sub-item: {LuminaSheets.ItemSheet[(uint)subItem.ItemIngredient].Name.RawString} * {subItem.AmountIngredient}");
+                var subRecipe = GetIngredientRecipe(subItem.ItemIngredient);
+                if (subRecipe.RowId != 0)
+                {
+                    AddAllSubcrafts(subRecipe, selectedList, subItem.AmountIngredient * amounts);
+
+                    PluginLog.Debug($"Adding: {subRecipe.ItemResult.Value.Name.RawString} {Math.Ceiling((double)subItem.AmountIngredient / (double)subRecipe.AmountResult * (double)timesToAdd * amounts)} times");
+
+                    for (int i = 1; i <= Math.Ceiling((double)subItem.AmountIngredient / (double)subRecipe.AmountResult * (double)timesToAdd * amounts); i++)
+                    {
+                        if (selectedList.Items.IndexOf(subRecipe.RowId) == -1)
+                        {
+                            selectedList.Items.Add(subRecipe.RowId);
+                        }
+                        else
+                        {
+                            var indexOfLast = selectedList.Items.IndexOf(subRecipe.RowId);
+                            selectedList.Items.Insert(indexOfLast, subRecipe.RowId);
+                        }
+                    }
+
+                    PluginLog.Debug($"There are now {selectedList.Items.Count} items on the list");
                 }
             }
         }
@@ -763,6 +804,10 @@ namespace Artisan.CraftingLists
                             ImGui.TableNextRow();
                             ImGui.TableNextColumn();
                             ImGui.Text($"{name}");
+                            if (ImGui.IsItemClicked())
+                            {
+                                Chat.Instance.SendMessage($"/gather {name}");
+                            }
                             ImGui.TableNextColumn();
                             ImGui.Text($"{count}");
                             ImGui.TableNextColumn();
@@ -1068,7 +1113,7 @@ namespace Artisan.CraftingLists
 
         }
 
-        
+
 
         public static Recipe? GetIngredientRecipe(string ingredient)
         {
