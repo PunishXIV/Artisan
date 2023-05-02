@@ -5,6 +5,7 @@ using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.GameFonts;
 using Dalamud.Interface.Windowing;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
@@ -50,6 +51,7 @@ namespace Artisan.UI
 
         public PluginUI() : base($"{P.Name} {P.GetType().Assembly.GetName().Version}###Artisan")
         {
+            this.RespectCloseHotkey = false;
             this.SizeConstraints = new()
             {
                 MinimumSize = new(250, 100),
@@ -130,6 +132,11 @@ namespace Artisan.UI
                         OpenWindow = OpenWindow.Lists;
                     }
                     ImGui.Spacing();
+                    if (ImGui.Selectable("List Builder", OpenWindow == OpenWindow.SpecialList))
+                    {
+                        OpenWindow = OpenWindow.SpecialList;
+                    }
+                    ImGui.Spacing();
                     if (ImGui.Selectable("FC Workshops", OpenWindow == OpenWindow.FCWorkshop))
                     {
                         OpenWindow = OpenWindow.FCWorkshop;
@@ -192,6 +199,10 @@ namespace Artisan.UI
                         FCWorkshopUI.Draw();
                     }
 
+                    if (OpenWindow == OpenWindow.SpecialList)
+                    {
+                        SpecialLists.Draw();
+                    }
                    
                 }
                 ImGui.EndChild();
@@ -366,6 +377,9 @@ namespace Artisan.UI
                     Service.Configuration.Save();
                 }
                 ImGuiComponents.HelpMarker("Switches to Basic -> Standard -> Advanced touch instead of highest level touch.");
+
+                if (ImGui.Checkbox("Disable Automatically Equipping Required Items for Crafts", ref Service.Configuration.DontEquipItems))
+                    Service.Configuration.Save();
             }
 
             if (ImGui.CollapsingHeader("UI Settings"))
@@ -422,10 +436,43 @@ namespace Artisan.UI
                     ImGui.SetClipboardText("DS1H4sIAAAAAAAACq1YS3PbNhD+Kx2ePR6AeJG+xXYbH+KOJ3bHbW60REusaFGlKOXhyX/v4rEACEqumlY+ECD32/cuFn7NquyCnpOz7Cm7eM1+zy5yvfnDPL+fZTP4at7MHVntyMi5MGTwBLJn+HqWLZB46Ygbx64C5kQv/nRo8xXQ3AhZZRdCv2jdhxdHxUeqrJO3Ftslb5l5u/Fa2rfEvP0LWBkBPQiSerF1Cg7wApBn2c5wOMv2juNn9/zieH09aP63g+Kqyr1mI91mHdj5mj3UX4bEG+b5yT0fzRPoNeF1s62e2np+EuCxWc+7z5cLr1SuuCBlkTvdqBCEKmaQxCHJeZmXnFKlgMHVsmnnEZ5IyXMiFUfjwt6yCHvDSitx1212m4gHV0QURY4saMEYl6Q4rsRl18/rPuCZQ+rFJxeARwyAJb5fVmD4NBaJEK3eL331UscuAgflOcY0J5zLUioHpHmhCC0lCuSBwU23r3sfF/0N0wKdoxcGFqHezYZmHypJIkgiSCJIalc8NEM7Utb6ErWlwngt9aUoFRWSB3wilRUl5SRwISUFvhJt9lvDrMgLIjgLzK66tq0228j0H+R3W693l1UfmUd9kqA79MKn9/2sB9lPI8hbofb073vdh1BbQYRgqKzfGbTfTWVqHmnMOcXUpI6BXhzGJjEQCNULmy4x9GpZz1a3Vb8KqaIDz4RPVGZin6dlZPKDSS29baAyRqYfzVGnr0ekaaowTbEw9MLjLnfD0GGT1unHSSlKr2lRyqLA2qU5ESovi6m+lkvqYiZ1/ygxyqrgjDKF8Yr2lp1pd4R7dokhvOBUQk37TCVKQbX4TMVtyuymruKWJCURVEofClYWbNpWCQfFifDwsWnYyXXS8ZxDOI+H0uLToPzrhKg3VV8N3amt1dP/t5goW/E85pg2pB8N8sd623yr3/dNOPYVstELg9cLA8zFCJKapQpEYkPVi9CMA/L/Uv8hrk1hmg9WKKMQXyIxnGFrm6i06MkhBHlIiQ8rI0xx4k/rsLWBsWpbTmmhqFIypcvUHTRgQ859V/bbKaPf1s/dbBcfD0R6NnCWwg/dS3lB4MfQMSrnCY9EK8qEw9uUl4YdHjRQRVFTuu5mq2a9uOvrfVOH0SDHqtXxMjDfi1RA/fyyGb7G5y5KdJg8EnTXdsOHZl1vQyJJQrlCQTDsEBi80HdhO+VwrEP48hwdTRp202yHbgGzhRfu03/UCA4gjglDd44mUT2D2i4UH9coSy8mfjEYN54NfbcOOIZnn15M7YqAH5rFEmdl3eJ8r0N5E9zH0fz71nQQyN+1/zSP6yR2A/l93dazoY6n5DdyiumWc91Xi+u+2zxU/aI+Jipq2QD5tdrfgO3t2P5jcqz9gLEXAEjgFHzcMJUgr5uXyDQsNSxZtCvX81s3r1qLOw0EztC3ORiEs4vssu9W9fqn2263HqpmncFF016PqklGjh1kjQ2NUyUJH08mcIk9gSrqn+jg0XFoqeqTrmDPwQv+PDEr6wl3oljaxcRSRTCyMc/lJJ/lAcnNhMr3WWZ+ES3exrXE+HJ2yNOrowkb97A2cExdXcrYjaFToVDfGSMqnCaDa0pi/vzNMyLG/wQEyzmzfhx7KAwJUn93Fz6v5shD8B+DRAG4Oh+QHYapovAd3/OEQzuiDSdE4c8wjJHh7iiBFFozvP3+NxT8RWGlEQAA");
                     Notify.Success("Theme copied to clipboard");
                 }
-                if (ImGui.IsItemHovered())
+            }
+            if (ImGui.CollapsingHeader("List Defaults"))
+            {
+                ImGui.TextWrapped($"These settings will automatically be applied when creating a crafting list.");
+
+                if (ImGui.Checkbox("Skip items you already have enough of", ref Service.Configuration.DefaultListSkip))
                 {
-                    
+                    Service.Configuration.Save();
                 }
+
+                if (ImGui.Checkbox("Automatically Extract Materia", ref Service.Configuration.DefaultListMateria))
+                {
+                    Service.Configuration.Save();
+                }
+
+                if (ImGui.Checkbox("Automatic Repairs", ref Service.Configuration.DefaultListRepair))
+                {
+                    Service.Configuration.Save();
+                }
+
+                if (Service.Configuration.DefaultListRepair)
+                {
+                    ImGui.TextWrapped($"Repair at");
+                    ImGui.SameLine();
+                    if (ImGui.SliderInt("###SliderRepairDefault", ref Service.Configuration.DefaultListRepairPercent, 0, 100, $"%d%%"))
+                    {
+                        Service.Configuration.Save();
+                    }
+                }
+
+                if (ImGui.Checkbox("Set new items added to list as quick synth", ref Service.Configuration.DefaultListQuickSynth))
+                {
+                    Service.Configuration.Save();
+                }
+
+                if (ImGui.Checkbox($@"Reset ""Number of Times to Add"" after adding to list.", ref Service.Configuration.ResetTimesToAdd))
+                    Service.Configuration.Save();
             }
         }
     }
@@ -440,5 +487,6 @@ namespace Artisan.UI
         About = 5,
         Debug = 6,
         FCWorkshop = 7,
+        SpecialList = 8,
     }
 }

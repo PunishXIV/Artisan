@@ -104,6 +104,13 @@ namespace Artisan.RawInformation
             }
         }
 
+        public static string NameOfItem(this uint id)
+        {
+            if (id == 0) return "";
+
+            return LuminaSheets.ItemSheet[id].Name.ExtractText();
+        }
+
         public static string NameOfQuest(this ushort id)
         {
             if (id == 9998 || id == 9999)

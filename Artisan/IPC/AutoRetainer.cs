@@ -6,18 +6,20 @@ namespace Artisan.IPC;
 
 internal static class AutoRetainer
 {
+    internal static bool ReEnable = false;
     internal static bool IsEnabled()
     {
         if (DalamudReflector.TryGetDalamudPlugin("AutoRetainer", out var pl, false, true))
         {
-            return Svc.PluginInterface.GetIpcSubscriber<bool>("AutoRetainer.GetSuppressed").InvokeFunc();
+            ReEnable = Svc.PluginInterface.GetIpcSubscriber<bool>("AutoRetainer.GetSuppressed").InvokeFunc();
+            return ReEnable;
         }
         return false;
     }
 
     internal static void Suppress()
     {
-        if (DalamudReflector.TryGetDalamudPlugin("AutoRetainer", out var pl, false, true))
+        if (IsEnabled() && DalamudReflector.TryGetDalamudPlugin("AutoRetainer", out var pl, false, true))
         {
             Svc.PluginInterface.GetIpcSubscriber<bool, object>("AutoRetainer.SetSuppressed").InvokeAction(true);
         }
@@ -25,9 +27,10 @@ internal static class AutoRetainer
 
     internal static void Unsuppress()
     {
-        if (DalamudReflector.TryGetDalamudPlugin("AutoRetainer", out var pl, false, true))
+        if (ReEnable && DalamudReflector.TryGetDalamudPlugin("AutoRetainer", out var pl, false, true))
         {
             Svc.PluginInterface.GetIpcSubscriber<bool, object>("AutoRetainer.SetSuppressed").InvokeAction(false);
+            ReEnable = false;
         }
     }
 }

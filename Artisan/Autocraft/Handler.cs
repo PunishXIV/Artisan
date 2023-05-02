@@ -2,6 +2,7 @@
 using Artisan.CraftingLogic;
 using Artisan.RawInformation;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Components;
 using Dalamud.Utility.Signatures;
 using ECommons;
@@ -245,6 +246,7 @@ namespace Artisan.Autocraft
             ImGuiComponents.HelpMarker("Artisan will require the configured food, manuals or medicine and refuse to craft if it cannot be found.");
             if (requireFoodPot)
             {
+
                 {
                     ImGuiEx.TextV("Food Usage:");
                     ImGui.SameLine(300f.Scale());
@@ -356,6 +358,7 @@ namespace Artisan.Autocraft
                         ImGui.EndCombo();
                     }
                 }
+
             }
 
             bool repairs = Service.Configuration.Repair;

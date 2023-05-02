@@ -32,6 +32,8 @@ namespace Artisan.CraftingLists
         public bool Repair { get; set; } = false;
 
         public int RepairPercent = 50;
+
+        public bool AddAsQuickSynth = false;
     }
 
     public class ListItemOptions
@@ -62,6 +64,20 @@ namespace Artisan.CraftingLists
         public static bool Save(this CraftingList list, bool isNew = false)
         {
             if (list.Items.Count() == 0 && !isNew) return false;
+
+            list.SkipIfEnough = Service.Configuration.DefaultListSkip;
+            list.Materia = Service.Configuration.DefaultListMateria;
+            list.Repair = Service.Configuration.DefaultListRepair;
+            list.RepairPercent = Service.Configuration.DefaultListRepairPercent;
+            list.AddAsQuickSynth = Service.Configuration.DefaultListQuickSynth;
+
+            if (list.AddAsQuickSynth)
+            {
+                foreach (var item in list.ListItemOptions)
+                {
+                    item.Value.NQOnly = true;
+                }
+            }
 
             Service.Configuration.CraftingLists.Add(list);
             Service.Configuration.Save();
@@ -112,7 +128,7 @@ namespace Artisan.CraftingLists
             var recipe = CraftingListUI.FilteredList[currentProcessedItem];
             if (recipe.RowId == 0) return false;
 
-            return CraftingListUI.CheckForIngredients(recipe, false);
+            return CraftingListUI.CheckForIngredients(recipe, false).Result;
         }
 
         internal unsafe static void ProcessList(CraftingList selectedList)
@@ -259,7 +275,7 @@ namespace Artisan.CraftingLists
                 OpenRecipeByID(CraftingListUI.CurrentProcessedItem);
                 SetIngredients(CraftingListUI.CurrentProcessedItem);
 
-                if (options.NQOnly)
+                if (options.NQOnly && recipe.CanQuickSynth)
                 {
                     var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
                     var count = lastIndex - CurrentIndex + 1;
@@ -310,7 +326,7 @@ namespace Artisan.CraftingLists
 
             if (isCrafting)
             {
-                if (options.NQOnly)
+                if (options.NQOnly && recipe.CanQuickSynth)
                 {
                     var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
                     var count = lastIndex - CurrentIndex + 1;

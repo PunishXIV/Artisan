@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Authors></Authors>
     <Company></Company>
-    <Version>1.7.4.14</Version>
+    <Version>1.7.4.19</Version>
     <Description>A 'simple' crafting plugin.</Description>
     <Copyright>Taurenkey</Copyright>
   </PropertyGroup>
@@ -68,6 +68,9 @@
     <None Update="Fonts\CaviarDreams.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Fonts\CaviarDreams_Bold.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Icon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -75,6 +78,7 @@
 
   <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="2.1.8" />
+    <PackageReference Include="SharpDX.Direct2D1" Version="4.2.0" />
     <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
     <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj" />
     <ProjectReference Include="..\PunishLib\PunishLib\PunishLib.csproj" />

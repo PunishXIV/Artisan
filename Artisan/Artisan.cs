@@ -42,6 +42,7 @@ public unsafe class Artisan : IDalamudPlugin
     public static List<Task> Tasks = new();
     public static bool warningMessage = false;
 
+    internal FontManager fm;
     internal StyleModel Style;
     internal ImFontPtr CustomFont;
     internal ImFontPtr ScaledFont;
@@ -61,7 +62,7 @@ public unsafe class Artisan : IDalamudPlugin
         cw = new();
         PluginUi = new();
         config = Service.Configuration;
-
+        fm = new FontManager();
         Service.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
         {
             HelpMessage = "Opens the Artisan menu.",
@@ -81,7 +82,8 @@ public unsafe class Artisan : IDalamudPlugin
         ConsumableChecker.Init();
         Handler.Init();
         IPC.IPC.Init();
-        
+        RetainerInfo.Init();
+
         ws.AddWindow(new RecipeWindowUI());
         ws.AddWindow(new ProcessingWindow());
         ws.AddWindow(new QuestHelper());
@@ -97,14 +99,14 @@ public unsafe class Artisan : IDalamudPlugin
     {
         if (Svc.ClientState.ClientLanguage == Dalamud.ClientLanguage.Japanese) return;
 
-        string path = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Fonts", "CaviarDreams.ttf");
+        string path = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Fonts", "CaviarDreams_Bold.ttf");
         if (File.Exists(path))
         {
-            CustomFont = ImGui.GetIO().Fonts.AddFontFromFileTTF(path, ImGui.GetFontSize());
+            PluginLog.Debug($"{fm.CustomFont.HasValue}");
+            CustomFont = fm.CustomFont.Value;
         }
 
     }
-
     private void ScanForHQItems(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
         if (type == (XivChatType)2242 && Service.Condition[ConditionFlag.Crafting])
@@ -521,7 +523,7 @@ public unsafe class Artisan : IDalamudPlugin
     {
         PluginUi.Dispose();
         Handler.Dispose();
-        ECommonsMain.Dispose();
+        RetainerInfo.Dispose();
         IPC.IPC.Dispose();
 
         Service.CommandManager.RemoveHandler(commandName);
@@ -537,6 +539,7 @@ public unsafe class Artisan : IDalamudPlugin
         SatisfactionManagerHelper.Dispose();
         Service.Plugin = null!;
         ws.RemoveAllWindows();
+        ECommonsMain.Dispose();
         ws = null!;
 
     }

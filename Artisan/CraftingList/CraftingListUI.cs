@@ -6,9 +6,11 @@ using Dalamud.Interface.Components;
 using Dalamud.Logging;
 using ECommons;
 using ECommons.Automation;
+using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -17,6 +19,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Artisan.CraftingLists
 {
@@ -26,7 +30,7 @@ namespace Artisan.CraftingLists
         internal static string Search = "";
         public unsafe static InventoryManager* invManager = InventoryManager.Instance();
         public static Dictionary<Recipe, bool> CraftableItems = new();
-        internal static List<int> SelectedRecipeRawIngredients = new();
+        internal static Dictionary<int, int> SelectedRecipeRawIngredients = new();
         internal static Dictionary<int, int> SelectedListMateralsNew = new();
         internal static Dictionary<int, bool> SelectedRecipesCraftable = new();
         internal static bool keyboardFocus = true;
@@ -40,7 +44,7 @@ namespace Artisan.CraftingLists
 
         internal static List<uint> jobs = new();
         internal static List<int> rawIngredientsList = new();
-        internal static List<int> subtableList = new();
+        internal static Dictionary<int, int> subtableList = new();
         internal static List<int> listMaterials = new();
         internal static Dictionary<int, int> listMaterialsNew = new();
         internal static uint selectedListItem;
@@ -51,6 +55,8 @@ namespace Artisan.CraftingLists
         public static bool Minimized = false;
         private static int timesToAdd = 1;
         private static bool GatherBuddy => DalamudReflector.TryGetDalamudPlugin("GatherBuddy", out var gb, false, true);
+
+        private unsafe static void SearchItem(uint item) => ItemFinderModule.Instance()->SearchForItem(item);
         internal static void Draw()
         {
             string hoverText = "!! HOVER FOR INFORMATION !!";
@@ -132,6 +138,7 @@ namespace Artisan.CraftingLists
                                     selectedList = l;
                                     SelectedListMateralsNew.Clear();
                                     listMaterialsNew.Clear();
+                                    selectedListItem = 0;
                                 }
                             }
                         }
@@ -217,6 +224,10 @@ namespace Artisan.CraftingLists
                             Service.Configuration.Save();
                         }
                     }
+                    if (ImGui.Checkbox("Set new items added to list as quick synth", ref selectedList.AddAsQuickSynth))
+                    {
+                        Service.Configuration.Save();
+                    }
 
                     if (selectedList.Items.Count > 0)
                     {
@@ -242,6 +253,7 @@ namespace Artisan.CraftingLists
                             ImGui.NextColumn();
                             if (selectedListItem != 0)
                             {
+                                var recipe = FilteredList[selectedListItem];
                                 ImGui.Text("Options");
                                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Trash))
                                 {
@@ -292,13 +304,23 @@ namespace Artisan.CraftingLists
                                 if (!selectedList.ListItemOptions.ContainsKey(selectedListItem))
                                 {
                                     selectedList.ListItemOptions.TryAdd(selectedListItem, new ListItemOptions());
+                                    if (selectedList.AddAsQuickSynth && recipe.CanQuickSynth)
+                                        selectedList.ListItemOptions[selectedListItem].NQOnly = true;
                                 }
                                 selectedList.ListItemOptions.TryGetValue(selectedListItem, out var options);
-                                bool NQOnly = options.NQOnly;
-                                if (ImGui.Checkbox("Quick Synthesis this item", ref NQOnly))
+
+                                if (recipe.CanQuickSynth)
                                 {
-                                    options.NQOnly = NQOnly;
-                                    Service.Configuration.Save();
+                                    bool NQOnly = options.NQOnly;
+                                    if (ImGui.Checkbox("Quick Synthesis this item", ref NQOnly))
+                                    {
+                                        options.NQOnly = NQOnly;
+                                        Service.Configuration.Save();
+                                    }
+                                }
+                                else
+                                {
+                                    ImGui.TextWrapped("This item cannot be quick synthed.");
                                 }
 
                                 string? preview = Service.Configuration.IndividualMacros.TryGetValue((uint)selectedListItem, out var prevMacro) && prevMacro != null ? Service.Configuration.IndividualMacros[(uint)selectedListItem].Name : "";
@@ -469,7 +491,7 @@ namespace Artisan.CraftingLists
                             {
                                 ImGui.TextWrapped($"Click the item name to copy to clipboard.\nHold ctrl and click the item name to perform an Item Search command for the item.\nInstall GatherBuddy for more functionality.");
                             }
-                            
+
                             ImGui.Spacing();
                             ImGui.Separator();
                             DrawTotalIngredientsTable();
@@ -483,6 +505,24 @@ namespace Artisan.CraftingLists
                             Processing = true;
                             Handler.Enable = false;
                         }
+                        if (RetainerInfo.ATools)
+                        {
+                            if (RetainerInfo.TM.IsBusy)
+                            {
+                                if (ImGui.Button("Abort Collecting From Retainer", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
+                                {
+                                    RetainerInfo.TM.Abort();
+                                }
+                            }
+                            else
+                            {
+                                if (ImGui.Button("Restock Inventory From Retainers", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
+                                {
+                                    RetainerInfo.RestockFromRetainers(selectedList);
+                                }
+                            }
+                        }
+
                     }
                     ImGui.Spacing();
                     ImGui.Separator();
@@ -500,80 +540,122 @@ namespace Artisan.CraftingLists
 
 
 
-        private unsafe static void DrawTotalIngredientsTable()
+        private async static void DrawTotalIngredientsTable()
         {
-            if (ImGui.BeginTable("###ListMaterialTableRaw", 3, ImGuiTableFlags.Borders))
+            int colCount = RetainerInfo.ATools ? 4 : 3;
+            try
             {
-                ImGui.TableSetupColumn("Ingredient", ImGuiTableColumnFlags.WidthFixed);
-                ImGui.TableSetupColumn("Required", ImGuiTableColumnFlags.WidthFixed);
-                ImGui.TableSetupColumn("Inventory", ImGuiTableColumnFlags.WidthFixed);
-                ImGui.TableHeadersRow();
-
-                if (SelectedListMateralsNew.Count == 0)
+                if (ImGui.BeginTable("###ListMaterialTableRaw", colCount, ImGuiTableFlags.Borders))
                 {
-                    foreach (var item in selectedList.Items.Distinct())
-                    {
-                        Recipe r = FilteredList[item];
-                        AddRecipeIngredientsToList(r, ref SelectedListMateralsNew, false, selectedList);
-                    }
-                }
+                    ImGui.TableSetupColumn("Ingredient", ImGuiTableColumnFlags.WidthFixed);
+                    ImGui.TableSetupColumn("Required", ImGuiTableColumnFlags.WidthFixed);
+                    ImGui.TableSetupColumn("Inventory", ImGuiTableColumnFlags.WidthFixed);
+                    if (RetainerInfo.ATools)
+                        ImGui.TableSetupColumn("Retainers", ImGuiTableColumnFlags.WidthFixed);
+                    ImGui.TableHeadersRow();
 
-                if (listMaterialsNew.Count == 0)
-                    listMaterialsNew = SelectedListMateralsNew;
-
-                try
-                {
-                    foreach (var item in listMaterialsNew.OrderByDescending(x => x.Key))
+                    if (SelectedListMateralsNew.Count == 0)
                     {
-                        if (LuminaSheets.ItemSheet.TryGetValue((uint)item.Key, out var sheetItem))
+                        foreach (var item in selectedList.Items.Distinct())
                         {
-                            if (SelectedRecipesCraftable[item.Key]) continue;
-                            ImGui.PushID(item.Key);
-                            var name = sheetItem.Name.RawString;
-                            var count = item.Value;
-                            ImGui.TableNextRow();
-                            ImGui.TableNextColumn();
-                            ImGui.Text($"{name}"); 
-                            if (GatherBuddy && ImGui.IsItemClicked() && ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl)
-                            {
-                                Chat.Instance.SendMessage($"/gather {name}");
-                            }
-                            if (ImGui.IsItemClicked() && ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift)
-                            {
-                                ItemFinderModule.Instance()->SearchForItem((uint)item.Key);
-                            }
-                            if (ImGui.IsItemClicked() && !ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl)
-                            {
-                                ImGui.SetClipboardText(name);
-                                Notify.Success("Name copied to clipboard");
-                            }
-                            ImGui.TableNextColumn();
-                            ImGui.Text($"{count}");
-                            ImGui.TableNextColumn();
-                            if (NumberOfIngredient((uint)item.Key) >= count)
-                            {
-                                var color = ImGuiColors.HealerGreen;
-                                color.W -= 0.3f;
-                                ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
-                            }
-                            ImGui.Text($"{NumberOfIngredient((uint)item.Key)}");
-                            ImGui.PopID();
+                            Recipe r = FilteredList[item];
+                            AddRecipeIngredientsToList(r, ref SelectedListMateralsNew, false, selectedList);
                         }
                     }
-                }
-                catch
-                {
 
-                }
+                    if (listMaterialsNew.Count == 0)
+                        listMaterialsNew = SelectedListMateralsNew;
 
-                ImGui.EndTable();
+                    try
+                    {
+                        foreach (var item in listMaterialsNew.OrderByDescending(x => x.Key))
+                        {
+                            if (LuminaSheets.ItemSheet.TryGetValue((uint)item.Key, out var sheetItem))
+                            {
+                                if (SelectedRecipesCraftable[item.Key]) continue;
+                                ImGui.PushID(item.Key);
+                                var name = sheetItem.Name.RawString;
+                                var count = item.Value;
+                                ImGui.TableNextRow();
+                                ImGui.TableNextColumn();
+                                ImGui.Text($"{name}");
+                                if (GatherBuddy && ImGui.IsItemClicked() && ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl)
+                                {
+                                    Chat.Instance.SendMessage($"/gather {name}");
+                                }
+                                if (ImGui.IsItemClicked() && ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift)
+                                {
+                                    SearchItem((uint)item.Key);
+                                }
+                                if (ImGui.IsItemClicked() && !ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl)
+                                {
+                                    ImGui.SetClipboardText(name);
+                                    Notify.Success("Name copied to clipboard");
+                                }
+                                ImGui.TableNextColumn();
+                                ImGui.Text($"{count}");
+                                ImGui.TableNextColumn();
+                                var invCount = NumberOfIngredient((uint)item.Key);
+                                if (invCount >= count)
+                                {
+                                    var color = ImGuiColors.HealerGreen;
+                                    color.W -= 0.3f;
+                                    ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                                }
+                                ImGui.Text($"{invCount}");
+                                if (RetainerInfo.ATools)
+                                {
+                                    ImGui.TableNextColumn();
+
+                                    if (RetainerInfo.CacheBuilt)
+                                    {
+                                        uint retainerCount = RetainerInfo.GetRetainerItemCount(sheetItem.RowId);
+                                        ImGui.Text($"{(retainerCount)}");
+
+                                        if (invCount >= count)
+                                        {
+                                            var color = ImGuiColors.HealerGreen;
+                                            color.W -= 0.3f;
+                                            ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                                        }
+                                        else if (retainerCount >= count)
+                                        {
+                                            var color = ImGuiColors.DalamudOrange;
+                                            color.W -= 0.6f;
+                                            ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        ImGui.Text($"Cache Building. Please wait.");
+                                    }
+                                }
+
+                                ImGui.PopID();
+                            }
+                        }
+                    }
+                    catch
+                    {
+
+                    }
+
+                    ImGui.EndTable();
+                }
+            }
+            catch(Exception ex)
+            {
+                PluginLog.Debug(ex, "TotalIngredsTable");
             }
 
-            if (ImGui.BeginTable("###ListMaterialTableSub", 3, ImGuiTableFlags.Borders))
+
+            if (ImGui.BeginTable("###ListMaterialTableSub", colCount, ImGuiTableFlags.Borders))
             {
                 ImGui.TableSetupColumn("Ingredient", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Required", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Inventory", ImGuiTableColumnFlags.WidthFixed);
+                if (RetainerInfo.ATools)
+                    ImGui.TableSetupColumn("Retainers", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableHeadersRow();
 
                 if (SelectedListMateralsNew.Count == 0)
@@ -604,7 +686,7 @@ namespace Artisan.CraftingLists
                                 ImGui.Text($"{name}");
                                 if (ImGui.IsItemClicked() && ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift)
                                 {
-                                    ItemFinderModule.Instance()->SearchForItem((uint)item.Key);
+                                    SearchItem((uint)item.Key);
                                 }
                                 if (ImGui.IsItemClicked() && !ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl)
                                 {
@@ -614,13 +696,41 @@ namespace Artisan.CraftingLists
                                 ImGui.TableNextColumn();
                                 ImGui.Text($"{count}");
                                 ImGui.TableNextColumn();
-                                if (NumberOfIngredient((uint)item.Key) >= count)
+                                var invCount = NumberOfIngredient((uint)item.Key);
+                                if (invCount >= count)
                                 {
                                     var color = ImGuiColors.HealerGreen;
                                     color.W -= 0.3f;
                                     ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                                 }
-                                ImGui.Text($"{NumberOfIngredient((uint)item.Key)}");
+                                ImGui.Text($"{invCount}");
+                                if (RetainerInfo.ATools)
+                                {
+                                    ImGui.TableNextColumn();
+                                    if (RetainerInfo.CacheBuilt)
+                                    {
+                                        uint retainerCount = RetainerInfo.GetRetainerItemCount(sheetItem.RowId);
+                                        ImGui.Text($"{(retainerCount)}");
+
+                                        if (invCount >= count)
+                                        {
+                                            var color = ImGuiColors.HealerGreen;
+                                            color.W -= 0.3f;
+                                            ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                                        }
+                                        else if (retainerCount >= count)
+                                        {
+                                            var color = ImGuiColors.DalamudOrange;
+                                            color.W -= 0.6f;
+                                            ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        ImGui.Text($"Cache Building. Please wait.");
+                                    }
+
+                                }
                                 ImGui.PopID();
                             }
                         }
@@ -660,15 +770,38 @@ namespace Artisan.CraftingLists
             }
         }
 
-        private static void DrawRecipeData()
+        private async static void DrawRecipeData()
         {
             bool showOnlyCraftable = Service.Configuration.ShowOnlyCraftable;
 
-            if (ImGui.Checkbox("Show only recipes you have materials for (toggle to refresh)", ref showOnlyCraftable))
+            if (ImGui.Checkbox("###ShowcraftableCheckbox", ref showOnlyCraftable))
             {
                 Service.Configuration.ShowOnlyCraftable = showOnlyCraftable;
                 Service.Configuration.Save();
-                CraftableItems.Clear();
+
+                if (showOnlyCraftable)
+                {
+                    RetainerInfo.LoadCache();
+
+                }
+            }
+            ImGui.SameLine();
+            ImGui.TextWrapped($"Show only recipes you have materials for (toggle to refresh)");
+
+            if (Service.Configuration.ShowOnlyCraftable && RetainerInfo.ATools)
+            {
+                bool showOnlyCraftableRetainers = Service.Configuration.ShowOnlyCraftableRetainers;
+                if (ImGui.Checkbox($"###ShowCraftableRetainersCheckbox", ref showOnlyCraftableRetainers))
+                {
+                    Service.Configuration.ShowOnlyCraftableRetainers = showOnlyCraftableRetainers;
+                    Service.Configuration.Save();
+
+                    CraftableItems.Clear();
+                    RetainerInfo.LoadCache();
+                }
+
+                ImGui.SameLine();
+                ImGui.TextWrapped("Include Retainers");
             }
 
             string preview = SelectedRecipe is null ? "" : $"{SelectedRecipe.ItemResult.Value.Name.RawString} ({LuminaSheets.ClassJobSheet[SelectedRecipe.CraftType.Row + 8].Abbreviation.RawString})";
@@ -720,6 +853,8 @@ namespace Artisan.CraftingLists
                         }
                     }
                     Service.Configuration.Save();
+                    if (Service.Configuration.ResetTimesToAdd)
+                        timesToAdd = 1;
                 }
                 ImGui.SameLine();
                 if (ImGui.Button("Add to List (with all subcrafts)", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
@@ -727,7 +862,7 @@ namespace Artisan.CraftingLists
                     SelectedListMateralsNew.Clear();
                     listMaterialsNew.Clear();
 
-                    AddAllSubcrafts(SelectedRecipe, selectedList);
+                    AddAllSubcrafts(SelectedRecipe, selectedList, 1, timesToAdd);
 
                     PluginLog.Debug($"Adding: {SelectedRecipe.ItemResult.Value.Name.RawString} {timesToAdd} times");
                     for (int i = 1; i <= timesToAdd; i++)
@@ -744,24 +879,26 @@ namespace Artisan.CraftingLists
                     }
 
                     Service.Configuration.Save();
+                    if (Service.Configuration.ResetTimesToAdd)
+                        timesToAdd = 1;
                 }
             }
         }
 
-        public static void AddAllSubcrafts(Recipe selectedRecipe, CraftingList selectedList, int amounts = 1)
+        public static void AddAllSubcrafts(Recipe selectedRecipe, CraftingList selectedList, int amounts = 1, int loops = 1)
         {
             PluginLog.Debug($"Processing: {selectedRecipe.ItemResult.Value.Name.RawString}");
             foreach (var subItem in selectedRecipe.UnkData5.Where(x => x.AmountIngredient > 0))
             {
                 PluginLog.Debug($"Sub-item: {LuminaSheets.ItemSheet[(uint)subItem.ItemIngredient].Name.RawString} * {subItem.AmountIngredient}");
                 var subRecipe = GetIngredientRecipe(subItem.ItemIngredient);
-                if (subRecipe.RowId != 0)
+                if (subRecipe != null)
                 {
-                    AddAllSubcrafts(subRecipe, selectedList, subItem.AmountIngredient * amounts);
+                    AddAllSubcrafts(subRecipe, selectedList, subItem.AmountIngredient * amounts, loops);
 
-                    PluginLog.Debug($"Adding: {subRecipe.ItemResult.Value.Name.RawString} {Math.Ceiling((double)subItem.AmountIngredient / (double)subRecipe.AmountResult * (double)timesToAdd * amounts)} times");
+                    PluginLog.Debug($"Adding: {subRecipe.ItemResult.Value.Name.RawString} {Math.Ceiling((double)subItem.AmountIngredient / (double)subRecipe.AmountResult * (double)loops * amounts)} times");
 
-                    for (int i = 1; i <= Math.Ceiling((double)subItem.AmountIngredient / (double)subRecipe.AmountResult * (double)timesToAdd * amounts); i++)
+                    for (int i = 1; i <= Math.Ceiling((double)subItem.AmountIngredient / (double)subRecipe.AmountResult * (double)loops * amounts); i++)
                     {
                         if (selectedList.Items.IndexOf(subRecipe.RowId) == -1)
                         {
@@ -781,81 +918,126 @@ namespace Artisan.CraftingLists
 
         private static void DrawRecipeSubTable()
         {
-            if (ImGui.BeginTable("###SubTable", 3, ImGuiTableFlags.Borders))
+            int colCount = RetainerInfo.ATools ? 4 : 3;
+            if (ImGui.BeginTable("###SubTableRecipeData", colCount, ImGuiTableFlags.Borders))
             {
                 ImGui.TableSetupColumn("Ingredient", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Required", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Inventory", ImGuiTableColumnFlags.WidthFixed);
+                if (RetainerInfo.ATools)
+                    ImGui.TableSetupColumn("Retainers", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableHeadersRow();
 
                 if (subtableList.Count == 0)
-                    subtableList = SelectedRecipeRawIngredients.Distinct().OrderByDescending(x => x).ToList();
+                    subtableList = SelectedRecipeRawIngredients;
 
                 try
                 {
-                    foreach (var item in CollectionsMarshal.AsSpan(subtableList))
+                    foreach (var item in subtableList)
                     {
-                        if (LuminaSheets.ItemSheet.TryGetValue((uint)item, out var sheetItem))
+                        if (LuminaSheets.ItemSheet.ContainsKey((uint)item.Key))
                         {
-                            if (SelectedRecipesCraftable[item]) continue;
-                            ImGui.PushID(item);
+                            if (SelectedRecipesCraftable[item.Key]) continue;
+                            ImGui.PushID($"###SubTableItem{item}");
+                            var sheetItem = LuminaSheets.ItemSheet[(uint)item.Key];
                             var name = sheetItem.Name.RawString;
-                            var count = SelectedRecipeRawIngredients.Count(x => x == item);
+                            var count = item.Value;
+
                             ImGui.TableNextRow();
                             ImGui.TableNextColumn();
                             ImGui.Text($"{name}");
-                            if (ImGui.IsItemClicked())
-                            {
-                                Chat.Instance.SendMessage($"/gather {name}");
-                            }
                             ImGui.TableNextColumn();
                             ImGui.Text($"{count}");
                             ImGui.TableNextColumn();
-                            if (NumberOfIngredient((uint)item) >= count)
+                            var invcount = NumberOfIngredient((uint)item.Key);
+                            if (invcount >= count)
                             {
                                 var color = ImGuiColors.HealerGreen;
                                 color.W -= 0.3f;
                                 ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                             }
-                            ImGui.Text($"{NumberOfIngredient((uint)item)}");
+                            ImGui.Text($"{invcount}");
+                            
+                            if (RetainerInfo.ATools && RetainerInfo.CacheBuilt)
+                            {
+                                ImGui.TableNextColumn();
+                                uint retainerCount = 0;
+                                retainerCount = RetainerInfo.GetRetainerItemCount(sheetItem.RowId);
+
+                                ImGuiEx.Text($"{retainerCount}");
+
+                                if (invcount + retainerCount >= count)
+                                {
+                                    var color = ImGuiColors.HealerGreen;
+                                    color.W -= 0.3f;
+                                    ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                                }
+
+                            }
                             ImGui.PopID();
+
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-
+                    PluginLog.Error(ex, "SubTableRender");
                 }
 
                 ImGui.EndTable();
             }
         }
 
-        private static void AddRecipeIngredientsToList(Recipe? recipe, ref Dictionary<int, int> ingredientList, bool addSublist = true, CraftingList selectedList = null)
+        public static void AddRecipeIngredientsToList(Recipe? recipe, ref Dictionary<int, int> ingredientList, bool addSublist = true, CraftingList selectedList = null)
         {
             try
             {
                 if (recipe == null) return;
 
-                foreach (var ing in recipe.UnkData5.Where(x => x.AmountIngredient > 0 && x.ItemIngredient != 0))
+                if (selectedList != null)
                 {
-                    if (ingredientList.ContainsKey(ing.ItemIngredient))
+                    foreach (var ing in recipe.UnkData5.Where(x => x.AmountIngredient > 0 && x.ItemIngredient != 0))
                     {
-                        ingredientList[ing.ItemIngredient] += ing.AmountIngredient * selectedList.Items.Count(x => x == recipe.RowId);
+                        if (ingredientList.ContainsKey(ing.ItemIngredient))
+                        {
+                            ingredientList[ing.ItemIngredient] += ing.AmountIngredient * selectedList.Items.Count(x => x == recipe.RowId);
+                        }
+                        else
+                        {
+                            ingredientList.TryAdd(ing.ItemIngredient, ing.AmountIngredient * selectedList.Items.Count(x => x == recipe.RowId));
+                        }
+
+                        var name = LuminaSheets.ItemSheet[(uint)ing.ItemIngredient].Name.RawString;
+                        SelectedRecipesCraftable[ing.ItemIngredient] = FilteredList.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
+
+                        if (GetIngredientRecipe(ing.ItemIngredient) != null && addSublist)
+                        {
+                            AddRecipeIngredientsToList(GetIngredientRecipe(ing.ItemIngredient), ref ingredientList);
+                        }
+
                     }
-                    else
+                }
+                else
+                {
+                    foreach (var ing in recipe.UnkData5.Where(x => x.AmountIngredient > 0 && x.ItemIngredient != 0))
                     {
-                        ingredientList.TryAdd(ing.ItemIngredient, ing.AmountIngredient * selectedList.Items.Count(x => x == recipe.RowId));
+                        if (ingredientList.ContainsKey(ing.ItemIngredient))
+                        {
+                            ingredientList[ing.ItemIngredient] += ing.AmountIngredient;
+                        }
+                        else
+                        {
+                            ingredientList.TryAdd(ing.ItemIngredient, ing.AmountIngredient);
+                        }
+
+                        var name = LuminaSheets.ItemSheet[(uint)ing.ItemIngredient].Name.RawString;
+                        SelectedRecipesCraftable[ing.ItemIngredient] = FilteredList.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
+
+                        if (GetIngredientRecipe(ing.ItemIngredient) != null && addSublist)
+                        {
+                            AddRecipeIngredientsToList(GetIngredientRecipe(ing.ItemIngredient), ref ingredientList);
+                        }
                     }
-
-                    var name = LuminaSheets.ItemSheet[(uint)ing.ItemIngredient].Name.RawString;
-                    SelectedRecipesCraftable[ing.ItemIngredient] = FilteredList.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
-
-                    if (GetIngredientRecipe(ing.ItemIngredient).RowId != 0 && addSublist)
-                    {
-                        AddRecipeIngredientsToList(GetIngredientRecipe(ing.ItemIngredient), ref ingredientList);
-                    }
-
                 }
             }
             catch (Exception ex)
@@ -892,6 +1074,13 @@ namespace Artisan.CraftingLists
 
         private static void DrawRecipes()
         {
+            if (Service.Configuration.ShowOnlyCraftable && !RetainerInfo.CacheBuilt)
+            {
+                if (RetainerInfo.ATools)
+                ImGui.TextWrapped($"Building Retainer Cache: {(RetainerInfo.RetainerData.Values.Any() ? RetainerInfo.RetainerData.FirstOrDefault().Value.Count : "0")}/{FilteredList.Select(x => x.Value).SelectMany(x => x.UnkData5).Where(x => x.ItemIngredient != 0 && x.AmountIngredient > 0).DistinctBy(x => x.ItemIngredient).Count()}");
+                ImGui.TextWrapped($"Building Craftable Items List: {CraftableItems.Count}/{FilteredList.Count}");
+                ImGui.Spacing();
+            }
             ImGui.Text("Search");
             ImGui.SameLine();
             ImGui.InputText("###RecipeSearch", ref Search, 100);
@@ -900,7 +1089,7 @@ namespace Artisan.CraftingLists
                 SelectedRecipe = null;
             }
 
-            if (Service.Configuration.ShowOnlyCraftable && CraftableItems.Count > 0)
+            if (Service.Configuration.ShowOnlyCraftable && RetainerInfo.CacheBuilt)
             {
                 foreach (var recipe in CraftableItems.Where(x => x.Value).Select(x => x.Key).Where(x => x.ItemResult.Value.Name.RawString.Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
                 {
@@ -916,7 +1105,7 @@ namespace Artisan.CraftingLists
                     ImGui.PopID();
                 }
             }
-            else
+            else if (!Service.Configuration.ShowOnlyCraftable)
             {
                 foreach (var recipe in CollectionsMarshal.AsSpan(FilteredList.Values.ToList()))
                 {
@@ -924,7 +1113,6 @@ namespace Artisan.CraftingLists
                     {
                         if (string.IsNullOrEmpty(recipe.ItemResult.Value.Name.RawString)) continue;
                         if (!recipe.ItemResult.Value.Name.RawString.Contains(Search, StringComparison.CurrentCultureIgnoreCase)) continue;
-                        CheckForIngredients(recipe);
                         rawIngredientsList.Clear();
                         var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.RawString} ({LuminaSheets.ClassJobSheet[recipe.CraftType.Row + 8].Abbreviation.RawString} {recipe.RecipeLevelTable.Value.ClassJobLevel})", recipe.RowId == SelectedRecipe?.RowId);
 
@@ -944,7 +1132,7 @@ namespace Artisan.CraftingLists
             }
         }
 
-        public unsafe static bool CheckForIngredients(Recipe recipe, bool fetchFromCache = true)
+        public async unsafe static Task<bool> CheckForIngredients(Recipe recipe, bool fetchFromCache = true, bool checkRetainer = false)
         {
             if (fetchFromCache)
                 if (CraftableItems.TryGetValue(recipe, out bool canCraft)) return canCraft;
@@ -956,13 +1144,28 @@ namespace Artisan.CraftingLists
                     int? invNumberNQ = invManager->GetInventoryItemCount((uint)value.ItemIngredient);
                     int? invNumberHQ = invManager->GetInventoryItemCount((uint)value.ItemIngredient, true);
 
-                    if (value.AmountIngredient > (invNumberNQ + invNumberHQ))
+                    if (!checkRetainer)
                     {
-                        invNumberHQ = null;
-                        invNumberNQ = null;
+                        if (value.AmountIngredient > (invNumberNQ + invNumberHQ))
+                        {
+                            invNumberHQ = null;
+                            invNumberNQ = null;
 
-                        CraftableItems[recipe] = false;
-                        return false;
+                            CraftableItems[recipe] = false;
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        uint retainerCount = RetainerInfo.GetRetainerItemCount((uint)value.ItemIngredient);
+                        if (value.AmountIngredient > (invNumberNQ + invNumberHQ + retainerCount))
+                        {
+                            invNumberHQ = null;
+                            invNumberNQ = null;
+
+                            CraftableItems[recipe] = false;
+                            return false;
+                        }
                     }
 
                     invNumberHQ = null;
@@ -983,7 +1186,7 @@ namespace Artisan.CraftingLists
         {
             if (GetIngredientRecipe(itemIngredient).RowId == 0) return false;
 
-            return CheckForIngredients(GetIngredientRecipe(itemIngredient));
+            return CheckForIngredients(GetIngredientRecipe(itemIngredient)).Result;
 
         }
 
@@ -1001,7 +1204,7 @@ namespace Artisan.CraftingLists
                 return 0;
             }
         }
-        private static void DrawRecipeOptions()
+        private unsafe static void DrawRecipeOptions()
         {
             {
                 List<uint> craftingJobs = LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.Name.RawString == SelectedRecipe.ItemResult.Value.Name.RawString).Select(x => x.CraftType.Value.RowId + 8).ToList();
@@ -1010,11 +1213,14 @@ namespace Artisan.CraftingLists
             }
             var ItemsRequired = SelectedRecipe.UnkData5;
 
-            if (ImGui.BeginTable("###RecipeTable", 5, ImGuiTableFlags.Borders))
+            int numRows = RetainerInfo.ATools ? 6 : 5;
+            if (ImGui.BeginTable("###RecipeTable", numRows, ImGuiTableFlags.Borders))
             {
                 ImGui.TableSetupColumn("Ingredient", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Required", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Inventory", ImGuiTableColumnFlags.WidthFixed);
+                if (RetainerInfo.ATools)
+                    ImGui.TableSetupColumn("Retainers", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Method", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Source", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableHeadersRow();
@@ -1024,21 +1230,38 @@ namespace Artisan.CraftingLists
                     {
                         jobs.Clear();
                         string ingredient = LuminaSheets.ItemSheet[(uint)value.ItemIngredient].Name.RawString;
-                        Recipe? ingredientRecipe = GetIngredientRecipe(ingredient);
+                        Recipe? ingredientRecipe = GetIngredientRecipe(value.ItemIngredient);
                         ImGui.TableNextRow();
                         ImGui.TableNextColumn();
                         ImGuiEx.Text($"{ingredient}");
                         ImGui.TableNextColumn();
                         ImGuiEx.Text($"{value.AmountIngredient}");
                         ImGui.TableNextColumn();
-                        ImGuiEx.Text($"{NumberOfIngredient((uint)value.ItemIngredient)}");
-                        if (NumberOfIngredient((uint)value.ItemIngredient) >= value.AmountIngredient)
+                        var invCount = NumberOfIngredient((uint)value.ItemIngredient);
+                        ImGuiEx.Text($"{invCount}");
+                        if (invCount >= value.AmountIngredient)
                         {
                             var color = ImGuiColors.HealerGreen;
                             color.W -= 0.3f;
                             ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                         }
                         ImGui.TableNextColumn();
+                        if (RetainerInfo.ATools && RetainerInfo.CacheBuilt)
+                        {
+                            uint retainerCount = 0;
+                            retainerCount = RetainerInfo.GetRetainerItemCount((uint)value.ItemIngredient);
+
+                            ImGuiEx.Text($"{retainerCount}");
+
+                            if (invCount + retainerCount >= value.AmountIngredient)
+                            {
+                                var color = ImGuiColors.HealerGreen;
+                                color.W -= 0.3f;
+                                ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                            }
+                            ImGui.TableNextColumn();
+                        }
+
                         if (ingredientRecipe is not null)
                         {
                             if (ImGui.Button($"Crafted###search{ingredientRecipe.RowId}"))
@@ -1055,7 +1278,7 @@ namespace Artisan.CraftingLists
                         {
                             try
                             {
-                                jobs.AddRange(FilteredList.Values.Where(x => x.ItemResult.Value.Name.RawString == ingredient).Select(x => x.CraftType.Value.RowId + 8));
+                                jobs.AddRange(FilteredList.Values.Where(x => x.ItemResult == ingredientRecipe.ItemResult).Select(x => x.CraftType.Row + 8));
                                 string[]? jobstrings = LuminaSheets.ClassJobSheet.Values.Where(x => jobs.Any(y => y == x.RowId)).Select(x => x.Abbreviation.ToString()).ToArray();
                                 ImGui.Text(String.Join(", ", jobstrings));
                             }
@@ -1120,12 +1343,12 @@ namespace Artisan.CraftingLists
             return FilteredList.Values.Any(x => x.ItemResult.Value.Name.RawString == ingredient) ? FilteredList.Values.First(x => x.ItemResult.Value.Name.RawString == ingredient) : null;
         }
 
-        public static Recipe GetIngredientRecipe(int ingredient)
+        public static Recipe? GetIngredientRecipe(int ingredient)
         {
             if (FilteredList.Values.Any(x => x.ItemResult.Value.RowId == ingredient))
                 return FilteredList.Values.First(x => x.ItemResult.Value.RowId == ingredient);
-            else
-                return new Recipe() { RowId = 0 };
+
+            return null;
         }
     }
 }

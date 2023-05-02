@@ -76,5 +76,6 @@ namespace Artisan
         [PluginService]
         internal static ToastGui ToastGui { get; private set; } = null!;
 
+
     }
 }
