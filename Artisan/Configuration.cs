@@ -72,6 +72,8 @@ namespace Artisan
 
         public int RepairPercent = 50;
 
+        public Dictionary<ulong, ulong> RetainerIDs = new Dictionary<ulong, ulong>();
+
         [NonSerialized]
         public bool CraftingX = false;
 

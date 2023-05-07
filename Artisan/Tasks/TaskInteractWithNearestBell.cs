@@ -1,5 +1,4 @@
-﻿using Artisan.RawInformation;
-using Dalamud.Game.ClientState.Objects.Enums;
+﻿using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Logging;
 using ECommons.Automation;
 using ECommons.DalamudServices;
@@ -10,6 +9,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using System.Numerics;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 using static ECommons.GenericHelpers;
+using Artisan.IPC;
 
 namespace Artisan.Tasks;
 
@@ -18,7 +18,6 @@ internal unsafe static class TaskInteractWithNearestBell
     internal static void EnqueueBell(this TaskManager TM)
     {
         TM.Enqueue(YesAlready.DisableIfNeeded);
-        //TM.Enqueue(YesAlready.WaitForYesAlreadyDisabledTask);
         TM.Enqueue(PlayerWorldHandlers.SelectNearestBell);
         TM.Enqueue(PlayerWorldHandlers.InteractWithTargetedBell);
     }
@@ -66,6 +65,7 @@ internal unsafe static class PlayerWorldHandlers
 {
     internal static bool? SelectNearestBell()
     {
+        if (Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.OccupiedSummoningBell]) return true;
         if (!IsOccupied())
         {
             var x = RetainerInfo.GetReachableRetainerBell();
@@ -84,6 +84,7 @@ internal unsafe static class PlayerWorldHandlers
 
     internal static bool? InteractWithTargetedBell()
     {
+        if (Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.OccupiedSummoningBell]) return true;
         var x = Svc.Targets.Target;
         if (x != null && (x.ObjectKind == ObjectKind.Housing || x.ObjectKind == ObjectKind.EventObj) && x.Name.ToString().EqualsIgnoreCaseAny(RetainerInfo.BellName, "リテイナーベル") && !IsOccupied())
         {

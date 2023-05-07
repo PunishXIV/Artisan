@@ -309,7 +309,7 @@ internal class FontManager
 
     void SetUpUserFonts()
     {
-        string path = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Fonts", "CaviarDreams.ttf");
+        string path = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Fonts", "CaviarDreams_Bold.ttf");
         if (File.Exists(path))
         {
             var memory = new MemoryStream();

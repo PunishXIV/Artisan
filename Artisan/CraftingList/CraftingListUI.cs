@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
@@ -781,8 +782,8 @@ namespace Artisan.CraftingLists
 
                 if (showOnlyCraftable)
                 {
-                    RetainerInfo.LoadCache();
-
+                    RetainerInfo.TM.Abort();
+                    RetainerInfo.TM.Enqueue(() => RetainerInfo.LoadCache());
                 }
             }
             ImGui.SameLine();
@@ -797,7 +798,8 @@ namespace Artisan.CraftingLists
                     Service.Configuration.Save();
 
                     CraftableItems.Clear();
-                    RetainerInfo.LoadCache();
+                    RetainerInfo.TM.Abort();
+                    RetainerInfo.TM.Enqueue(() => RetainerInfo.LoadCache());
                 }
 
                 ImGui.SameLine();

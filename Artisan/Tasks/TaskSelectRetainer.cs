@@ -1,4 +1,4 @@
-﻿using Artisan.RawInformation;
+﻿using Artisan.IPC;
 using ClickLib.Clicks;
 using ClickLib.Enums;
 using ClickLib.Structures;

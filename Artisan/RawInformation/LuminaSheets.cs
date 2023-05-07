@@ -111,6 +111,13 @@ namespace Artisan.RawInformation
             return LuminaSheets.ItemSheet[id].Name.ExtractText();
         }
 
+        public static string NameOfRecipe(this uint id)
+        {
+            if (id == 0) return "";
+
+            return LuminaSheets.RecipeSheet[id].ItemResult.Value.Name.ExtractText();
+        }
+
         public static string NameOfQuest(this ushort id)
         {
             if (id == 9998 || id == 9999)

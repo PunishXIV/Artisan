@@ -8,12 +8,14 @@ using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static ECommons.GenericHelpers;
 
 namespace Artisan.Autocraft
 {
@@ -208,6 +210,12 @@ namespace Artisan.Autocraft
                 {
                     Svc.PluginInterface.GetIpcSubscriber<bool, object>("Artisan.SetStopRequest").InvokeAction(false);
                 }
+
+                foreach (var retainer in Service.Configuration.RetainerIDs.Where(x => x.Value == Svc.ClientState.LocalContentId))
+                {
+                    ImGui.Text($"ATools IPC: {RetainerInfo.ATools} {RetainerInfo.GetRetainerInventoryItem(5111, retainer.Key)}");
+                }
+                ImGui.Text($"ATools IPC: {RetainerInfo.ATools} {RetainerInfo.GetRetainerItemCount(5111, false)}");
             }
             ImGui.Separator();
 
@@ -224,6 +232,15 @@ namespace Artisan.Autocraft
             }
 
             ImGui.InputInt("Debug Value", ref DebugValue);
+
+            if (ImGui.Button("Accept Leve (Use Debug Value for ID)"))
+            {
+                if (Svc.GameGui.GetAddonByName("GuildLeve") != IntPtr.Zero)
+                {
+                    var addon = (AtkUnitBase*)Svc.GameGui.GetAddonByName("GuildLeve");
+                    Callback(addon, 13, 13, DebugValue);
+                }
+            }
 
             if (ImGui.Button($"Open And Quick Synth"))
             {
