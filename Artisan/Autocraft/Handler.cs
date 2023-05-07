@@ -2,6 +2,7 @@
 using Artisan.CraftingLogic;
 using Artisan.RawInformation;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Components;
 using Dalamud.Utility.Signatures;
 using ECommons;
@@ -25,14 +26,21 @@ namespace Artisan.Autocraft
 {
     internal unsafe class Handler
     {
-        /*delegate IntPtr BeginSynthesis(IntPtr a1, IntPtr a2, IntPtr a3, int a4);
-        [Signature("40 55 53 41 54 41 55 48 8B EC", DetourName = nameof(BeginSynthesisDetour), Fallibility = Fallibility.Infallible)]
-        static Hook<BeginSynthesis>? BeginSynthesisHook;*/
-
-        internal static bool Enable = false;
+        private static bool enable = false;
         internal static List<int>? HQData = null;
         internal static int RecipeID = 0;
         internal static string RecipeName { get => recipeName; set { if (value != recipeName) PluginLog.Verbose($"{value}"); recipeName = value; } }
+
+        internal static bool Enable
+        {
+            get => enable; 
+            set
+            {
+                Tasks.Clear();
+                enable = value;
+            }
+        }
+
         internal static CircularBuffer<long> Errors = new(5);
         private static string recipeName = "";
         public static List<Task> Tasks = new();
@@ -41,18 +49,9 @@ namespace Artisan.Autocraft
         internal static void Init()
         {
             SignatureHelper.Initialise(new Handler());
-            //BeginSynthesisHook.Enable();
             Svc.Framework.Update += Framework_Update;
             Svc.Toasts.ErrorToast += Toasts_ErrorToast;
         }
-
-        /*internal static IntPtr BeginSynthesisDetour(IntPtr a1, IntPtr a2, IntPtr a3, int a4)
-        {
-            var ret = BeginSynthesisHook.Original(a1, a2, a3, 4);
-            var recipeId = *(int*)(a1 + 528);
-            PluginLog.Debug($"Crafting recipe: {recipeId}");
-            return ret;
-        }*/
 
         private static void Toasts_ErrorToast(ref Dalamud.Game.Text.SeStringHandling.SeString message, ref bool isHandled)
         {
@@ -121,15 +120,23 @@ namespace Artisan.Autocraft
                     if (!Spiritbond.IsMateriaMenuOpen() && !isCrafting && !preparing)
                     {
                         Spiritbond.OpenMateriaMenu();
+                        return;
                     }
                     if (Spiritbond.IsMateriaMenuOpen() && !isCrafting && !preparing)
                     {
                         Spiritbond.ExtractFirstMateria();
+                        return;
                     }
+
+                    return;
                 }
                 else
                 {
-                    Spiritbond.CloseMateriaMenu();
+                    if (Spiritbond.IsMateriaMenuOpen())
+                    {
+                        Spiritbond.CloseMateriaMenu();
+                        return;
+                    }
                 }
 
                 if (Service.Configuration.Repair && !RepairManager.ProcessRepair(false) && ((Service.Configuration.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!Service.Configuration.Materia)))
@@ -220,7 +227,14 @@ namespace Artisan.Autocraft
                 ImGui.TextWrapped("Processing list...");
                 return;
             }
-            ImGui.Checkbox("Enable Endurance Mode", ref Enable);
+
+            ImGui.TextWrapped("Endurance mode is Artisan's way to repeat the same craft over and over, either so many times or until you run out of materials. It has full capabilities to automatically repair your gear once a piece is under a certain percentage, use food/potions/exp manuals and extract materia from spiritbonding. Please note these settings are independent of crafting list settings, and only intended to be used to craft the one item repeatedly.");
+            ImGui.Separator();
+            ImGui.Spacing();
+            if (ImGui.Checkbox("Enable Endurance Mode", ref enable))
+            {
+                Enable = enable;
+            }
             ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe and NQ/HQ material distribution in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
             ImGuiEx.Text($"Recipe: {RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.RecipeSheet[(uint)RecipeID].CraftType.Value.Name.RawString})" : "")}\nHQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}");
             bool requireFoodPot = Service.Configuration.AbortIfNoFoodPot;
@@ -232,6 +246,7 @@ namespace Artisan.Autocraft
             ImGuiComponents.HelpMarker("Artisan will require the configured food, manuals or medicine and refuse to craft if it cannot be found.");
             if (requireFoodPot)
             {
+
                 {
                     ImGuiEx.TextV("Food Usage:");
                     ImGui.SameLine(300f.Scale());
@@ -241,6 +256,7 @@ namespace Artisan.Autocraft
                         if (ImGui.Selectable("Disable"))
                         {
                             Service.Configuration.Food = 0;
+                            Service.Configuration.Save();
                         }
                         foreach (var x in ConsumableChecker.GetFood(true))
                         {
@@ -248,6 +264,7 @@ namespace Artisan.Autocraft
                             {
                                 Service.Configuration.Food = x.Id;
                                 Service.Configuration.FoodHQ = false;
+                                Service.Configuration.Save();
                             }
                         }
                         foreach (var x in ConsumableChecker.GetFood(true, true))
@@ -256,6 +273,7 @@ namespace Artisan.Autocraft
                             {
                                 Service.Configuration.Food = x.Id;
                                 Service.Configuration.FoodHQ = true;
+                                Service.Configuration.Save();
                             }
                         }
                         ImGui.EndCombo();
@@ -271,6 +289,7 @@ namespace Artisan.Autocraft
                         if (ImGui.Selectable("Disable"))
                         {
                             Service.Configuration.Potion = 0;
+                            Service.Configuration.Save();
                         }
                         foreach (var x in ConsumableChecker.GetPots(true))
                         {
@@ -278,6 +297,7 @@ namespace Artisan.Autocraft
                             {
                                 Service.Configuration.Potion = x.Id;
                                 Service.Configuration.PotHQ = false;
+                                Service.Configuration.Save();
                             }
                         }
                         foreach (var x in ConsumableChecker.GetPots(true, true))
@@ -286,6 +306,7 @@ namespace Artisan.Autocraft
                             {
                                 Service.Configuration.Potion = x.Id;
                                 Service.Configuration.PotHQ = true;
+                                Service.Configuration.Save();
                             }
                         }
                         ImGui.EndCombo();
@@ -301,12 +322,14 @@ namespace Artisan.Autocraft
                         if (ImGui.Selectable("Disable"))
                         {
                             Service.Configuration.Manual = 0;
+                            Service.Configuration.Save();
                         }
                         foreach (var x in ConsumableChecker.GetManuals(true))
                         {
                             if (ImGui.Selectable($"{x.Name}"))
                             {
                                 Service.Configuration.Manual = x.Id;
+                                Service.Configuration.Save();
                             }
                         }
                         ImGui.EndCombo();
@@ -322,17 +345,20 @@ namespace Artisan.Autocraft
                         if (ImGui.Selectable("Disable"))
                         {
                             Service.Configuration.SquadronManual = 0;
+                            Service.Configuration.Save();
                         }
                         foreach (var x in ConsumableChecker.GetSquadronManuals(true))
                         {
                             if (ImGui.Selectable($"{x.Name}"))
                             {
                                 Service.Configuration.SquadronManual = x.Id;
+                                Service.Configuration.Save();
                             }
                         }
                         ImGui.EndCombo();
                     }
                 }
+
             }
 
             bool repairs = Service.Configuration.Repair;
@@ -346,7 +372,12 @@ namespace Artisan.Autocraft
             {
                 //ImGui.SameLine();
                 ImGui.PushItemWidth(200);
-                ImGui.SliderInt("##repairp", ref Service.Configuration.RepairPercent, 10, 100, $"{Service.Configuration.RepairPercent}%%");
+                int percent = Service.Configuration.RepairPercent;
+                if (ImGui.SliderInt("##repairp", ref percent, 10, 100, $"%d%%"))
+                {
+                    Service.Configuration.RepairPercent = percent;
+                    Service.Configuration.Save();
+                }
             }
 
             bool materia = Service.Configuration.Materia;
@@ -408,6 +439,13 @@ namespace Artisan.Autocraft
             {
                 try
                 {
+                    if (addon->UldManager.NodeList[88]->IsVisible)
+                    {
+                        RecipeID = 0;
+                        RecipeName = "";
+                        return;
+                    }
+
                     if (addon->UldManager.NodeList[49]->IsVisible)
                     {
                         var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
@@ -456,7 +494,7 @@ namespace Artisan.Autocraft
                         {
                             if (RecipeName != rName)
                             {
-                                if (Svc.Data.GetExcelSheet<Recipe>().TryGetFirst(x => x.ItemResult.Value?.Name!.ExtractText() == rName && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
+                                if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.ExtractText() == rName && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
                                 {
                                     RecipeID = (int)id.RowId;
                                     RecipeName = id.ItemResult.Value.Name.ExtractText();
@@ -464,7 +502,6 @@ namespace Artisan.Autocraft
                             }
                         }
                     }
-
                 }
                 catch (Exception ex)
                 {

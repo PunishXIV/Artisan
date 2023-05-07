@@ -3,10 +3,10 @@ using Artisan.CraftingLogic;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Configuration;
+using Dalamud.Game.Gui.FlyText;
 using Dalamud.Plugin;
 using System;
 using System.Collections.Generic;
-using System.Windows.Forms.VisualStyles;
 
 namespace Artisan
 {
@@ -60,6 +60,7 @@ namespace Artisan
         public bool Repair { get; set; } = false;
         public bool DisableToasts { get; set; } = false;
         public bool ShowOnlyCraftable { get; set; } = false;
+        public bool ShowOnlyCraftableRetainers { get;set; } = false;
         public bool DisableMiniMenu { get; set; } = false;
         public bool Materia { get; set; } = false;
         public bool LockMiniMenu { get; set; } = false;
@@ -71,11 +72,26 @@ namespace Artisan
 
         public int RepairPercent = 50;
 
+        public Dictionary<ulong, ulong> RetainerIDs = new Dictionary<ulong, ulong>();
+
         [NonSerialized]
         public bool CraftingX = false;
 
-        public bool UseExperminentalRotation { get; set; } = false;
+        public bool UseAlternativeRotation { get; set; } = false;
         public bool HideQuestHelper { get; set; } = false;
+        public bool DisableTheme { get; set; } = false;
+        public bool RequestToStopDuty { get; set; } = false;
+        public bool RequestToResumeDuty { get; set; } = false;
+        public int RequestToResumeDelay { get; set; } = 5;
+
+        public bool DefaultListMateria = false;   
+        public bool DefaultListSkip = false;
+        public bool DefaultListRepair = false;
+        public int DefaultListRepairPercent = 50;
+        public bool DefaultListQuickSynth = false;
+        public bool ResetTimesToAdd = false;
+
+        public bool DontEquipItems = false;
 
         [NonSerialized]
         public int CraftX = 0;

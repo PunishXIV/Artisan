@@ -1,7 +1,6 @@
 ﻿using Artisan.QuestSync;
 using Dalamud;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Utility;
 using ECommons;
 using ECommons.DalamudServices;
@@ -11,7 +10,6 @@ using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Permissions;
 using Action = Lumina.Excel.GeneratedSheets.Action;
 
 namespace Artisan.RawInformation
@@ -69,8 +67,24 @@ namespace Artisan.RawInformation
         public static Dictionary<uint, ItemFood>? ItemFoodSheet = Service.DataManager?.GetExcelSheet<ItemFood>()?
             .ToDictionary(i => i.RowId, i => i);
 
+        public static Dictionary<uint, ENpcResident>? ENPCResidentSheet = Service.DataManager?.GetExcelSheet<ENpcResident>()?
+            .Where(x => x.Singular.ExtractText().Length > 0)
+            .ToDictionary(i => i.RowId, i => i);
+
         public static Dictionary<uint, Quest>? QuestSheet = Service.DataManager?.GetExcelSheet<Quest>()?
             .Where(x => x.Id.ExtractText().Length > 0)
+            .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, CompanyCraftPart>? WorkshopPartSheet = Service.DataManager?.GetExcelSheet<CompanyCraftPart>()?
+            .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, CompanyCraftProcess>? WorkshopProcessSheet = Service.DataManager?.GetExcelSheet<CompanyCraftProcess>()?
+            .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, CompanyCraftSequence>? WorkshopSequenceSheet = Service.DataManager?.GetExcelSheet<CompanyCraftSequence>()?
+            .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, CompanyCraftSupplyItem>? WorkshopSupplyItemSheet = Service.DataManager?.GetExcelSheet<CompanyCraftSupplyItem>()?
             .ToDictionary(i => i.RowId, i => i);
     }
 
@@ -90,6 +104,20 @@ namespace Artisan.RawInformation
             }
         }
 
+        public static string NameOfItem(this uint id)
+        {
+            if (id == 0) return "";
+
+            return LuminaSheets.ItemSheet[id].Name.ExtractText();
+        }
+
+        public static string NameOfRecipe(this uint id)
+        {
+            if (id == 0) return "";
+
+            return LuminaSheets.RecipeSheet[id].ItemResult.Value.Name.ExtractText();
+        }
+
         public static string NameOfQuest(this ushort id)
         {
             if (id == 9998 || id == 9999)
@@ -100,7 +128,7 @@ namespace Artisan.RawInformation
                 var digits = id.ToString().Length;
                 if (LuminaSheets.QuestSheet!.Any(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id))
                 {
-                    return LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id).Value.Name.ExtractText();
+                    return LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id).Value.Name.ExtractText().Replace("", "").Trim();
                 }
             }
             return "";
@@ -150,7 +178,7 @@ namespace Artisan.RawInformation
                 if (LuminaSheets.QuestSheet!.Any(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id))
                 {
                     var quest = LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id).Value;
-                   
+
                     var lang = Svc.ClientState.ClientLanguage switch
                     {
                         ClientLanguage.English => Language.English,

@@ -2,8 +2,10 @@
 using Artisan.RawInformation;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
+using Dalamud.Utility;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using PunishLib.ImGuiMethods;
 using System;
 using System.Collections.Generic;
@@ -23,7 +25,7 @@ namespace Artisan.CraftingLists
 
         internal static void DrawTeamCraftListButtons()
         {
-            ImGui.SetCursorPosY(ImGui.GetContentRegionMax().Y - 90);
+            ImGui.SetCursorPosY(ImGui.GetWindowSize().Y - 93);
             if (ImGui.BeginChild("###TeamCraftSection", new Vector2(0, 0), false))
             {
                 string labelText = "Teamcraft Lists";
@@ -42,8 +44,9 @@ namespace Artisan.CraftingLists
                         ExportSelectedListToTC();
                     }
                 }
-                ImGui.EndChild();
+                
             }
+            ImGui.EndChild();
         }
 
         private static void ExportSelectedListToTC()
@@ -61,29 +64,7 @@ namespace Artisan.CraftingLists
                 var itemID = recipe.ItemResult.Value.RowId;
 
                 Dalamud.Logging.PluginLog.Debug($"{recipe.ItemResult.Value.Name.RawString} {sublist.Count()}");
-                foreach (var ing in recipe.UnkData5.Where(x => x.AmountIngredient > 0))
-                {
-                    var subRec = CraftingListUI.GetIngredientRecipe(ing.ItemIngredient);
-                    if (sublist.Contains(subRec.RowId))
-                    {
-                        foreach (var subIng in subRec.UnkData5.Where(x => x.AmountIngredient > 0))
-                        {
-                            var subSubRec = CraftingListUI.GetIngredientRecipe(subIng.ItemIngredient);
-                            if (sublist.Contains(subSubRec.RowId))
-                            {
-                                for (int y = 1; y <= subIng.AmountIngredient; y++)
-                                {
-                                    sublist.Remove(subSubRec.RowId);
-                                }
-                            }
-                        }
-
-                        for (int y = 1; y <= ing.AmountIngredient; y++)
-                        {
-                            sublist.Remove(subRec.RowId);
-                        }
-                    }
-                }
+                ExtractRecipes(sublist, recipe);
             }
 
             foreach (var item in sublist)
@@ -104,13 +85,46 @@ namespace Artisan.CraftingLists
             Notify.Success("Link copied to clipboard");
         }
 
+        private static void ExtractRecipes(List<uint> sublist, Recipe recipe)
+        {
+            foreach (var ing in recipe.UnkData5.Where(x => x.AmountIngredient > 0))
+            {
+                var subRec = CraftingListUI.GetIngredientRecipe(ing.ItemIngredient);
+                if (subRec != null)
+                {
+                    if (sublist.Contains(subRec.RowId))
+                    {
+                        foreach (var subIng in subRec.UnkData5.Where(x => x.AmountIngredient > 0))
+                        {
+                            var subSubRec = CraftingListUI.GetIngredientRecipe(subIng.ItemIngredient);
+                            if (subSubRec != null)
+                            {
+                                if (sublist.Contains(subSubRec.RowId))
+                                {
+                                    for (int y = 1; y <= subIng.AmountIngredient; y++)
+                                    {
+                                        sublist.Remove(subSubRec.RowId);
+                                    }
+                                }
+                            }
+                        }
+
+                        for (int y = 1; y <= ing.AmountIngredient; y++)
+                        {
+                            sublist.Remove(subRec.RowId);
+                        }
+                    }
+                }
+            }
+        }
+
         private static void OpenTeamcraftImportWindow()
         {
             if (!openImportWindow) return;
 
 
             ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0.2f, 0.1f, 0.2f, 1f));
-            if (ImGui.Begin("Teamcraft Import", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysAutoResize))
+            if (ImGui.Begin("Teamcraft Import###TCImport", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysAutoResize))
             {
                 ImGui.Text("List Name");
                 ImGui.SameLine();
@@ -122,9 +136,9 @@ namespace Artisan.CraftingLists
                     "Step 5. Give your list a name and click import.");
                 ImGui.InputText("###ImportListName", ref importListName, 50);
                 ImGui.Text("Pre-craft Items");
-                ImGui.InputTextMultiline("###PrecraftItems", ref importListPreCraft, 10000000, new Vector2(ImGui.GetContentRegionAvail().X, 100));
+                ImGui.InputTextMultiline("###PrecraftItems", ref importListPreCraft, 5000000, new Vector2(ImGui.GetContentRegionAvail().X, 100));
                 ImGui.Text("Final Items");
-                ImGui.InputTextMultiline("###FinalItems", ref importListItems, 10000000, new Vector2(ImGui.GetContentRegionAvail().X, 100));
+                ImGui.InputTextMultiline("###FinalItems", ref importListItems, 5000000, new Vector2(ImGui.GetContentRegionAvail().X, 100));
 
 
                 if (ImGui.Button("Import"))
@@ -132,6 +146,8 @@ namespace Artisan.CraftingLists
                     CraftingList? importedList = ParseImport();
                     if (importedList is not null)
                     {
+                        if (importedList.Name.IsNullOrEmpty())
+                            importedList.Name = importedList.Items.FirstOrDefault().NameOfRecipe();
                         importedList.SetID();
                         importedList.Save();
                         openImportWindow = false;
@@ -142,7 +158,7 @@ namespace Artisan.CraftingLists
                     }
                     else
                     {
-                        Notify.Error("Something has gone wrong with importing. Please check you have filled everything out correctly.");
+                        Notify.Error("The imported list has no items. Please check your import and try again.");
                     }
 
                 }
@@ -161,7 +177,7 @@ namespace Artisan.CraftingLists
 
         private static CraftingList? ParseImport()
         {
-            if (string.IsNullOrEmpty(importListName) || string.IsNullOrEmpty(importListItems) || string.IsNullOrEmpty(importListPreCraft)) return null;
+            if (string.IsNullOrEmpty(importListName) && string.IsNullOrEmpty(importListItems) && string.IsNullOrEmpty(importListPreCraft)) return null;
             CraftingList output = new CraftingList();
             output.Name = importListName;
             using (System.IO.StringReader reader = new System.IO.StringReader(importListPreCraft))

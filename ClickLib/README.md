@@ -1,3 +1,0 @@
-## ClickLib
-
-Programmatic button clicking.
