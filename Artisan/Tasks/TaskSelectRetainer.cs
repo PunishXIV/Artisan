@@ -332,6 +332,7 @@ internal unsafe static class RetainerHandlers
         var numeric = (AtkUnitBase*)Svc.GameGui.GetAddonByName("InputNumeric", 1);
         if (numeric != null)
         {
+            PluginLog.Debug($"{value}");
             var values = stackalloc AtkValue[1];
             values[0] = new AtkValue()
             {

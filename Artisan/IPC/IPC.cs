@@ -1,6 +1,7 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using ECommons.DalamudServices;
+using ECommons.Logging;
 
 namespace Artisan.IPC
 {
@@ -10,7 +11,7 @@ namespace Artisan.IPC
 
         public static bool StopCraftingRequest
         {
-            get => stopCraftingRequest; 
+            get => stopCraftingRequest;
             set
             {
                 if (value)
@@ -85,6 +86,11 @@ namespace Artisan.IPC
 
         static void SetStopRequest(bool s)
         {
+            if (s)
+                DuoLog.Information("Artisan has been requested to stop by an external plugin.");
+            else
+                DuoLog.Information("Artisan has been requested to restart by an external plugin.");
+
             StopCraftingRequest = s;
         }
 

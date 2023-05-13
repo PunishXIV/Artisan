@@ -27,7 +27,7 @@ namespace Artisan
         {
             try
             {
-                if (CanUse(Skills.BasicSynth))
+                if (CanUse(actionID))
                 {
                     PluginLog.Debug($"{actionID.NameOfAction()}");
                     PreviousAction = actionID;

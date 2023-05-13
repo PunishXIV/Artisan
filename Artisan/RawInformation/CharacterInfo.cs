@@ -1,4 +1,5 @@
 ﻿using Dalamud.Hooking;
+using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.Havok;
@@ -194,5 +195,24 @@ namespace Artisan.RawInformation
             }
         }
 
+    }
+
+    internal unsafe class RecipeInformation : IDisposable
+    {
+        delegate byte HasItemBeenCraftedDelegate(uint recipe);
+        [Signature("40 53 48 83 EC 20 8B D9 81 F9")]
+        HasItemBeenCraftedDelegate GetIsGatheringItemGathered;
+
+        public bool HasRecipeCrafted(uint recipe) => GetIsGatheringItemGathered(recipe) != 0;
+        public void Dispose()
+        {
+
+        }
+
+        internal RecipeInformation()
+        {
+            SignatureHelper.Initialise(this, true);
+
+        }
     }
 }

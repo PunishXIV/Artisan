@@ -7,11 +7,9 @@ using Dalamud.Interface.Components;
 using Dalamud.Logging;
 using ECommons;
 using ECommons.Automation;
-using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -20,7 +18,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Artisan.CraftingLists
@@ -582,7 +579,10 @@ namespace Artisan.CraftingLists
                                 ImGui.Text($"{name}");
                                 if (GatherBuddy && ImGui.IsItemClicked() && ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl)
                                 {
-                                    Chat.Instance.SendMessage($"/gather {name}");
+                                    if (sheetItem.ItemUICategory.Row == 47)
+                                        Chat.Instance.SendMessage($"/gatherfish {name}");
+                                    else
+                                        Chat.Instance.SendMessage($"/gather {name}");
                                 }
                                 if (ImGui.IsItemClicked() && ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift)
                                 {
@@ -644,7 +644,7 @@ namespace Artisan.CraftingLists
                     ImGui.EndTable();
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 PluginLog.Debug(ex, "TotalIngredsTable");
             }
@@ -783,7 +783,7 @@ namespace Artisan.CraftingLists
                 if (showOnlyCraftable)
                 {
                     RetainerInfo.TM.Abort();
-                    RetainerInfo.TM.Enqueue(() => RetainerInfo.LoadCache());
+                    RetainerInfo.TM.Enqueue(async () => await RetainerInfo.LoadCache());
                 }
             }
             ImGui.SameLine();
@@ -799,7 +799,7 @@ namespace Artisan.CraftingLists
 
                     CraftableItems.Clear();
                     RetainerInfo.TM.Abort();
-                    RetainerInfo.TM.Enqueue(() => RetainerInfo.LoadCache());
+                    RetainerInfo.TM.Enqueue(async () => await RetainerInfo.LoadCache());
                 }
 
                 ImGui.SameLine();
@@ -959,7 +959,7 @@ namespace Artisan.CraftingLists
                                 ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                             }
                             ImGui.Text($"{invcount}");
-                            
+
                             if (RetainerInfo.ATools && RetainerInfo.CacheBuilt)
                             {
                                 ImGui.TableNextColumn();
@@ -1079,7 +1079,7 @@ namespace Artisan.CraftingLists
             if (Service.Configuration.ShowOnlyCraftable && !RetainerInfo.CacheBuilt)
             {
                 if (RetainerInfo.ATools)
-                ImGui.TextWrapped($"Building Retainer Cache: {(RetainerInfo.RetainerData.Values.Any() ? RetainerInfo.RetainerData.FirstOrDefault().Value.Count : "0")}/{FilteredList.Select(x => x.Value).SelectMany(x => x.UnkData5).Where(x => x.ItemIngredient != 0 && x.AmountIngredient > 0).DistinctBy(x => x.ItemIngredient).Count()}");
+                    ImGui.TextWrapped($"Building Retainer Cache: {(RetainerInfo.RetainerData.Values.Any() ? RetainerInfo.RetainerData.FirstOrDefault().Value.Count : "0")}/{FilteredList.Select(x => x.Value).SelectMany(x => x.UnkData5).Where(x => x.ItemIngredient != 0 && x.AmountIngredient > 0).DistinctBy(x => x.ItemIngredient).Count()}");
                 ImGui.TextWrapped($"Building Craftable Items List: {CraftableItems.Count}/{FilteredList.Count}");
                 ImGui.Spacing();
             }
@@ -1134,7 +1134,7 @@ namespace Artisan.CraftingLists
             }
         }
 
-        public async unsafe static Task<bool> CheckForIngredients(Recipe recipe, bool fetchFromCache = true, bool checkRetainer = false)
+        public unsafe static bool CheckForIngredients(Recipe recipe, bool fetchFromCache = true, bool checkRetainer = false)
         {
             if (fetchFromCache)
                 if (CraftableItems.TryGetValue(recipe, out bool canCraft)) return canCraft;
@@ -1186,9 +1186,9 @@ namespace Artisan.CraftingLists
 
         private static bool HasRawIngredients(int itemIngredient, byte amountIngredient)
         {
-            if (GetIngredientRecipe(itemIngredient).RowId == 0) return false;
+            if (GetIngredientRecipe(itemIngredient) == null) return false;
 
-            return CheckForIngredients(GetIngredientRecipe(itemIngredient)).Result;
+            return CheckForIngredients(GetIngredientRecipe(itemIngredient));
 
         }
 
@@ -1196,9 +1196,9 @@ namespace Artisan.CraftingLists
         {
             try
             {
-                var invNumberNQ = invManager->GetInventoryItemCount(ingredient);
-                var invNumberHQ = invManager->GetInventoryItemCount(ingredient, true);
-
+                var invNumberNQ = invManager->GetInventoryItemCount(ingredient, false, false);
+                var invNumberHQ = invManager->GetInventoryItemCount(ingredient, true, false, false);
+                //PluginLog.Debug($"{invNumberNQ + invNumberHQ}");
                 return invNumberHQ + invNumberNQ;
             }
             catch

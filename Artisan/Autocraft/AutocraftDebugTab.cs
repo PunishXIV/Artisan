@@ -3,6 +3,7 @@ using Artisan.CustomDeliveries;
 using Artisan.IPC;
 using Artisan.QuestSync;
 using Artisan.RawInformation;
+using Dalamud.Utility.Signatures;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
@@ -25,10 +26,11 @@ namespace Artisan.Autocraft
         internal static int SelRecId = 0;
         internal static bool Debug = false;
 
-        public static int DebugValue = 0;
+        public static int DebugValue = 1;
 
         internal static void Draw()
         {
+            
             ImGui.Checkbox("Debug logging", ref Debug);
             if (ImGui.CollapsingHeader("Crafter's food"))
             {
@@ -241,6 +243,8 @@ namespace Artisan.Autocraft
                     Callback(addon, 13, 13, DebugValue);
                 }
             }
+
+            ImGui.Text($"Item Count? {InventoryManager.Instance()->GetInventoryItemCount((uint)DebugValue)}");
 
             if (ImGui.Button($"Open And Quick Synth"))
             {

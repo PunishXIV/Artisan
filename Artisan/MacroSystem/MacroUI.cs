@@ -604,6 +604,7 @@ namespace Artisan.MacroSystem
                             if (act == null)
                             {
                                 Service.ChatGui.PrintError($"Unable to parse action: {action}");
+                                continue;
                             }
                             macro.MacroActions.Add(act.RowId);
                             macro.MacroStepOptions.Add(new());
@@ -616,6 +617,7 @@ namespace Artisan.MacroSystem
                             if (act == null)
                             {
                                 Service.ChatGui.PrintError($"Unable to parse action: {action}");
+                                continue;
                             }
                             macro.MacroActions.Add(act.RowId);
                             macro.MacroStepOptions.Add(new());
@@ -652,6 +654,7 @@ namespace Artisan.MacroSystem
                             if (act == null)
                             {
                                 Service.ChatGui.PrintError($"Unable to parse action: {action}");
+                                continue;
                             }
                             macro.MacroActions.Add(act.RowId);
                             macro.MacroStepOptions.Add(new());
@@ -664,6 +667,7 @@ namespace Artisan.MacroSystem
                             if (act == null)
                             {
                                 Service.ChatGui.PrintError($"Unable to parse action: {action}");
+                                continue;
                             }
                             macro.MacroActions.Add(act.RowId);
                             macro.MacroStepOptions.Add(new());

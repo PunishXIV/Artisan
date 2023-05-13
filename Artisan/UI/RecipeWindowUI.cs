@@ -391,7 +391,9 @@ namespace Artisan
 
                 ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
                 float oldSize = ImGui.GetFont().Scale;
+                float oldFPont = ImGui.GetFont().FontSize;
                 ImGui.GetFont().Scale *= scale.X;
+                ImGui.GetFont().FontSize = 12f;
                 ImGui.PushFont(ImGui.GetFont());
                 ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f.Scale());
                 ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(5f.Scale(), 2.5f.Scale()));
@@ -431,6 +433,7 @@ namespace Artisan
                 ImGui.End();
                 ImGui.PopStyleVar(5);
                 ImGui.GetFont().Scale = oldSize;
+                ImGui.GetFont().FontSize = oldFPont;
                 ImGui.PopFont();
                 ImGui.PopStyleColor();
             }

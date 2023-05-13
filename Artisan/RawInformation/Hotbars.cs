@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -127,16 +128,16 @@ namespace Artisan.RawInformation
             }
         }
 
-        internal unsafe static void ExecuteRecommended(uint currentRecommendation)
+        internal unsafe static bool ExecuteRecommended(uint currentRecommendation)
         {
-            if (currentRecommendation == 0) return;
+            if (currentRecommendation == 0) return false;
             if (actionManager == null)
-                return;
+                return false;
 
             ActionType actionType = currentRecommendation >= 100000 ? ActionType.CraftAction : ActionType.Spell;
-            actionManager->UseAction(actionType, currentRecommendation);
-            return;
-
+            if (actionManager->GetActionStatus(actionType, currentRecommendation, Svc.ClientState.LocalPlayer.ObjectId) != 0) return false;
+            return actionManager->UseAction(actionType, currentRecommendation);
+            
             //PopulateHotbarDict();
             //if (currentRecommendation >= 100000)
             //{

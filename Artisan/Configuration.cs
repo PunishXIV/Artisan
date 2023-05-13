@@ -5,6 +5,7 @@ using Artisan.RawInformation;
 using Dalamud.Configuration;
 using Dalamud.Game.Gui.FlyText;
 using Dalamud.Plugin;
+using ECommons.ImGuiMethods;
 using System;
 using System.Collections.Generic;
 
@@ -90,6 +91,8 @@ namespace Artisan
         public int DefaultListRepairPercent = 50;
         public bool DefaultListQuickSynth = false;
         public bool ResetTimesToAdd = false;
+        public bool SkipMacroStepIfUnable = false;
+        public bool DisableAllaganTools = false;
 
         public bool DontEquipItems = false;
 

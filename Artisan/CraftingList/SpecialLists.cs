@@ -1,6 +1,5 @@
 ﻿using Artisan.QuestSync;
 using Artisan.RawInformation;
-using Dalamud.Logging;
 using Dalamud.Utility;
 using ECommons;
 using ECommons.DalamudServices;
@@ -28,6 +27,7 @@ namespace Artisan.CraftingLists
         private static Dictionary<int, bool> hasToBeUnlocked = new Dictionary<int, bool>() { [1] = false, [2] = false };
         private static Dictionary<int, bool> questRecipe = new Dictionary<int, bool>() { [1] = false, [2] = false };
         private static Dictionary<int, bool> isSecondary = new Dictionary<int, bool>() { [1] = false, [2] = false };
+        private static Dictionary<int, bool> alreadyCrafted = new Dictionary<int, bool>() { [1] = false, [2] = false };
 
         private static Dictionary<int, bool> Yields = LuminaSheets.RecipeSheet.Values.DistinctBy(x => x.AmountResult).OrderBy(x => x.AmountResult).ToDictionary(x => (int)x.AmountResult, x => false);
         //private static Dictionary<float, bool> PatchRelease = LuminaSheets.RecipeSheet.Values.Where(x => x.PatchNumber > 0).DistinctBy(x => x.PatchNumber).OrderBy(x => x.PatchNumber).ToDictionary(x => (float)x.PatchNumber / 100, x => false);
@@ -37,7 +37,7 @@ namespace Artisan.CraftingLists
         private static float DurY = 0f;
         public static void Draw()
         {
-            ImGui.TextWrapped($@"This section is for building lists based on certain criteria rather than individually. Give your list a name and select your criteria from below then select ""Build List"" and a new list will be created with all items that match the criteria. If you do not select any checkboxes then that category will be treated as ""Any"" or ""All"".");
+            ImGui.TextWrapped($@"This section is for building lists based on certain criteria rather than individually. Give your list a name and select your criteria from below then select ""Build List"" and a new list will be created with all items that match the criteria. If you do not select any checkboxes then that category will be treated as ""Any"" or ""All"" except for which job crafts it.");
 
             ImGui.Separator();
 
@@ -84,6 +84,25 @@ namespace Artisan.CraftingLists
 
                 ImGui.EndListBox();
             }
+
+            ImGui.TextWrapped($"Already Crafted Recipe");
+            if (ImGui.BeginListBox("###AlreadyCraftedRecipes", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 32f.Scale())))
+            {
+                ImGui.Columns(2, null, false);
+                bool yes = alreadyCrafted[1];
+                if (ImGui.Checkbox("Yes", ref yes))
+                {
+                    alreadyCrafted[1] = yes;
+                }
+                ImGui.NextColumn();
+                bool no = alreadyCrafted[2];
+                if (ImGui.Checkbox("No", ref no))
+                {
+                    alreadyCrafted[2] = no;
+                }
+                ImGui.Columns(6, null, false);
+                ImGui.EndListBox();
+            }
             ImGui.Columns(6, null, false);
             ImGui.NextColumn();
             ImGui.TextWrapped("Minimum Level");
@@ -91,7 +110,7 @@ namespace Artisan.CraftingLists
             ImGui.SliderInt("###SpecialListMinLevel", ref minLevel, 1, 90);
 
             ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
-            ImGui.TextWrapped($"Unlockable Recipe");
+            ImGui.TextWrapped($"Recipe from a Book");
             if (ImGui.BeginListBox("###UnlockableRecipe", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 32f.Scale())))
             {
                 ImGui.Columns(2, null, false);
@@ -110,7 +129,7 @@ namespace Artisan.CraftingLists
                 ImGui.EndListBox();
             }
 
-            ImGui.TextWrapped($"Quest Recipe");
+            ImGui.TextWrapped($"Quest Only Recipe");
             if (ImGui.BeginListBox("###QuestRecipe", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 32f.Scale())))
             {
                 ImGui.Columns(2, null, false);
@@ -172,6 +191,7 @@ namespace Artisan.CraftingLists
                 ImGui.Columns(6, null, false);
                 ImGui.EndListBox();
             }
+
             ImGui.NextColumn();
 
             ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
@@ -220,7 +240,7 @@ namespace Artisan.CraftingLists
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 4);
             if (ImGui.BeginListBox("###Stats", new System.Numerics.Vector2((ImGui.GetContentRegionAvail().X / 6) * 4, 120)))
             {
-                ImGui.Columns(5, null, false);
+                ImGui.Columns(3, null, false);
                 foreach (var stat in Stats)
                 {
                     var val = stat.Value;
@@ -313,6 +333,7 @@ namespace Artisan.CraftingLists
             recipes.RemoveAll(x => x.RequiredCraftsmanship < minCraftsmanship);
             recipes.RemoveAll(x => x.RequiredControl < minControl);
 
+
             if (Durabilities.Any(x => x.Value))
             {
                 foreach (var dur in Durabilities)
@@ -337,6 +358,24 @@ namespace Artisan.CraftingLists
                         else
                         {
                             recipes.RemoveAll(x => x.SecretRecipeBook.Row == 0);
+                        }
+                    }
+                }
+            }
+
+            if (alreadyCrafted.Any(x => x.Value))
+            {
+                foreach (var v in alreadyCrafted)
+                {
+                    if (!v.Value)
+                    {
+                        if (v.Key == 1)
+                        {
+                            recipes.RemoveAll(x => P.ri.HasRecipeCrafted(x.RowId));
+                        }
+                        else
+                        {
+                            recipes.RemoveAll(x => !P.ri.HasRecipeCrafted(x.RowId));
                         }
                     }
                 }

@@ -38,7 +38,7 @@ namespace Artisan.IPC
         internal static void RethrottleGeneric() => EzThrottler.Throttle("RetainerInfoThrottler", 100, true);
         internal static Tasks.RetainerManager retainerManager = new(Svc.SigScanner);
 
-        public static bool ATools => DalamudReflector.TryGetDalamudPlugin("Allagan Tools", out var it, false, true) && _IsInitialized != null && _IsInitialized.InvokeFunc();
+        public static bool ATools => !Service.Configuration.DisableAllaganTools && DalamudReflector.TryGetDalamudPlugin("Allagan Tools", out var it, false, true) && _IsInitialized != null && _IsInitialized.InvokeFunc();
         private static uint firstFoundQuantity = 0;
 
         public static bool CacheBuilt = ATools ? false : true;
@@ -66,7 +66,7 @@ namespace Artisan.IPC
             TM.TimeoutSilently = true;
 
             if (Svc.ClientState.IsLoggedIn)
-                LoadCache(true);
+                TM.Enqueue(async () => await LoadCache(true));
             Svc.ClientState.Login += LoadCacheLogin;
 
         }
@@ -74,7 +74,7 @@ namespace Artisan.IPC
         private static void LoadCacheLogin(object? sender, EventArgs e)
         {
             TM.DelayNext("LoadCacheLogin", 5000);
-            TM.Enqueue(() => LoadCache(true));
+            TM.Enqueue(async () => await LoadCache(true));
         }
 
         public async static Task<bool?> LoadCache(bool onLoad = false)
@@ -93,9 +93,9 @@ namespace Artisan.IPC
                 foreach (var recipe in CraftingListUI.FilteredList.Values)
                 {
                     if (ATools && Service.Configuration.ShowOnlyCraftableRetainers || onLoad)
-                        await Task.Run(async () => await CraftingListUI.CheckForIngredients(recipe, false, true));
+                        await Task.Run(() => Safe(() => CraftingListUI.CheckForIngredients(recipe, false, true)));
                     else
-                        await Task.Run(async () => await CraftingListUI.CheckForIngredients(recipe, false, false));
+                        await Task.Run(() => Safe(() => CraftingListUI.CheckForIngredients(recipe, false, false)));
                 }
             }
 
@@ -302,7 +302,8 @@ namespace Artisan.IPC
                                         TM.EnqueueImmediate(() =>
                                         {
                                             var value = Math.Min(requiredItems[item.Key], (int)firstFoundQuantity);
-                                            if (value == 1) return true;
+                                            PluginLog.Debug($"Min withdrawing: {value}");
+                                            if (firstFoundQuantity == 1) return true;
                                             if (RetainerHandlers.InputNumericValue(value))
                                             {
                                                 requiredItems[item.Key] -= value;
@@ -327,7 +328,7 @@ namespace Artisan.IPC
                                         TM.EnqueueImmediate(() =>
                                         {
                                             var value = Math.Min(requiredItems[item.Key], (int)firstFoundQuantity);
-                                            if (value == 1) return true;
+                                            if (firstFoundQuantity == 1) return true;
                                             if (RetainerHandlers.InputNumericValue(value))
                                             {
                                                 requiredItems[item.Key] -= value;

@@ -16,6 +16,7 @@ using Dalamud.Interface.Style;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using ECommons;
+using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.Logging;
 using ImGuiNET;
@@ -25,6 +26,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
+using Macro = Artisan.MacroSystem.Macro;
 
 namespace Artisan;
 
@@ -37,6 +39,8 @@ public unsafe class Artisan : IDalamudPlugin
     internal WindowSystem ws;
     internal Configuration config;
     internal CraftingWindow cw;
+    internal RecipeInformation ri;
+    internal TaskManager TM;
 
     public static bool currentCraftFinished = false;
     public static readonly object _lockObj = new();
@@ -58,9 +62,12 @@ public unsafe class Artisan : IDalamudPlugin
         Service.Configuration.Initialize(Service.Interface);
 
         ECommonsMain.Init(pluginInterface, this, Module.All);
+        TM = new();
+        TM.ShowDebug = false;
         P = this;
         ws = new();
         cw = new();
+        ri = new();
         PluginUi = new();
         config = Service.Configuration;
         fm = new FontManager();
@@ -317,7 +324,7 @@ public unsafe class Artisan : IDalamudPlugin
                             {
                                 if (CurrentQuality >= MaxQuality)
                                 {
-                                    while (ActionIsQuality(macro))
+                                    while (ActionIsQuality(macro) && (!Service.Configuration.SkipMacroStepIfUnable || (Service.Configuration.SkipMacroStepIfUnable && CanUse(macro.MacroActions[MacroStep]))))
                                     {
                                         MacroStep++;
                                     }
@@ -327,6 +334,14 @@ public unsafe class Artisan : IDalamudPlugin
                             if (macro.MacroOptions.SkipObservesIfNotPoor && CurrentCondition != CraftingLogic.CurrentCraft.Condition.Poor)
                             {
                                 while (macro.MacroActions[MacroStep] == Skills.Observe || macro.MacroActions[MacroStep] == Skills.CarefulObservation)
+                                {
+                                    MacroStep++;
+                                }
+                            }
+
+                            if (Service.Configuration.SkipMacroStepIfUnable)
+                            {
+                                while (!CanUse(macro.MacroActions[MacroStep]))
                                 {
                                     MacroStep++;
                                 }
@@ -355,11 +370,12 @@ public unsafe class Artisan : IDalamudPlugin
                     {
                         if (Service.Configuration.SetMacro != null && MacroStep < Service.Configuration.SetMacro.MacroActions.Count)
                         {
+
                             if (Service.Configuration.SetMacro.MacroOptions.SkipQualityIfMet)
                             {
                                 if (CurrentQuality >= MaxQuality)
                                 {
-                                    while (ActionIsQuality(Service.Configuration.SetMacro))
+                                    while (ActionIsQuality(Service.Configuration.SetMacro) && (!Service.Configuration.SkipMacroStepIfUnable || (Service.Configuration.SkipMacroStepIfUnable && CanUse(Service.Configuration.SetMacro.MacroActions[MacroStep]))))
                                     {
                                         MacroStep++;
                                     }
@@ -369,6 +385,14 @@ public unsafe class Artisan : IDalamudPlugin
                             if (Service.Configuration.SetMacro.MacroOptions.SkipObservesIfNotPoor && CurrentCondition != CraftingLogic.CurrentCraft.Condition.Poor)
                             {
                                 while (Service.Configuration.SetMacro.MacroActions[MacroStep] == Skills.Observe || Service.Configuration.SetMacro.MacroActions[MacroStep] == Skills.CarefulObservation)
+                                {
+                                    MacroStep++;
+                                }
+                            }
+
+                            if (Service.Configuration.SkipMacroStepIfUnable)
+                            {
+                                while (!CanUse(Service.Configuration.SetMacro.MacroActions[MacroStep]))
                                 {
                                     MacroStep++;
                                 }
@@ -446,7 +470,9 @@ public unsafe class Artisan : IDalamudPlugin
 
                     if (Service.Configuration.AutoMode)
                     {
-                        Service.Framework.RunOnTick(() => Hotbars.ExecuteRecommended(CurrentRecommendation), TimeSpan.FromMilliseconds(Service.Configuration.AutoDelay));
+                        P.TM.DelayNext(Service.Configuration.AutoDelay);
+                        P.TM.Enqueue(() => Hotbars.ExecuteRecommended(CurrentRecommendation));
+                        //Service.Framework.RunOnTick(() => , TimeSpan.FromMilliseconds(Service.Configuration.AutoDelay));
 
                         //Service.Plugin.BotTask.Schedule(() => Hotbars.ExecuteRecommended(CurrentRecommendation), Service.Configuration.AutoDelay);
                     }
@@ -571,7 +597,7 @@ public unsafe class Artisan : IDalamudPlugin
                 CraftingListFunctions.Paused = true;
                 break;
         }
-
+        
 
     }
 

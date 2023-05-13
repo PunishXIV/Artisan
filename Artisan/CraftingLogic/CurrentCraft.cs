@@ -571,6 +571,8 @@ namespace Artisan.CraftingLogic
             if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || Recipe.ItemResult.Value.IsCollectable) && Recipe.CanHq) return Skills.TrainedEye;
             if (CanUse(Skills.Tricks) && CurrentStep > 2 && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent))) return Skills.Tricks;
 
+            if (CurrentDurability <= 10 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
+
             if (MaxQuality == 0 || Service.Configuration.MaxPercentage == 0 || !Recipe.CanHq)
             {
                 if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
@@ -578,8 +580,6 @@ namespace Artisan.CraftingLogic
                 if (GetStatus(Buffs.Veneration) == null && CanUse(Skills.Veneration)) return Skills.Veneration;
                 return act;
             }
-
-            if (CurrentDurability <= 10 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
 
             if (CharacterInfo.CurrentCP > 0)
             {

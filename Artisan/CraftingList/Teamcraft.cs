@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Artisan.CraftingLists
 {
@@ -22,6 +21,8 @@ namespace Artisan.CraftingLists
         internal static string importListPreCraft = "";
         internal static string importListItems = "";
         internal static bool openImportWindow = false;
+        private static bool precraftQS = false;
+        private static bool finalitemQS = false;
 
         internal static void DrawTeamCraftListButtons()
         {
@@ -44,7 +45,7 @@ namespace Artisan.CraftingLists
                         ExportSelectedListToTC();
                     }
                 }
-                
+
             }
             ImGui.EndChild();
         }
@@ -124,6 +125,7 @@ namespace Artisan.CraftingLists
 
 
             ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0.2f, 0.1f, 0.2f, 1f));
+            ImGui.SetNextWindowSize(new Vector2(1, 1), ImGuiCond.Appearing);
             if (ImGui.Begin("Teamcraft Import###TCImport", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.AlwaysAutoResize))
             {
                 ImGui.Text("List Name");
@@ -137,13 +139,21 @@ namespace Artisan.CraftingLists
                 ImGui.InputText("###ImportListName", ref importListName, 50);
                 ImGui.Text("Pre-craft Items");
                 ImGui.InputTextMultiline("###PrecraftItems", ref importListPreCraft, 5000000, new Vector2(ImGui.GetContentRegionAvail().X, 100));
+
+                if (!P.config.DefaultListQuickSynth)
+                    ImGui.Checkbox("Import as Quick Synth", ref precraftQS);
+                else
+                    ImGui.TextWrapped($@"These items will try to be added as quick synth due to the default setting being enabled.");
                 ImGui.Text("Final Items");
                 ImGui.InputTextMultiline("###FinalItems", ref importListItems, 5000000, new Vector2(ImGui.GetContentRegionAvail().X, 100));
-
+                if (!P.config.DefaultListQuickSynth)
+                    ImGui.Checkbox("Import as Quick Synth", ref finalitemQS);
+                else
+                    ImGui.TextWrapped($@"These items will try to be added as quick synth due to the default setting being enabled.");
 
                 if (ImGui.Button("Import"))
                 {
-                    CraftingList? importedList = ParseImport();
+                    CraftingList? importedList = ParseImport(precraftQS, finalitemQS);
                     if (importedList is not null)
                     {
                         if (importedList.Name.IsNullOrEmpty())
@@ -175,7 +185,7 @@ namespace Artisan.CraftingLists
             ImGui.PopStyleColor();
         }
 
-        private static CraftingList? ParseImport()
+        private static CraftingList? ParseImport(bool precraftQS, bool finalitemQS)
         {
             if (string.IsNullOrEmpty(importListName) && string.IsNullOrEmpty(importListItems) && string.IsNullOrEmpty(importListPreCraft)) return null;
             CraftingList output = new CraftingList();
@@ -208,6 +218,8 @@ namespace Artisan.CraftingLists
                             {
                                 output.Items.Add(recipe.RowId);
                             }
+                            if (precraftQS && recipe.CanQuickSynth)
+                                output.ListItemOptions.TryAdd(recipe.RowId, new ListItemOptions() { NQOnly = true });
                         }
                     }
 
@@ -241,6 +253,8 @@ namespace Artisan.CraftingLists
                             {
                                 output.Items.Add(recipe.RowId);
                             }
+                            if (finalitemQS && recipe.CanQuickSynth)
+                                output.ListItemOptions.TryAdd(recipe.RowId, new ListItemOptions() { NQOnly = true });
                         }
                     }
 
