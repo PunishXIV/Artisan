@@ -4,15 +4,19 @@ using Artisan.RawInformation;
 using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Logging;
+using ECommons;
 using ECommons.DalamudServices;
+using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using static ECommons.GenericHelpers;
+using PluginLog = Dalamud.Logging.PluginLog;
 
 namespace Artisan.CraftingLists
 {
@@ -126,7 +130,7 @@ namespace Artisan.CraftingLists
         public static bool HasItemsForRecipe(uint currentProcessedItem)
         {
             if (currentProcessedItem == 0) return false;
-            var recipe = CraftingListUI.FilteredList[currentProcessedItem];
+            var recipe = CraftingListHelpers.FilteredList[currentProcessedItem];
             if (recipe.RowId == 0) return false;
 
             return CraftingListUI.CheckForIngredients(recipe, false);
@@ -143,7 +147,6 @@ namespace Artisan.CraftingLists
             }
             if (CurrentIndex < selectedList.Items.Count)
             {
-                Dalamud.Logging.PluginLog.Verbose($"Current Item: {selectedList.Items[CurrentIndex]}");
                 CraftingListUI.CurrentProcessedItem = selectedList.Items[CurrentIndex];
             }
             else
@@ -153,20 +156,20 @@ namespace Artisan.CraftingLists
                 CraftingListUI.Processing = false;
             }
 
-            var recipe = CraftingListUI.FilteredList[CraftingListUI.CurrentProcessedItem];
+            var recipe = CraftingListHelpers.FilteredList[CraftingListUI.CurrentProcessedItem];
             if (!Throttler.Throttle(0))
             {
                 return;
             }
 
             if (selectedList.SkipIfEnough &&
-                CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= CraftingListUI.SelectedListMateralsNew.FirstOrDefault(x => x.Key == recipe.ItemResult.Row).Value &&
+                CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= CraftingListHelpers.SelectedListMateralsNew.FirstOrDefault(x => x.Key == recipe.ItemResult.Row).Value &&
                 (preparing || !isCrafting))
             {
                 //Probably a final craft, treat like before
-                if (CraftingListUI.SelectedListMateralsNew.Count(x => x.Key == recipe.ItemResult.Row) == 0)
+                if (CraftingListHelpers.SelectedListMateralsNew.Count(x => x.Key == recipe.ItemResult.Row) == 0)
                 {
-                    if (CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= selectedList.Items.Count(x => x == CraftingListUI.CurrentProcessedItem) * recipe.AmountResult)
+                    if (CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult)
                     {
                         if (Throttler.Throttle(500))
                         {
@@ -175,13 +178,17 @@ namespace Artisan.CraftingLists
                             {
                                 PluginLog.Debug($"Skipping {currentRecipe.NameOfRecipe()}");
                                 CurrentIndex++;
+                                if (CurrentIndex == selectedList.Items.Count)
+                                    break;
                             }
+                            return;
                         }
+
                     }
                 }
                 else
                 {
-                    PluginLog.Debug($"{recipe.RowId.NameOfRecipe()} {CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId)} {CraftingListUI.SelectedListMateralsNew.First(x => x.Key == recipe.ItemResult.Row).Value}");
+                    PluginLog.Debug($"{recipe.RowId.NameOfRecipe()} {CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId)} {CraftingListHelpers.SelectedListMateralsNew.First(x => x.Key == recipe.ItemResult.Row).Value}");
                     if (Throttler.Throttle(500))
                     {
                         var currentRecipe = selectedList.Items[CurrentIndex];
@@ -189,7 +196,10 @@ namespace Artisan.CraftingLists
                         {
                             PluginLog.Debug($"Skipping {currentRecipe.NameOfRecipe()}");
                             CurrentIndex++;
+                            if (CurrentIndex == selectedList.Items.Count)
+                                break;
                         }
+                        return;
                     }
                 }
             }
@@ -207,7 +217,7 @@ namespace Artisan.CraftingLists
                         if (CurrentIndex == selectedList.Items.Count)
                             break;
                     }
-
+                    return;
                 }
             }
 
@@ -222,7 +232,7 @@ namespace Artisan.CraftingLists
 
             }
 
-            if (Service.ClientState.LocalPlayer.Level < recipe.RecipeLevelTable.Value.ClassJobLevel && Service.ClientState.LocalPlayer.ClassJob.Id == recipe.CraftType.Value.RowId + 8 && !isCrafting && !preparing)
+            if (Service.ClientState.LocalPlayer.Level < recipe.RecipeLevelTable.Value.ClassJobLevel - 5 && Service.ClientState.LocalPlayer.ClassJob.Id == recipe.CraftType.Value.RowId + 8 && !isCrafting && !preparing)
             {
                 Service.ChatGui.PrintError("Insufficient level to craft this item. Moving on.");
                 CurrentIndex++;
@@ -297,31 +307,13 @@ namespace Artisan.CraftingLists
             {
                 //if (CurrentIndex == 0 || CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1])
                 OpenRecipeByID(CraftingListUI.CurrentProcessedItem);
-                SetIngredients(CraftingListUI.CurrentProcessedItem);
+                SetIngredients();
 
                 if (options.NQOnly && recipe.CanQuickSynth)
                 {
                     var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
                     var count = lastIndex - CurrentIndex + 1;
-                    if (selectedList.SkipIfEnough)
-                    {
-                        var inventoryitems = CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId);
-                        var expectedNumber = 0;
-                        if (CraftingListUI.SelectedListMateralsNew.Count(x => x.Key == recipe.ItemResult.Row) == 0)
-                        {
-                            expectedNumber = selectedList.Items.Count(x => x == CraftingListUI.CurrentProcessedItem) * recipe.AmountResult;
-                        }
-                        else
-                        {
-                            expectedNumber = CraftingListUI.SelectedListMateralsNew.Count(x => x.Key == recipe.ItemResult.Row);
-                        }
-                        
-                        var difference = expectedNumber - inventoryitems;
-                        double numberToCraft = Math.Ceiling((double)difference / recipe.AmountResult);
-
-                        count = (int)numberToCraft;
-                    }
-
+                    count = CheckWhatExpected(selectedList, recipe, count);
 
                     if (count >= 99)
                     {
@@ -363,24 +355,7 @@ namespace Artisan.CraftingLists
                 {
                     var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
                     var count = lastIndex - CurrentIndex + 1;
-
-                    if (selectedList.SkipIfEnough)
-                    {
-                        var inventoryitems = CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId);
-                        var expectedNumber = 0;
-                        if (CraftingListUI.SelectedListMateralsNew.Count(x => x.Key == recipe.ItemResult.Row) == 0)
-                        {
-                            expectedNumber = selectedList.Items.Count(x => x == CraftingListUI.CurrentProcessedItem) * recipe.AmountResult;
-                        }
-                        else
-                        {
-                            expectedNumber = CraftingListUI.SelectedListMateralsNew.Count(x => x.Key == recipe.ItemResult.Row);
-                        }
-                        var difference = expectedNumber - inventoryitems;
-                        double numberToCraft = Math.Ceiling((double)difference / recipe.AmountResult);
-
-                        count = (int)numberToCraft;
-                    }
+                    count = CheckWhatExpected(selectedList, recipe, count);
 
                     if (count >= 99)
                     {
@@ -393,16 +368,56 @@ namespace Artisan.CraftingLists
                 }
                 else
                 {
-                    SetIngredients(CraftingListUI.CurrentProcessedItem);
+                    SetIngredients();
                     CurrentCraft.RepeatActualCraft();
                 }
             }
         }
 
-        private unsafe static void SetIngredients(uint currentProcessedItem)
+        private static unsafe int CheckWhatExpected(CraftingList selectedList, Recipe recipe, int count)
+        {
+            if (selectedList.SkipIfEnough)
+            {
+                var inventoryitems = CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId);
+                var expectedNumber = 0;
+                var stillToCraft = 0;
+                var totalToCraft = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult;
+                if (CraftingListHelpers.SelectedListMateralsNew.Count(x => x.Key == recipe.ItemResult.Row) == 0)
+                {
+                    //var previousCrafted = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString && selectedList.Items.IndexOf(x) < CurrentIndex) * recipe.AmountResult;
+                    stillToCraft = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString && selectedList.Items.IndexOf(x) >= CurrentIndex) * recipe.AmountResult - inventoryitems;
+                    expectedNumber = stillToCraft > 0 ? Math.Min(selectedList.Items.Count(x => x == CraftingListUI.CurrentProcessedItem) * recipe.AmountResult, stillToCraft) : selectedList.Items.Count(x => x == CraftingListUI.CurrentProcessedItem);
+
+                }
+                else
+                {
+                    expectedNumber = CraftingListHelpers.SelectedListMateralsNew.First(x => x.Key == recipe.ItemResult.Row).Value;
+                }
+
+                var difference = Math.Min(totalToCraft - inventoryitems, expectedNumber);
+                double numberToCraft = Math.Ceiling((double)difference / recipe.AmountResult);
+
+                count = (int)numberToCraft;
+            }
+
+            return count;
+        }
+
+        public unsafe static void SetIngredients()
         {
             if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
             {
+                if (Convert.ToInt32(addon->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString().GetNumbers()) == 0)
+                {
+                    DuoLog.Error("You do not have materials for this recipe.");
+                    if (Handler.Enable)
+                    {
+                        Handler.Enable = false;
+                        P.TM.Abort();
+                    }
+                }
+                    
+
                 for (var i = 0; i <= 5; i++)
                 {
                     try

@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using Artisan.CraftingLists;
 using Artisan.RawInformation;
 using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Statuses;

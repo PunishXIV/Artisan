@@ -469,6 +469,7 @@ namespace Artisan.CraftingLists
                 {
                     craftingList.Items.Add(recipe.RowId);
                 }
+                CraftingListHelpers.TidyUpList(craftingList);
                 craftingList.SetID();
                 craftingList.Save(true);
             }
@@ -479,6 +480,7 @@ namespace Artisan.CraftingLists
                     CraftingListUI.AddAllSubcrafts(recipe, craftingList, 1);
                     craftingList.Items.Add(recipe.RowId);
                 }
+                CraftingListHelpers.TidyUpList(craftingList);
                 craftingList.SetID();
                 craftingList.Save(true);
             }

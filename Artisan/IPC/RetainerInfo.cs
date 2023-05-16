@@ -38,7 +38,21 @@ namespace Artisan.IPC
         internal static void RethrottleGeneric() => EzThrottler.Throttle("RetainerInfoThrottler", 100, true);
         internal static Tasks.RetainerManager retainerManager = new(Svc.SigScanner);
 
-        public static bool ATools => !Service.Configuration.DisableAllaganTools && DalamudReflector.TryGetDalamudPlugin("Allagan Tools", out var it, false, true) && _IsInitialized != null && _IsInitialized.InvokeFunc();
+        public static bool ATools
+        {
+            get
+            {
+                try
+                {
+                    return !Service.Configuration.DisableAllaganTools && DalamudReflector.TryGetDalamudPlugin("Allagan Tools", out var it, false, true) && _IsInitialized != null && _IsInitialized.InvokeFunc();
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+        }
+
         private static uint firstFoundQuantity = 0;
 
         public static bool CacheBuilt = ATools ? false : true;
@@ -90,7 +104,7 @@ namespace Artisan.IPC
 
             if (Service.Configuration.ShowOnlyCraftable || onLoad)
             {
-                foreach (var recipe in CraftingListUI.FilteredList.Values)
+                foreach (var recipe in CraftingListHelpers.FilteredList.Values)
                 {
                     if (ATools && Service.Configuration.ShowOnlyCraftableRetainers || onLoad)
                         await Task.Run(() => Safe(() => CraftingListUI.CheckForIngredients(recipe, false, true)));
@@ -262,7 +276,7 @@ namespace Artisan.IPC
             foreach (var item in list.Items)
             {
                 var recipe = LuminaSheets.RecipeSheet[item];
-                CraftingListUI.AddRecipeIngredientsToList(recipe, ref materialList, false);
+                CraftingListHelpers.AddRecipeIngredientsToList(recipe, ref materialList, false);
             }
 
             foreach (var material in materialList.OrderByDescending(x => x.Key))

@@ -2,11 +2,13 @@
 using ClickLib.Clicks;
 using Dalamud.Logging;
 using ECommons;
+using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using PluginLog = Dalamud.Logging.PluginLog;
 
 namespace Artisan.Autocraft
 {
@@ -75,6 +77,7 @@ namespace Artisan.Autocraft
                         Handler.Enable = false;
                         InsufficientMaterials = true;
                         dataFinalized = true;
+                        DuoLog.Error("Insufficient materials set to craft. Disabling endurance mode.");
                         return false;
                     }
 

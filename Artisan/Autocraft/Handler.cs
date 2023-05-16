@@ -3,6 +3,7 @@ using Artisan.CraftingLogic;
 using Artisan.RawInformation;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Utility.Signatures;
 using ECommons;
@@ -42,7 +43,7 @@ namespace Artisan.Autocraft
         }
 
         internal static CircularBuffer<long> Errors = new(5);
-        private static string recipeName = "";
+        private static string recipeName = "No Recipe Picked";
         public static List<Task> Tasks = new();
 
 
@@ -77,7 +78,7 @@ namespace Artisan.Autocraft
 
         private static void Framework_Update(Dalamud.Game.Framework framework)
         {
-            if (Enable)
+            if (Enable && !P.TM.IsBusy)
             {
                 var isCrafting = Service.Condition[ConditionFlag.Crafting];
                 var preparing = Service.Condition[ConditionFlag.PreparingToCraft];
@@ -98,9 +99,9 @@ namespace Artisan.Autocraft
                     Throttler.Rethrottle(1000);
                 }
                 if (AutocraftDebugTab.Debug) PluginLog.Verbose("Throttle success");
-                if (HQData == null)
+                if (RecipeID == 0)
                 {
-                    DuoLog.Error("HQ data is null");
+                    DuoLog.Error("No recipe has been set for Endurance mode. Disabling Endurance mode.");
                     Enable = false;
                     return;
                 }
@@ -182,16 +183,17 @@ namespace Artisan.Autocraft
                         if (AutocraftDebugTab.Debug) PluginLog.Verbose("Addon visible");
 
                         if (AutocraftDebugTab.Debug) PluginLog.Verbose("Error text not visible");
-                        if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
-                        {
-                            if (AutocraftDebugTab.Debug) PluginLog.Verbose("HQ data finalised");
-                            return;
-                        }
-                        if (AutocraftDebugTab.Debug) PluginLog.Verbose("HQ data restored");
+                        //if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
+                        //{
+                        //    if (AutocraftDebugTab.Debug) PluginLog.Verbose($"HQ data finalised");
+                        //}
+                        //if (AutocraftDebugTab.Debug) PluginLog.Verbose("HQ data restored");
 
-                        if (Tasks.Count == 0)
+                        if (!P.TM.IsBusy)
                         {
-                            Tasks.Add(Service.Framework.RunOnTick(CurrentCraft.RepeatActualCraft, TimeSpan.FromMilliseconds(300)));
+                            P.TM.Enqueue(() => CraftingListFunctions.SetIngredients());
+                            P.TM.DelayNext(300);
+                            P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraft.RepeatActualCraft(); });
                         }
 
                     }
@@ -202,7 +204,7 @@ namespace Artisan.Autocraft
                             if (AutocraftDebugTab.Debug) PluginLog.Verbose("Addon invisible");
                             if (Tasks.Count == 0 && !Svc.Condition[ConditionFlag.Crafting40])
                             {
-                                if (AutocraftDebugTab.Debug) PluginLog.Verbose("Opening crafting log");
+                                if (AutocraftDebugTab.Debug) PluginLog.Verbose($"Opening crafting log {RecipeID}");
                                 if (RecipeID == 0)
                                 {
                                     CommandProcessor.ExecuteThrottled("/clog");
@@ -231,12 +233,21 @@ namespace Artisan.Autocraft
             ImGui.TextWrapped("Endurance mode is Artisan's way to repeat the same craft over and over, either so many times or until you run out of materials. It has full capabilities to automatically repair your gear once a piece is under a certain percentage, use food/potions/exp manuals and extract materia from spiritbonding. Please note these settings are independent of crafting list settings, and only intended to be used to craft the one item repeatedly.");
             ImGui.Separator();
             ImGui.Spacing();
-            if (ImGui.Checkbox("Enable Endurance Mode", ref enable))
+           
+            if (RecipeID == 0)
             {
-                Enable = enable;
+                ImGuiEx.TextV(ImGuiColors.DalamudRed, "No recipe selected");
             }
-            ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe and NQ/HQ material distribution in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
-            ImGuiEx.Text($"Recipe: {RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.RecipeSheet[(uint)RecipeID].CraftType.Value.Name.RawString})" : "")}\nHQ ingredients: {HQData?.Select(x => x.ToString()).Join(", ")}");
+            else
+            {
+                if (ImGui.Checkbox("Enable Endurance Mode", ref enable))
+                {
+                    Enable = enable;
+                }
+                ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
+
+                ImGuiEx.Text($"Recipe: {RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.ClassJobSheet[LuminaSheets.RecipeSheet[(uint)RecipeID].CraftType.Row + 8].Abbreviation})" : "")}");
+            }
             bool requireFoodPot = Service.Configuration.AbortIfNoFoodPot;
             if (ImGui.Checkbox("Use Food, Manuals and/or Medicine", ref requireFoodPot))
             {
@@ -249,7 +260,7 @@ namespace Artisan.Autocraft
 
                 {
                     ImGuiEx.TextV("Food Usage:");
-                    ImGui.SameLine(300f.Scale());
+                    ImGui.SameLine(200f.Scale());
                     ImGuiEx.SetNextItemFullWidth();
                     if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == Service.Configuration.Food, out var item) ? $"{(Service.Configuration.FoodHQ ? " " : "")}{item.Name}" : $"{(Service.Configuration.Food == 0 ? "Disabled" : $"{(Service.Configuration.FoodHQ ? " " : "")}{Service.Configuration.Food}")}"))
                     {
@@ -282,7 +293,7 @@ namespace Artisan.Autocraft
 
                 {
                     ImGuiEx.TextV("Medicine Usage:");
-                    ImGui.SameLine(300f.Scale());
+                    ImGui.SameLine(200f.Scale());
                     ImGuiEx.SetNextItemFullWidth();
                     if (ImGui.BeginCombo("##potBuff", ConsumableChecker.Pots.TryGetFirst(x => x.Id == Service.Configuration.Potion, out var item) ? $"{(Service.Configuration.PotHQ ? " " : "")}{item.Name}" : $"{(Service.Configuration.Potion == 0 ? "Disabled" : $"{(Service.Configuration.PotHQ ? " " : "")}{Service.Configuration.Potion}")}"))
                     {
@@ -315,7 +326,7 @@ namespace Artisan.Autocraft
 
                 {
                     ImGuiEx.TextV("Manual Usage:");
-                    ImGui.SameLine(300f.Scale());
+                    ImGui.SameLine(200f.Scale());
                     ImGuiEx.SetNextItemFullWidth();
                     if (ImGui.BeginCombo("##manualBuff", ConsumableChecker.Manuals.TryGetFirst(x => x.Id == Service.Configuration.Manual, out var item) ? $"{item.Name}" : $"{(Service.Configuration.Manual == 0 ? "Disabled" : $"{Service.Configuration.Manual}")}"))
                     {
@@ -338,7 +349,7 @@ namespace Artisan.Autocraft
 
                 {
                     ImGuiEx.TextV("Squadron Manual Usage:");
-                    ImGui.SameLine(300f.Scale());
+                    ImGui.SameLine(200f.Scale());
                     ImGuiEx.SetNextItemFullWidth();
                     if (ImGui.BeginCombo("##squadronManualBuff", ConsumableChecker.SquadronManuals.TryGetFirst(x => x.Id == Service.Configuration.SquadronManual, out var item) ? $"{item.Name}" : $"{(Service.Configuration.SquadronManual == 0 ? "Disabled" : $"{Service.Configuration.SquadronManual}")}"))
                     {

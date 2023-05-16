@@ -5,7 +5,6 @@ using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
-using Dalamud.Interface.GameFonts;
 using Dalamud.Interface.Windowing;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
@@ -27,7 +26,7 @@ namespace Artisan.UI
 
         // this extra bool exists for ImGui, since you can't ref a property
         private bool visible = false;
-        public OpenWindow OpenWindow { get; private set; } = OpenWindow.None;
+        public OpenWindow OpenWindow { get; private set; } = OpenWindow.Main;
 
         public bool Visible
         {
@@ -100,7 +99,7 @@ namespace Artisan.UI
                 ImGui.TableNextColumn();
 
                 var regionSize = ImGui.GetContentRegionAvail();
-                
+
                 ImGui.PushStyleVar(ImGuiStyleVar.SelectableTextAlign, new Vector2(0.5f, 0.5f));
                 if (ImGui.BeginChild($"###ArtisanLeftSide", regionSize with { Y = topLeftSideHeight }, false, ImGuiWindowFlags.NoDecoration))
                 {
@@ -108,7 +107,17 @@ namespace Artisan.UI
 
                     if (ThreadLoadImageHandler.TryGetTextureWrap(imagePath, out var logo))
                     {
-                        ImGui.Image(logo.ImGuiHandle, new(125f.Scale(), 125f.Scale()));
+                        ImGuiEx.ImGuiLineCentered("###ArtisanLogo", () =>
+                        {
+                            ImGui.Image(logo.ImGuiHandle, new(125f.Scale(), 125f.Scale()));
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.BeginTooltip();
+                                ImGui.Text($"You are the 69th person to find this secret. Nice!");
+                                ImGui.EndTooltip();
+                            }
+                        });
+
                     }
                     ImGui.Spacing();
                     ImGui.Separator();
@@ -203,7 +212,7 @@ namespace Artisan.UI
                     {
                         SpecialLists.Draw();
                     }
-                   
+
                 }
                 ImGui.EndChild();
                 ImGui.EndTable();
@@ -382,7 +391,7 @@ namespace Artisan.UI
                     Service.Configuration.Save();
 
                 if (ImGui.Checkbox("Skip Macro Steps if Unable To Use Action", ref Service.Configuration.SkipMacroStepIfUnable))
-                    Service.Configuration.Save();   
+                    Service.Configuration.Save();
             }
 
             if (ImGui.CollapsingHeader("UI Settings"))

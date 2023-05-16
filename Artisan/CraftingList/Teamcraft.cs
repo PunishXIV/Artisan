@@ -61,7 +61,7 @@ namespace Artisan.CraftingLists
                 if (i >= sublist.Count()) break;
 
                 int number = CraftingListUI.selectedList.Items.Count(x => x == sublist[i]);
-                var recipe = CraftingListUI.FilteredList[sublist[i]];
+                var recipe = CraftingListHelpers.FilteredList[sublist[i]];
                 var itemID = recipe.ItemResult.Value.RowId;
 
                 Dalamud.Logging.PluginLog.Debug($"{recipe.ItemResult.Value.Name.RawString} {sublist.Count()}");
@@ -71,7 +71,7 @@ namespace Artisan.CraftingLists
             foreach (var item in sublist)
             {
                 int number = CraftingListUI.selectedList.Items.Count(x => x == item);
-                var recipe = CraftingListUI.FilteredList[item];
+                var recipe = CraftingListHelpers.FilteredList[item];
                 var itemID = recipe.ItemResult.Value.RowId;
 
                 exportItems += $"{itemID},null,{number};";
@@ -90,14 +90,14 @@ namespace Artisan.CraftingLists
         {
             foreach (var ing in recipe.UnkData5.Where(x => x.AmountIngredient > 0))
             {
-                var subRec = CraftingListUI.GetIngredientRecipe(ing.ItemIngredient);
+                var subRec = CraftingListHelpers.GetIngredientRecipe(ing.ItemIngredient);
                 if (subRec != null)
                 {
                     if (sublist.Contains(subRec.RowId))
                     {
                         foreach (var subIng in subRec.UnkData5.Where(x => x.AmountIngredient > 0))
                         {
-                            var subSubRec = CraftingListUI.GetIngredientRecipe(subIng.ItemIngredient);
+                            var subSubRec = CraftingListHelpers.GetIngredientRecipe(subIng.ItemIngredient);
                             if (subSubRec != null)
                             {
                                 if (sublist.Contains(subSubRec.RowId))
