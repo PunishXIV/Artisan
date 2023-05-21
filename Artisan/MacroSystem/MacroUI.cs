@@ -115,7 +115,7 @@ namespace Artisan.MacroSystem
                     {
                         ImGui.Text($"Selected Macro: {selectedMacro.Name}");
                         ImGui.SameLine();
-                        if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.Pen))
+                        if (ImGuiComponents.IconButton(FontAwesomeIcon.Pen))
                         {
                             renameMode = true;
                         }
@@ -142,7 +142,7 @@ namespace Artisan.MacroSystem
                         selectedMacro = new();
                         selectedActionIndex = -1;
 
-                        Artisan.CleanUpIndividualMacros();
+                        CleanUpIndividualMacros();
                     }
                     ImGui.SameLine();
                     if (ImGui.Button("Raw Editor"))
@@ -228,7 +228,7 @@ namespace Artisan.MacroSystem
                             if (selectedActionIndex > 0)
                             {
                                 ImGui.SameLine();
-                                if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowLeft))
+                                if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowLeft))
                                 {
                                     selectedActionIndex--;
                                 }
@@ -237,7 +237,7 @@ namespace Artisan.MacroSystem
                             if (selectedActionIndex < selectedMacro.MacroActions.Count - 1)
                             {
                                 ImGui.SameLine();
-                                if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowRight))
+                                if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowRight))
                                 {
                                     selectedActionIndex++;
                                 }
@@ -291,7 +291,7 @@ namespace Artisan.MacroSystem
                             if (selectedActionIndex > 0)
                             {
                                 ImGui.SameLine();
-                                if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowUp))
+                                if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowUp))
                                 {
                                     selectedMacro.MacroActions.Reverse(selectedActionIndex - 1, 2);
                                     selectedMacro.MacroStepOptions.Reverse(selectedActionIndex - 1, 2);
@@ -312,7 +312,7 @@ namespace Artisan.MacroSystem
                                     ImGui.SameLine();
                                 }
 
-                                if (ImGuiComponents.IconButton(Dalamud.Interface.FontAwesomeIcon.ArrowDown))
+                                if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowDown))
                                 {
                                     selectedMacro.MacroActions.Reverse(selectedActionIndex, 2);
                                     selectedMacro.MacroStepOptions.Reverse(selectedActionIndex, 2);

@@ -1,6 +1,7 @@
 ﻿using Artisan.RawInformation;
 using Dalamud.Hooking;
 using Dalamud.Logging;
+using ECommons.Automation;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
@@ -117,7 +118,7 @@ namespace Artisan
             }
             catch (Exception ex)
             {
-                Dalamud.Logging.PluginLog.Error(ex, "UseActionDetour");
+                PluginLog.Error(ex, "UseActionDetour");
                 return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
             }
         }
@@ -158,7 +159,7 @@ namespace Artisan
                                     ag->OpenForItemSlot(InventoryType.Inventory1, i, AgentModule.Instance()->GetAgentByInternalId(AgentId.Inventory)->GetAddonID());
                                     var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu", 1);
                                     if (contextMenu != null)
-                                        Callback(contextMenu, 0, 0, 0, 0, 0);
+                                        Callback.Fire(contextMenu, true, 0, 0, 0, 0, 0);
                                 }
                             }
                             for (int i = 0; i < InventoryManager.Instance()->GetInventoryContainer(InventoryType.Inventory2)->Size; i++)
@@ -170,7 +171,7 @@ namespace Artisan
                                     ag->OpenForItemSlot(InventoryType.Inventory2, i, AgentModule.Instance()->GetAgentByInternalId(AgentId.Inventory)->GetAddonID());
                                     var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu", 1);
                                     if (contextMenu != null)
-                                        Callback(contextMenu, 0, 0, 0, 0, 0);
+                                        Callback.Fire(contextMenu, true, 0, 0, 0, 0, 0);
                                 }
                             }
                             for (int i = 0; i < InventoryManager.Instance()->GetInventoryContainer(InventoryType.Inventory3)->Size; i++)
@@ -182,7 +183,7 @@ namespace Artisan
                                     ag->OpenForItemSlot(InventoryType.Inventory3, i, AgentModule.Instance()->GetAgentByInternalId(AgentId.Inventory)->GetAddonID());
                                     var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu", 1);
                                     if (contextMenu != null)
-                                        Callback(contextMenu, 0, 0, 0, 0, 0);
+                                        Callback.Fire(contextMenu, true, 0, 0, 0, 0, 0);
                                 }
                             }
                             for (int i = 0; i < InventoryManager.Instance()->GetInventoryContainer(InventoryType.Inventory4)->Size; i++)
@@ -194,7 +195,7 @@ namespace Artisan
                                     ag->OpenForItemSlot(InventoryType.Inventory4, i, AgentModule.Instance()->GetAgentByInternalId(AgentId.Inventory)->GetAddonID());
                                     var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu", 1);
                                     if (contextMenu != null)
-                                        Callback(contextMenu, 0, 0, 0, 0, 0);
+                                        Callback.Fire(contextMenu, true, 0, 0, 0, 0, 0);
                                 }
                             }
                         }
@@ -210,7 +211,7 @@ namespace Artisan
                                     ag->OpenForItemSlot(InventoryType.ArmoryHands, i, AgentModule.Instance()->GetAgentByInternalId(AgentId.ArmouryBoard)->GetAddonID());
                                     var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu", 1);
                                     if (contextMenu != null)
-                                        Callback(contextMenu, 0, 0, 0, 0, 0);
+                                        Callback.Fire(contextMenu, true, 0, 0, 0, 0, 0);
                                 }
                             }
                         }
@@ -226,7 +227,7 @@ namespace Artisan
                                     ag->OpenForItemSlot(InventoryType.ArmoryMainHand, i, AgentModule.Instance()->GetAgentByInternalId(AgentId.ArmouryBoard)->GetAddonID());
                                     var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu", 1);
                                     if (contextMenu != null)
-                                        Callback(contextMenu, 0, 0, 0, 0, 0);
+                                        Callback.Fire(contextMenu, true, 0, 0, 0, 0, 0);
                                 }
                             }
                         }

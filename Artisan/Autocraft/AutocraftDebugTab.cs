@@ -5,6 +5,7 @@ using Artisan.QuestSync;
 using Artisan.RawInformation;
 using Dalamud.Utility.Signatures;
 using ECommons;
+using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -240,7 +241,7 @@ namespace Artisan.Autocraft
                 if (Svc.GameGui.GetAddonByName("GuildLeve") != IntPtr.Zero)
                 {
                     var addon = (AtkUnitBase*)Svc.GameGui.GetAddonByName("GuildLeve");
-                    Callback(addon, 13, 13, DebugValue);
+                    Callback.Fire(addon, true, 13, 13, DebugValue);
                 }
             }
 

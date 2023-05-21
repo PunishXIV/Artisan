@@ -42,6 +42,7 @@ public unsafe class Artisan : IDalamudPlugin
     internal CraftingWindow cw;
     internal RecipeInformation ri;
     internal TaskManager TM;
+    internal TaskManager CTM;
 
     public static bool currentCraftFinished = false;
     public static readonly object _lockObj = new();
@@ -66,7 +67,11 @@ public unsafe class Artisan : IDalamudPlugin
         PunishLibMain.Init(pluginInterface, this);
 
         TM = new();
+        CTM = new();
+#if !DEBUG
         TM.ShowDebug = false;
+        CTM.ShowDebug = false;
+#endif
         P = this;
         ws = new();
         cw = new();
@@ -263,7 +268,7 @@ public unsafe class Artisan : IDalamudPlugin
         {
             currentCraftFinished = true;
 
-            if (CraftingListUI.Processing)
+            if (CraftingListUI.Processing && !CraftingListFunctions.Paused)
             {
                 Dalamud.Logging.PluginLog.Verbose("Advancing Crafting List");
                 CraftingListFunctions.CurrentIndex++;
@@ -473,8 +478,8 @@ public unsafe class Artisan : IDalamudPlugin
 
                     if (Service.Configuration.AutoMode)
                     {
-                        P.TM.DelayNext(Service.Configuration.AutoDelay);
-                        P.TM.Enqueue(() => Hotbars.ExecuteRecommended(CurrentRecommendation));
+                        P.CTM.DelayNext(Service.Configuration.AutoDelay);
+                        P.CTM.Enqueue(() => Hotbars.ExecuteRecommended(CurrentRecommendation));
                         //Service.Framework.RunOnTick(() => , TimeSpan.FromMilliseconds(Service.Configuration.AutoDelay));
 
                         //Service.Plugin.BotTask.Schedule(() => Hotbars.ExecuteRecommended(CurrentRecommendation), Service.Configuration.AutoDelay);

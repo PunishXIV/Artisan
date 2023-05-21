@@ -3,10 +3,12 @@ using Artisan.CraftingLogic;
 using Artisan.RawInformation;
 using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Logging;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.Logging;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -151,15 +153,41 @@ namespace Artisan.CraftingLists
             }
             else
             {
-                Dalamud.Logging.PluginLog.Verbose($"End of Index");
+                PluginLog.Verbose($"End of Index");
                 CurrentIndex = 0;
                 CraftingListUI.Processing = false;
+                return;
             }
 
             var recipe = CraftingListHelpers.FilteredList[CraftingListUI.CurrentProcessedItem];
+
             if (!Throttler.Throttle(0))
             {
                 return;
+            }
+
+            if (recipe.SecretRecipeBook.Row != 0)
+            {
+                if (!PlayerState.Instance()->IsSecretRecipeBookUnlocked(recipe.SecretRecipeBook.Row))
+                {
+                    SeString error = new SeString(
+                        new TextPayload("You haven't unlocked the recipe book "),
+                        new ItemPayload(recipe.SecretRecipeBook.Value.Item.Row),
+                        new UIForegroundPayload(1),
+                        new TextPayload(recipe.SecretRecipeBook.Value.Name.RawString),
+                        RawPayload.LinkTerminator,
+                        UIForegroundPayload.UIForegroundOff,
+                        new TextPayload(" for this recipe. Moving on."));
+                    Svc.Chat.PrintError(error);
+
+                    var currentRecipe = selectedList.Items[CurrentIndex];
+                    while (currentRecipe == selectedList.Items[CurrentIndex])
+                    {
+                        CurrentIndex++;
+                        if (CurrentIndex == selectedList.Items.Count)
+                            return;
+                    }
+                }
             }
 
             if (selectedList.SkipIfEnough &&
@@ -176,10 +204,9 @@ namespace Artisan.CraftingLists
                             var currentRecipe = selectedList.Items[CurrentIndex];
                             while (currentRecipe == selectedList.Items[CurrentIndex])
                             {
-                                PluginLog.Debug($"Skipping {currentRecipe.NameOfRecipe()}");
                                 CurrentIndex++;
                                 if (CurrentIndex == selectedList.Items.Count)
-                                    break;
+                                    return;
                             }
                             return;
                         }
@@ -194,10 +221,9 @@ namespace Artisan.CraftingLists
                         var currentRecipe = selectedList.Items[CurrentIndex];
                         while (currentRecipe == selectedList.Items[CurrentIndex])
                         {
-                            PluginLog.Debug($"Skipping {currentRecipe.NameOfRecipe()}");
                             CurrentIndex++;
                             if (CurrentIndex == selectedList.Items.Count)
-                                break;
+                                return;
                         }
                         return;
                     }
@@ -215,7 +241,7 @@ namespace Artisan.CraftingLists
                     {
                         CurrentIndex++;
                         if (CurrentIndex == selectedList.Items.Count)
-                            break;
+                            return;
                     }
                     return;
                 }
@@ -226,7 +252,14 @@ namespace Artisan.CraftingLists
                 if (!SwitchJobGearset(recipe.CraftType.Value.RowId + 8))
                 {
                     Service.ChatGui.PrintError($"Gearset not found for {LuminaSheets.ClassJobSheet[recipe.CraftType.Value.RowId + 8].Name.RawString}. Moving on.");
-                    CurrentIndex++;
+                    var currentRecipe = selectedList.Items[CurrentIndex];
+
+                    while (currentRecipe == selectedList.Items[CurrentIndex])
+                    {
+                        CurrentIndex++;
+                        if (CurrentIndex == selectedList.Items.Count)
+                            return;
+                    }
                     return;
                 }
 
@@ -235,7 +268,14 @@ namespace Artisan.CraftingLists
             if (Service.ClientState.LocalPlayer.Level < recipe.RecipeLevelTable.Value.ClassJobLevel - 5 && Service.ClientState.LocalPlayer.ClassJob.Id == recipe.CraftType.Value.RowId + 8 && !isCrafting && !preparing)
             {
                 Service.ChatGui.PrintError("Insufficient level to craft this item. Moving on.");
-                CurrentIndex++;
+                var currentRecipe = selectedList.Items[CurrentIndex];
+
+                while (currentRecipe == selectedList.Items[CurrentIndex])
+                {
+                    CurrentIndex++;
+                    if (CurrentIndex == selectedList.Items.Count)
+                        return;
+                }
                 return;
             }
             if (Svc.Condition[ConditionFlag.Occupied39])
@@ -305,8 +345,8 @@ namespace Artisan.CraftingLists
 
             if (!isCrafting)
             {
-                //if (CurrentIndex == 0 || CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1])
                 OpenRecipeByID(CraftingListUI.CurrentProcessedItem);
+                RecipeWindowOpen();
                 SetIngredients();
 
                 if (options.NQOnly && recipe.CanQuickSynth)
@@ -329,6 +369,7 @@ namespace Artisan.CraftingLists
                 {
                     CurrentCraft.RepeatActualCraft();
                 }
+
             }
 
             if (CurrentIndex == 0 || CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1] || (CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0))
@@ -336,16 +377,19 @@ namespace Artisan.CraftingLists
                 if (isCrafting)
                 {
                     CloseCraftingMenu();
+                    return;
                 }
 
                 if (CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0)
                 {
                     CurrentCraft.CloseQuickSynthWindow();
+                    return;
                 }
 
-                if (Artisan.CheckIfCraftFinished())
+                if (CheckIfCraftFinished())
                 {
                     CloseCraftingMenu();
+                    return;
                 }
             }
 
@@ -368,6 +412,7 @@ namespace Artisan.CraftingLists
                 }
                 else
                 {
+                    RecipeWindowOpen();
                     SetIngredients();
                     CurrentCraft.RepeatActualCraft();
                 }
@@ -403,10 +448,13 @@ namespace Artisan.CraftingLists
             return count;
         }
 
-        public unsafe static void SetIngredients()
+        public unsafe static bool SetIngredients()
         {
             if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
             {
+                if (addon->UldManager.NodeListCount <= 35) return false;
+                if (string.IsNullOrEmpty(addon->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString())) return false;
+
                 if (Convert.ToInt32(addon->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString().GetNumbers()) == 0)
                 {
                     DuoLog.Error("You do not have materials for this recipe.");
@@ -415,8 +463,10 @@ namespace Artisan.CraftingLists
                         Handler.Enable = false;
                         P.TM.Abort();
                     }
+
+                    return true;
                 }
-                    
+
 
                 for (var i = 0; i <= 5; i++)
                 {
@@ -425,7 +475,7 @@ namespace Artisan.CraftingLists
                         var node = addon->UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
                         if (node is null || !node->AtkResNode.IsVisible)
                         {
-                            return;
+                            return true;
                         }
 
                         var setNQ = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode()->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText.ToString();
@@ -455,10 +505,11 @@ namespace Artisan.CraftingLists
                     }
                     catch
                     {
-                        return;
+                        return false;
                     }
                 }
             }
+            return false;
         }
 
         private unsafe static bool SwitchJobGearset(uint cjID)

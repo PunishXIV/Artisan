@@ -126,7 +126,7 @@ namespace Artisan.UI
                 }
                 if (ImGui.Button("Fetch Recommendation"))
                 {
-                    Artisan.FetchRecommendation(CurrentStep);
+                    FetchRecommendation(CurrentStep);
                 }
             }
         }

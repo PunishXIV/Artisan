@@ -909,6 +909,10 @@ namespace Artisan.CraftingLists
                     {
                         opts.NQOnly = selectedList.AddAsQuickSynth;
                     }
+                    else
+                    {
+                        selectedList.ListItemOptions.TryAdd(SelectedRecipe.RowId, new ListItemOptions() { NQOnly = selectedList.AddAsQuickSynth });
+                    }
 
                     Service.Configuration.Save();
                     if (Service.Configuration.ResetTimesToAdd)
@@ -942,6 +946,10 @@ namespace Artisan.CraftingLists
                     if (selectedList.ListItemOptions.TryGetValue(SelectedRecipe.RowId, out var opts))
                     {
                         opts.NQOnly = selectedList.AddAsQuickSynth;
+                    }
+                    else
+                    {
+                        selectedList.ListItemOptions.TryAdd(SelectedRecipe.RowId, new ListItemOptions() { NQOnly = selectedList.AddAsQuickSynth });
                     }
 
                     Service.Configuration.Save();
@@ -1078,7 +1086,7 @@ namespace Artisan.CraftingLists
             }
             catch (Exception ex)
             {
-                Dalamud.Logging.PluginLog.Error(ex, "ERROR");
+                PluginLog.Error(ex, "ERROR");
             }
         }
 
@@ -1136,7 +1144,7 @@ namespace Artisan.CraftingLists
                     }
                     catch (Exception ex)
                     {
-                        Dalamud.Logging.PluginLog.Error(ex, "DrawRecipeList");
+                        PluginLog.Error(ex, "DrawRecipeList");
                     }
                 }
             }
@@ -1294,7 +1302,7 @@ namespace Artisan.CraftingLists
                             }
                             catch (Exception ex)
                             {
-                                Dalamud.Logging.PluginLog.Error(ex, "JobStrings");
+                                PluginLog.Error(ex, "JobStrings");
                             }
 
                         }
@@ -1332,14 +1340,14 @@ namespace Artisan.CraftingLists
                             }
                             catch (Exception ex)
                             {
-                                Dalamud.Logging.PluginLog.Error(ex, "JobStrings");
+                                PluginLog.Error(ex, "JobStrings");
                             }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Dalamud.Logging.PluginLog.Error(ex, "RecipeIngreds");
+                    PluginLog.Error(ex, "RecipeIngreds");
                 }
                 ImGui.EndTable();
             }

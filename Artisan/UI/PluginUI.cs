@@ -190,7 +190,7 @@ namespace Artisan.UI
 
                     if (OpenWindow == OpenWindow.About)
                     {
-                        PunishLib.ImGuiMethods.AboutTab.Draw(P);
+                        AboutTab.Draw(P);
                     }
 
                     if (OpenWindow == OpenWindow.Debug)

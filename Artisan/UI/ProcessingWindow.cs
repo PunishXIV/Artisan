@@ -1,10 +1,12 @@
 ﻿using Artisan.CraftingLists;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
 using System;
+using System.CodeDom;
 using System.Linq;
 
 namespace Artisan.UI
@@ -50,8 +52,8 @@ namespace Artisan.UI
         {
             if (CraftingListUI.Processing)
             {
-                Service.Framework.RunOnFrameworkThread(() => CraftingListFunctions.ProcessList(CraftingListUI.selectedList));
-                
+                CraftingListFunctions.ProcessList(CraftingListUI.selectedList);
+
                 if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
                 {
                     P.PluginUi.Visible = true;
@@ -80,7 +82,7 @@ namespace Artisan.UI
                         if (CraftingListFunctions.RecipeWindowOpen())
                             CraftingListFunctions.CloseCraftingMenu();
 
-                        Svc.Framework.RunOnTick(() => CraftingListFunctions.OpenRecipeByID(CraftingListUI.CurrentProcessedItem, true), TimeSpan.FromSeconds(1));
+                        P.TM.Enqueue(() => CraftingListFunctions.OpenRecipeByID(CraftingListUI.CurrentProcessedItem, true));
 
                         CraftingListFunctions.Paused = false;
                     }
@@ -90,6 +92,8 @@ namespace Artisan.UI
                 if (ImGui.Button("Cancel"))
                 {
                     CraftingListUI.Processing = false;
+                    CraftingListFunctions.Paused = false;
+                    P.TM.Abort();
                 }
             }
         }

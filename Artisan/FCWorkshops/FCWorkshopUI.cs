@@ -44,7 +44,7 @@ namespace Artisan.FCWorkshops
                     SelectedProject = 0;
                 }
 
-                foreach (var project in LuminaSheets.WorkshopSequenceSheet.Values.Where(x => x.RowId > 0).Where(x => x.ResultItem.Value.Name.RawString.Contains(Search, System.StringComparison.CurrentCultureIgnoreCase)))
+                foreach (var project in LuminaSheets.WorkshopSequenceSheet.Values.Where(x => x.RowId > 0).Where(x => x.ResultItem.Value.Name.RawString.Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
                 {
                     bool selected = ImGui.Selectable($"{project.ResultItem.Value.Name.RawString}", project.RowId == SelectedProject);
 

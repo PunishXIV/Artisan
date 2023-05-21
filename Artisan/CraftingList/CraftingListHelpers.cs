@@ -70,7 +70,7 @@ internal static class CraftingListHelpers
         }
         catch (Exception ex)
         {
-            Dalamud.Logging.PluginLog.Error(ex, "ERROR");
+            PluginLog.Error(ex, "ERROR");
         }
     }
 

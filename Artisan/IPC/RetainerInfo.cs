@@ -1,16 +1,22 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.RawInformation;
 using Artisan.Tasks;
+using ClickLib.Clicks;
+using Dalamud.Game;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
 using Dalamud.Plugin.Ipc;
+using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices.TerritoryEnumeration;
 using ECommons.Reflection;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
@@ -120,7 +126,7 @@ namespace Artisan.IPC
 
         private static void OnItemAdded((uint, InventoryItem.ItemFlags, ulong, uint) tuple)
         {
-            if (Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.OccupiedSummoningBell])
+            if (Svc.Condition[ConditionFlag.OccupiedSummoningBell])
             {
                 ClearCache(null);
             }
@@ -128,7 +134,7 @@ namespace Artisan.IPC
 
         private static void OnItemRemoved((uint, InventoryItem.ItemFlags, ulong, uint) tuple)
         {
-            if (Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.OccupiedSummoningBell])
+            if (Svc.Condition[ConditionFlag.OccupiedSummoningBell])
             {
                 ClearCache(null);
             }
@@ -291,6 +297,7 @@ namespace Artisan.IPC
 
             if (RetainerData.SelectMany(x => x.Value).Any(x => requiredItems.Any(y => y.Key == x.Value.ItemID)))
             {
+                TM.Enqueue(() => Svc.Framework.Update += Tick);
                 TM.Enqueue(() => AutoRetainer.Suppress());
                 TM.EnqueueBell();
                 TM.DelayNext("BellInteracted", 200);
@@ -309,54 +316,8 @@ namespace Artisan.IPC
                                 TM.DelayNext("SwitchItems", 200);
                                 TM.Enqueue(() =>
                                 {
-                                    if (requiredItems[item.Key] != 0)
-                                    {
-                                        TM.EnqueueImmediate(() => RetainerHandlers.OpenItemContextMenu((uint)item.Key, out firstFoundQuantity), 1500);
-                                        TM.DelayNextImmediate("WaitOnNumericPopup", 300);
-                                        TM.EnqueueImmediate(() =>
-                                        {
-                                            var value = Math.Min(requiredItems[item.Key], (int)firstFoundQuantity);
-                                            PluginLog.Debug($"Min withdrawing: {value}");
-                                            if (firstFoundQuantity == 1) return true;
-                                            if (RetainerHandlers.InputNumericValue(value))
-                                            {
-                                                requiredItems[item.Key] -= value;
-
-                                                return true;
-                                            }
-                                            else
-                                            {
-                                                return false;
-                                            }
-                                        }, 300);
-                                    }
+                                    ExtractItem(requiredItems, item);
                                 });
-
-                                TM.Enqueue(() =>
-                                {
-                                    if (requiredItems[item.Key] != 0)
-                                    {
-                                        TM.DelayNextImmediate("TryForExtraMat", 200);
-                                        TM.EnqueueImmediate(() => RetainerHandlers.OpenItemContextMenu((uint)item.Key, out firstFoundQuantity), 1500);
-                                        TM.DelayNextImmediate("WaitOnNumericPopup", 300);
-                                        TM.EnqueueImmediate(() =>
-                                        {
-                                            var value = Math.Min(requiredItems[item.Key], (int)firstFoundQuantity);
-                                            if (firstFoundQuantity == 1) return true;
-                                            if (RetainerHandlers.InputNumericValue(value))
-                                            {
-                                                requiredItems[item.Key] -= value;
-
-                                                return true;
-                                            }
-                                            else
-                                            {
-                                                return false;
-                                            }
-                                        }, 300);
-                                    }
-                                });
-
                             }
                         }
                         TM.DelayNext("CloseRetainer", 200);
@@ -369,7 +330,52 @@ namespace Artisan.IPC
                 TM.Enqueue(() => RetainerListHandlers.CloseRetainerList());
                 TM.Enqueue(() => YesAlready.EnableIfNeeded());
                 TM.Enqueue(() => AutoRetainer.Unsuppress());
+                TM.Enqueue(() => Svc.Framework.Update -= Tick);
             }
+        }
+
+        private static unsafe void Tick(Framework framework)
+        {
+            if (Svc.Condition[ConditionFlag.OccupiedSummoningBell])
+            {
+                if (TryGetAddonByName<AddonTalk>("Talk", out var addon) && addon->AtkUnitBase.IsVisible)
+                {
+                    ClickTalk.Using((IntPtr)addon).Click();
+                }
+            }
+        }
+
+        private static bool ExtractItem(Dictionary<int, int> requiredItems, KeyValuePair<int, int> item)
+        {
+            if (requiredItems[item.Key] != 0)
+            {
+                TM.DelayNextImmediate("WaitOnRetainerInventory", 500);
+                TM.EnqueueImmediate(() => RetainerHandlers.OpenItemContextMenu((uint)item.Key, out firstFoundQuantity), 300);
+                TM.DelayNextImmediate("WaitOnNumericPopup", 200);
+                TM.EnqueueImmediate(() =>
+                {
+                    var value = Math.Min(requiredItems[item.Key], (int)firstFoundQuantity);
+                    PluginLog.Debug($"Min withdrawing: {value}, found {firstFoundQuantity}");
+                    if (firstFoundQuantity == 1) { requiredItems[item.Key] -= (int)firstFoundQuantity; return true; }
+                    if (RetainerHandlers.InputNumericValue(value))
+                    {
+                        requiredItems[item.Key] -= value;
+                        PluginLog.Debug($"{requiredItems[item.Key]}");
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }, 1000);
+
+                TM.EnqueueImmediate(() =>
+                {
+                    ExtractItem(requiredItems, item);
+                });
+            }
+
+            return true;
         }
 
         internal static GameObject GetReachableRetainerBell()

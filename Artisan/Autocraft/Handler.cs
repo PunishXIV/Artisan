@@ -183,14 +183,10 @@ namespace Artisan.Autocraft
                         if (AutocraftDebugTab.Debug) PluginLog.Verbose("Addon visible");
 
                         if (AutocraftDebugTab.Debug) PluginLog.Verbose("Error text not visible");
-                        //if (!HQManager.RestoreHQData(HQData, out var fin) || !fin)
-                        //{
-                        //    if (AutocraftDebugTab.Debug) PluginLog.Verbose($"HQ data finalised");
-                        //}
-                        //if (AutocraftDebugTab.Debug) PluginLog.Verbose("HQ data restored");
 
                         if (!P.TM.IsBusy)
                         {
+                            P.TM.Enqueue(() => CraftingListFunctions.RecipeWindowOpen());
                             P.TM.Enqueue(() => CraftingListFunctions.SetIngredients());
                             P.TM.DelayNext(300);
                             P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraft.RepeatActualCraft(); });

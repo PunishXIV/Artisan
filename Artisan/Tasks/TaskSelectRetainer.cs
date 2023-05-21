@@ -305,7 +305,7 @@ internal unsafe static class RetainerHandlers
                 if (item->ItemID == itemId)
                 {
                     quantity = item->Quantity;
-                    PluginLog.Debug($"Found item?");
+                    PluginLog.Debug($"Found item? {item->Quantity}");
                     var ag = AgentInventoryContext.Instance();
                     ag->OpenForItemSlot(inv, i, AgentModule.Instance()->GetAgentByInternalId(AgentId.Retainer)->GetAddonID());
                     var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu", 1);
@@ -313,11 +313,11 @@ internal unsafe static class RetainerHandlers
                     {
                         if (item->Quantity == 1 || item->ItemID <= 19)
                         {
-                            Callback(contextMenu, 0, 0, 0, 0, 0);
+                            Callback.Fire(contextMenu, true, 0, 0, 0, 0, 0);
                         }
                         else
                         {
-                            Callback(contextMenu, 0, 1, 0, 0, 0);
+                            Callback.Fire(contextMenu, true, 0, 1, 0, 0, 0);
                         }
                         return true;
                     }
@@ -333,13 +333,7 @@ internal unsafe static class RetainerHandlers
         if (numeric != null)
         {
             PluginLog.Debug($"{value}");
-            var values = stackalloc AtkValue[1];
-            values[0] = new AtkValue()
-            {
-                Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int,
-                Int = value
-            };
-            numeric->FireCallback(1, values, (void*)1);
+            Callback.Fire(numeric, true, value);
             return true;
         }
         return false;
@@ -367,7 +361,7 @@ internal unsafe static class RetainerHandlers
 
     internal static bool? CloseAgentRetainer()
     {
-        var a = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework.Instance()->UIModule->GetAgentModule()->GetAgentByInternalId(AgentId.Retainer);
+        var a = CSFramework.Instance()->UIModule->GetAgentModule()->GetAgentByInternalId(AgentId.Retainer);
         if (a->IsAgentActive())
         {
             a->Hide();
