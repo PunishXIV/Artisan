@@ -9,6 +9,7 @@ using PluginLog = Dalamud.Logging.PluginLog;
 internal static class CraftingListHelpers
 {
     public static Dictionary<uint, Recipe> FilteredList = LuminaSheets.RecipeSheet.Values
+                .Where(x => x.ItemResult.Row > 0)
                 .DistinctBy(x => x.RowId)
                 .OrderBy(x => x.RecipeLevelTable.Value.ClassJobLevel)
                 .ThenBy(x => x.ItemResult.Value.Name.RawString)

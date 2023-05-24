@@ -1,6 +1,7 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.RawInformation;
+using Artisan.UI;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Colors;
@@ -78,7 +79,7 @@ namespace Artisan.Autocraft
 
         private static void Framework_Update(Dalamud.Game.Framework framework)
         {
-            if (Enable && !P.TM.IsBusy)
+            if (Enable && !P.TM.IsBusy && CurrentCraft.State != CurrentCraft.CraftingState.Crafting)
             {
                 var isCrafting = Service.Condition[ConditionFlag.Crafting];
                 var preparing = Service.Condition[ConditionFlag.PreparingToCraft];

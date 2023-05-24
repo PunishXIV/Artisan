@@ -349,18 +349,25 @@ namespace Artisan.IPC
         {
             if (requiredItems[item.Key] != 0)
             {
+                PluginLog.Debug($"{requiredItems[item.Key]}");
                 TM.DelayNextImmediate("WaitOnRetainerInventory", 500);
                 TM.EnqueueImmediate(() => RetainerHandlers.OpenItemContextMenu((uint)item.Key, out firstFoundQuantity), 300);
                 TM.DelayNextImmediate("WaitOnNumericPopup", 200);
                 TM.EnqueueImmediate(() =>
                 {
                     var value = Math.Min(requiredItems[item.Key], (int)firstFoundQuantity);
+                    if (value == 0) return true;
                     PluginLog.Debug($"Min withdrawing: {value}, found {firstFoundQuantity}");
                     if (firstFoundQuantity == 1) { requiredItems[item.Key] -= (int)firstFoundQuantity; return true; }
                     if (RetainerHandlers.InputNumericValue(value))
                     {
                         requiredItems[item.Key] -= value;
                         PluginLog.Debug($"{requiredItems[item.Key]}");
+
+                        TM.EnqueueImmediate(() =>
+                        {
+                            ExtractItem(requiredItems, item);
+                        });
                         return true;
                     }
                     else
@@ -368,11 +375,6 @@ namespace Artisan.IPC
                         return false;
                     }
                 }, 1000);
-
-                TM.EnqueueImmediate(() =>
-                {
-                    ExtractItem(requiredItems, item);
-                });
             }
 
             return true;

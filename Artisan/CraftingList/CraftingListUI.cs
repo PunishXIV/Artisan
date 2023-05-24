@@ -45,6 +45,8 @@ namespace Artisan.CraftingLists
         private static int timesToAdd = 1;
         private static bool GatherBuddy => DalamudReflector.TryGetDalamudPlugin("GatherBuddy", out var gb, false, true);
         private static bool ItemVendor => DalamudReflector.TryGetDalamudPlugin("Item Vendor Location", out var ivl, false, true);
+
+        private static bool MonsterLookup => DalamudReflector.TryGetDalamudPlugin("Monster Loot Hunter", out var mlh, false, true);
         private static bool TidyAfter = false;
 
         private unsafe static void SearchItem(uint item) => ItemFinderModule.Instance()->SearchForItem(item);
@@ -501,23 +503,59 @@ namespace Artisan.CraftingLists
                         ImGui.Columns(1, null, false);
                         if (ImGui.CollapsingHeader("Total Ingredients"))
                         {
+                            ImGui.Columns(2, "###ListClickFunctions", false);
+                            ImGui.TextWrapped("Left Click Name");
+                            ImGui.NextColumn();
+                            ImGui.TextWrapped("Copy to Clipboard");
+                            ImGui.NextColumn();
+                            ImGui.TextWrapped($"Ctrl + Left Click Name");
+                            ImGui.NextColumn();
+                            ImGui.TextWrapped($"Perform an Item Search command for the item");
+                            ImGui.NextColumn();
+
                             if (GatherBuddy)
                             {
-                                ImGui.TextWrapped($"Click the item name to copy to clipboard.\nHold shift and click the item name to perform a GatherBuddy gather command for the item.\nHold ctrl and click the item name to perform an Item Search command for the item.");
+                                ImGui.TextWrapped($"Shift + Left Click Name");
+                                ImGui.NextColumn();
+                                ImGui.TextWrapped($"Perform a GatherBuddy /gather command");
+                                ImGui.NextColumn();
                             }
                             else
                             {
-                                ImGui.TextWrapped($"Click the item name to copy to clipboard.\nHold ctrl and click the item name to perform an Item Search command for the item.\nInstall GatherBuddy for more functionality.");
+                                ImGui.TextWrapped($"Install GatherBuddy for more functionality.");
+                                ImGui.NextColumn();
+                                ImGui.NextColumn();
                             }
+
                             if (ItemVendor)
                             {
-                                ImGui.TextWrapped($"Hold alt and click the item name to perform an Item Vendor Lookup.");
+                                ImGui.TextWrapped($"Alt + Left Click Name");
+                                ImGui.NextColumn();
+                                ImGui.TextWrapped($"Perform an Item Vendor Lookup.");
+                                ImGui.NextColumn();
                             }
                             else
                             {
                                 ImGui.TextWrapped($"Install Item Vendor Location for more functionality.");
+                                ImGui.NextColumn();
+                                ImGui.NextColumn();
                             }
 
+                            if (MonsterLookup)
+                            {
+                                ImGui.TextWrapped($"Right Click Name");
+                                ImGui.NextColumn();
+                                ImGui.TextWrapped($"Perform a /mloot command.");
+                                ImGui.NextColumn();
+                            }
+                            else
+                            {
+                                ImGui.TextWrapped($"Install Monster Loot Hunter for more functionality.");
+                                ImGui.NextColumn();
+                                ImGui.NextColumn();
+                            }
+
+                            ImGui.Columns(1);
                             ImGui.Spacing();
                             ImGui.Separator();
                             DrawTotalIngredientsTable();
@@ -605,24 +643,28 @@ namespace Artisan.CraftingLists
                                 ImGui.TableNextRow();
                                 ImGui.TableNextColumn();
                                 ImGui.Text($"{name}");
-                                if (GatherBuddy && ImGui.IsItemClicked() && ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyAlt)
+                                if (GatherBuddy && ImGui.IsItemClicked(ImGuiMouseButton.Left) && ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyAlt)
                                 {
-                                    if (sheetItem.ItemUICategory.Row == 47)
-                                        Chat.Instance.SendMessage($"/gatherfish {name}");
-                                    else
+                                    if (LuminaSheets.GatheringItemSheet!.Any(x => x.Value.Item == item.Key))
                                         Chat.Instance.SendMessage($"/gather {name}");
+                                    else
+                                        Chat.Instance.SendMessage($"/gatherfish {name}");
                                 }
-                                if (ItemVendor && ImGui.IsItemClicked() && ImGui.GetIO().KeyAlt && !ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift)
+                                if (ItemVendor && ImGui.IsItemClicked(ImGuiMouseButton.Left) && ImGui.GetIO().KeyAlt && !ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift)
                                 {
                                     ItemVendorLocation.OpenContextMenu((uint)item.Key);
                                     //Chat.Instance.SendMessage($"/xlvendor {name}");
                                 }
+                                if (MonsterLookup && ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                                {
+                                    Chat.Instance.SendMessage($"/mloot {name}");
+                                }
 
-                                if (ImGui.IsItemClicked() && ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyAlt)
+                                if (ImGui.IsItemClicked(ImGuiMouseButton.Left) && ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyAlt)
                                 {
                                     SearchItem((uint)item.Key);
                                 }
-                                if (ImGui.IsItemClicked() && !ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyAlt)
+                                if (ImGui.IsItemClicked(ImGuiMouseButton.Left) && !ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyAlt)
                                 {
                                     ImGui.SetClipboardText(name);
                                     Notify.Success("Name copied to clipboard");
@@ -719,28 +761,33 @@ namespace Artisan.CraftingLists
                                 ImGui.TableNextRow();
                                 ImGui.TableNextColumn();
                                 ImGui.Text($"{name}");
-                                if (GatherBuddy && ImGui.IsItemClicked() && ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyAlt)
+                                if (GatherBuddy && ImGui.IsItemClicked(ImGuiMouseButton.Left) && ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyAlt)
                                 {
                                     if (sheetItem.ItemUICategory.Row == 47)
                                         Chat.Instance.SendMessage($"/gatherfish {name}");
                                     else
                                         Chat.Instance.SendMessage($"/gather {name}");
                                 }
-                                if (ItemVendor && ImGui.IsItemClicked() && ImGui.GetIO().KeyAlt && !ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift)
+                                if (ItemVendor && ImGui.IsItemClicked(ImGuiMouseButton.Left) && ImGui.GetIO().KeyAlt && !ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift)
                                 {
                                     ItemVendorLocation.OpenContextMenu((uint)item.Key);
                                     //Chat.Instance.SendMessage($"/xlvendor {name}");
                                 }
+                                if (MonsterLookup && ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                                {
+                                    Chat.Instance.SendMessage($"/mloot {name}");
+                                }
 
-                                if (ImGui.IsItemClicked() && ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyAlt)
+                                if (ImGui.IsItemClicked(ImGuiMouseButton.Left) && ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyAlt)
                                 {
                                     SearchItem((uint)item.Key);
                                 }
-                                if (ImGui.IsItemClicked() && !ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyAlt)
+                                if (ImGui.IsItemClicked(ImGuiMouseButton.Left) && !ImGui.GetIO().KeyShift && !ImGui.GetIO().KeyCtrl && !ImGui.GetIO().KeyAlt)
                                 {
                                     ImGui.SetClipboardText(name);
                                     Notify.Success("Name copied to clipboard");
                                 }
+
                                 ImGui.TableNextColumn();
                                 ImGui.Text($"{count}");
                                 ImGui.TableNextColumn();

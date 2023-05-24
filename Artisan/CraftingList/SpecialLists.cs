@@ -28,9 +28,10 @@ namespace Artisan.CraftingLists
         private static Dictionary<int, bool> questRecipe = new Dictionary<int, bool>() { [1] = false, [2] = false };
         private static Dictionary<int, bool> isSecondary = new Dictionary<int, bool>() { [1] = false, [2] = false };
         private static Dictionary<int, bool> alreadyCrafted = new Dictionary<int, bool>() { [1] = false, [2] = false };
+        private static Dictionary<int, bool> countsToLog = new Dictionary<int, bool>() { [1] = false, [2] = false };
+
 
         private static Dictionary<int, bool> Yields = LuminaSheets.RecipeSheet.Values.DistinctBy(x => x.AmountResult).OrderBy(x => x.AmountResult).ToDictionary(x => (int)x.AmountResult, x => false);
-        //private static Dictionary<float, bool> PatchRelease = LuminaSheets.RecipeSheet.Values.Where(x => x.PatchNumber > 0).DistinctBy(x => x.PatchNumber).OrderBy(x => x.PatchNumber).ToDictionary(x => (float)x.PatchNumber / 100, x => false);
         private static Dictionary<string, bool> Stars = LuminaSheets.RecipeLevelTableSheet.Values.DistinctBy(x => x.Stars).ToDictionary(x => "★".Repeat(x.Stars), x => false);
         private static Dictionary<int, bool> Stats = LuminaSheets.RecipeSheet.Values.SelectMany(x => x.ItemResult.Value.UnkData59).DistinctBy(x => x.BaseParam).Where(x => x.BaseParam > 0).OrderBy(x => x.BaseParam).ToDictionary(x => (int)x.BaseParam, x => false);
 
@@ -41,31 +42,11 @@ namespace Artisan.CraftingLists
 
             ImGui.Separator();
 
-            ImGui.Columns(6, null, false);
-
             ImGui.TextWrapped("List Name");
-            ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
+            ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X / 2);
             ImGui.InputText("###NameInput", ref listName, 300);
 
-            ImGui.TextWrapped($"Max Durability");
-            if (ImGui.BeginListBox("###SpecialListDurability", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 110)))
-            {
-                ImGui.Columns(2, null, false);
-                foreach (var dur in Durabilities)
-                {
-                    var val = dur.Value;
-                    if (ImGui.Checkbox($"{dur.Key}", ref val))
-                    {
-                        Durabilities[dur.Key] = val;
-                    }
-                    ImGui.NextColumn();
-                }
-                ImGui.EndListBox();
-
-                DurY = ImGui.GetCursorPosY();
-            }
             ImGui.Columns(6, null, false);
-            ImGui.NextColumn();
 
             ImGui.TextWrapped("Select Job(s)");
             if (ImGui.BeginListBox("###JobSelectListBox", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 110)))
@@ -85,6 +66,7 @@ namespace Artisan.CraftingLists
                 ImGui.EndListBox();
             }
 
+            
             ImGui.TextWrapped($"Already Crafted Recipe");
             if (ImGui.BeginListBox("###AlreadyCraftedRecipes", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 32f.Scale())))
             {
@@ -103,6 +85,47 @@ namespace Artisan.CraftingLists
                 ImGui.Columns(6, null, false);
                 ImGui.EndListBox();
             }
+            ImGui.Columns(6, null, false);
+            ImGui.NextColumn();
+
+            ImGui.TextWrapped($"Max Durability");
+            if (ImGui.BeginListBox("###SpecialListDurability", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 110)))
+            {
+                ImGui.Columns(2, null, false);
+                foreach (var dur in Durabilities)
+                {
+                    var val = dur.Value;
+                    if (ImGui.Checkbox($"{dur.Key}", ref val))
+                    {
+                        Durabilities[dur.Key] = val;
+                    }
+                    ImGui.NextColumn();
+                }
+                ImGui.EndListBox();
+
+                DurY = ImGui.GetCursorPosY();
+            }
+
+            ImGui.TextWrapped($"Level-based Recipes");
+            if (ImGui.BeginListBox("###CountsLog", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 32f.Scale())))
+            {
+                ImGui.Columns(2, null, false);
+                bool yes = countsToLog[1];
+                if (ImGui.Checkbox("Yes", ref yes))
+                {
+                    countsToLog[1] = yes;
+                }
+                ImGui.NextColumn();
+                bool no = countsToLog[2];
+                if (ImGui.Checkbox("No", ref no))
+                {
+                    countsToLog[2] = no;
+                }
+                ImGui.Columns(6, null, false);
+                ImGui.EndListBox();
+            }
+
+
             ImGui.Columns(6, null, false);
             ImGui.NextColumn();
             ImGui.TextWrapped("Minimum Level");
@@ -147,6 +170,8 @@ namespace Artisan.CraftingLists
                 ImGui.Columns(6, null, false);
                 ImGui.EndListBox();
             }
+
+            
             ImGui.NextColumn();
 
             ImGui.TextWrapped("Max Level");
@@ -195,11 +220,11 @@ namespace Artisan.CraftingLists
             ImGui.NextColumn();
 
             ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
-            ImGui.TextWrapped($"Minimum Craftsmanship");
+            ImGui.TextWrapped($"Min. Craftsmanship");
             ImGui.SliderInt($"###MinCraftsmanship", ref minCraftsmanship, LuminaSheets.RecipeSheet.Values.Min(x => x.RequiredCraftsmanship), LuminaSheets.RecipeSheet.Values.Max(x => x.RequiredCraftsmanship));
 
             ImGui.TextWrapped("Amount Result");
-            if (ImGui.BeginListBox("###Yields", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 147f.Scale())))
+            if (ImGui.BeginListBox("###Yields", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 120f.Scale())))
             {
                 ImGui.Columns(2, null, false);
                 foreach (var yield in Yields)
@@ -216,11 +241,11 @@ namespace Artisan.CraftingLists
             ImGui.Columns(6, null, false);
             ImGui.NextColumn();
             ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
-            ImGui.TextWrapped($"Minimum Control");
+            ImGui.TextWrapped($"Min. Control");
             ImGui.SliderInt($"###MinControl", ref minControl, LuminaSheets.RecipeSheet.Values.Min(x => x.RequiredControl), LuminaSheets.RecipeSheet.Values.Max(x => x.RequiredControl));
 
             ImGui.TextWrapped("Stars");
-            if (ImGui.BeginListBox("###Stars", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 162f.Scale())))
+            if (ImGui.BeginListBox("###Stars", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 120f.Scale())))
             {
                 foreach (var star in Stars)
                 {
@@ -234,13 +259,13 @@ namespace Artisan.CraftingLists
             }
 
             ImGui.Columns(1);
-            ImGui.SetCursorPosY(DurY);
+            //ImGui.SetCursorPosY(DurY + 10);
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 4);
             ImGui.TextWrapped("Base Stats");
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 4);
-            if (ImGui.BeginListBox("###Stats", new System.Numerics.Vector2((ImGui.GetContentRegionAvail().X / 6) * 4, 120)))
+            if (ImGui.BeginListBox("###Stats", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 120)))
             {
-                ImGui.Columns(3, null, false);
+                ImGui.Columns(6, null, false);
                 foreach (var stat in Stats)
                 {
                     var val = stat.Value;
@@ -376,6 +401,24 @@ namespace Artisan.CraftingLists
                         else
                         {
                             recipes.RemoveAll(x => !P.ri.HasRecipeCrafted(x.RowId));
+                        }
+                    }
+                }
+            }
+
+            if (countsToLog.Any(x => x.Value))
+            {
+                foreach (var v in countsToLog)
+                {
+                    if (!v.Value)
+                    {
+                        if (v.Key == 1)
+                        {
+                            recipes.RemoveAll(x => x.RecipeNotebookList.Row < 1000);
+                        }
+                        else
+                        {
+                            recipes.RemoveAll(x => x.RecipeNotebookList.Row > 1000);
                         }
                     }
                 }

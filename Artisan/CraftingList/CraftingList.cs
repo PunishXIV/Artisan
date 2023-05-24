@@ -377,19 +377,16 @@ namespace Artisan.CraftingLists
                 if (isCrafting)
                 {
                     CloseCraftingMenu();
-                    return;
                 }
 
                 if (CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0)
                 {
                     CurrentCraft.CloseQuickSynthWindow();
-                    return;
                 }
 
                 if (CheckIfCraftFinished())
                 {
                     CloseCraftingMenu();
-                    return;
                 }
             }
 
@@ -450,66 +447,73 @@ namespace Artisan.CraftingLists
 
         public unsafe static bool SetIngredients()
         {
-            if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
+            try
             {
-                if (addon->UldManager.NodeListCount <= 35) return false;
-                if (string.IsNullOrEmpty(addon->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString())) return false;
-
-                if (Convert.ToInt32(addon->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString().GetNumbers()) == 0)
+                if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible)
                 {
-                    DuoLog.Error("You do not have materials for this recipe.");
-                    if (Handler.Enable)
+                    if (addon->UldManager.NodeListCount <= 35) return false;
+                    if (string.IsNullOrEmpty(addon->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString())) return false;
+
+                    if (Convert.ToInt32(addon->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString().GetNumbers()) == 0)
                     {
-                        Handler.Enable = false;
-                        P.TM.Abort();
+                        DuoLog.Error("You do not have materials for this recipe.");
+                        if (Handler.Enable)
+                        {
+                            Handler.Enable = false;
+                            P.TM.Abort();
+                        }
+
+                        return true;
                     }
 
-                    return true;
+
+                    for (var i = 0; i <= 5; i++)
+                    {
+                        try
+                        {
+                            var node = addon->UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
+                            if (node is null || !node->AtkResNode.IsVisible)
+                            {
+                                return true;
+                            }
+
+                            var setNQ = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode()->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText.ToString();
+                            var setHQ = node->Component->UldManager.NodeList[6]->GetAsAtkComponentNode()->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText.ToString();
+                            var setNQint = Convert.ToInt32(setNQ);
+                            var setHQint = Convert.ToInt32(setHQ);
+
+                            var nqNodeText = node->Component->UldManager.NodeList[8]->GetAsAtkTextNode();
+                            var hqNodeText = node->Component->UldManager.NodeList[5]->GetAsAtkTextNode();
+                            var required = node->Component->UldManager.NodeList[15]->GetAsAtkTextNode();
+
+                            int nqMaterials = Convert.ToInt32(nqNodeText->NodeText.ToString().GetNumbers());
+                            int hqMaterials = Convert.ToInt32(hqNodeText->NodeText.ToString().GetNumbers());
+                            int requiredMaterials = Convert.ToInt32(required->NodeText.ToString().GetNumbers());
+
+                            if ((setHQint + setNQint) == requiredMaterials) continue;
+
+                            for (int m = 0; m <= requiredMaterials && m <= nqMaterials; m++)
+                            {
+                                ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
+                            }
+
+                            for (int m = 0; m <= requiredMaterials && m <= hqMaterials; m++)
+                            {
+                                ClickRecipeNote.Using((IntPtr)addon).Material(i, true);
+                            }
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    }
                 }
-
-
-                for (var i = 0; i <= 5; i++)
-                {
-                    try
-                    {
-                        var node = addon->UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
-                        if (node is null || !node->AtkResNode.IsVisible)
-                        {
-                            return true;
-                        }
-
-                        var setNQ = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode()->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText.ToString();
-                        var setHQ = node->Component->UldManager.NodeList[6]->GetAsAtkComponentNode()->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText.ToString();
-                        var setNQint = Convert.ToInt32(setNQ);
-                        var setHQint = Convert.ToInt32(setHQ);
-
-                        var nqNodeText = node->Component->UldManager.NodeList[8]->GetAsAtkTextNode();
-                        var hqNodeText = node->Component->UldManager.NodeList[5]->GetAsAtkTextNode();
-                        var required = node->Component->UldManager.NodeList[15]->GetAsAtkTextNode();
-
-                        int nqMaterials = Convert.ToInt32(nqNodeText->NodeText.ToString().GetNumbers());
-                        int hqMaterials = Convert.ToInt32(hqNodeText->NodeText.ToString().GetNumbers());
-                        int requiredMaterials = Convert.ToInt32(required->NodeText.ToString().GetNumbers());
-
-                        if ((setHQint + setNQint) == requiredMaterials) continue;
-
-                        for (int m = 0; m <= requiredMaterials && m <= nqMaterials; m++)
-                        {
-                            ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
-                        }
-
-                        for (int m = 0; m <= requiredMaterials && m <= hqMaterials; m++)
-                        {
-                            ClickRecipeNote.Using((IntPtr)addon).Material(i, true);
-                        }
-                    }
-                    catch
-                    {
-                        return false;
-                    }
-                }
+                return false;
             }
-            return false;
+            catch
+            {
+                return false;
+            }
         }
 
         private unsafe static bool SwitchJobGearset(uint cjID)

@@ -216,7 +216,7 @@ namespace Artisan.Autocraft
             bool desiredPotHQ = listItemOptions != null ? listItemOptions.PotHQ : Service.Configuration.PotHQ;
 
 
-            var fooded = IsFooded(listItemOptions) || desiredFood == 0;
+            var fooded = IsFooded(listItemOptions) || (desiredFood == 0 && Handler.Enable);
             if (!fooded)
             {
                 if (GetFood(true, desiredFoodHQ).Any(x => x.Id == desiredFood))
@@ -234,7 +234,8 @@ namespace Artisan.Autocraft
                     fooded = !Service.Configuration.AbortIfNoFoodPot;
                 }
             }
-            var potted = IsPotted(listItemOptions) || Service.Configuration.Potion == 0;
+            var potted = IsPotted(listItemOptions) || (Service.Configuration.Potion == 0 && Handler.Enable);
+            PluginLog.Debug($"{potted}");
             if (!potted)
             {
                 if (GetPots(true, desiredPotHQ).Any(x => x.Id == desiredPot))
@@ -254,7 +255,7 @@ namespace Artisan.Autocraft
             }
             if (listItemOptions == null)
             {
-                var manualed = IsManualled() || Service.Configuration.Manual == 0;
+                var manualed = IsManualled() || (Service.Configuration.Manual == 0 && Handler.Enable);
                 if (!manualed)
                 {
                     if (GetManuals(true).Any(x => x.Id == Service.Configuration.Manual))
@@ -272,7 +273,7 @@ namespace Artisan.Autocraft
                         manualed = !Service.Configuration.AbortIfNoFoodPot;
                     }
                 }
-                var squadronManualed = IsSquadronManualled() || Service.Configuration.SquadronManual == 0;
+                var squadronManualed = IsSquadronManualled() || (Service.Configuration.SquadronManual == 0 && Handler.Enable);
                 if (!squadronManualed)
                 {
                     if (GetSquadronManuals(true).Any(x => x.Id == Service.Configuration.SquadronManual))
