@@ -150,6 +150,8 @@ namespace Artisan.CraftingLists
             if (CurrentIndex < selectedList.Items.Count)
             {
                 CraftingListUI.CurrentProcessedItem = selectedList.Items[CurrentIndex];
+                CraftingListUI.CurrentItemFirstIndex = CraftingListUI.selectedList.Items.IndexOf(CraftingListUI.CurrentProcessedItem);
+                CraftingListUI.CurrentItemLastIndex = CraftingListUI.selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
             }
             else
             {

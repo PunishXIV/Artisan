@@ -39,6 +39,8 @@ namespace Artisan.CraftingLists
         internal static uint selectedListItem;
         public static bool Processing = false;
         public static uint CurrentProcessedItem;
+        public static int CurrentItemFirstIndex;
+        public static int CurrentItemLastIndex;
         private static bool renameMode = false;
         private static string? renameList;
         public static bool Minimized = false;
