@@ -66,7 +66,7 @@ namespace Artisan.UI
                 {
                     var firstIndex = CraftingListUI.CurrentItemFirstIndex;
                     var lastIndex = CraftingListUI.CurrentItemLastIndex;
-                    var currentProgress = $"{CraftingListFunctions.CurrentIndex - firstIndex + 1} / {lastIndex - firstIndex + 1}";
+                    var currentProgress = $"{CraftingListFunctions.CurrentIndex - firstIndex + 1}/{lastIndex - firstIndex + 1}";
                     ImGuiEx.TextV($"Trying to craft: {CraftingListHelpers.FilteredList[CraftingListUI.CurrentProcessedItem].ItemResult.Value.Name.RawString} ({currentProgress})");
                     ImGuiEx.TextV($"Overall Progress: {CraftingListFunctions.CurrentIndex + 1} / {CraftingListUI.selectedList.Items.Count}");
                 }
