@@ -1,6 +1,7 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Statuses;
 using ECommons;
@@ -17,89 +18,9 @@ using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan.CraftingLogic
 {
-    public unsafe static class CurrentCraft
+    public static unsafe partial class CurrentCraft
     {
-        public static class Skills
-        {
-            public const uint
-                BasicSynth = 100001,
-                BasicTouch = 100002,
-                MastersMend = 100003,
-                HastyTouch = 100355,
-                RapidSynthesis = 100363,
-                Observe = 100010,
-                Tricks = 100371,
-                WasteNot = 4631,
-                Veneration = 19297,
-                StandardTouch = 100004,
-                GreatStrides = 260,
-                Innovation = 19004,
-                FinalAppraisal = 19012,
-                WasteNot2 = 4639,
-                ByregotsBlessing = 100339,
-                PreciseTouch = 100128,
-                MuscleMemory = 100379,
-                CarefulSynthesis = 100203,
-                Manipulation = 4574,
-                PrudentTouch = 100227,
-                FocusedSynthesis = 100235,
-                FocusedTouch = 100243,
-                Reflect = 100387,
-                PreparatoryTouch = 100299,
-                Groundwork = 100403,
-                DelicateSynthesis = 100323,
-                IntensiveSynthesis = 100315,
-                TrainedEye = 100283,
-                AdvancedTouch = 100411,
-                PrudentSynthesis = 100427,
-                TrainedFinesse = 100435,
-                CarefulObservation = 100395,
-                HeartAndSoul = 100419;
-        }
-
-        public static class Buffs
-        {
-            public const ushort
-                InnerQuiet = 251,
-                Innovation = 2189,
-                Veneration = 2226,
-                GreatStrides = 254,
-                Manipulation = 1164,
-                WasteNot = 252,
-                WasteNot2 = 257,
-                FinalAppraisal = 2190,
-                MuscleMemory = 2191;
-
-
-        }
-
-        public static class Multipliers
-        {
-            public const double
-                BasicSynthesis = 1,
-                RapidSynthesis = 5,
-                MuscleMemory = 3,
-                CarefulSynthesis = 1.5,
-                FocusedSynthesis = 2,
-                GroundWork = 3,
-                DelicateSynthesis = 1,
-                IntensiveSynthesis = 4,
-                PrudentSynthesis = 1.8,
-                BasicTouch = 1,
-                HastyTouch = 1,
-                StandardTouch = 1.25,
-                PreciseTouch = 1.5,
-                PrudentTouch = 1,
-                FocusedTouch = 1.5,
-                Reflect = 1,
-                PrepatoryTouch = 2,
-                AdvancedTouch = 1.5,
-                TrainedFinesse = 1;
-
-
-        }
         public static event EventHandler<int>? StepChanged;
-
         public static int CurrentDurability { get; set; } = 0;
         public static int MaxDurability { get; set; } = 0;
         public static int CurrentProgress { get; set; } = 0;
@@ -136,7 +57,7 @@ namespace Artisan.CraftingLogic
 
         public static string? ItemName { get; set; }
 
-        public static Recipe? Recipe { get; set; }
+        public static Recipe? CurrentRecipe { get; set; }
 
         public static uint CurrentRecommendation { get; set; }
 
@@ -278,17 +199,17 @@ namespace Artisan.CraftingLogic
                     ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
                 }
 
-                if (Recipe is null || Recipe.ItemResult.Value.Name.ExtractText() != ItemName)
+                if (CurrentRecipe is null || CurrentRecipe.ItemResult.Value.Name.ExtractText() != ItemName)
                 {
                     var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.ExtractText().Equals(ItemName) && x.CraftType.Value.RowId == CharacterInfo.JobID() - 8).FirstOrDefault();
                     if (sheetItem != null)
                     {
-                        Recipe = sheetItem;
+                        CurrentRecipe = sheetItem;
                     }
                 }
-                if (Recipe != null)
+                if (CurrentRecipe != null)
                 {
-                    if (Recipe.CanHq)
+                    if (CurrentRecipe.CanHq)
                     {
                         CanHQ = true;
                         HighQualityPercentage = Convert.ToInt32(hqp.NodeText.ToString());
@@ -330,210 +251,6 @@ namespace Artisan.CraftingLogic
             }
         }
 
-        public static double BaseQuality(Recipe? recipe = null)
-        {
-            try
-            {
-                if (recipe == null)
-                {
-                    if (Recipe != null)
-                        recipe = Recipe;
-                    else
-                        return 0;
-                }
-
-                var baseValue = CharacterInfo.Control() * 10 / recipe.RecipeLevelTable.Value.QualityDivider + 35;
-                if (CharacterInfo.CharacterLevel() <= recipe.RecipeLevelTable.Value.ClassJobLevel)
-                {
-                    return baseValue * recipe.RecipeLevelTable.Value.QualityModifier * 0.01;
-                }
-
-                return baseValue;
-            }
-            catch (Exception ex)
-            {
-                Dalamud.Logging.PluginLog.Error(ex, "BaseQuality");
-                return 0;
-            }
-        }
-
-        public static double BaseProgression()
-        {
-            try
-            {
-                if (CraftingWindowOpen)
-                {
-                    var baseValue = CharacterInfo.Craftsmanship() * 10 / Recipe.RecipeLevelTable.Value.ProgressDivider + 2;
-                    var p2 = baseValue;
-                    if (CharacterInfo.CharacterLevel() <= Recipe.RecipeLevelTable.Value.ClassJobLevel)
-                    {
-                        p2 = baseValue * Recipe.RecipeLevelTable.Value.ProgressModifier / 100;
-                    }
-
-                    return p2;
-                }
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                Dalamud.Logging.PluginLog.Error(ex, "BaseProgression");
-                return 0;
-            }
-        }
-
-        public static double GetMultiplier(uint id, bool isQuality = false)
-        {
-            if (id == 0) return 1;
-
-            if (id < 100000)
-            {
-                var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == id.NameOfAction() && x.ClassJob.Row == 8).FirstOrDefault();
-                id = newAct.RowId;
-            }
-            else
-            {
-                var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == id.NameOfAction() && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
-                id = newAct.CRP.Row;
-            }
-
-
-            double baseMultiplier = id switch
-            {
-                Skills.BasicSynth => Multipliers.BasicSynthesis,
-                Skills.RapidSynthesis => Multipliers.RapidSynthesis,
-                Skills.MuscleMemory => Multipliers.MuscleMemory,
-                Skills.CarefulSynthesis => Multipliers.CarefulSynthesis,
-                Skills.FocusedSynthesis => Multipliers.FocusedSynthesis,
-                Skills.Groundwork => Multipliers.GroundWork,
-                Skills.DelicateSynthesis => Multipliers.DelicateSynthesis,
-                Skills.IntensiveSynthesis => Multipliers.IntensiveSynthesis,
-                Skills.PrudentSynthesis => Multipliers.PrudentSynthesis,
-                Skills.BasicTouch => Multipliers.BasicTouch,
-                Skills.HastyTouch => Multipliers.HastyTouch,
-                Skills.StandardTouch => Multipliers.StandardTouch,
-                Skills.PreciseTouch => Multipliers.PreciseTouch,
-                Skills.PrudentTouch => Multipliers.PrudentTouch,
-                Skills.FocusedTouch => Multipliers.FocusedTouch,
-                Skills.Reflect => Multipliers.Reflect,
-                Skills.PreparatoryTouch => Multipliers.PrepatoryTouch,
-                Skills.AdvancedTouch => Multipliers.AdvancedTouch,
-                Skills.TrainedFinesse => Multipliers.TrainedFinesse,
-                Skills.ByregotsBlessing => ByregotMultiplier(),
-                _ => 1
-            };
-
-            if (id == Skills.Groundwork && CharacterInfo.CharacterLevel() >= 86)
-                baseMultiplier = 3.6;
-            if (id == Skills.CarefulSynthesis && CharacterInfo.CharacterLevel() >= 82)
-                baseMultiplier = 1.8;
-            if (id == Skills.RapidSynthesis && CharacterInfo.CharacterLevel() >= 63)
-                baseMultiplier = 5;
-            if (id == Skills.BasicSynth && CharacterInfo.CharacterLevel() >= 31)
-                baseMultiplier = 1.2;
-
-            if (!isQuality)
-            {
-
-                if (CurrentCondition == Condition.Malleable)
-                    return baseMultiplier * 1.5;
-
-                return baseMultiplier;
-            }
-
-
-
-            var conditionMod = CurrentCondition switch
-            {
-                Condition.Poor => 0.5,
-                Condition.Normal => 1,
-                Condition.Good => 1.5,
-                Condition.Excellent => 4,
-                Condition.Unknown => 1,
-                _ => 1
-            };
-
-            return conditionMod * baseMultiplier;
-        }
-
-        public static uint CalculateNewQuality(uint id)
-        {
-            //double efficiency = GetMultiplier(id, true);
-            //double IQStacks = GetStatus(Buffs.InnerQuiet) is null ? 1 : 1 + (GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
-            //double innovation = GetStatus(Buffs.Innovation) is not null ? 0.5 : 0;
-            //double greatStrides = GetStatus(Buffs.GreatStrides) is not null ? 1 : 0;
-
-            var agentCraftActionSimulator = AgentModule.Instance()->GetAgentCraftActionSimulator();
-            var acts = agentCraftActionSimulator->Quality;
-            uint baseIncrease = id switch
-            {
-                Skills.BasicTouch => acts->BasicTouch.QualityIncrease,
-                Skills.HastyTouch => acts->HastyTouch.QualityIncrease,
-                Skills.StandardTouch => acts->StandardTouch.QualityIncrease,
-                Skills.ByregotsBlessing => acts->ByregotsBlessing.QualityIncrease,
-                Skills.PreciseTouch => acts->PreciseTouch.QualityIncrease,
-                Skills.PrudentTouch => acts->PrudentTouch.QualityIncrease,
-                Skills.FocusedTouch => acts->FocusedTouch.QualityIncrease,
-                Skills.Reflect => acts->Reflect.QualityIncrease,
-                Skills.PreparatoryTouch => acts->PreparatoryTouch.QualityIncrease,
-                Skills.DelicateSynthesis => acts->DelicateSynthesis.QualityIncrease,
-                Skills.TrainedEye => acts->TrainedEye.QualityIncrease,
-                Skills.AdvancedTouch => acts->AdvancedTouch.QualityIncrease,
-                Skills.TrainedFinesse => acts->TrainedFinesse.QualityIncrease,
-                _ => 0
-            };
-
-            return (uint)CurrentQuality + baseIncrease;
-
-            //return (uint)Math.Floor(CurrentQuality + (BaseQuality() * efficiency * IQStacks * (innovation + greatStrides + 1)));
-
-        }
-
-        public static uint CalculateNewProgress(uint id)
-        {
-            //var multiplier = GetMultiplier(id, false);
-            //double veneration = GetStatus(Buffs.Veneration) != null ? 0.5 : 0;
-            //double muscleMemory = GetStatus(Buffs.MuscleMemory) != null ? 1 : 0;
-
-            var agentCraftActionSimulator = AgentModule.Instance()->GetAgentCraftActionSimulator();
-            var acts = agentCraftActionSimulator->Progress;
-            uint baseIncrease = id switch
-            {
-                Skills.BasicSynth => acts->BasicSynthesis.ProgressIncrease,
-                Skills.RapidSynthesis => acts->RapidSynthesis.ProgressIncrease,
-                Skills.MuscleMemory => acts->MuscleMemory.ProgressIncrease,
-                Skills.CarefulSynthesis => acts->CarefulSynthesis.ProgressIncrease,
-                Skills.FocusedSynthesis => acts->FocusedSynthesis.ProgressIncrease,
-                Skills.Groundwork => acts->Groundwork.ProgressIncrease,
-                Skills.DelicateSynthesis => acts->DelicateSynthesis.ProgressIncrease,
-                Skills.IntensiveSynthesis => acts->IntensiveSynthesis.ProgressIncrease,
-                Skills.PrudentSynthesis => acts->PrudentSynthesis.ProgressIncrease,
-                _ => 0
-            };
-
-            return (uint)CurrentProgress + baseIncrease;
-
-            //return (uint)Math.Floor(CurrentProgress + (BaseProgression() * multiplier * (veneration + muscleMemory + 1)));
-
-        }
-
-        public static uint GreatStridesByregotCombo()
-        {
-            if (GetStatus(Buffs.InnerQuiet) is null) return 0;
-
-            double efficiency = GetMultiplier(Skills.ByregotsBlessing);
-            double IQStacks = 1 + (GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
-            double innovation = (GetStatus(Buffs.Innovation)?.StackCount >= 2 && CurrentCondition != Condition.Excellent) || (GetStatus(Buffs.Innovation)?.StackCount >= 3 && CurrentCondition == Condition.Excellent) || (JustUsedGreatStrides && GetStatus(Buffs.Innovation)?.StackCount >= 1) ? 0.5 : 0;
-            double greatStrides = 1;
-
-            return (uint)Math.Floor(CurrentQuality + (BaseQuality() * efficiency * IQStacks * (innovation + greatStrides + 1)));
-        }
-
-        public static double ByregotMultiplier()
-        {
-            int IQStacks = Convert.ToInt32(GetStatus(Buffs.InnerQuiet)?.StackCount);
-            return 1 + (IQStacks * 0.2);
-        }
-
         public static uint GetExpertRecommendation()
         {
             if (CurrentDurability <= 10 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
@@ -546,13 +263,13 @@ namespace Artisan.CraftingLogic
                 if (CurrentCondition is Condition.Good && CanUse(Skills.IntensiveSynthesis)) return Skills.IntensiveSynthesis;
                 if (CurrentCondition is Condition.Centered && CanUse(Skills.RapidSynthesis)) return Skills.RapidSynthesis;
                 if (CurrentCondition is Condition.Sturdy or Condition.Primed or Condition.Normal && CanUse(Skills.Groundwork)) return Skills.Groundwork;
-                if (CurrentCondition is Condition.Malleable && CalculateNewProgress(Skills.Groundwork) >= MaxProgress && !JustUsedFinalAppraisal && CanUse(Skills.FinalAppraisal)) return Skills.FinalAppraisal;
-                if (CurrentCondition is Condition.Malleable && (CalculateNewProgress(Skills.Groundwork) < MaxProgress) || GetStatus(Buffs.FinalAppraisal) is not null && CanUse(Skills.Groundwork)) return Skills.Groundwork;
+                if (CurrentCondition is Condition.Malleable && Calculations.CalculateNewProgress(Skills.Groundwork) >= MaxProgress && !JustUsedFinalAppraisal && CanUse(Skills.FinalAppraisal)) return Skills.FinalAppraisal;
+                if (CurrentCondition is Condition.Malleable && (Calculations.CalculateNewProgress(Skills.Groundwork) < MaxProgress) || GetStatus(Buffs.FinalAppraisal) is not null && CanUse(Skills.Groundwork)) return Skills.Groundwork;
                 if (CurrentCondition is Condition.Pliant && GetStatus(Buffs.Manipulation) is null && GetStatus(Buffs.MuscleMemory) is null && CanUse(Skills.Manipulation)) return Skills.Manipulation;
             }
             if (CurrentQuality < MaxQuality)
             {
-                if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
+                if (Calculations.GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
                 if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                 if (CurrentCondition == Condition.Pliant && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
                 if (CanUse(Skills.Manipulation) && (GetStatus(Buffs.Manipulation) is null || (GetStatus(Buffs.Manipulation)?.StackCount <= 3 && CurrentCondition == Condition.Pliant))) return Skills.Manipulation;
@@ -568,18 +285,18 @@ namespace Artisan.CraftingLogic
         public static uint GetRecommendation()
         {
             BestSynthesis(out var act, true);
-            if (CurrentStep == 1 && CalculateNewProgress(Skills.DelicateSynthesis) >= MaxProgress && CalculateNewQuality(Skills.DelicateSynthesis) >= MaxQuality && CanUse(Skills.DelicateSynthesis)) return Skills.DelicateSynthesis;
+            if (CurrentStep == 1 && Calculations.CalculateNewProgress(Skills.DelicateSynthesis) >= MaxProgress && Calculations.CalculateNewQuality(Skills.DelicateSynthesis) >= MaxQuality && CanUse(Skills.DelicateSynthesis)) return Skills.DelicateSynthesis;
             if (CanFinishCraft(act)) return act;
 
-            if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || Recipe.ItemResult.Value.IsCollectable) && Recipe.CanHq) return Skills.TrainedEye;
+            if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || CurrentRecipe.ItemResult.Value.IsCollectable) && CurrentRecipe.CanHq) return Skills.TrainedEye;
             if (CanUse(Skills.Tricks) && CurrentStep > 2 && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent))) return Skills.Tricks;
 
             if (CurrentDurability <= 10 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
 
-            if (MaxQuality == 0 || Service.Configuration.MaxPercentage == 0 || !Recipe.CanHq)
+            if (MaxQuality == 0 || Service.Configuration.MaxPercentage == 0 || !CurrentRecipe.CanHq)
             {
                 if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
-                if (CalculateNewProgress(act) >= MaxProgress) return act;
+                if (Calculations.CalculateNewProgress(act) >= MaxProgress) return act;
                 if (GetStatus(Buffs.Veneration) == null && CanUse(Skills.Veneration)) return Skills.Veneration;
                 return act;
             }
@@ -588,16 +305,16 @@ namespace Artisan.CraftingLogic
             {
                 if (MaxDurability >= 60)
                 {
-                    if (CurrentQuality < MaxQuality && (HighQualityPercentage < Service.Configuration.MaxPercentage || Recipe.ItemResult.Value.IsCollectable || Recipe.IsExpert))
+                    if (CurrentQuality < MaxQuality && (HighQualityPercentage < Service.Configuration.MaxPercentage || CurrentRecipe.ItemResult.Value.IsCollectable || CurrentRecipe.IsExpert))
                     {
-                        if (CurrentStep == 1 && CanUse(Skills.MuscleMemory) && CalculateNewProgress(Skills.MuscleMemory) < MaxProgress) return Skills.MuscleMemory;
-                        if (CurrentStep == 2 && CanUse(Skills.FinalAppraisal) && !JustUsedFinalAppraisal && CalculateNewProgress(CharacterInfo.HighestLevelSynth()) >= MaxProgress) return Skills.FinalAppraisal;
+                        if (CurrentStep == 1 && CanUse(Skills.MuscleMemory) && Calculations.CalculateNewProgress(Skills.MuscleMemory) < MaxProgress) return Skills.MuscleMemory;
+                        if (CurrentStep == 2 && CanUse(Skills.FinalAppraisal) && !JustUsedFinalAppraisal && Calculations.CalculateNewProgress(CharacterInfo.HighestLevelSynth()) >= MaxProgress) return Skills.FinalAppraisal;
                         if (GetStatus(Buffs.MuscleMemory) != null) return CharacterInfo.HighestLevelSynth();
                         if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) return Skills.Manipulation;
                         if (!WasteNotUsed && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
-                        if (CalculateNewQuality(Skills.ByregotsBlessing) >= MaxQuality && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
+                        if (Calculations.CalculateNewQuality(Skills.ByregotsBlessing) >= MaxQuality && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                         if (GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation)) return Skills.Innovation;
-                        if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides) && CurrentCondition != Condition.Excellent) return Skills.GreatStrides;
+                        if (Calculations.GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides) && CurrentCondition != Condition.Excellent) return Skills.GreatStrides;
                         if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
                         if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe;
                         if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
@@ -614,14 +331,14 @@ namespace Artisan.CraftingLogic
 
                 if (MaxDurability >= 35 && MaxDurability < 60)
                 {
-                    if (CurrentQuality < MaxQuality && (HighQualityPercentage < Service.Configuration.MaxPercentage || Recipe.ItemResult.Value.IsCollectable || Recipe.IsExpert))
+                    if (CurrentQuality < MaxQuality && (HighQualityPercentage < Service.Configuration.MaxPercentage || CurrentRecipe.ItemResult.Value.IsCollectable || CurrentRecipe.IsExpert))
                     {
                         if (CurrentStep == 1 && CanUse(Skills.Reflect)) return Skills.Reflect;
                         if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation)) return Skills.Manipulation;
                         if (!WasteNotUsed && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
                         if (!InnovationUsed && CanUse(Skills.Innovation)) return Skills.Innovation;
-                        if (CalculateNewQuality(Skills.ByregotsBlessing) >= MaxQuality && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
-                        if (GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides) && CurrentCondition != Condition.Excellent) return Skills.GreatStrides;
+                        if (Calculations.CalculateNewQuality(Skills.ByregotsBlessing) >= MaxQuality && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
+                        if (Calculations.GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides) && CurrentCondition != Condition.Excellent) return Skills.GreatStrides;
                         if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
                         if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe)) return Skills.Observe;
                         if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
@@ -660,13 +377,13 @@ namespace Artisan.CraftingLogic
 
             if (CurrentStep == 1)
             {
-                if (CurrentStep == 1 && CalculateNewProgress(Skills.DelicateSynthesis) >= MaxProgress && CalculateNewQuality(Skills.DelicateSynthesis) >= MaxQuality && CanUse(Skills.DelicateSynthesis)) return Skills.DelicateSynthesis;
-                if (CanUse(Skills.TrainedEye) && Recipe.CanHq) return Skills.TrainedEye;
-                if (CanUse(Skills.MuscleMemory) && CalculateNewProgress(Skills.MuscleMemory) < MaxProgress) return Skills.MuscleMemory;
-                if (CanUse(Skills.Reflect) && Recipe.CanHq) return Skills.Reflect;
+                if (CurrentStep == 1 && Calculations.CalculateNewProgress(Skills.DelicateSynthesis) >= MaxProgress && Calculations.CalculateNewQuality(Skills.DelicateSynthesis) >= MaxQuality && CanUse(Skills.DelicateSynthesis)) return Skills.DelicateSynthesis;
+                if (CanUse(Skills.TrainedEye) && CurrentRecipe.CanHq) return Skills.TrainedEye;
+                if (CanUse(Skills.MuscleMemory) && Calculations.CalculateNewProgress(Skills.MuscleMemory) < MaxProgress) return Skills.MuscleMemory;
+                if (CanUse(Skills.Reflect) && CurrentRecipe.CanHq) return Skills.Reflect;
             }
 
-            if (!Recipe.CanHq && BestSynthesis(out var action, true))
+            if (!CurrentRecipe.CanHq && BestSynthesis(out var action, true))
                 return action;
 
             if (CurrentQuality >= MaxQuality && GetStatus(Buffs.Veneration) is null && CanUse(Skills.CarefulSynthesis) && RemainingProgress() <= Skills.CarefulSynthesis.ProgressIncrease() * 1.5 && CanUse(Skills.Veneration))
@@ -683,7 +400,7 @@ namespace Artisan.CraftingLogic
                 if (IsMaxQuality() && CanUse(Skills.Tricks))
                     return Skills.Tricks;
 
-                if (CalculateNewQuality(Skills.ByregotsBlessing) >= MaxQuality && Skills.ByregotsBlessing.QualityIncrease() > Skills.PreciseTouch.QualityIncrease() && CanUse(Skills.ByregotsBlessing))
+                if (Calculations.CalculateNewQuality(Skills.ByregotsBlessing) >= MaxQuality && Skills.ByregotsBlessing.QualityIncrease() > Skills.PreciseTouch.QualityIncrease() && CanUse(Skills.ByregotsBlessing))
                     return Skills.ByregotsBlessing;
 
                 return Skills.PreciseTouch;
@@ -854,12 +571,12 @@ namespace Artisan.CraftingLogic
 
         public static bool CanFinishCraft(uint act)
         {
-            if (!Recipe.CanHq)
-                return CalculateNewProgress(act) >= MaxProgress;
+            if (!CurrentRecipe.CanHq)
+                return Calculations.CalculateNewProgress(act) >= MaxProgress;
 
             var metMaxProg = CurrentQuality >= MaxQuality;
-            var usingPercentage = HighQualityPercentage >= Service.Configuration.MaxPercentage && !Recipe.ItemResult.Value.IsCollectable && !Recipe.IsExpert;
-            return CalculateNewProgress(act) >= MaxProgress && (metMaxProg || usingPercentage);
+            var usingPercentage = HighQualityPercentage >= Service.Configuration.MaxPercentage && !CurrentRecipe.ItemResult.Value.IsCollectable && !CurrentRecipe.IsExpert;
+            return Calculations.CalculateNewProgress(act) >= MaxProgress && (metMaxProg || usingPercentage);
         }
 
         private static bool PredictFailureSynth(uint highestLevelSynth)
@@ -894,7 +611,7 @@ namespace Artisan.CraftingLogic
 
         private static int EstimateSynths(uint highestLevelSynth)
         {
-            var baseProg = (int)Math.Floor(BaseProgression() * GetMultiplier(highestLevelSynth));
+            var baseProg = (int)Math.Floor(Calculations.BaseProgression() * Calculations.GetMultiplier(highestLevelSynth));
             int counter = 0;
             var currentProg = CurrentProgress;
             while (currentProg < MaxProgress)
@@ -1165,28 +882,6 @@ namespace Artisan.CraftingLogic
             return false;
         }
 
-        public enum Condition
-        {
-            Poor,
-            Normal,
-            Good,
-            Excellent,
-            Centered,
-            Sturdy,
-            Pliant,
-            Malleable,
-            Primed,
-            GoodOmen,
-            Unknown
-        }
-
-        public enum CraftingState
-        {
-            PreparingToCraft,
-            Crafting,
-            NotCrafting
-        }
-
         public enum CraftingPlayerStatuses : uint
         {
             InnerQuiet = 251,
@@ -1211,7 +906,7 @@ namespace Artisan.CraftingLogic
             // Need to take into account MP
             // Rapid(500/50, 0)?
             // Intensive(400, 6) > Groundwork(300, 18) > Focused(200, 5) > Prudent(180, 18) > Careful(150, 7) > Groundwork(150, 18) > Basic(120, 0)
-            if (CalculateNewProgress(Skills.BasicSynth) >= MaxProgress)
+            if (Calculations.CalculateNewProgress(Skills.BasicSynth) >= MaxProgress)
             {
                 action = Skills.BasicSynth;
                 return true;
@@ -1299,20 +994,20 @@ namespace Artisan.CraftingLogic
     {
         public static int ProgressIncrease(this uint Id)
         {
-            var multiplier = GetMultiplier(Id, false);
+            var multiplier = Calculations.GetMultiplier(Id, false);
             double veneration = GetStatus(Buffs.Veneration) != null ? 0.5 : 0;
             double muscleMemory = GetStatus(Buffs.MuscleMemory) != null ? 1 : 0;
-            return (int)Math.Floor(BaseProgression() * multiplier * (veneration + muscleMemory + 1));
+            return (int)Math.Floor(Calculations.BaseProgression() * multiplier * (veneration + muscleMemory + 1));
         }
 
         public static int QualityIncrease(this uint id)
         {
-            double efficiency = GetMultiplier(id, true);
+            double efficiency = Calculations.GetMultiplier(id, true);
             double IQStacks = GetStatus(Buffs.InnerQuiet) is null ? 1 : 1 + (GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
             double innovation = GetStatus(Buffs.Innovation) is not null ? 0.5 : 0;
             double greatStrides = GetStatus(Buffs.GreatStrides) is not null ? 1 : 0;
 
-            return (int)Math.Floor(BaseQuality() * efficiency * IQStacks * (innovation + greatStrides + 1));
+            return (int)Math.Floor(Calculations.BaseQuality() * efficiency * IQStacks * (innovation + greatStrides + 1));
 
         }
 

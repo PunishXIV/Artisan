@@ -138,10 +138,10 @@ namespace Artisan.Autocraft
                 ImGui.Text($"Current Step: {CurrentCraft.CurrentStep}");
                 ImGui.Text($"Current Quick Synth Step: {CurrentCraft.QuickSynthCurrent}");
                 ImGui.Text($"Max Quick Synth Step: {CurrentCraft.QuickSynthMax}");
-                ImGui.Text($"GS+ByregotCombo: {CurrentCraft.GreatStridesByregotCombo()}");
-                ImGui.Text($"Base Quality: {CurrentCraft.BaseQuality()}");
-                ImGui.Text($"Predicted Quality: {CurrentCraft.CalculateNewQuality(CurrentCraft.CurrentRecommendation)}");
-                ImGui.Text($"Predicted Progress: {CurrentCraft.CalculateNewProgress(CurrentCraft.CurrentRecommendation)}");
+                ImGui.Text($"GS+ByregotCombo: {Calculations.GreatStridesByregotCombo()}");
+                ImGui.Text($"Base Quality: {Calculations.BaseQuality()}");
+                ImGui.Text($"Predicted Quality: {Calculations.CalculateNewQuality(CurrentCraft.CurrentRecommendation)}");
+                ImGui.Text($"Predicted Progress: {Calculations.CalculateNewProgress(CurrentCraft.CurrentRecommendation)}");
                 ImGui.Text($"Macro Step: {CurrentCraft.MacroStep}");
                 ImGui.Text($"Collectibility Low: {CurrentCraft.CollectabilityLow}");
                 ImGui.Text($"Collectibility Mid: {CurrentCraft.CollectabilityMid}");

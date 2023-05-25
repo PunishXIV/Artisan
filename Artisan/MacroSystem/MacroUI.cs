@@ -1,4 +1,5 @@
 ﻿using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using ECommons.ImGuiMethods;

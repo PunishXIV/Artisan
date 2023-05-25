@@ -1,4 +1,5 @@
-﻿using Dalamud.Hooking;
+﻿using Artisan.RawInformation.Character;
+using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -51,11 +52,11 @@ namespace Artisan.RawInformation
             return false;
         }
         public static bool CanUseTrainedEye
-            => Service.ClientState?.LocalPlayer?.Level >= Recipe?.RecipeLevelTable.Value?.ClassJobLevel + 10 && CurrentStep == 1 && Service.ClientState?.LocalPlayer?.Level >= 80;
+            => Service.ClientState?.LocalPlayer?.Level >= CurrentRecipe?.RecipeLevelTable.Value?.ClassJobLevel + 10 && CurrentStep == 1 && Service.ClientState?.LocalPlayer?.Level >= 80;
 
         public static uint HighestLevelTouch()
         {
-            if (Recipe.IsExpert)
+            if (CurrentRecipe.IsExpert)
             {
                 if (CanUse(Skills.HastyTouch) && CurrentCondition is Condition.Centered) return Skills.HastyTouch;
                 if (CanUse(Skills.PreciseTouch) && CurrentCondition is Condition.Good) return Skills.PreciseTouch;

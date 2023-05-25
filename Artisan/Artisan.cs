@@ -4,6 +4,7 @@ using Artisan.CustomDeliveries;
 using Artisan.IPC;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using Artisan.UI;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
@@ -247,7 +248,7 @@ public unsafe class Artisan : IDalamudPlugin
         GetCraft();
         if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0 && Tasks.Count == 0 && CurrentStep >= 1)
         {
-            if (Recipe is null && !warningMessage)
+            if (CurrentRecipe is null && !warningMessage)
             {
                 DuoLog.Error("Warning: Your recipe cannot be parsed in Artisan. Please report this to the Discord with the recipe name and client language.");
                 warningMessage = true;
@@ -319,11 +320,11 @@ public unsafe class Artisan : IDalamudPlugin
         {
             try
             {
-                CurrentRecommendation = Recipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
+                CurrentRecommendation = CurrentRecipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
 
                 if (Service.Configuration.UseMacroMode && Service.Configuration.UserMacros.Count > 0)
                 {
-                    if (Service.Configuration.IndividualMacros.TryGetValue(Recipe.RowId, out var macro))
+                    if (Service.Configuration.IndividualMacros.TryGetValue(CurrentRecipe.RowId, out var macro))
                     {
                         macro = Service.Configuration.UserMacros.First(x => x.ID == macro.ID);
                         if (MacroStep < macro.MacroActions.Count)

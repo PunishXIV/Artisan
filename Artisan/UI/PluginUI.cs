@@ -3,6 +3,7 @@ using Artisan.CraftingLists;
 using Artisan.FCWorkshops;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
