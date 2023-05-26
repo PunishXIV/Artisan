@@ -131,6 +131,7 @@ namespace Artisan.Autocraft
 
         internal static bool IsFooded(ListItemOptions? listItemOptions = null)
         {
+            if (listItemOptions != null && listItemOptions.Food == 0) return true;
             if (Service.ClientState.LocalPlayer.StatusList.Any(x => x.StatusId == 48 & x.RemainingTime > 0f))
             {
                 var configFood = listItemOptions != null ? listItemOptions.Food : Service.Configuration.Food;
@@ -150,6 +151,7 @@ namespace Artisan.Autocraft
 
         internal static bool IsPotted(ListItemOptions? listItemOptions = null)
         {
+            if (listItemOptions != null && listItemOptions.Potion == 0) return true;
             if (Service.ClientState.LocalPlayer.StatusList.Any(x => x.StatusId == 49))
             {
                 var configPot = listItemOptions != null ? listItemOptions.Potion : Service.Configuration.Potion ;
