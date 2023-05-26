@@ -1,5 +1,5 @@
 ﻿using Artisan.Autocraft;
-using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Types;
 using ECommons.DalamudServices;

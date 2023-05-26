@@ -232,7 +232,7 @@ namespace Artisan.CraftingLogic
                 if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[241].Text.RawString) CurrentCondition = Condition.Pliant;
                 if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[13455].Text.RawString) CurrentCondition = Condition.Malleable;
                 if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[13454].Text.RawString) CurrentCondition = Condition.Primed;
-                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[14214].Text.RawString) CurrentCondition = Condition.GoodOmen;
+                if (LuminaSheets.AddonSheet.ContainsKey(14214) && cond.NodeText.ToString() == LuminaSheets.AddonSheet[14214].Text.RawString) CurrentCondition = Condition.GoodOmen;
 
                 CurrentStep = Convert.ToInt32(cs.NodeText.ToString());
                 HQLiteral = hql.NodeText.ToString();

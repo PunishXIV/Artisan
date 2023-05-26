@@ -235,7 +235,6 @@ namespace Artisan.Autocraft
                 }
             }
             var potted = IsPotted(listItemOptions) || (Service.Configuration.Potion == 0 && Handler.Enable);
-            PluginLog.Debug($"{potted}");
             if (!potted)
             {
                 if (GetPots(true, desiredPotHQ).Any(x => x.Id == desiredPot))

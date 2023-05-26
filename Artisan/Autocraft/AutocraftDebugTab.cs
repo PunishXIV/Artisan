@@ -3,6 +3,7 @@ using Artisan.CustomDeliveries;
 using Artisan.IPC;
 using Artisan.QuestSync;
 using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using Dalamud.Utility.Signatures;
 using ECommons;
 using ECommons.Automation;

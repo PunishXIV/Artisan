@@ -1,9 +1,7 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.RawInformation;
-using Artisan.UI;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Utility.Signatures;
@@ -15,7 +13,6 @@ using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,7 +32,7 @@ namespace Artisan.Autocraft
 
         internal static bool Enable
         {
-            get => enable; 
+            get => enable;
             set
             {
                 Tasks.Clear();
@@ -185,13 +182,11 @@ namespace Artisan.Autocraft
 
                         if (AutocraftDebugTab.Debug) PluginLog.Verbose("Error text not visible");
 
-                        if (!P.TM.IsBusy)
-                        {
-                            P.TM.Enqueue(() => CraftingListFunctions.RecipeWindowOpen());
-                            P.TM.Enqueue(() => CraftingListFunctions.SetIngredients());
-                            P.TM.DelayNext(300);
-                            P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraft.RepeatActualCraft(); });
-                        }
+                        P.TM.Enqueue(() => CraftingListFunctions.RecipeWindowOpen(), "EnduranceCheckRecipeWindow");
+                        P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredients");
+                        P.TM.DelayNext("EnduranceThrottle", 100);
+                        P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraft.RepeatActualCraft(); }, "EnduranceStartCraft");
+
 
                     }
                     else
@@ -230,7 +225,7 @@ namespace Artisan.Autocraft
             ImGui.TextWrapped("Endurance mode is Artisan's way to repeat the same craft over and over, either so many times or until you run out of materials. It has full capabilities to automatically repair your gear once a piece is under a certain percentage, use food/potions/exp manuals and extract materia from spiritbonding. Please note these settings are independent of crafting list settings, and only intended to be used to craft the one item repeatedly.");
             ImGui.Separator();
             ImGui.Spacing();
-           
+
             if (RecipeID == 0)
             {
                 ImGuiEx.TextV(ImGuiColors.DalamudRed, "No recipe selected");

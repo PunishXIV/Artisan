@@ -1,4 +1,5 @@
 ﻿using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using ECommons.DalamudServices;

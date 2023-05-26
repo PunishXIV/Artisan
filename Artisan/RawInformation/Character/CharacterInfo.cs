@@ -1,5 +1,4 @@
-﻿using Artisan.RawInformation.Character;
-using Dalamud.Hooking;
+﻿using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -8,7 +7,7 @@ using System;
 using System.Runtime.InteropServices;
 using static Artisan.CraftingLogic.CurrentCraft;
 
-namespace Artisan.RawInformation
+namespace Artisan.RawInformation.Character
 {
     public static class CharacterInfo
     {
@@ -68,7 +67,7 @@ namespace Artisan.RawInformation
             else
             {
                 if (CanUse(Skills.FocusedTouch) && JustUsedObserve) return Skills.FocusedTouch;
-                if (CanUse(Skills.PreciseTouch) && (CurrentCondition is Condition.Good or Condition.Excellent)) return Skills.PreciseTouch;
+                if (CanUse(Skills.PreciseTouch) && CurrentCondition is Condition.Good or Condition.Excellent) return Skills.PreciseTouch;
                 if (CanUse(Skills.PreparatoryTouch) && CurrentDurability > 20 && (GetStatus(Buffs.InnerQuiet)?.StackCount < 10 || GetStatus(Buffs.InnerQuiet) is null)) return Skills.PreparatoryTouch;
                 if (CanUse(Skills.PrudentTouch) && GetStatus(Buffs.WasteNot2) == null && GetStatus(Buffs.WasteNot) == null) return Skills.PrudentTouch;
                 if (CanUse(Skills.AdvancedTouch) && StandardTouchUsed) return Skills.AdvancedTouch;
@@ -161,7 +160,7 @@ namespace Artisan.RawInformation
 
     public unsafe static class CharacterStats
     {
-        private static IntPtr getBaseParamAddress;
+        private static nint getBaseParamAddress;
         private unsafe delegate ulong GetBaseParam(PlayerState* playerAddress, uint baseParamId);
         private static GetBaseParam? getBaseParam;
 
@@ -172,7 +171,7 @@ namespace Artisan.RawInformation
         {
             try
             {
-                if (getBaseParamAddress == IntPtr.Zero)
+                if (getBaseParamAddress == nint.Zero)
                 {
                     getBaseParamAddress = Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 44 8B C0 33 D2 48 8B CB E8 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8D 0D");
                     getBaseParam = Marshal.GetDelegateForFunctionPointer<GetBaseParam>(getBaseParamAddress);
