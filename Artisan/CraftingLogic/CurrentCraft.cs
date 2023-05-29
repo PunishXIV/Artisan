@@ -17,7 +17,7 @@ using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.CraftingLogic
 {
-    public static unsafe partial class CurrentCraft
+    public static unsafe class CurrentCraft
     {
         public static event EventHandler<int>? StepChanged;
         public static int CurrentDurability { get; set; } = 0;
@@ -29,11 +29,6 @@ namespace Artisan.CraftingLogic
         public static int HighQualityPercentage { get; set; } = 0;
         public static string? RecommendationName { get; set; }
         public static Condition CurrentCondition { get; set; }
-        private static int currentStep = 0;
-        private static int quickSynthCurrent = 0;
-        private static int quickSynthMax = 0;
-        private static CraftingState state = CraftingState.NotCrafting;
-
         public static int CurrentStep
         {
             get { return currentStep; }
@@ -53,15 +48,10 @@ namespace Artisan.CraftingLogic
         public static string? CollectabilityLow { get; set; }
         public static string? CollectabilityMid { get; set; }
         public static string? CollectabilityHigh { get; set; }
-
         public static string? ItemName { get; set; }
-
         public static Recipe? CurrentRecipe { get; set; }
-
         public static uint CurrentRecommendation { get; set; }
-
         public static bool CraftingWindowOpen { get; set; } = false;
-
         public static bool JustUsedFinalAppraisal { get; set; } = false;
         public static bool JustUsedObserve { get; set; } = false;
         public static bool JustUsedGreatStrides { get; set; } = false;
@@ -69,22 +59,13 @@ namespace Artisan.CraftingLogic
         public static bool WasteNotUsed { get; set; } = false;
         public static bool InnovationUsed { get; set; } = false;
         public static bool VenerationUsed { get; set; } = false;
-
         public static bool BasicTouchUsed { get; set; } = false;
-
         public static bool StandardTouchUsed { get; set; } = false;
-
         public static bool AdvancedTouchUsed { get; set; } = false;
-
         public static bool ExpertCraftOpenerFinish { get; set; } = false;
-
         public static int QuickSynthCurrent { get => quickSynthCurrent; set { if (value != 0 && quickSynthCurrent != value) { CraftingListFunctions.CurrentIndex++; } quickSynthCurrent = value; } }
         public static int QuickSynthMax { get => quickSynthMax; set => quickSynthMax = value; }
         public static int MacroStep { get; set; } = 0;
-
-        public static bool LastItemWasHQ = false;
-        public static Item? LastCraftedItem;
-        public static uint PreviousAction = 0;
         public static CraftingState State
         {
             get { return state; }
@@ -112,6 +93,14 @@ namespace Artisan.CraftingLogic
                 state = value;
             }
         }
+
+        private static int currentStep = 0;
+        private static int quickSynthCurrent = 0;
+        private static int quickSynthMax = 0;
+        private static CraftingState state = CraftingState.NotCrafting;
+        public static bool LastItemWasHQ = false;
+        public static Item? LastCraftedItem;
+        public static uint PreviousAction = 0;
 
         public unsafe static bool GetCraft()
         {

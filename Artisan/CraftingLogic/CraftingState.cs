@@ -1,12 +1,9 @@
 ﻿namespace Artisan.CraftingLogic
 {
-    public static unsafe partial class CurrentCraft
+    public enum CraftingState
     {
-        public enum CraftingState
-        {
-            PreparingToCraft,
-            Crafting,
-            NotCrafting
-        }
+        PreparingToCraft,
+        Crafting,
+        NotCrafting
     }
 }

@@ -11,6 +11,7 @@ using System;
 using System.Linq;
 using static Artisan.CraftingLogic.CurrentCraft;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
+using Status = Dalamud.Game.ClientState.Statuses.Status;
 
 namespace Artisan.CraftingLogic
 {
@@ -306,37 +307,6 @@ namespace Artisan.CraftingLogic
 
                         quickSynthWindow->FireCallback(3, values);
 
-                        //var qsynthButton = (AtkComponentButton*)quickSynthWindow->UldManager.NodeList[3];
-                        //if (qsynthButton != null && !qsynthButton->IsEnabled)
-                        //{
-                        //    qsynthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
-                        //}
-
-                        //var checkboxNode = (AtkComponentNode*)quickSynthWindow->UldManager.NodeList[5];
-                        //if (checkboxNode == null)
-                        //    return;
-                        //var checkboxComponent = (AtkComponentCheckBox*)checkboxNode->Component;
-                        //if (!checkboxComponent->IsChecked)
-                        //{
-
-                        //    //checkboxComponent->AtkComponentButton.Flags ^= 0x40000;
-
-                        //    //AtkResNode* checkmarkNode = checkboxComponent->AtkComponentButton.ButtonBGNode->PrevSiblingNode;
-
-                        //    //checkmarkNode->Color.A = (byte)(true ? 0xFF : 0x7F);
-                        //    //checkmarkNode->Flags ^= 0x10;
-                        //}
-
-                        //var numericInput = (AtkComponentNode*)quickSynthWindow->UldManager.NodeList[4];
-                        //if (numericInput == null)
-                        //    return;
-                        //var numericComponent = (AtkComponentNumericInput*)numericInput->Component;
-
-                        //if (crafts <= numericComponent->Data.Max)
-                        //{
-                        //    numericComponent->SetValue(numericComponent->Data.Max);
-                        //}
-                        //AtkResNodeFunctions.ClickButton(quickSynthWindow, qsynthButton, 1);
                     }
 
 
@@ -469,7 +439,7 @@ namespace Artisan.CraftingLogic
             return false;
         }
 
-        internal static Dalamud.Game.ClientState.Statuses.Status? GetStatus(uint statusID)
+        internal static Status? GetStatus(uint statusID)
         {
             if (Service.ClientState.LocalPlayer is null) return null;
 

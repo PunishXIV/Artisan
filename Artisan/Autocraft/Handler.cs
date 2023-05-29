@@ -59,7 +59,6 @@ namespace Artisan.Autocraft
                 Errors.PushBack(Environment.TickCount64);
                 if (Errors.Count() >= 5 && Errors.All(x => x > Environment.TickCount64 - 30 * 1000))
                 {
-                    //Svc.Chat.Print($"{Errors.Select(x => x.ToString()).Join(",")}");
                     DuoLog.Error("Endurance has been disabled due to too many errors in succession.");
                     Enable = false;
                 }
@@ -68,15 +67,13 @@ namespace Artisan.Autocraft
 
         internal static void Dispose()
         {
-            //BeginSynthesisHook?.Disable();
-            //BeginSynthesisHook?.Dispose();
             Svc.Framework.Update -= Framework_Update;
             Svc.Toasts.ErrorToast -= Toasts_ErrorToast;
         }
 
         private static void Framework_Update(Dalamud.Game.Framework framework)
         {
-            if (Enable && !P.TM.IsBusy && CurrentCraft.State != CurrentCraft.CraftingState.Crafting)
+            if (Enable && !P.TM.IsBusy && CurrentCraft.State != CraftingState.Crafting)
             {
                 var isCrafting = Service.Condition[ConditionFlag.Crafting];
                 var preparing = Service.Condition[ConditionFlag.PreparingToCraft];
