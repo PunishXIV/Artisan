@@ -87,6 +87,7 @@ public unsafe class Artisan : IDalamudPlugin
             ShowInHelp = true,
         });
 
+        TransitionMacros();
         CleanUpIndividualMacros();
         Svc.PluginInterface.UiBuilder.BuildFonts += AddCustomFont;
         Svc.PluginInterface.UiBuilder.RebuildFonts();
@@ -185,18 +186,6 @@ public unsafe class Artisan : IDalamudPlugin
     {
         Handler.Enable = false;
         CraftingListUI.Processing = false;
-    }
-
-    public static void CleanUpIndividualMacros()
-    {
-        foreach (var item in Service.Configuration.IndividualMacros)
-        {
-            if (item.Value is null || !Service.Configuration.UserMacros.Any(x => x.ID == item.Value.ID))
-            {
-                Service.Configuration.IndividualMacros.Remove(item.Key);
-                Service.Configuration.Save();
-            }
-        }
     }
 
     private void ResetRecommendation(object? sender, int e)
@@ -325,9 +314,9 @@ public unsafe class Artisan : IDalamudPlugin
 
                 if (Service.Configuration.UseMacroMode && Service.Configuration.UserMacros.Count > 0)
                 {
-                    if (Service.Configuration.IndividualMacros.TryGetValue(CurrentRecipe.RowId, out var macro))
+                    if (Service.Configuration.IRM.TryGetValue(CurrentRecipe.RowId, out var id))
                     {
-                        macro = Service.Configuration.UserMacros.First(x => x.ID == macro.ID);
+                        var macro = Service.Configuration.UserMacros.First(x => x.ID == id);
                         if (MacroStep < macro.MacroActions.Count)
                         {
                             if (macro.MacroOptions.SkipQualityIfMet)
@@ -368,57 +357,6 @@ public unsafe class Artisan : IDalamudPlugin
                                         CurrentRecommendation = newAction;
                                     }
                                     if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(macro) && ActionUpgradable(macro, out newAction))
-                                    {
-                                        CurrentRecommendation = newAction;
-                                    }
-                                }
-                            }
-                            catch { }
-                        }
-                    }
-                    else
-                    {
-                        if (Service.Configuration.SetMacro != null && MacroStep < Service.Configuration.SetMacro.MacroActions.Count)
-                        {
-
-                            if (Service.Configuration.SetMacro.MacroOptions.SkipQualityIfMet)
-                            {
-                                if (CurrentQuality >= MaxQuality)
-                                {
-                                    while (ActionIsQuality(Service.Configuration.SetMacro) && (!Service.Configuration.SkipMacroStepIfUnable || (Service.Configuration.SkipMacroStepIfUnable && CanUse(Service.Configuration.SetMacro.MacroActions[MacroStep]))))
-                                    {
-                                        MacroStep++;
-                                    }
-                                }
-                            }
-
-                            if (Service.Configuration.SetMacro.MacroOptions.SkipObservesIfNotPoor && CurrentCondition != CraftingLogic.CurrentCraft.Condition.Poor)
-                            {
-                                while (Service.Configuration.SetMacro.MacroActions[MacroStep] == Skills.Observe || Service.Configuration.SetMacro.MacroActions[MacroStep] == Skills.CarefulObservation)
-                                {
-                                    MacroStep++;
-                                }
-                            }
-
-                            if (Service.Configuration.SkipMacroStepIfUnable)
-                            {
-                                while (!CanUse(Service.Configuration.SetMacro.MacroActions[MacroStep]))
-                                {
-                                    MacroStep++;
-                                }
-                            }
-
-                            CurrentRecommendation = Service.Configuration.SetMacro.MacroActions[MacroStep] == 0 ? CurrentRecommendation : Service.Configuration.SetMacro.MacroActions[MacroStep];
-
-                            try
-                            {
-                                if (Service.Configuration.SetMacro.MacroStepOptions.Count == 0 || !Service.Configuration.SetMacro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
-                                {
-                                    if (Service.Configuration.SetMacro.MacroOptions.UpgradeQualityActions && ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out uint newAction))
-                                    {
-                                        CurrentRecommendation = newAction;
-                                    }
-                                    if (Service.Configuration.SetMacro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(Service.Configuration.SetMacro) && ActionUpgradable(Service.Configuration.SetMacro, out newAction))
                                     {
                                         CurrentRecommendation = newAction;
                                     }

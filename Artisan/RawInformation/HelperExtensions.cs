@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,7 +11,8 @@ namespace Artisan.RawInformation
     {
         public static string GetNumbers(this string input)
         {
-            return new string(input.Where(c => char.IsDigit(c)).ToArray());
+            var numbers = new string(input.Where(c => char.IsDigit(c)).ToArray());
+            return numbers;
         }
 
         public static string GetLast(this string source, int tail_length)

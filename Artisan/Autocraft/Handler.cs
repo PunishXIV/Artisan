@@ -104,39 +104,9 @@ namespace Artisan.Autocraft
                     return;
                 }
                 if (AutocraftDebugTab.Debug) PluginLog.Verbose("HQ not null");
-                if (Service.Configuration.Materia && Spiritbond.IsSpiritbondReadyAny())
-                {
-                    if (AutocraftDebugTab.Debug) PluginLog.Verbose("Entered materia extraction");
-                    if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
-                    {
-                        if (AutocraftDebugTab.Debug) PluginLog.Verbose("Crafting");
-                        if (Throttler.Throttle(1000))
-                        {
-                            if (AutocraftDebugTab.Debug) PluginLog.Verbose("Closing crafting log");
-                            CommandProcessor.ExecuteThrottled("/clog");
-                        }
-                    }
-                    if (!Spiritbond.IsMateriaMenuOpen() && !isCrafting && !preparing)
-                    {
-                        Spiritbond.OpenMateriaMenu();
-                        return;
-                    }
-                    if (Spiritbond.IsMateriaMenuOpen() && !isCrafting && !preparing)
-                    {
-                        Spiritbond.ExtractFirstMateria();
-                        return;
-                    }
 
+                if (!Spiritbond.ExtractMateriaTask(Service.Configuration.Materia, isCrafting, preparing))
                     return;
-                }
-                else
-                {
-                    if (Spiritbond.IsMateriaMenuOpen())
-                    {
-                        Spiritbond.CloseMateriaMenu();
-                        return;
-                    }
-                }
 
                 if (Service.Configuration.Repair && !RepairManager.ProcessRepair(false) && ((Service.Configuration.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!Service.Configuration.Materia)))
                 {

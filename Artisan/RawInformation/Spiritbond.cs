@@ -1,5 +1,8 @@
 ﻿using Artisan.Autocraft;
 using ClickLib.Clicks;
+using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Logging;
+using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -102,6 +105,45 @@ namespace Artisan.RawInformation
             {
 
             }
+        }
+
+        public unsafe static bool ExtractMateriaTask(bool option, bool isCrafting, bool preparing)
+        {
+            if (option && IsSpiritbondReadyAny())
+            {
+                if (AutocraftDebugTab.Debug) PluginLog.Verbose("Entered materia extraction");
+                if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
+                {
+                    if (AutocraftDebugTab.Debug) PluginLog.Verbose("Crafting");
+                    if (Throttler.Throttle(1000))
+                    {
+                        if (AutocraftDebugTab.Debug) PluginLog.Verbose("Closing crafting log");
+                        CommandProcessor.ExecuteThrottled("/clog");
+                    }
+                }
+                if (!IsMateriaMenuOpen() && !isCrafting && !preparing)
+                {
+                    OpenMateriaMenu();
+                    return false;
+                }
+                if (IsMateriaMenuOpen() && !isCrafting && !preparing)
+                {
+                    ExtractFirstMateria();
+                    return false;
+                }
+
+                return false;
+            }
+            else
+            {
+                if (IsMateriaMenuOpen())
+                {
+                    CloseMateriaMenu();
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public unsafe static void ExtractFirstMateria()

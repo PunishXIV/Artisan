@@ -136,9 +136,6 @@ namespace Artisan.MacroSystem
                     if (ImGui.Button("Delete Macro (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                     {
                         Service.Configuration.UserMacros.Remove(selectedMacro);
-                        if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
-                            Service.Configuration.SetMacro = null;
-
                         Service.Configuration.Save();
                         selectedMacro = new();
                         selectedActionIndex = -1;
@@ -156,8 +153,6 @@ namespace Artisan.MacroSystem
                     if (ImGui.Checkbox("Skip quality actions if at 100%", ref skipQuality))
                     {
                         selectedMacro.MacroOptions.SkipQualityIfMet = skipQuality;
-                        if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
-                            Service.Configuration.SetMacro = selectedMacro;
                         Service.Configuration.Save();
                     }
                     ImGuiComponents.HelpMarker("Once you're at 100% quality, the macro will skip over all actions relating to quality, including buffs.");
@@ -165,8 +160,6 @@ namespace Artisan.MacroSystem
                     if (ImGui.Checkbox("Upgrade Quality Actions", ref upgradeQualityActions))
                     {
                         selectedMacro.MacroOptions.UpgradeQualityActions = upgradeQualityActions;
-                        if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
-                            Service.Configuration.SetMacro = selectedMacro;
                         Service.Configuration.Save();
                     }
                     ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases quality (not including Byregot's Blessing) then it will upgrade the action to Precise Touch.");
@@ -176,8 +169,6 @@ namespace Artisan.MacroSystem
                     if (ImGui.Checkbox("Upgrade Progress Actions", ref upgradeProgressActions))
                     {
                         selectedMacro.MacroOptions.UpgradeProgressActions = upgradeProgressActions;
-                        if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
-                            Service.Configuration.SetMacro = selectedMacro;
                         Service.Configuration.Save();
                     }
                     ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases progress then it will upgrade the action to Intensive Synthesis.");
@@ -186,8 +177,6 @@ namespace Artisan.MacroSystem
                     if (ImGui.Checkbox("Skip Observes If Not Poor", ref skipObserves))
                     {
                         selectedMacro.MacroOptions.SkipObservesIfNotPoor = skipObserves;
-                        if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
-                            Service.Configuration.SetMacro = selectedMacro;
                         Service.Configuration.Save();
                     }
 
@@ -267,8 +256,6 @@ namespace Artisan.MacroSystem
                                 if (ImGui.Selectable($"Artisan Recommendation"))
                                 {
                                     selectedMacro.MacroActions[selectedActionIndex] = 0;
-                                    if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
-                                        Service.Configuration.SetMacro = selectedMacro;
 
                                     Service.Configuration.Save();
                                 }
@@ -278,8 +265,6 @@ namespace Artisan.MacroSystem
                                     if (ImGui.Selectable($"{GetActionName((uint)constant.GetValue(null)!)}"))
                                     {
                                         selectedMacro.MacroActions[selectedActionIndex] = (uint)constant.GetValue(null)!;
-                                        if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
-                                            Service.Configuration.SetMacro = selectedMacro;
 
                                         Service.Configuration.Save();
                                     }
@@ -297,8 +282,6 @@ namespace Artisan.MacroSystem
                                     selectedMacro.MacroActions.Reverse(selectedActionIndex - 1, 2);
                                     selectedMacro.MacroStepOptions.Reverse(selectedActionIndex - 1, 2);
                                     selectedActionIndex--;
-                                    if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
-                                        Service.Configuration.SetMacro = selectedMacro;
 
                                     Service.Configuration.Save();
                                 }
@@ -318,8 +301,6 @@ namespace Artisan.MacroSystem
                                     selectedMacro.MacroActions.Reverse(selectedActionIndex, 2);
                                     selectedMacro.MacroStepOptions.Reverse(selectedActionIndex, 2);
                                     selectedActionIndex++;
-                                    if (Service.Configuration.SetMacro?.ID == selectedMacro.ID)
-                                        Service.Configuration.SetMacro = selectedMacro;
 
                                     Service.Configuration.Save();
                                 }

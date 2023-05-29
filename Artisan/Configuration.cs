@@ -45,9 +45,9 @@ namespace Artisan
         public List<Macro> UserMacros { get; set; } = new();
         public List<CraftingList> CraftingLists { get; set; } = new();
         public bool UseMacroMode { get; set; }
-        public Macro? SetMacro { get; set; }
-
         public Dictionary<uint, Macro?> IndividualMacros { get; set; } = new();
+
+        public Dictionary<uint, int> IRM { get; set; } = new();
 
         public int AutoDelay { get; set; } = 0;
 

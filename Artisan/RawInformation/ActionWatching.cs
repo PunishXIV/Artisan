@@ -1,5 +1,4 @@
-﻿using Artisan.RawInformation;
-using Artisan.RawInformation.Character;
+﻿using Artisan.RawInformation.Character;
 using Dalamud.Hooking;
 using Dalamud.Logging;
 using ECommons.Automation;
@@ -15,7 +14,7 @@ using System.Linq;
 using static Artisan.CraftingLogic.CurrentCraft;
 using static ECommons.GenericHelpers;
 
-namespace Artisan
+namespace Artisan.RawInformation
 {
     internal unsafe class ActionWatching
     {
@@ -126,7 +125,7 @@ namespace Artisan
 
         static ActionWatching()
         {
-            UseActionHook ??= Hook<UseActionDelegate>.FromAddress((IntPtr)ActionManager.Addresses.UseAction.Value, UseActionDetour);
+            UseActionHook ??= Hook<UseActionDelegate>.FromAddress((nint)ActionManager.Addresses.UseAction.Value, UseActionDetour);
             clickSysnthesisButtonHook ??= Hook<ClickSynthesisButton>.FromAddress(Svc.SigScanner.ScanText("E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 33 D2"), ClickSynthesisButtonDetour);
             clickSysnthesisButtonHook?.Enable();
         }

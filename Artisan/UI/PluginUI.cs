@@ -268,36 +268,13 @@ namespace Artisan.UI
                     if (ImGui.Checkbox("Macro Mode Enabled", ref useMacroMode))
                     {
                         Service.Configuration.UseMacroMode = useMacroMode;
+                        Service.Configuration.AutoMode = useMacroMode;
                         Service.Configuration.Save();
                     }
+
                     ImGuiComponents.HelpMarker($"Use a macro to craft instead of Artisan making its own decisions.\r\n" +
-                        $"Priority is individual recipe macros followed by the selected macro below.\r\n" +
-                        $"If you wish to only use individual recipe macros then leave below unset.\r\n" +
+                        $"Set macros from the recipe window pop-up window.\r\n" +
                         $"If the macro ends before a craft is complete, Artisan will make its own suggestions until the end of the craft.");
-
-                    if (useMacroMode)
-                    {
-                        string preview = Service.Configuration.SetMacro == null ? "" : Service.Configuration.SetMacro.Name!;
-                        if (ImGui.BeginCombo("Select Macro", preview))
-                        {
-                            if (ImGui.Selectable(""))
-                            {
-                                Service.Configuration.SetMacro = null;
-                                Service.Configuration.Save();
-                            }
-                            foreach (var macro in Service.Configuration.UserMacros)
-                            {
-                                bool selected = Service.Configuration.SetMacro == null ? false : Service.Configuration.SetMacro.ID == macro.ID;
-                                if (ImGui.Selectable(macro.Name, selected))
-                                {
-                                    Service.Configuration.SetMacro = macro;
-                                    Service.Configuration.Save();
-                                }
-                            }
-
-                            ImGui.EndCombo();
-                        }
-                    }
                 }
                 else
                 {

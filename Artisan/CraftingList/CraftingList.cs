@@ -283,28 +283,8 @@ namespace Artisan.CraftingLists
                 Throttler.Rethrottle(1000);
             }
 
-            if (selectedList.Materia && Spiritbond.IsSpiritbondReadyAny())
-            {
-                if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
-                {
-                    if (Throttler.Throttle(1000))
-                    {
-                        CommandProcessor.ExecuteThrottled("/clog");
-                    }
-                }
-                if (!Spiritbond.IsMateriaMenuOpen() && !isCrafting && !preparing)
-                {
-                    Spiritbond.OpenMateriaMenu();
-                }
-                if (Spiritbond.IsMateriaMenuOpen() && !isCrafting && !preparing)
-                {
-                    Spiritbond.ExtractFirstMateria();
-                }
-            }
-            else
-            {
-                Spiritbond.CloseMateriaMenu();
-            }
+            if (!Spiritbond.ExtractMateriaTask(selectedList.Materia, isCrafting, preparing))
+                return;
 
             if (selectedList.Repair && !RepairManager.ProcessRepair(false, selectedList) && ((Service.Configuration.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!Service.Configuration.Materia)))
             {
@@ -454,7 +434,7 @@ namespace Artisan.CraftingLists
                     if (addon->UldManager.NodeListCount <= 35) return false;
                     if (string.IsNullOrEmpty(addon->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString())) return false;
 
-                    if (Convert.ToInt32(addon->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString().GetNumbers()) == 0)
+                    if (addon->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString().GetNumbers().Trim() == "0")
                     {
                         DuoLog.Error("You do not have materials for this recipe.");
                         if (Handler.Enable)

@@ -270,6 +270,7 @@ namespace Artisan
             if (ImGui.Checkbox("Macro Mode", ref macroMode))
             {
                 Service.Configuration.UseMacroMode = macroMode;
+                Service.Configuration.AutoMode = macroMode;
                 Service.Configuration.Save();
             }
 
@@ -321,29 +322,22 @@ namespace Artisan
                 ImGui.Begin($"###Options{node->NodeID}", ImGuiWindowFlags.NoScrollbar
                     | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding);
 
-                string? preview = Service.Configuration.IndividualMacros.TryGetValue((uint)Handler.RecipeID, out var prevMacro) && prevMacro != null ? Service.Configuration.IndividualMacros[(uint)Handler.RecipeID].Name : "";
-                if (prevMacro is not null && !Service.Configuration.UserMacros.Where(x => x.ID == prevMacro.ID).Any())
-                {
-                    preview = "";
-                    Service.Configuration.IndividualMacros[(uint)Handler.RecipeID] = null;
-                    Service.Configuration.Save();
-                }
-
                 ImGui.Spacing();
                 ImGui.Text($"Use a macro for this recipe ({Handler.RecipeName})");
+                string? preview = Service.Configuration.IRM.TryGetValue((uint)Handler.RecipeID, out var prevMacro) ? Service.Configuration.UserMacros.First(x => x.ID == prevMacro).Name : "";
                 if (ImGui.BeginCombo("", preview))
                 {
                     if (ImGui.Selectable(""))
                     {
-                        Service.Configuration.IndividualMacros.Remove((uint)Handler.RecipeID);
+                        Service.Configuration.IRM.Remove((uint)Handler.RecipeID);
                         Service.Configuration.Save();
                     }
                     foreach (var macro in Service.Configuration.UserMacros)
                     {
-                        bool selected = Service.Configuration.IndividualMacros.TryGetValue((uint)Handler.RecipeID, out var selectedMacro) && selectedMacro != null;
+                        bool selected = Service.Configuration.IRM.TryGetValue((uint)Handler.RecipeID, out var selectedMacro);
                         if (ImGui.Selectable(macro.Name, selected))
                         {
-                            Service.Configuration.IndividualMacros[(uint)Handler.RecipeID] = macro;
+                            Service.Configuration.IRM[(uint)Handler.RecipeID] = macro.ID;
                             Service.Configuration.Save();
                         }
                     }

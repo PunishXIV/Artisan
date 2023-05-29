@@ -98,9 +98,9 @@ namespace Artisan.UI
             if (Service.Configuration.CraftingX && Handler.Enable)
             {
                 ImGui.Text($"Remaining Crafts: {Service.Configuration.CraftX}");
-                if (Service.Configuration.IndividualMacros.TryGetValue((uint)Handler.RecipeID, out var prevMacro) && prevMacro != null)
+                if (Service.Configuration.IRM.TryGetValue((uint)Handler.RecipeID, out var prevMacro))
                 {
-                    Macro? macro = Service.Configuration.IndividualMacros[(uint)Handler.RecipeID];
+                    Macro? macro = Service.Configuration.UserMacros.First(x => x.ID == prevMacro);
                     if (macro != null)
                     {
                         Double timeInSeconds = ((MacroUI.GetMacroLength(macro) * Service.Configuration.CraftX) + (Service.Configuration.CraftX * 2)); // Counting crafting duration + 2 seconds between crafts.
