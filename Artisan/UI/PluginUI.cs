@@ -7,6 +7,7 @@ using Artisan.RawInformation.Character;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
+using Dalamud.Utility;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
@@ -256,7 +257,7 @@ namespace Artisan.UI
             ImGui.Spacing();
             ImGuiEx.ImGuiLineCentered("###ArtisanModes", () =>
             {
-                ImGuiEx.TextUnderlined("Modes");
+                ImGuiEx.TextUnderlined("Crafting Modes");
             });
             ImGui.Spacing();
 
@@ -355,6 +356,82 @@ namespace Artisan.UI
                     ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
                 });
             }
+
+            ImGui.Spacing();
+            ImGuiEx.ImGuiLineCentered("###Endurance", () =>
+            {
+                ImGuiEx.TextUnderlined("Endurance");
+            });
+            ImGui.Spacing();
+
+            ImGuiEx.TextWrapped($"Artisan has a mode titled \"Endurance Mode\" which is basically a fancier way of saying \"Auto-repeat mode\". " +
+                $"Endurance Mode works by selecting a recipe from the in-game crafting log and enabling the feature. " +
+                $"Your character will then attempt to keep crafting that item as many times as you have materials for it. " +
+                $"\r\n\r\n" +
+                $"The other features should hopefully be self-explanatory as Endurance Mode can also manage the usage of your food, potions, manuals, repairs and materia extraction between crafts. " +
+                $"The repair feature only supports repairing with dark matter and does not support repair NPCs.");
+
+            ImGuiEx.TextUnderlined($"Click here to be taken to the Endurance menu.");
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            }
+            if (ImGui.IsItemClicked())
+            {
+                OpenWindow = OpenWindow.Endurance;
+            }
+
+            ImGui.Spacing();
+            ImGuiEx.ImGuiLineCentered("###Lists", () =>
+            {
+                ImGuiEx.TextUnderlined("Crafting Lists");
+            });
+            ImGui.Spacing();
+
+            ImGuiEx.TextWrapped($"Artisan also has the ability to create a list of items and have it start crafting each of them, one after another, automatically. " +
+                $"Crafting lists have a lot of powerful tools to streamline the process of going from materials to final products. " +
+                $"It also supports importing and exporting to Teamcraft.");
+
+            ImGuiEx.TextUnderlined($"Click here to be taken to the Crafting List menu.");
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            }
+            if (ImGui.IsItemClicked())
+            {
+                OpenWindow = OpenWindow.Lists;
+            }
+
+            ImGui.Spacing();
+            ImGuiEx.ImGuiLineCentered("###Questions", () =>
+            {
+                ImGuiEx.TextUnderlined("Got Questions?");
+            });
+            ImGui.Spacing();
+
+            ImGuiEx.TextWrapped($"If you have questions about things not outlined here, you can drop a question in our");
+            ImGui.SameLine(ImGui.GetCursorPosX(), 1.5f);
+            ImGuiEx.TextUnderlined($"Discord server.");
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            }
+            if (ImGui.IsItemClicked())
+            {
+                Util.OpenLink("https://discord.gg/Zzrcc8kmvy");
+            }
+            ImGuiEx.TextWrapped($"You can also raise issues on our");
+            ImGui.SameLine(ImGui.GetCursorPosX(), 2f);
+            ImGuiEx.TextUnderlined($"Github page.");
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            }
+            if (ImGui.IsItemClicked())
+            {
+                Util.OpenLink("https://github.com/PunishXIV/Artisan");
+            }
+
         }
 
         public static void DrawMainWindow()
