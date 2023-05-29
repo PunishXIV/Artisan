@@ -14,7 +14,6 @@ using PunishLib.ImGuiMethods;
 using System;
 using System.IO;
 using System.Numerics;
-using static Artisan.CraftingLogic.CurrentCraft;
 using ThreadLoadImageHandler = ECommons.ImGuiMethods.ThreadLoadImageHandler;
 
 namespace Artisan.UI
@@ -27,7 +26,7 @@ namespace Artisan.UI
 
         // this extra bool exists for ImGui, since you can't ref a property
         private bool visible = false;
-        public OpenWindow OpenWindow { get; private set; } = OpenWindow.Main;
+        public OpenWindow OpenWindow { get; private set; } = OpenWindow.Overview;
 
         public bool Visible
         {
@@ -93,6 +92,7 @@ namespace Artisan.UI
 
             var topLeftSideHeight = region.Y;
 
+            ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(5f.Scale(), 0));
             if (ImGui.BeginTable($"ArtisanTableContainer", 2, ImGuiTableFlags.Resizable))
             {
                 ImGui.TableSetupColumn("##LeftColumn", ImGuiTableColumnFlags.WidthFixed, ImGui.GetWindowWidth() / 2);
@@ -104,7 +104,7 @@ namespace Artisan.UI
                 ImGui.PushStyleVar(ImGuiStyleVar.SelectableTextAlign, new Vector2(0.5f, 0.5f));
                 if (ImGui.BeginChild($"###ArtisanLeftSide", regionSize with { Y = topLeftSideHeight }, false, ImGuiWindowFlags.NoDecoration))
                 {
-                    var imagePath = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "artisan-icon.png");
+                    var imagePath = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/artisan-icon.png");
 
                     if (ThreadLoadImageHandler.TryGetTextureWrap(imagePath, out var logo))
                     {
@@ -122,6 +122,11 @@ namespace Artisan.UI
                     }
                     ImGui.Spacing();
                     ImGui.Separator();
+
+                    if (ImGui.Selectable("Overview", OpenWindow == OpenWindow.Overview))
+                    {
+                        OpenWindow = OpenWindow.Overview;
+                    }
                     if (ImGui.Selectable("Settings", OpenWindow == OpenWindow.Main))
                     {
                         OpenWindow = OpenWindow.Main;
@@ -171,7 +176,7 @@ namespace Artisan.UI
                 ImGui.EndChild();
                 ImGui.PopStyleVar();
                 ImGui.TableNextColumn();
-                if (ImGui.BeginChild($"###ArtisanRightSide", Vector2.Zero, false, (false ? ImGuiWindowFlags.AlwaysVerticalScrollbar : ImGuiWindowFlags.None) | ImGuiWindowFlags.NoDecoration))
+                if (ImGui.BeginChild($"###ArtisanRightSide", Vector2.Zero, false))
                 {
 
                     if (OpenWindow == OpenWindow.Main)
@@ -214,11 +219,142 @@ namespace Artisan.UI
                         SpecialLists.Draw();
                     }
 
+                    if (OpenWindow == OpenWindow.Overview)
+                    {
+                        DrawOverview();
+                    }
+
                 }
                 ImGui.EndChild();
                 ImGui.EndTable();
             }
+            ImGui.PopStyleVar();
+        }
 
+        private void DrawOverview()
+        {
+            var imagePath = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/artisan.png");
+
+            if (ThreadLoadImageHandler.TryGetTextureWrap(imagePath, out var logo))
+            {
+                ImGuiEx.ImGuiLineCentered("###ArtisanTextLogo", () =>
+                {
+                    ImGui.Image(logo.ImGuiHandle, new Vector2(300f.Scale(), 100f.Scale()));
+                });
+            }
+
+            ImGuiEx.ImGuiLineCentered("###ArtisanOverview", () =>
+            {
+                ImGuiEx.TextUnderlined("Artisan - Overview");
+            });
+            ImGui.Spacing();
+
+            ImGuiEx.TextWrapped($"I would first like to thank you for downloading my little crafting plugin. I have been working on Artisan consistently since June 2022 and it's my magnum opus of a plugin.");
+            ImGui.Spacing();
+            ImGuiEx.TextWrapped($"Before you get started with Artisan, we should go over a few things about how the plugin works. Artisan is simple to use once you understand a few key factors.");
+
+            ImGui.Spacing();
+            ImGuiEx.ImGuiLineCentered("###ArtisanModes", () =>
+            {
+                ImGuiEx.TextUnderlined("Modes");
+            });
+            ImGui.Spacing();
+
+            ImGuiEx.TextWrapped($"Artisan features an \"Automatic Action Execution Mode\" which merely takes the suggestions provided to it and performs the action on your behalf." +
+                                " By default, this will fire as fast as the game allows, which is faster than normal macros." +
+                                " You are not bypassing any sort of game restrictions doing this, however you can set a delay should you choose to." +
+                                " Enabling this has nothing to do with the suggestion making process Artisan uses by default.");
+
+            var automode = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/AutoMode.png");
+
+            if (ThreadLoadImageHandler.TryGetTextureWrap(automode, out var example))
+            {
+                ImGuiEx.ImGuiLineCentered("###AutoModeExample", () =>
+                {
+                    ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
+                });
+            }
+
+            ImGuiEx.TextWrapped($"If you do not have the automatic mode enabled, you will have access to 2 more modes. \"Semi-Manual Mode\" and \"Full Manual\"." +
+                                $" \"Semi-Manual Mode\" will appear in a small pop-up window when you start crafting.");
+
+            var craftWindowExample = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/ThemeCraftingWindowExample.png");
+
+            if (ThreadLoadImageHandler.TryGetTextureWrap(craftWindowExample, out example))
+            {
+                ImGuiEx.ImGuiLineCentered("###CraftWindowExample", () =>
+                {
+                    ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
+                });
+            }
+
+            ImGuiEx.TextWrapped($"By clicking the \"Execute recommended action\" button, you are instructing the plugin to perform the suggestion it has recommended." +
+                $" This considered semi-manual as you still have to click each action, but you don't have to worry about finding them on your hotbars." +
+                $" \"Full-Manual\" mode is performed by pressing the buttons on your hotbar as normal." +
+                $" You are provided with an aid by default as Artisan will highlight the action on your hotbar if it is slotted. (This can be disabled in the settings)");
+
+            var outlineExample = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/OutlineExample.png");
+
+            if (ThreadLoadImageHandler.TryGetTextureWrap(outlineExample, out example))
+            {
+                ImGuiEx.ImGuiLineCentered("###OutlineExample", () =>
+                {
+                    ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
+                });
+            }
+
+            ImGui.Spacing();
+            ImGuiEx.ImGuiLineCentered("###ArtisanSuggestions", () =>
+            {
+                ImGuiEx.TextUnderlined("Solvers/Macros");
+            });
+            ImGui.Spacing();
+
+            ImGuiEx.TextWrapped($"Artisan by default will provide you with suggestions on what your next crafting step should be. This solver is not perfect however and it is definitely not a substitute for having appropriate gear. " +
+                $"You do not need to do anything to enable this behaviour other than have Artisan enabled. " +
+                $"\r\n\r\n" +
+                $"If you are trying to tackle a craft that the default solver cannot craft, Artisan allows you to build macros which can be used as the suggestions instead of the default solver. " +
+                $"Artisan macros have the benefit of not being restricted in length, can fire off as fast as the game allows and also allows some additional options to tweak on the fly.");
+
+            ImGuiEx.TextUnderlined($"Click here to be taken to the Macro menu.");
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            }
+            if (ImGui.IsItemClicked())
+            {
+                OpenWindow = OpenWindow.Macro;
+            }
+
+            ImGuiEx.TextWrapped($"Once you have created a macro, you will have to assign it to a recipe. This is easily accomplished by using the Recipe Window dropdown. By default, this is attached to the top right of the in-game crafting log window but can be unattached in the settings.");
+
+
+            var recipeWindowExample = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/RecipeWindowExample.png");
+
+            if (ThreadLoadImageHandler.TryGetTextureWrap(recipeWindowExample, out example))
+            {
+                ImGuiEx.ImGuiLineCentered("###RecipeWindowExample", () =>
+                {
+                    ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
+                });
+            }
+
+
+            ImGuiEx.TextWrapped($"Select a macro you have created from the dropdown box and enable the \"Use Set Macros\" checkbox. " +
+                $"When you go to craft this item, the suggestions will be replaced by the contents of your macro. " +
+                $"By default, changing the \"Use Set Macros\" box also enables/disables the \"Automatic Action Execution Mode\" option for convenience. " +
+                $"You can still toggle \"Automatic Action Execution Mode\" on or off independently of macro options. " +
+                $"If you have \"Use Set Macros\" enabled and attempt to craft an item without a macro set, you will be presented with an error.");
+
+            var macroStartError = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/MacroStartError.png");
+
+            if (ThreadLoadImageHandler.TryGetTextureWrap(macroStartError, out example))
+            {
+                ImGuiEx.ImGuiLineCentered("###macroStartError", () =>
+                {
+                    ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
+                });
+            }
         }
 
         public static void DrawMainWindow()
@@ -243,7 +379,7 @@ namespace Artisan.UI
             ImGui.Separator();
             if (ImGui.CollapsingHeader("Mode Selections"))
             {
-                if (ImGui.Checkbox("Auto Mode Enabled", ref autoEnabled))
+                if (ImGui.Checkbox("Automatic Action Execution Mode", ref autoEnabled))
                 {
                     Service.Configuration.AutoMode = autoEnabled;
                     Service.Configuration.Save();
@@ -265,7 +401,7 @@ namespace Artisan.UI
 
                 if (Service.Configuration.UserMacros.Count > 0)
                 {
-                    if (ImGui.Checkbox("Macro Mode Enabled", ref useMacroMode))
+                    if (ImGui.Checkbox("Use Set Macros", ref useMacroMode))
                     {
                         Service.Configuration.UseMacroMode = useMacroMode;
                         Service.Configuration.AutoMode = useMacroMode;
@@ -275,6 +411,9 @@ namespace Artisan.UI
                     ImGuiComponents.HelpMarker($"Use a macro to craft instead of Artisan making its own decisions.\r\n" +
                         $"Set macros from the recipe window pop-up window.\r\n" +
                         $"If the macro ends before a craft is complete, Artisan will make its own suggestions until the end of the craft.");
+
+                    if (ImGui.Checkbox($"Prevent Artisan from Continuing After Macro Finishes", ref Service.Configuration.DisableMacroArtisanRecommendation))
+                        Service.Configuration.Save();
                 }
                 else
                 {
@@ -429,6 +568,7 @@ namespace Artisan.UI
 
                 if (ImGui.Checkbox("Disable Allagan Tools Integration With Lists", ref Service.Configuration.DisableAllaganTools))
                     Service.Configuration.Save();
+
             }
             if (ImGui.CollapsingHeader("List Defaults"))
             {
@@ -481,5 +621,6 @@ namespace Artisan.UI
         Debug = 6,
         FCWorkshop = 7,
         SpecialList = 8,
+        Overview = 9,
     }
 }

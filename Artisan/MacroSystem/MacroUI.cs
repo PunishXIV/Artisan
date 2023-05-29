@@ -1,4 +1,5 @@
-﻿using Artisan.RawInformation;
+﻿using Artisan.CraftingLogic;
+using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
@@ -32,6 +33,11 @@ namespace Artisan.MacroSystem
             ImGui.TextWrapped("This tab will allow you to add macros that Artisan can use instead of its own decisions.");
             ImGui.Separator();
 
+            if (State == CraftingState.Crafting)
+            {
+                ImGui.Text($"Crafting in progress. Macro settings will be unavailable until you stop crafting.");
+                return;
+            }
             if (Minimized)
             {
                 if (ImGuiEx.IconButton(FontAwesomeIcon.ArrowRight, "Maximize", new Vector2(80f, 0)))

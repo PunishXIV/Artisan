@@ -456,19 +456,17 @@ namespace Artisan.Autocraft
                         }
                         else
                         {
-
                             rName += str.ExtractText().Trim();
                         }
 
+                        if (rName.Length == 0) return;
+
                         if (firstCrystal > 0)
                         {
-                            if (RecipeName != rName)
+                            if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.ExtractText() == rName && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
                             {
-                                if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.ExtractText() == rName && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
-                                {
-                                    RecipeID = (int)id.RowId;
-                                    RecipeName = id.ItemResult.Value.Name.ExtractText();
-                                }
+                                RecipeID = (int)id.RowId;
+                                RecipeName = id.ItemResult.Value.Name.ExtractText();
                             }
                         }
                     }

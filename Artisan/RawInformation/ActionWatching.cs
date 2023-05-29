@@ -1,4 +1,5 @@
-﻿using Artisan.CraftingLogic;
+﻿using Artisan.CraftingLists;
+using Artisan.CraftingLogic;
 using Artisan.RawInformation.Character;
 using Dalamud.Hooking;
 using Dalamud.Logging;
@@ -110,7 +111,7 @@ namespace Artisan.RawInformation
                             Artisan.Tasks.Clear();
                         }
                     }
-                    if (Service.Configuration.UseMacroMode)
+                    if (Service.Configuration.UseMacroMode || CraftingListUI.Processing)
                     {
                         MacroStep++;
                     }

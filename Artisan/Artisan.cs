@@ -3,7 +3,6 @@ using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.CustomDeliveries;
 using Artisan.IPC;
-using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
@@ -50,6 +49,7 @@ public unsafe class Artisan : IDalamudPlugin
     public static readonly object _lockObj = new();
     public static List<Task> Tasks = new();
     public static bool warningMessage = false;
+    public static bool macroWarning = false;
 
     internal FontManager fm;
     internal StyleModel Style;
@@ -205,6 +205,7 @@ public unsafe class Artisan : IDalamudPlugin
             AdvancedTouchUsed = false;
             ExpertCraftOpenerFinish = false;
             MacroStep = 0;
+            warningMessage = false;
         }
         if (e > 0)
             Tasks.Clear();
@@ -307,134 +308,147 @@ public unsafe class Artisan : IDalamudPlugin
         if (Tasks.Count > 1)
             return;
 
-        lock (_lockObj)
+        try
         {
-            try
+            if (Service.Configuration.UseMacroMode && !Service.Configuration.IRM.ContainsKey(CurrentRecipe.RowId))
+            {
+                if (!macroWarning)
+                    DuoLog.Error("You do not have a macro set for this recipe and you have macro mode enabled. Artisan will not continue.");
+
+                P.CTM.Abort();
+                return;
+            }
+
+            if (Service.Configuration.UseMacroMode && Service.Configuration.UserMacros.Count > 0)
+            {
+                if (Service.Configuration.IRM.TryGetValue(CurrentRecipe.RowId, out var id))
+                {
+                    var macro = Service.Configuration.UserMacros.First(x => x.ID == id);
+
+                    if (MacroStep < macro.MacroActions.Count)
+                    {
+                        if (macro.MacroOptions.SkipQualityIfMet)
+                        {
+                            if (CurrentQuality >= MaxQuality)
+                            {
+                                while (ActionIsQuality(macro) && (!Service.Configuration.SkipMacroStepIfUnable || (Service.Configuration.SkipMacroStepIfUnable && CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))))
+                                {
+                                    MacroStep++;
+                                }
+                            }
+                        }
+
+                        if (macro.MacroOptions.SkipObservesIfNotPoor && CurrentCondition != CraftingLogic.CraftData.Condition.Poor)
+                        {
+                            while (macro.MacroActions[MacroStep] == Skills.Observe || macro.MacroActions[MacroStep] == Skills.CarefulObservation)
+                            {
+                                MacroStep++;
+                            }
+                        }
+
+                        if (Service.Configuration.SkipMacroStepIfUnable)
+                        {
+                            while (!CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))
+                            {
+                                MacroStep++;
+                            }
+                        }
+
+                        CurrentRecommendation = macro.MacroActions[MacroStep] == 0 ? (CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation()) : macro.MacroActions[MacroStep];
+
+                        try
+                        {
+                            if (macro.MacroStepOptions.Count == 0 || !macro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
+                            {
+                                if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(macro) && ActionUpgradable(macro, out uint newAction))
+                                {
+                                    CurrentRecommendation = newAction;
+                                }
+                                if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(macro) && ActionUpgradable(macro, out newAction))
+                                {
+                                    CurrentRecommendation = newAction;
+                                }
+                            }
+                        }
+                        catch (Exception ex) { ex.Log(); }
+                    }
+                    else
+                    {
+                        if (!Service.Configuration.DisableMacroArtisanRecommendation)
+                            CurrentRecommendation = CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation();
+                    }
+                }
+            }
+            else
             {
                 CurrentRecommendation = CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation();
+            }
 
-                if (Service.Configuration.UseMacroMode && Service.Configuration.UserMacros.Count > 0)
-                {
-                    if (Service.Configuration.IRM.TryGetValue(CurrentRecipe.RowId, out var id))
-                    {
-                        var macro = Service.Configuration.UserMacros.First(x => x.ID == id);
-                        if (MacroStep < macro.MacroActions.Count)
-                        {
-                            if (macro.MacroOptions.SkipQualityIfMet)
-                            {
-                                if (CurrentQuality >= MaxQuality)
-                                {
-                                    while (ActionIsQuality(macro) && (!Service.Configuration.SkipMacroStepIfUnable || (Service.Configuration.SkipMacroStepIfUnable && CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))))
-                                    {
-                                        MacroStep++;
-                                    }
-                                }
-                            }
-
-                            if (macro.MacroOptions.SkipObservesIfNotPoor && CurrentCondition != CraftingLogic.CraftData.Condition.Poor)
-                            {
-                                while (macro.MacroActions[MacroStep] == Skills.Observe || macro.MacroActions[MacroStep] == Skills.CarefulObservation)
-                                {
-                                    MacroStep++;
-                                }
-                            }
-
-                            if (Service.Configuration.SkipMacroStepIfUnable)
-                            {
-                                while (!CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))
-                                {
-                                    MacroStep++;
-                                }
-                            }
-
-                            CurrentRecommendation = macro.MacroActions[MacroStep] == 0 ? CurrentRecommendation : macro.MacroActions[MacroStep];
-
-                            try
-                            {
-                                if (macro.MacroStepOptions.Count == 0 || !macro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
-                                {
-                                    if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(macro) && ActionUpgradable(macro, out uint newAction))
-                                    {
-                                        CurrentRecommendation = newAction;
-                                    }
-                                    if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(macro) && ActionUpgradable(macro, out newAction))
-                                    {
-                                        CurrentRecommendation = newAction;
-                                    }
-                                }
-                            }
-                            catch { }
-                        }
-                    }
-                }
-
+            if (CurrentRecommendation != 0)
+            {
                 RecommendationName = CurrentRecommendation.NameOfAction();
 
-                if (CurrentRecommendation != 0)
+                if (LuminaSheets.ActionSheet.TryGetValue(CurrentRecommendation, out var normalAct))
                 {
-                    if (LuminaSheets.ActionSheet.TryGetValue(CurrentRecommendation, out var normalAct))
+                    if (normalAct.ClassJob.Value.RowId != CharacterInfo.JobID())
                     {
-                        if (normalAct.ClassJob.Value.RowId != CharacterInfo.JobID())
+                        var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == normalAct.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
+                        CurrentRecommendation = newAct.RowId;
+                        if (!Service.Configuration.DisableToasts)
                         {
-                            var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == normalAct.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
-                            CurrentRecommendation = newAct.RowId;
-                            if (!Service.Configuration.DisableToasts)
-                            {
-                                QuestToastOptions options = new() { IconId = newAct.Icon };
-                                Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
-                            }
-
+                            QuestToastOptions options = new() { IconId = newAct.Icon };
+                            Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
                         }
-                        else
+
+                    }
+                    else
+                    {
+                        if (!Service.Configuration.DisableToasts)
                         {
-                            if (!Service.Configuration.DisableToasts)
-                            {
-                                QuestToastOptions options = new() { IconId = normalAct.Icon };
-                                Service.ToastGui.ShowQuest($"Use {normalAct.Name}", options);
-                            }
+                            QuestToastOptions options = new() { IconId = normalAct.Icon };
+                            Service.ToastGui.ShowQuest($"Use {normalAct.Name}", options);
                         }
                     }
-
-                    if (LuminaSheets.CraftActions.TryGetValue(CurrentRecommendation, out var craftAction))
-                    {
-                        if (craftAction.ClassJob.Row != CharacterInfo.JobID())
-                        {
-                            var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == craftAction.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
-                            CurrentRecommendation = newAct.RowId;
-                            if (!Service.Configuration.DisableToasts)
-                            {
-                                QuestToastOptions options = new() { IconId = newAct.Icon };
-                                Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
-                            }
-                        }
-                        else
-                        {
-                            if (!Service.Configuration.DisableToasts)
-                            {
-                                QuestToastOptions options = new() { IconId = craftAction.Icon };
-                                Service.ToastGui.ShowQuest($"Use {craftAction.Name}", options);
-                            }
-                        }
-                    }
-
-                    if (Service.Configuration.AutoMode)
-                    {
-                        P.CTM.DelayNext(Service.Configuration.AutoDelay);
-                        P.CTM.Enqueue(() => Hotbars.ExecuteRecommended(CurrentRecommendation));
-                        //Service.Framework.RunOnTick(() => , TimeSpan.FromMilliseconds(Service.Configuration.AutoDelay));
-
-                        //Service.Plugin.BotTask.Schedule(() => Hotbars.ExecuteRecommended(CurrentRecommendation), Service.Configuration.AutoDelay);
-                    }
-
-                    return;
                 }
-            }
-            catch (Exception ex)
-            {
-                Dalamud.Logging.PluginLog.Error(ex, "Crafting Step Change");
+
+                if (LuminaSheets.CraftActions.TryGetValue(CurrentRecommendation, out var craftAction))
+                {
+                    if (craftAction.ClassJob.Row != CharacterInfo.JobID())
+                    {
+                        var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == craftAction.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
+                        CurrentRecommendation = newAct.RowId;
+                        if (!Service.Configuration.DisableToasts)
+                        {
+                            QuestToastOptions options = new() { IconId = newAct.Icon };
+                            Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+                        }
+                    }
+                    else
+                    {
+                        if (!Service.Configuration.DisableToasts)
+                        {
+                            QuestToastOptions options = new() { IconId = craftAction.Icon };
+                            Service.ToastGui.ShowQuest($"Use {craftAction.Name}", options);
+                        }
+                    }
+                }
+
+                if (Service.Configuration.AutoMode)
+                {
+                    P.CTM.DelayNext(Service.Configuration.AutoDelay);
+                    P.CTM.Enqueue(() => Hotbars.ExecuteRecommended(CurrentRecommendation));
+                    //Service.Framework.RunOnTick(() => , TimeSpan.FromMilliseconds(Service.Configuration.AutoDelay));
+
+                    //Service.Plugin.BotTask.Schedule(() => Hotbars.ExecuteRecommended(CurrentRecommendation), Service.Configuration.AutoDelay);
+                }
+
+                return;
             }
         }
-
+        catch (Exception ex)
+        {
+            Dalamud.Logging.PluginLog.Error(ex, "Crafting Step Change");
+        }
     }
 
     private static bool ActionUpgradable(Macro macro, out uint newAction)
@@ -520,7 +534,7 @@ public unsafe class Artisan : IDalamudPlugin
         ECommonsMain.Dispose();
         CustomFont = null;
         P = null;
-        
+
     }
 
     private void OnCommand(string command, string args)
@@ -546,7 +560,7 @@ public unsafe class Artisan : IDalamudPlugin
                 CraftingListFunctions.Paused = true;
                 break;
         }
-        
+
 
     }
 

@@ -254,7 +254,7 @@ namespace Artisan
 
             bool autoMode = Service.Configuration.AutoMode;
 
-            if (ImGui.Checkbox("Auto Mode", ref autoMode))
+            if (ImGui.Checkbox("Automatic Action Execution Mode", ref autoMode))
             {
                 Service.Configuration.AutoMode = autoMode;
                 Service.Configuration.Save();
@@ -267,7 +267,7 @@ namespace Artisan
             }
 
             bool macroMode = Service.Configuration.UseMacroMode;
-            if (ImGui.Checkbox("Macro Mode", ref macroMode))
+            if (ImGui.Checkbox("Use Set Macros", ref macroMode))
             {
                 Service.Configuration.UseMacroMode = macroMode;
                 Service.Configuration.AutoMode = macroMode;
@@ -323,28 +323,30 @@ namespace Artisan
                     | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding);
 
                 ImGui.Spacing();
-                ImGui.Text($"Use a macro for this recipe ({Handler.RecipeName})");
-                string? preview = Service.Configuration.IRM.TryGetValue((uint)Handler.RecipeID, out var prevMacro) ? Service.Configuration.UserMacros.First(x => x.ID == prevMacro).Name : "";
-                if (ImGui.BeginCombo("", preview))
+                if (Handler.RecipeID != 0)
                 {
-                    if (ImGui.Selectable(""))
+                    ImGui.Text($"Use a macro for this recipe ({Handler.RecipeName})");
+                    string? preview = Service.Configuration.IRM.TryGetValue((uint)Handler.RecipeID, out var prevMacro) ? Service.Configuration.UserMacros.First(x => x.ID == prevMacro).Name : "";
+                    if (ImGui.BeginCombo("", preview))
                     {
-                        Service.Configuration.IRM.Remove((uint)Handler.RecipeID);
-                        Service.Configuration.Save();
-                    }
-                    foreach (var macro in Service.Configuration.UserMacros)
-                    {
-                        bool selected = Service.Configuration.IRM.TryGetValue((uint)Handler.RecipeID, out var selectedMacro);
-                        if (ImGui.Selectable(macro.Name, selected))
+                        if (ImGui.Selectable(""))
                         {
-                            Service.Configuration.IRM[(uint)Handler.RecipeID] = macro.ID;
+                            Service.Configuration.IRM.Remove((uint)Handler.RecipeID);
                             Service.Configuration.Save();
                         }
+                        foreach (var macro in Service.Configuration.UserMacros)
+                        {
+                            bool selected = Service.Configuration.IRM.TryGetValue((uint)Handler.RecipeID, out var selectedMacro);
+                            if (ImGui.Selectable(macro.Name, selected))
+                            {
+                                Service.Configuration.IRM[(uint)Handler.RecipeID] = macro.ID;
+                                Service.Configuration.Save();
+                            }
+                        }
+
+                        ImGui.EndCombo();
                     }
-
-                    ImGui.EndCombo();
                 }
-
                 ImGui.End();
                 ImGui.PopStyleVar(2);
             }

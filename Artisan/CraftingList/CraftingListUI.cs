@@ -61,7 +61,7 @@ namespace Artisan.CraftingLists
                 ImGui.TextWrapped($"You can use this tab to see what items you can craft with the items in your inventory. You can also use it to create a quick crafting list that Artisan will try and work through.");
                 ImGui.TextWrapped($"Please note that due to heavy computational requirements, filtering the recipe list to show only recipes you have ingredients for will not take into account raw ingredients for any crafted items. This may be addressed in the future. For now, it will only look at final ingredients *only* for a given recipe.");
                 ImGui.TextWrapped($"Crafting lists process from top to bottom, so ensure any pre-requsite crafts come first.");
-                ImGui.TextWrapped("Please ensure that you have gearsets saved for each job you have items to craft. Also if you require the usage of food and/or potions, please do so before starting the crafting list as this will not be automated.");
+                ImGui.TextWrapped("Please ensure that you have gearsets saved for each job you have items to craft.");
             }
             ImGui.Separator();
 
@@ -417,7 +417,7 @@ namespace Artisan.CraftingLists
                                 if (Service.Configuration.UserMacros.Count > 0)
                                 {
                                     ImGui.Spacing();
-                                    ImGui.TextWrapped($"Use a macro for this recipe (only when Macro mode is enabled)");
+                                    ImGui.TextWrapped($"Use a macro for this recipe");
 
                                     string? preview = Service.Configuration.IRM.TryGetValue((uint)selectedListItem, out var prevMacro) ? Service.Configuration.UserMacros.First(x => x.ID == prevMacro).Name : "";
                                     if (ImGui.BeginCombo("", preview))

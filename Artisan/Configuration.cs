@@ -80,7 +80,7 @@ namespace Artisan
 
         public bool UseAlternativeRotation { get; set; } = false;
         public bool HideQuestHelper { get; set; } = false;
-        public bool DisableTheme { get; set; } = false;
+        public bool DisableTheme { get; set; } = true;
         public bool RequestToStopDuty { get; set; } = false;
         public bool RequestToResumeDuty { get; set; } = false;
         public int RequestToResumeDelay { get; set; } = 5;
@@ -93,6 +93,7 @@ namespace Artisan
         public bool ResetTimesToAdd = false;
         public bool SkipMacroStepIfUnable = false;
         public bool DisableAllaganTools = false;
+        public bool DisableMacroArtisanRecommendation = false;
 
         public bool DontEquipItems = false;
 
