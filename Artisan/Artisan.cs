@@ -1,5 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.CraftingLogic;
 using Artisan.CustomDeliveries;
 using Artisan.IPC;
 using Artisan.MacroSystem;
@@ -236,7 +237,7 @@ public unsafe class Artisan : IDalamudPlugin
             Handler.DrawRecipeData();
 
         GetCraft();
-        if (CanUse(Skills.BasicSynth) && CurrentRecommendation == 0 && Tasks.Count == 0 && CurrentStep >= 1)
+        if (CurrentCraftMethods.CanUse(Skills.BasicSynth) && CurrentRecommendation == 0 && Tasks.Count == 0 && CurrentStep >= 1)
         {
             if (CurrentRecipe is null && !warningMessage)
             {
@@ -295,7 +296,7 @@ public unsafe class Artisan : IDalamudPlugin
 #if DEBUG
         if (cw.repeatTrial)
         {
-            RepeatTrialCraft();
+            CurrentCraftMethods.RepeatTrialCraft();
         }
 #endif
 
@@ -310,7 +311,7 @@ public unsafe class Artisan : IDalamudPlugin
         {
             try
             {
-                CurrentRecommendation = CurrentRecipe.IsExpert ? GetExpertRecommendation() : GetRecommendation();
+                CurrentRecommendation = CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation();
 
                 if (Service.Configuration.UseMacroMode && Service.Configuration.UserMacros.Count > 0)
                 {
@@ -323,14 +324,14 @@ public unsafe class Artisan : IDalamudPlugin
                             {
                                 if (CurrentQuality >= MaxQuality)
                                 {
-                                    while (ActionIsQuality(macro) && (!Service.Configuration.SkipMacroStepIfUnable || (Service.Configuration.SkipMacroStepIfUnable && CanUse(macro.MacroActions[MacroStep]))))
+                                    while (ActionIsQuality(macro) && (!Service.Configuration.SkipMacroStepIfUnable || (Service.Configuration.SkipMacroStepIfUnable && CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))))
                                     {
                                         MacroStep++;
                                     }
                                 }
                             }
 
-                            if (macro.MacroOptions.SkipObservesIfNotPoor && CurrentCondition != CraftingLogic.CurrentCraft.Condition.Poor)
+                            if (macro.MacroOptions.SkipObservesIfNotPoor && CurrentCondition != CraftingLogic.CraftData.Condition.Poor)
                             {
                                 while (macro.MacroActions[MacroStep] == Skills.Observe || macro.MacroActions[MacroStep] == Skills.CarefulObservation)
                                 {
@@ -340,7 +341,7 @@ public unsafe class Artisan : IDalamudPlugin
 
                             if (Service.Configuration.SkipMacroStepIfUnable)
                             {
-                                while (!CanUse(macro.MacroActions[MacroStep]))
+                                while (!CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))
                                 {
                                     MacroStep++;
                                 }
@@ -439,7 +440,7 @@ public unsafe class Artisan : IDalamudPlugin
     private static bool ActionUpgradable(Macro macro, out uint newAction)
     {
         newAction = macro.MacroActions[MacroStep];
-        if (CurrentCondition is CraftingLogic.CurrentCraft.Condition.Good or CraftingLogic.CurrentCraft.Condition.Excellent)
+        if (CurrentCondition is CraftingLogic.CraftData.Condition.Good or CraftingLogic.CraftData.Condition.Excellent)
         {
             switch (newAction)
             {
@@ -460,7 +461,7 @@ public unsafe class Artisan : IDalamudPlugin
                     break;
             }
 
-            return CanUse(newAction);
+            return CurrentCraftMethods.CanUse(newAction);
         }
 
         return false;

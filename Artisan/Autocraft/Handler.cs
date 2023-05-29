@@ -155,7 +155,7 @@ namespace Artisan.Autocraft
                         P.TM.Enqueue(() => CraftingListFunctions.RecipeWindowOpen(), "EnduranceCheckRecipeWindow");
                         P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredients");
                         P.TM.DelayNext("EnduranceThrottle", 100);
-                        P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraft.RepeatActualCraft(); }, "EnduranceStartCraft");
+                        P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraftMethods.RepeatActualCraft(); }, "EnduranceStartCraft");
 
 
                     }

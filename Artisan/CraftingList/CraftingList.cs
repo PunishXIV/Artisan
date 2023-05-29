@@ -337,17 +337,17 @@ namespace Artisan.CraftingLists
 
                     if (count >= 99)
                     {
-                        CurrentCraft.QuickSynthItem(99);
+                        CurrentCraftMethods.QuickSynthItem(99);
                     }
                     else
                     {
-                        CurrentCraft.QuickSynthItem(count);
+                        CurrentCraftMethods.QuickSynthItem(count);
                     }
 
                 }
                 else
                 {
-                    CurrentCraft.RepeatActualCraft();
+                    CurrentCraftMethods.RepeatActualCraft();
                 }
 
             }
@@ -361,7 +361,7 @@ namespace Artisan.CraftingLists
 
                 if (CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0)
                 {
-                    CurrentCraft.CloseQuickSynthWindow();
+                    CurrentCraftMethods.CloseQuickSynthWindow();
                 }
 
                 if (CheckIfCraftFinished())
@@ -380,18 +380,18 @@ namespace Artisan.CraftingLists
 
                     if (count >= 99)
                     {
-                        CurrentCraft.QuickSynthItem(99);
+                        CurrentCraftMethods.QuickSynthItem(99);
                     }
                     else
                     {
-                        CurrentCraft.QuickSynthItem(count);
+                        CurrentCraftMethods.QuickSynthItem(count);
                     }
                 }
                 else
                 {
                     RecipeWindowOpen();
                     SetIngredients();
-                    CurrentCraft.RepeatActualCraft();
+                    CurrentCraftMethods.RepeatActualCraft();
                 }
             }
         }

@@ -1,4 +1,5 @@
-﻿using Artisan.RawInformation.Character;
+﻿using Artisan.CraftingLogic;
+using Artisan.RawInformation.Character;
 using Dalamud.Hooking;
 using Dalamud.Logging;
 using ECommons.Automation;
@@ -28,7 +29,7 @@ namespace Artisan.RawInformation
         {
             try
             {
-                if (CanUse(actionID))
+                if (CurrentCraftMethods.CanUse(actionID))
                 {
                     PluginLog.Debug($"{actionID.NameOfAction()}");
                     PreviousAction = actionID;
@@ -297,7 +298,7 @@ namespace Artisan.RawInformation
             var requiredJob = Svc.Data.Excel.GetSheet<ClassJob>()?.GetRow(requiredClass);
             if (requiredJob == null) return CraftReadyState.NotReady;
             if (Service.ClientState.LocalPlayer.ClassJob.Id == requiredClass) return CraftReadyState.Ready;
-            var localPlayer = (Character*)Service.ClientState.LocalPlayer.Address;
+            var localPlayer = (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)Service.ClientState.LocalPlayer.Address;
             return localPlayer->EventState == 5 ? CraftReadyState.AlreadyCrafting : CraftReadyState.WrongClass;
         }
 

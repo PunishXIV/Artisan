@@ -5,7 +5,7 @@ using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Linq;
 using static Artisan.CraftingLogic.CurrentCraft;
-using Condition = Artisan.CraftingLogic.CurrentCraft.Condition;
+using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.CraftingLogic
 {
@@ -64,7 +64,7 @@ namespace Artisan.CraftingLogic
 
         public static double ByregotMultiplier()
         {
-            int IQStacks = Convert.ToInt32(GetStatus(Buffs.InnerQuiet)?.StackCount);
+            int IQStacks = Convert.ToInt32(CurrentCraftMethods.GetStatus(Buffs.InnerQuiet)?.StackCount);
             return 1 + (IQStacks * 0.2);
         }
 
@@ -205,11 +205,11 @@ namespace Artisan.CraftingLogic
 
         public static uint GreatStridesByregotCombo()
         {
-            if (GetStatus(Buffs.InnerQuiet) is null) return 0;
+            if (CurrentCraftMethods.GetStatus(Buffs.InnerQuiet) is null) return 0;
 
             double efficiency = GetMultiplier(Skills.ByregotsBlessing);
-            double IQStacks = 1 + (GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
-            double innovation = (GetStatus(Buffs.Innovation)?.StackCount >= 2 && CurrentCondition != Condition.Excellent) || (GetStatus(Buffs.Innovation)?.StackCount >= 3 && CurrentCondition == Condition.Excellent) || (JustUsedGreatStrides && GetStatus(Buffs.Innovation)?.StackCount >= 1) ? 0.5 : 0;
+            double IQStacks = 1 + (CurrentCraftMethods.GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
+            double innovation = (CurrentCraftMethods.GetStatus(Buffs.Innovation)?.StackCount >= 2 && CurrentCondition != Condition.Excellent) || (CurrentCraftMethods.GetStatus(Buffs.Innovation)?.StackCount >= 3 && CurrentCondition == Condition.Excellent) || (JustUsedGreatStrides && CurrentCraftMethods.GetStatus(Buffs.Innovation)?.StackCount >= 1) ? 0.5 : 0;
             double greatStrides = 1;
 
             return (uint)Math.Floor(CurrentQuality + (BaseQuality() * efficiency * IQStacks * (innovation + greatStrides + 1)));
