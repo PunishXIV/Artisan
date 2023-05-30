@@ -263,15 +263,7 @@ namespace Artisan
             bool enable = Handler.Enable;
             if (ImGui.Checkbox("Endurance Mode Toggle", ref enable))
             {
-                Handler.Enable = enable;
-            }
-
-            bool macroMode = Service.Configuration.UseMacroMode;
-            if (ImGui.Checkbox("Use Set Macros", ref macroMode))
-            {
-                Service.Configuration.UseMacroMode = macroMode;
-                Service.Configuration.AutoMode = macroMode;
-                Service.Configuration.Save();
+                Handler.ToggleEndurance(enable);
             }
 
         }

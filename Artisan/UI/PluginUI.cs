@@ -8,6 +8,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
+using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
@@ -94,140 +95,147 @@ namespace Artisan.UI
             var topLeftSideHeight = region.Y;
 
             ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(5f.Scale(), 0));
-            if (ImGui.BeginTable($"ArtisanTableContainer", 2, ImGuiTableFlags.Resizable))
+            try
             {
-                ImGui.TableSetupColumn("##LeftColumn", ImGuiTableColumnFlags.WidthFixed, ImGui.GetWindowWidth() / 2);
-
-                ImGui.TableNextColumn();
-
-                var regionSize = ImGui.GetContentRegionAvail();
-
-                ImGui.PushStyleVar(ImGuiStyleVar.SelectableTextAlign, new Vector2(0.5f, 0.5f));
-                if (ImGui.BeginChild($"###ArtisanLeftSide", regionSize with { Y = topLeftSideHeight }, false, ImGuiWindowFlags.NoDecoration))
+                if (ImGui.BeginTable($"ArtisanTableContainer", 2, ImGuiTableFlags.Resizable))
                 {
-                    var imagePath = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/artisan-icon.png");
+                    ImGui.TableSetupColumn("##LeftColumn", ImGuiTableColumnFlags.WidthFixed, ImGui.GetWindowWidth() / 2);
 
-                    if (ThreadLoadImageHandler.TryGetTextureWrap(imagePath, out var logo))
+                    ImGui.TableNextColumn();
+
+                    var regionSize = ImGui.GetContentRegionAvail();
+
+                    ImGui.PushStyleVar(ImGuiStyleVar.SelectableTextAlign, new Vector2(0.5f, 0.5f));
+                    if (ImGui.BeginChild($"###ArtisanLeftSide", regionSize with { Y = topLeftSideHeight }, false, ImGuiWindowFlags.NoDecoration))
                     {
-                        ImGuiEx.ImGuiLineCentered("###ArtisanLogo", () =>
+                        var imagePath = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/artisan-icon.png");
+
+                        if (ThreadLoadImageHandler.TryGetTextureWrap(imagePath, out var logo))
                         {
-                            ImGui.Image(logo.ImGuiHandle, new(125f.Scale(), 125f.Scale()));
-                            if (ImGui.IsItemHovered())
+                            ImGuiEx.ImGuiLineCentered("###ArtisanLogo", () =>
                             {
-                                ImGui.BeginTooltip();
-                                ImGui.Text($"You are the 69th person to find this secret. Nice!");
-                                ImGui.EndTooltip();
-                            }
-                        });
+                                ImGui.Image(logo.ImGuiHandle, new(125f.Scale(), 125f.Scale()));
+                                if (ImGui.IsItemHovered())
+                                {
+                                    ImGui.BeginTooltip();
+                                    ImGui.Text($"You are the 69th person to find this secret. Nice!");
+                                    ImGui.EndTooltip();
+                                }
+                            });
 
-                    }
-                    ImGui.Spacing();
-                    ImGui.Separator();
+                        }
+                        ImGui.Spacing();
+                        ImGui.Separator();
 
-                    if (ImGui.Selectable("Overview", OpenWindow == OpenWindow.Overview))
-                    {
-                        OpenWindow = OpenWindow.Overview;
-                    }
-                    if (ImGui.Selectable("Settings", OpenWindow == OpenWindow.Main))
-                    {
-                        OpenWindow = OpenWindow.Main;
-                    }
-                    ImGui.Spacing();
-                    if (ImGui.Selectable("Endurance", OpenWindow == OpenWindow.Endurance))
-                    {
-                        OpenWindow = OpenWindow.Endurance;
-                    }
-                    ImGui.Spacing();
-                    if (ImGui.Selectable("Macros", OpenWindow == OpenWindow.Macro))
-                    {
-                        OpenWindow = OpenWindow.Macro;
-                    }
-                    ImGui.Spacing();
-                    if (ImGui.Selectable("Crafting Lists", OpenWindow == OpenWindow.Lists))
-                    {
-                        OpenWindow = OpenWindow.Lists;
-                    }
-                    ImGui.Spacing();
-                    if (ImGui.Selectable("List Builder", OpenWindow == OpenWindow.SpecialList))
-                    {
-                        OpenWindow = OpenWindow.SpecialList;
-                    }
-                    ImGui.Spacing();
-                    if (ImGui.Selectable("FC Workshops", OpenWindow == OpenWindow.FCWorkshop))
-                    {
-                        OpenWindow = OpenWindow.FCWorkshop;
-                    }
-                    ImGui.Spacing();
-                    if (ImGui.Selectable("About", OpenWindow == OpenWindow.About))
-                    {
-                        OpenWindow = OpenWindow.About;
-                    }
+                        if (ImGui.Selectable("Overview", OpenWindow == OpenWindow.Overview))
+                        {
+                            OpenWindow = OpenWindow.Overview;
+                        }
+                        if (ImGui.Selectable("Settings", OpenWindow == OpenWindow.Main))
+                        {
+                            OpenWindow = OpenWindow.Main;
+                        }
+                        ImGui.Spacing();
+                        if (ImGui.Selectable("Endurance", OpenWindow == OpenWindow.Endurance))
+                        {
+                            OpenWindow = OpenWindow.Endurance;
+                        }
+                        ImGui.Spacing();
+                        if (ImGui.Selectable("Macros", OpenWindow == OpenWindow.Macro))
+                        {
+                            OpenWindow = OpenWindow.Macro;
+                        }
+                        ImGui.Spacing();
+                        if (ImGui.Selectable("Crafting Lists", OpenWindow == OpenWindow.Lists))
+                        {
+                            OpenWindow = OpenWindow.Lists;
+                        }
+                        ImGui.Spacing();
+                        if (ImGui.Selectable("List Builder", OpenWindow == OpenWindow.SpecialList))
+                        {
+                            OpenWindow = OpenWindow.SpecialList;
+                        }
+                        ImGui.Spacing();
+                        if (ImGui.Selectable("FC Workshops", OpenWindow == OpenWindow.FCWorkshop))
+                        {
+                            OpenWindow = OpenWindow.FCWorkshop;
+                        }
+                        ImGui.Spacing();
+                        if (ImGui.Selectable("About", OpenWindow == OpenWindow.About))
+                        {
+                            OpenWindow = OpenWindow.About;
+                        }
 
 
 #if DEBUG
-                    ImGui.Spacing();
-                    if (ImGui.Selectable("DEBUG", OpenWindow == OpenWindow.Debug))
-                    {
-                        OpenWindow = OpenWindow.Debug;
-                    }
-                    ImGui.Spacing();
+                        ImGui.Spacing();
+                        if (ImGui.Selectable("DEBUG", OpenWindow == OpenWindow.Debug))
+                        {
+                            OpenWindow = OpenWindow.Debug;
+                        }
+                        ImGui.Spacing();
 #endif
 
+                    }
+                    ImGui.EndChild();
+                    ImGui.PopStyleVar();
+                    ImGui.TableNextColumn();
+                    if (ImGui.BeginChild($"###ArtisanRightSide", Vector2.Zero, false))
+                    {
+
+                        if (OpenWindow == OpenWindow.Main)
+                        {
+                            DrawMainWindow();
+                        }
+
+                        if (OpenWindow == OpenWindow.Endurance)
+                        {
+                            Handler.Draw();
+                        }
+
+                        if (OpenWindow == OpenWindow.Lists)
+                        {
+                            CraftingListUI.Draw();
+                        }
+
+                        if (OpenWindow == OpenWindow.About)
+                        {
+                            AboutTab.Draw(P);
+                        }
+
+                        if (OpenWindow == OpenWindow.Debug)
+                        {
+                            AutocraftDebugTab.Draw();
+                        }
+
+                        if (OpenWindow == OpenWindow.Macro)
+                        {
+                            MacroUI.Draw();
+                        }
+
+                        if (OpenWindow == OpenWindow.FCWorkshop)
+                        {
+                            FCWorkshopUI.Draw();
+                        }
+
+                        if (OpenWindow == OpenWindow.SpecialList)
+                        {
+                            SpecialLists.Draw();
+                        }
+
+                        if (OpenWindow == OpenWindow.Overview)
+                        {
+                            DrawOverview();
+                        }
+
+                    }
+                    ImGui.EndChild();
+                    ImGui.EndTable();
                 }
-                ImGui.EndChild();
-                ImGui.PopStyleVar();
-                ImGui.TableNextColumn();
-                if (ImGui.BeginChild($"###ArtisanRightSide", Vector2.Zero, false))
-                {
-
-                    if (OpenWindow == OpenWindow.Main)
-                    {
-                        DrawMainWindow();
-                    }
-
-                    if (OpenWindow == OpenWindow.Endurance)
-                    {
-                        Handler.Draw();
-                    }
-
-                    if (OpenWindow == OpenWindow.Lists)
-                    {
-                        CraftingListUI.Draw();
-                    }
-
-                    if (OpenWindow == OpenWindow.About)
-                    {
-                        AboutTab.Draw(P);
-                    }
-
-                    if (OpenWindow == OpenWindow.Debug)
-                    {
-                        AutocraftDebugTab.Draw();
-                    }
-
-                    if (OpenWindow == OpenWindow.Macro)
-                    {
-                        MacroUI.Draw();
-                    }
-
-                    if (OpenWindow == OpenWindow.FCWorkshop)
-                    {
-                        FCWorkshopUI.Draw();
-                    }
-
-                    if (OpenWindow == OpenWindow.SpecialList)
-                    {
-                        SpecialLists.Draw();
-                    }
-
-                    if (OpenWindow == OpenWindow.Overview)
-                    {
-                        DrawOverview();
-                    }
-
-                }
-                ImGui.EndChild();
-                ImGui.EndTable();
+            }
+            catch(Exception ex)
+            {
+                ex.Log();
             }
             ImGui.PopStyleVar();
         }
@@ -240,7 +248,7 @@ namespace Artisan.UI
             {
                 ImGuiEx.ImGuiLineCentered("###ArtisanTextLogo", () =>
                 {
-                    ImGui.Image(logo.ImGuiHandle, new Vector2(300f.Scale(), 100f.Scale()));
+                    ImGui.Image(logo.ImGuiHandle, new Vector2(logo.Width, 100f.Scale()));
                 });
             }
 
@@ -279,6 +287,7 @@ namespace Artisan.UI
             ImGuiEx.TextWrapped($"If you do not have the automatic mode enabled, you will have access to 2 more modes. \"Semi-Manual Mode\" and \"Full Manual\"." +
                                 $" \"Semi-Manual Mode\" will appear in a small pop-up window when you start crafting.");
 
+            //TODO Update to remove debug trial craft repeat from screenshot
             var craftWindowExample = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/ThemeCraftingWindowExample.png");
 
             if (ThreadLoadImageHandler.TryGetTextureWrap(craftWindowExample, out example))
@@ -317,6 +326,7 @@ namespace Artisan.UI
                 $"If you are trying to tackle a craft that the default solver cannot craft, Artisan allows you to build macros which can be used as the suggestions instead of the default solver. " +
                 $"Artisan macros have the benefit of not being restricted in length, can fire off as fast as the game allows and also allows some additional options to tweak on the fly.");
 
+            ImGui.Spacing();
             ImGuiEx.TextUnderlined($"Click here to be taken to the Macro menu.");
             if (ImGui.IsItemHovered())
             {
@@ -326,7 +336,7 @@ namespace Artisan.UI
             {
                 OpenWindow = OpenWindow.Macro;
             }
-
+            ImGui.Spacing();
             ImGuiEx.TextWrapped($"Once you have created a macro, you will have to assign it to a recipe. This is easily accomplished by using the Recipe Window dropdown. By default, this is attached to the top right of the in-game crafting log window but can be unattached in the settings.");
 
 
@@ -341,21 +351,9 @@ namespace Artisan.UI
             }
 
 
-            ImGuiEx.TextWrapped($"Select a macro you have created from the dropdown box and enable the \"Use Set Macros\" checkbox. " +
-                $"When you go to craft this item, the suggestions will be replaced by the contents of your macro. " +
-                $"By default, changing the \"Use Set Macros\" box also enables/disables the \"Automatic Action Execution Mode\" option for convenience. " +
-                $"You can still toggle \"Automatic Action Execution Mode\" on or off independently of macro options. " +
-                $"If you have \"Use Set Macros\" enabled and attempt to craft an item without a macro set, you will be presented with an error.");
+            ImGuiEx.TextWrapped($"Select a macro you have created from the dropdown box. " +
+                $"When you go to craft this item, the suggestions will be replaced by the contents of your macro.");
 
-            var macroStartError = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/MacroStartError.png");
-
-            if (ThreadLoadImageHandler.TryGetTextureWrap(macroStartError, out example))
-            {
-                ImGuiEx.ImGuiLineCentered("###macroStartError", () =>
-                {
-                    ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
-                });
-            }
 
             ImGui.Spacing();
             ImGuiEx.ImGuiLineCentered("###Endurance", () =>
@@ -364,13 +362,14 @@ namespace Artisan.UI
             });
             ImGui.Spacing();
 
-            ImGuiEx.TextWrapped($"Artisan has a mode titled \"Endurance Mode\" which is basically a fancier way of saying \"Auto-repeat mode\". " +
+            ImGuiEx.TextWrapped($"Artisan has a mode titled \"Endurance Mode\" which is basically a fancier way of saying \"Auto-repeat mode\" which will continually try to craft the same item for you. " +
                 $"Endurance Mode works by selecting a recipe from the in-game crafting log and enabling the feature. " +
                 $"Your character will then attempt to keep crafting that item as many times as you have materials for it. " +
                 $"\r\n\r\n" +
                 $"The other features should hopefully be self-explanatory as Endurance Mode can also manage the usage of your food, potions, manuals, repairs and materia extraction between crafts. " +
                 $"The repair feature only supports repairing with dark matter and does not support repair NPCs.");
 
+            ImGui.Spacing();
             ImGuiEx.TextUnderlined($"Click here to be taken to the Endurance menu.");
             if (ImGui.IsItemHovered())
             {
@@ -392,6 +391,7 @@ namespace Artisan.UI
                 $"Crafting lists have a lot of powerful tools to streamline the process of going from materials to final products. " +
                 $"It also supports importing and exporting to Teamcraft.");
 
+            ImGui.Spacing();
             ImGuiEx.TextUnderlined($"Click here to be taken to the Crafting List menu.");
             if (ImGui.IsItemHovered())
             {
@@ -415,21 +415,23 @@ namespace Artisan.UI
             if (ImGui.IsItemHovered())
             {
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+                if (ImGui.IsItemClicked())
+                {
+                    Util.OpenLink("https://discord.gg/Zzrcc8kmvy");
+                }
             }
-            if (ImGui.IsItemClicked())
-            {
-                Util.OpenLink("https://discord.gg/Zzrcc8kmvy");
-            }
+
             ImGuiEx.TextWrapped($"You can also raise issues on our");
             ImGui.SameLine(ImGui.GetCursorPosX(), 2f);
             ImGuiEx.TextUnderlined($"Github page.");
             if (ImGui.IsItemHovered())
             {
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-            if (ImGui.IsItemClicked())
-            {
-                Util.OpenLink("https://github.com/PunishXIV/Artisan");
+
+                if (ImGui.IsItemClicked())
+                {
+                    Util.OpenLink("https://github.com/PunishXIV/Artisan");
+                }
             }
 
         }
@@ -447,7 +449,6 @@ namespace Artisan.UI
             bool useSpecialist = Service.Configuration.UseSpecialist;
             //bool showEHQ = Service.Configuration.ShowEHQ;
             //bool useSimulated = Service.Configuration.UseSimulatedStartingQuality;
-            bool useMacroMode = Service.Configuration.UseMacroMode;
             bool disableGlow = Service.Configuration.DisableHighlightedAction;
             bool disableToasts = Service.Configuration.DisableToasts;
             bool disableMini = Service.Configuration.DisableMiniMenu;
@@ -475,29 +476,16 @@ namespace Artisan.UI
                         Service.Configuration.Save();
                     }
                 }
-
-                if (Service.Configuration.UserMacros.Count > 0)
-                {
-                    if (ImGui.Checkbox("Use Set Macros", ref useMacroMode))
-                    {
-                        Service.Configuration.UseMacroMode = useMacroMode;
-                        Service.Configuration.AutoMode = useMacroMode;
-                        Service.Configuration.Save();
-                    }
-
-                    ImGuiComponents.HelpMarker($"Use a macro to craft instead of Artisan making its own decisions.\r\n" +
-                        $"Set macros from the recipe window pop-up window.\r\n" +
-                        $"If the macro ends before a craft is complete, Artisan will make its own suggestions until the end of the craft.");
-
-                    if (ImGui.Checkbox($"Prevent Artisan from Continuing After Macro Finishes", ref Service.Configuration.DisableMacroArtisanRecommendation))
-                        Service.Configuration.Save();
-                }
-                else
-                {
-                    useMacroMode = false;
-                }
             }
 
+            if (ImGui.CollapsingHeader("Macro Settings"))
+            {
+                if (ImGui.Checkbox("Skip Macro Steps if Unable To Use Action", ref Service.Configuration.SkipMacroStepIfUnable))
+                    Service.Configuration.Save();
+
+                if (ImGui.Checkbox($"Prevent Artisan from Continuing After Macro Finishes", ref Service.Configuration.DisableMacroArtisanRecommendation))
+                    Service.Configuration.Save();
+            }
             if (ImGui.CollapsingHeader("Execution Settings"))
             {
                 if (ImGui.Checkbox("Delay Getting Recommendations", ref delayRec))
@@ -584,8 +572,6 @@ namespace Artisan.UI
                 if (ImGui.Checkbox("Disable Automatically Equipping Required Items for Crafts", ref Service.Configuration.DontEquipItems))
                     Service.Configuration.Save();
 
-                if (ImGui.Checkbox("Skip Macro Steps if Unable To Use Action", ref Service.Configuration.SkipMacroStepIfUnable))
-                    Service.Configuration.Save();
             }
 
             if (ImGui.CollapsingHeader("UI Settings"))

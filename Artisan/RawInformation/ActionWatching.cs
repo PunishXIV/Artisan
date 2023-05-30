@@ -1,12 +1,10 @@
-﻿using Artisan.CraftingLists;
-using Artisan.CraftingLogic;
+﻿using Artisan.CraftingLogic;
 using Artisan.RawInformation.Character;
 using Dalamud.Hooking;
 using Dalamud.Logging;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -14,7 +12,6 @@ using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Linq;
 using static Artisan.CraftingLogic.CurrentCraft;
-using static ECommons.GenericHelpers;
 
 namespace Artisan.RawInformation
 {
@@ -111,10 +108,7 @@ namespace Artisan.RawInformation
                             Artisan.Tasks.Clear();
                         }
                     }
-                    if (Service.Configuration.UseMacroMode || CraftingListUI.Processing)
-                    {
-                        MacroStep++;
-                    }
+                    MacroStep++;
                 }
                 return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
             }

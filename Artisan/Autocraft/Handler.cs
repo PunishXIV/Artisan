@@ -1,6 +1,8 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
+using Artisan.MacroSystem;
 using Artisan.RawInformation;
+using Artisan.UI;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
@@ -151,6 +153,7 @@ namespace Artisan.Autocraft
 
                         P.TM.Enqueue(() => CraftingListFunctions.RecipeWindowOpen(), "EnduranceCheckRecipeWindow");
                         P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredients");
+                        P.TM.Enqueue(() => UpdateMacroTimer(), "UpdateEnduranceMacroTimer");
                         P.TM.DelayNext("EnduranceThrottle", 100);
                         P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraftMethods.RepeatActualCraft(); }, "EnduranceStartCraft");
 
@@ -201,7 +204,7 @@ namespace Artisan.Autocraft
             {
                 if (ImGui.Checkbox("Enable Endurance Mode", ref enable))
                 {
-                    Enable = enable;
+                    Handler.ToggleEndurance(enable);
                 }
                 ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
 
@@ -423,7 +426,7 @@ namespace Artisan.Autocraft
                         uint jobTab = GetSelectedJobTab(addon);
                         var firstCrystal = GetCrystal(addon, 1);
                         var secondCrystal = GetCrystal(addon, 2);
-                        var str = MemoryHelper.ReadSeString(&text);
+                        var str = MemoryHelper.ReadSeString(&text).ExtractText();
                         var rName = "";
 
                         /*
@@ -448,15 +451,15 @@ namespace Artisan.Autocraft
                          * 
                          * */
 
-                        if (str.ExtractText().Length == 0) return;
+                        if (str.Length == 0) return;
 
-                        if (str.ExtractText()[^1] == '')
+                        if (str[^1] == '')
                         {
-                            rName += str.ExtractText().Remove(str.ExtractText().Length - 1, 1).Trim();
+                            rName += str.Remove(str.Length - 1, 1).Trim();
                         }
                         else
                         {
-                            rName += str.ExtractText().Trim();
+                            rName += str;
                         }
 
                         if (rName.Length == 0) return;
@@ -548,6 +551,33 @@ namespace Artisan.Autocraft
 
             return -1;
 
+        }
+
+        public static void ToggleEndurance(bool enable)
+        {
+            Enable = enable;
+
+            try
+            {
+                if (enable)
+                {
+                    UpdateMacroTimer();
+                }
+            }
+            catch(Exception ex)
+            {
+                ex.Log();
+            }
+        }
+
+        private static void UpdateMacroTimer()
+        {
+            if (Service.Configuration.CraftingX && Service.Configuration.CraftX > 0 && Service.Configuration.IRM.ContainsKey((uint)RecipeID))
+            {
+                var macro = Service.Configuration.UserMacros.FirstOrDefault(x => x.ID == Service.Configuration.IRM[(uint)RecipeID]);
+                Double timeInSeconds = ((MacroUI.GetMacroLength(macro) * Service.Configuration.CraftX) + (Service.Configuration.CraftX * 2.5)); // Counting crafting duration + 2 seconds between crafts.
+                CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
+            }
         }
     }
 }

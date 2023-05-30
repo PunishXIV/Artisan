@@ -66,6 +66,7 @@ namespace Artisan.CraftingLogic
         public static int QuickSynthCurrent { get => quickSynthCurrent; set { if (value != 0 && quickSynthCurrent != value) { CraftingListFunctions.CurrentIndex++; } quickSynthCurrent = value; } }
         public static int QuickSynthMax { get => quickSynthMax; set => quickSynthMax = value; }
         public static int MacroStep { get; set; } = 0;
+        public static bool DoingTrial { get; set; } = false;
         public static CraftingState State
         {
             get { return state; }
@@ -162,7 +163,7 @@ namespace Artisan.CraftingLogic
                 var collectHigh = *craft.CollectabilityHigh;
                 var item = *craft.ItemName;
 
-
+                DoingTrial = craft.AtkUnitBase.UldManager.NodeList[99]->IsVisible;
                 CharacterInfo.IsCrafting = true;
                 CurrentDurability = Convert.ToInt32(cd.NodeText.ToString());
                 MaxDurability = Convert.ToInt32(md.NodeText.ToString());

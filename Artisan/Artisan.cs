@@ -223,6 +223,9 @@ public unsafe class Artisan : IDalamudPlugin
 
     private void FireBot(Framework framework)
     {
+        if (CraftingWindow.MacroTime.Ticks > 0)
+        CraftingWindow.MacroTime -= framework.UpdateDelta;
+
         if (!Service.ClientState.IsLoggedIn)
         {
             Handler.Enable = false;
@@ -261,6 +264,7 @@ public unsafe class Artisan : IDalamudPlugin
         {
             currentCraftFinished = true;
 
+        
             if (CraftingListUI.Processing && !CraftingListFunctions.Paused)
             {
                 Dalamud.Logging.PluginLog.Verbose("Advancing Crafting List");
@@ -279,27 +283,12 @@ public unsafe class Artisan : IDalamudPlugin
 
                 }
             }
-
-#if DEBUG
-            if (cw.repeatTrial && Service.Configuration.CraftingX && Service.Configuration.CraftX > 0)
-            {
-                Service.Configuration.CraftX -= 1;
-                if (Service.Configuration.CraftX == 0)
-                {
-                    Service.Configuration.CraftingX = false;
-                    cw.repeatTrial = false;
-                }
-            }
-#endif
         }
 
-
-#if DEBUG
-        if (cw.repeatTrial)
+        if (cw.repeatTrial && !Handler.Enable)
         {
             CurrentCraftMethods.RepeatTrialCraft();
         }
-#endif
 
     }
 
@@ -310,16 +299,7 @@ public unsafe class Artisan : IDalamudPlugin
 
         try
         {
-            if (Service.Configuration.UseMacroMode && !Service.Configuration.IRM.ContainsKey(CurrentRecipe.RowId))
-            {
-                if (!macroWarning)
-                    DuoLog.Error("You do not have a macro set for this recipe and you have macro mode enabled. Artisan will not continue.");
-
-                P.CTM.Abort();
-                return;
-            }
-
-            if (Service.Configuration.UseMacroMode && Service.Configuration.UserMacros.Count > 0)
+            if (Service.Configuration.UserMacros.Count > 0)
             {
                 if (Service.Configuration.IRM.TryGetValue(CurrentRecipe.RowId, out var id))
                 {
@@ -374,9 +354,13 @@ public unsafe class Artisan : IDalamudPlugin
                     }
                     else
                     {
-                        if (!Service.Configuration.DisableMacroArtisanRecommendation)
+                        if (!Service.Configuration.DisableMacroArtisanRecommendation || CraftingListUI.Processing)
                             CurrentRecommendation = CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation();
                     }
+                }
+                else
+                {
+                    CurrentRecommendation = CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation();
                 }
             }
             else

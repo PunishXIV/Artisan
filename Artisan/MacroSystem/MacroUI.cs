@@ -7,7 +7,6 @@ using ECommons.ImGuiMethods;
 using ECommons.Logging;
 using ImGuiNET;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -63,315 +62,316 @@ namespace Artisan.MacroSystem
             if (Service.Configuration.UserMacros.Count > 0)
             {
                 ImGui.BeginGroup();
-                float longestName = 0;
-                foreach (var macro in Service.Configuration.UserMacros)
                 {
-                    if (ImGui.CalcTextSize($"{macro.Name} (CP Cost: {GetCPCost(macro)})").Length() > longestName)
-                        longestName = ImGui.CalcTextSize($"{macro.Name} (CP Cost: {GetCPCost(macro)})").Length();
-
-                    if (macro.MacroStepOptions.Count == 0 && macro.MacroActions.Count > 0)
+                    float longestName = 0;
+                    foreach (var macro in Service.Configuration.UserMacros)
                     {
-                        for (int i = 0; i < macro.MacroActions.Count; i++)
-                        {
-                            macro.MacroStepOptions.Add(new());
-                        }
-                    }
-                }
+                        if (ImGui.CalcTextSize($"{macro.Name} (CP Cost: {GetCPCost(macro)})").Length() > longestName)
+                            longestName = ImGui.CalcTextSize($"{macro.Name} (CP Cost: {GetCPCost(macro)})").Length();
 
-                longestName = Math.Max(150, longestName);
-                if (!Minimized)
-                {
-                    if (ImGui.BeginChild("##selector", new Vector2(longestName + 40, 0), true))
-                    {
-                        if (ImGuiEx.IconButton(FontAwesomeIcon.ArrowLeft, "MinimizeButton", new Vector2(longestName + 20, 0)))
+                        if (macro.MacroStepOptions.Count == 0 && macro.MacroActions.Count > 0)
                         {
-                            Minimized = true;
-                        }
-                        ImGui.Separator();
-
-                        foreach (Macro m in Service.Configuration.UserMacros)
-                        {
-                            uint cpCost = GetCPCost(m);
-                            var selected = ImGui.Selectable($"{m.Name} (CP Cost: {cpCost})###{m.ID}", m.ID == selectedMacro.ID);
-
-                            if (selected)
+                            for (int i = 0; i < macro.MacroActions.Count; i++)
                             {
-                                selectedMacro = m;
-                                _rawMacro = string.Join("\r\n", m.MacroActions.Select(x => $"{x.NameOfAction()}"));
+                                macro.MacroStepOptions.Add(new());
                             }
                         }
-                        
-                    }
-                    ImGui.EndChild();
-                }
-
-                if (selectedMacro.ID != 0)
-                {
-                    if (selectedMacro.MacroStepOptions.Count == 0 && selectedMacro.MacroActions.Count > 0)
-                    {
-                        for (int i = 0; i < selectedMacro.MacroActions.Count; i++)
-                        {
-                            selectedMacro.MacroStepOptions.Add(new());
-                        }
                     }
 
+                    longestName = Math.Max(150, longestName);
                     if (!Minimized)
-                    ImGui.SameLine();
-                    ImGui.BeginChild("###selectedMacro", new Vector2(0, 0), false);
-                    if (!renameMode)
                     {
-                        ImGui.Text($"Selected Macro: {selectedMacro.Name}");
-                        ImGui.SameLine();
-                        if (ImGuiComponents.IconButton(FontAwesomeIcon.Pen))
+                        if (ImGui.BeginChild("##selector", new Vector2(longestName + 40, 0), true))
                         {
-                            renameMode = true;
-                        }
-                    }
-                    else
-                    {
-                        renameMacro = selectedMacro.Name!;
-                        if (ImGui.InputText("", ref renameMacro, 64, ImGuiInputTextFlags.EnterReturnsTrue))
-                        {
-                            selectedMacro.Name = renameMacro;
-                            Service.Configuration.Save();
-
-                            renameMode = false;
-                            renameMacro = String.Empty;
-                        }
-                    }
-                    if (ImGui.Button("Delete Macro (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
-                    {
-                        Service.Configuration.UserMacros.Remove(selectedMacro);
-                        Service.Configuration.Save();
-                        selectedMacro = new();
-                        selectedActionIndex = -1;
-
-                        CleanUpIndividualMacros();
-                    }
-                    ImGui.SameLine();
-                    if (ImGui.Button("Raw Editor"))
-                    {
-                        Raweditor = !Raweditor;
-                    }
-
-                    ImGui.Spacing();
-                    bool skipQuality = selectedMacro.MacroOptions.SkipQualityIfMet;
-                    if (ImGui.Checkbox("Skip quality actions if at 100%", ref skipQuality))
-                    {
-                        selectedMacro.MacroOptions.SkipQualityIfMet = skipQuality;
-                        Service.Configuration.Save();
-                    }
-                    ImGuiComponents.HelpMarker("Once you're at 100% quality, the macro will skip over all actions relating to quality, including buffs.");
-                    bool upgradeQualityActions = selectedMacro.MacroOptions.UpgradeQualityActions;
-                    if (ImGui.Checkbox("Upgrade Quality Actions", ref upgradeQualityActions))
-                    {
-                        selectedMacro.MacroOptions.UpgradeQualityActions = upgradeQualityActions;
-                        Service.Configuration.Save();
-                    }
-                    ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases quality (not including Byregot's Blessing) then it will upgrade the action to Precise Touch.");
-                    ImGui.SameLine();
-
-                    bool upgradeProgressActions = selectedMacro.MacroOptions.UpgradeProgressActions;
-                    if (ImGui.Checkbox("Upgrade Progress Actions", ref upgradeProgressActions))
-                    {
-                        selectedMacro.MacroOptions.UpgradeProgressActions = upgradeProgressActions;
-                        Service.Configuration.Save();
-                    }
-                    ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases progress then it will upgrade the action to Intensive Synthesis.");
-
-                    bool skipObserves = selectedMacro.MacroOptions.SkipObservesIfNotPoor;
-                    if (ImGui.Checkbox("Skip Observes If Not Poor", ref skipObserves))
-                    {
-                        selectedMacro.MacroOptions.SkipObservesIfNotPoor = skipObserves;
-                        Service.Configuration.Save();
-                    }
-
-                    if (!Raweditor)
-                    {
-                        ImGui.Columns(2, "actionColumns", false);
-                        if (ImGui.Button("Insert New Action"))
-                        {
-                            if (selectedMacro.MacroActions.Count == 0)
+                            if (ImGuiEx.IconButton(FontAwesomeIcon.ArrowLeft, "MinimizeButton", new Vector2(longestName + 20, 0)))
                             {
-                                selectedMacro.MacroActions.Add(Skills.BasicSynth);
+                                Minimized = true;
+                            }
+                            ImGui.Separator();
+
+                            foreach (Macro m in Service.Configuration.UserMacros)
+                            {
+                                uint cpCost = GetCPCost(m);
+                                var selected = ImGui.Selectable($"{m.Name} (CP Cost: {cpCost})###{m.ID}", m.ID == selectedMacro.ID);
+
+                                if (selected)
+                                {
+                                    selectedMacro = m;
+                                    _rawMacro = string.Join("\r\n", m.MacroActions.Select(x => $"{x.NameOfAction()}"));
+                                }
+                            }
+
+                        }
+                        ImGui.EndChild();
+                    }
+
+                    if (selectedMacro.ID != 0)
+                    {
+                        if (selectedMacro.MacroStepOptions.Count == 0 && selectedMacro.MacroActions.Count > 0)
+                        {
+                            for (int i = 0; i < selectedMacro.MacroActions.Count; i++)
+                            {
                                 selectedMacro.MacroStepOptions.Add(new());
                             }
-                            else
-                            {
-                                selectedMacro.MacroActions.Insert(selectedActionIndex + 1, Skills.BasicSynth);
-                                selectedMacro.MacroStepOptions.Insert(selectedActionIndex + 1, new());
-                            }
+                        }
 
+                        if (!Minimized)
+                            ImGui.SameLine();
+                        ImGui.BeginChild("###selectedMacro", new Vector2(0, 0), false);
+                        if (!renameMode)
+                        {
+                            ImGui.Text($"Selected Macro: {selectedMacro.Name}");
+                            ImGui.SameLine();
+                            if (ImGuiComponents.IconButton(FontAwesomeIcon.Pen))
+                            {
+                                renameMode = true;
+                            }
+                        }
+                        else
+                        {
+                            renameMacro = selectedMacro.Name!;
+                            if (ImGui.InputText("", ref renameMacro, 64, ImGuiInputTextFlags.EnterReturnsTrue))
+                            {
+                                selectedMacro.Name = renameMacro;
+                                Service.Configuration.Save();
+
+                                renameMode = false;
+                                renameMacro = String.Empty;
+                            }
+                        }
+                        if (ImGui.Button("Delete Macro (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
+                        {
+                            Service.Configuration.UserMacros.Remove(selectedMacro);
+                            Service.Configuration.Save();
+                            selectedMacro = new();
+                            selectedActionIndex = -1;
+
+                            CleanUpIndividualMacros();
+                        }
+                        ImGui.SameLine();
+                        if (ImGui.Button("Raw Editor"))
+                        {
+                            Raweditor = !Raweditor;
+                        }
+
+                        ImGui.Spacing();
+                        bool skipQuality = selectedMacro.MacroOptions.SkipQualityIfMet;
+                        if (ImGui.Checkbox("Skip quality actions if at 100%", ref skipQuality))
+                        {
+                            selectedMacro.MacroOptions.SkipQualityIfMet = skipQuality;
                             Service.Configuration.Save();
                         }
-                        ImGui.TextWrapped("Macro Actions");
-                        ImGui.Indent();
-                        for (int i = 0; i < selectedMacro.MacroActions.Count(); i++)
+                        ImGuiComponents.HelpMarker("Once you're at 100% quality, the macro will skip over all actions relating to quality, including buffs.");
+                        bool upgradeQualityActions = selectedMacro.MacroOptions.UpgradeQualityActions;
+                        if (ImGui.Checkbox("Upgrade Quality Actions", ref upgradeQualityActions))
                         {
-                            var selectedAction = ImGui.Selectable($"{i + 1}. {(selectedMacro.MacroActions[i] == 0 ? $"Artisan Recommendation###selectedAction{i}" : GetActionName(selectedMacro.MacroActions[i]))}###selectedAction{i}", i == selectedActionIndex);
-
-                            if (selectedAction)
-                                selectedActionIndex = i;
+                            selectedMacro.MacroOptions.UpgradeQualityActions = upgradeQualityActions;
+                            Service.Configuration.Save();
                         }
-                        ImGui.Unindent();
-                        if (selectedActionIndex != -1)
+                        ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases quality (not including Byregot's Blessing) then it will upgrade the action to Precise Touch.");
+                        ImGui.SameLine();
+
+                        bool upgradeProgressActions = selectedMacro.MacroOptions.UpgradeProgressActions;
+                        if (ImGui.Checkbox("Upgrade Progress Actions", ref upgradeProgressActions))
                         {
-                            if (selectedActionIndex >= selectedMacro.MacroActions.Count)
-                                return;
+                            selectedMacro.MacroOptions.UpgradeProgressActions = upgradeProgressActions;
+                            Service.Configuration.Save();
+                        }
+                        ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases progress then it will upgrade the action to Intensive Synthesis.");
 
-                            ImGui.NextColumn();
-                            ImGui.Text($"Selected Action: {(selectedMacro.MacroActions[selectedActionIndex] == 0 ? "Artisan Recommendation" : GetActionName(selectedMacro.MacroActions[selectedActionIndex]))}");
-                            if (selectedActionIndex > 0)
+                        bool skipObserves = selectedMacro.MacroOptions.SkipObservesIfNotPoor;
+                        if (ImGui.Checkbox("Skip Observes If Not Poor", ref skipObserves))
+                        {
+                            selectedMacro.MacroOptions.SkipObservesIfNotPoor = skipObserves;
+                            Service.Configuration.Save();
+                        }
+
+                        if (!Raweditor)
+                        {
+                            ImGui.Columns(2, "actionColumns", false);
+                            if (ImGui.Button("Insert New Action"))
                             {
-                                ImGui.SameLine();
-                                if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowLeft))
+                                if (selectedMacro.MacroActions.Count == 0)
                                 {
-                                    selectedActionIndex--;
+                                    selectedMacro.MacroActions.Add(Skills.BasicSynth);
+                                    selectedMacro.MacroStepOptions.Add(new());
                                 }
-                            }
-
-                            if (selectedActionIndex < selectedMacro.MacroActions.Count - 1)
-                            {
-                                ImGui.SameLine();
-                                if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowRight))
+                                else
                                 {
-                                    selectedActionIndex++;
+                                    selectedMacro.MacroActions.Insert(selectedActionIndex + 1, Skills.BasicSynth);
+                                    selectedMacro.MacroStepOptions.Insert(selectedActionIndex + 1, new());
                                 }
-                            }
 
-                            bool skip = selectedMacro.MacroStepOptions[selectedActionIndex].ExcludeFromUpgrade;
-                            if (ImGui.Checkbox($"Skip Upgrades For This Action", ref skip))
-                            {
-                                selectedMacro.MacroStepOptions[selectedActionIndex].ExcludeFromUpgrade = skip;
                                 Service.Configuration.Save();
                             }
-
-                            if (ImGui.Button("Delete Action (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
+                            ImGui.TextWrapped("Macro Actions");
+                            ImGui.Indent();
+                            for (int i = 0; i < selectedMacro.MacroActions.Count(); i++)
                             {
-                                selectedMacro.MacroActions.RemoveAt(selectedActionIndex);
-                                selectedMacro.MacroStepOptions.RemoveAt(selectedActionIndex);
+                                var selectedAction = ImGui.Selectable($"{i + 1}. {(selectedMacro.MacroActions[i] == 0 ? $"Artisan Recommendation###selectedAction{i}" : GetActionName(selectedMacro.MacroActions[i]))}###selectedAction{i}", i == selectedActionIndex);
 
-                                Service.Configuration.Save();
-
-                                if (selectedActionIndex == selectedMacro.MacroActions.Count)
-                                    selectedActionIndex--;
+                                if (selectedAction)
+                                    selectedActionIndex = i;
                             }
-
-                            if (ImGui.BeginCombo("###ReplaceAction", "Replace Action"))
+                            ImGui.Unindent();
+                            if (selectedActionIndex != -1)
                             {
-                                if (ImGui.Selectable($"Artisan Recommendation"))
-                                {
-                                    selectedMacro.MacroActions[selectedActionIndex] = 0;
+                                if (selectedActionIndex >= selectedMacro.MacroActions.Count)
+                                    return;
 
+                                ImGui.NextColumn();
+                                ImGui.Text($"Selected Action: {(selectedMacro.MacroActions[selectedActionIndex] == 0 ? "Artisan Recommendation" : GetActionName(selectedMacro.MacroActions[selectedActionIndex]))}");
+                                if (selectedActionIndex > 0)
+                                {
+                                    ImGui.SameLine();
+                                    if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowLeft))
+                                    {
+                                        selectedActionIndex--;
+                                    }
+                                }
+
+                                if (selectedActionIndex < selectedMacro.MacroActions.Count - 1)
+                                {
+                                    ImGui.SameLine();
+                                    if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowRight))
+                                    {
+                                        selectedActionIndex++;
+                                    }
+                                }
+
+                                bool skip = selectedMacro.MacroStepOptions[selectedActionIndex].ExcludeFromUpgrade;
+                                if (ImGui.Checkbox($"Skip Upgrades For This Action", ref skip))
+                                {
+                                    selectedMacro.MacroStepOptions[selectedActionIndex].ExcludeFromUpgrade = skip;
                                     Service.Configuration.Save();
                                 }
 
-                                foreach (var constant in typeof(Skills).GetFields().OrderBy(x => GetActionName((uint)x.GetValue(null)!)))
+                                if (ImGui.Button("Delete Action (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                                 {
-                                    if (ImGui.Selectable($"{GetActionName((uint)constant.GetValue(null)!)}"))
+                                    selectedMacro.MacroActions.RemoveAt(selectedActionIndex);
+                                    selectedMacro.MacroStepOptions.RemoveAt(selectedActionIndex);
+
+                                    Service.Configuration.Save();
+
+                                    if (selectedActionIndex == selectedMacro.MacroActions.Count)
+                                        selectedActionIndex--;
+                                }
+
+                                if (ImGui.BeginCombo("###ReplaceAction", "Replace Action"))
+                                {
+                                    if (ImGui.Selectable($"Artisan Recommendation"))
                                     {
-                                        selectedMacro.MacroActions[selectedActionIndex] = (uint)constant.GetValue(null)!;
+                                        selectedMacro.MacroActions[selectedActionIndex] = 0;
+
+                                        Service.Configuration.Save();
+                                    }
+
+                                    foreach (var constant in typeof(Skills).GetFields().OrderBy(x => GetActionName((uint)x.GetValue(null)!)))
+                                    {
+                                        if (ImGui.Selectable($"{GetActionName((uint)constant.GetValue(null)!)}"))
+                                        {
+                                            selectedMacro.MacroActions[selectedActionIndex] = (uint)constant.GetValue(null)!;
+
+                                            Service.Configuration.Save();
+                                        }
+                                    }
+
+                                    ImGui.EndCombo();
+                                }
+
+                                ImGui.Text("Re-order Action");
+                                if (selectedActionIndex > 0)
+                                {
+                                    ImGui.SameLine();
+                                    if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowUp))
+                                    {
+                                        selectedMacro.MacroActions.Reverse(selectedActionIndex - 1, 2);
+                                        selectedMacro.MacroStepOptions.Reverse(selectedActionIndex - 1, 2);
+                                        selectedActionIndex--;
 
                                         Service.Configuration.Save();
                                     }
                                 }
 
-                                ImGui.EndCombo();
-                            }
-
-                            ImGui.Text("Re-order Action");
-                            if (selectedActionIndex > 0)
-                            {
-                                ImGui.SameLine();
-                                if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowUp))
+                                if (selectedActionIndex < selectedMacro.MacroActions.Count - 1)
                                 {
-                                    selectedMacro.MacroActions.Reverse(selectedActionIndex - 1, 2);
-                                    selectedMacro.MacroStepOptions.Reverse(selectedActionIndex - 1, 2);
-                                    selectedActionIndex--;
-
-                                    Service.Configuration.Save();
-                                }
-                            }
-
-                            if (selectedActionIndex < selectedMacro.MacroActions.Count - 1)
-                            {
-                                ImGui.SameLine();
-                                if (selectedActionIndex == 0)
-                                {
-                                    ImGui.Dummy(new Vector2(22));
                                     ImGui.SameLine();
+                                    if (selectedActionIndex == 0)
+                                    {
+                                        ImGui.Dummy(new Vector2(22));
+                                        ImGui.SameLine();
+                                    }
+
+                                    if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowDown))
+                                    {
+                                        selectedMacro.MacroActions.Reverse(selectedActionIndex, 2);
+                                        selectedMacro.MacroStepOptions.Reverse(selectedActionIndex, 2);
+                                        selectedActionIndex++;
+
+                                        Service.Configuration.Save();
+                                    }
                                 }
 
-                                if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowDown))
+                            }
+                            ImGui.Columns(1);
+                        }
+                        else
+                        {
+                            ImGui.Text($"Macro Actions (line per action)");
+                            ImGuiComponents.HelpMarker("You can either copy/paste macros directly as you would a normal game macro, or list each action on its own per line.\nFor example:\n/ac Muscle Memory\n\nis the same as\n\nMuscle Memory\n\nYou can also use * (asterisk) or 'Artisan Recommendation' to insert Artisan's recommendation as a step.");
+                            ImGui.InputTextMultiline("###MacroEditor", ref _rawMacro, 10000000, new Vector2(ImGui.GetContentRegionAvail().X - 30f, ImGui.GetContentRegionAvail().Y - 30f));
+                            if (ImGui.Button("Save"))
+                            {
+                                ParseMacro(_rawMacro, out Macro updated);
+                                if (updated.ID != 0 && !selectedMacro.MacroActions.SequenceEqual(updated.MacroActions))
                                 {
-                                    selectedMacro.MacroActions.Reverse(selectedActionIndex, 2);
-                                    selectedMacro.MacroStepOptions.Reverse(selectedActionIndex, 2);
-                                    selectedActionIndex++;
-
+                                    selectedMacro.MacroActions = updated.MacroActions;
+                                    selectedMacro.MacroStepOptions = updated.MacroStepOptions;
                                     Service.Configuration.Save();
+
+                                    DuoLog.Information($"Macro Updated");
                                 }
                             }
+                            ImGui.SameLine();
+                            if (ImGui.Button("Save and Close"))
+                            {
+                                ParseMacro(_rawMacro, out Macro updated);
+                                if (updated.ID != 0 && !selectedMacro.MacroActions.SequenceEqual(updated.MacroActions))
+                                {
+                                    selectedMacro.MacroActions = updated.MacroActions;
+                                    selectedMacro.MacroStepOptions = updated.MacroStepOptions;
+                                    Service.Configuration.Save();
 
+                                    DuoLog.Information($"Macro Updated");
+                                }
+
+                                Raweditor = !Raweditor;
+                            }
+                            ImGui.SameLine();
+                            if (ImGui.Button("Close"))
+                            {
+                                Raweditor = !Raweditor;
+                            }
                         }
-                        ImGui.Columns(1);
+                        ImGuiEx.ImGuiLineCentered("MTimeHead", delegate
+                        {
+                            ImGuiEx.TextUnderlined($"Estimated Macro Length");
+                        });
+                        ImGuiEx.ImGuiLineCentered("MTimeArtisan", delegate
+                        {
+                            ImGuiEx.Text($"Artisan: {GetMacroLength(selectedMacro)} seconds");
+                        });
+                        ImGuiEx.ImGuiLineCentered("MTimeTeamcraft", delegate
+                        {
+                            ImGuiEx.Text($"Normal Macro: {GetTeamcraftMacroLength(selectedMacro)} seconds");
+                        });
+                        ImGui.EndChild();
                     }
                     else
                     {
-                        ImGui.Text($"Macro Actions (line per action)");
-                        ImGuiComponents.HelpMarker("You can either copy/paste macros directly as you would a normal game macro, or list each action on its own per line.\nFor example:\n/ac Muscle Memory\n\nis the same as\n\nMuscle Memory\n\nYou can also use * (asterisk) or 'Artisan Recommendation' to insert Artisan's recommendation as a step.");
-                        ImGui.InputTextMultiline("###MacroEditor", ref _rawMacro, 10000000, new Vector2(ImGui.GetContentRegionAvail().X - 30f, ImGui.GetContentRegionAvail().Y - 30f));
-                        if (ImGui.Button("Save"))
-                        {
-                            ParseMacro(_rawMacro, out Macro updated);
-                            if (updated.ID != 0 && !selectedMacro.MacroActions.SequenceEqual(updated.MacroActions))
-                            {
-                                selectedMacro.MacroActions = updated.MacroActions;
-                                selectedMacro.MacroStepOptions = updated.MacroStepOptions;
-                                Service.Configuration.Save();
-
-                                DuoLog.Information($"Macro Updated");
-                            }
-                        }
-                        ImGui.SameLine();
-                        if (ImGui.Button("Save and Close"))
-                        {
-                            ParseMacro(_rawMacro, out Macro updated);
-                            if (updated.ID != 0 && !selectedMacro.MacroActions.SequenceEqual(updated.MacroActions))
-                            {
-                                selectedMacro.MacroActions = updated.MacroActions;
-                                selectedMacro.MacroStepOptions = updated.MacroStepOptions;
-                                Service.Configuration.Save();
-
-                                DuoLog.Information($"Macro Updated");
-                            }
-
-                            Raweditor = !Raweditor;
-                        }
-                        ImGui.SameLine();
-                        if (ImGui.Button("Close"))
-                        {
-                            Raweditor = !Raweditor;
-                        }
+                        selectedActionIndex = -1;
                     }
-                    ImGuiEx.ImGuiLineCentered("MTimeHead", delegate
-                    {
-                        ImGuiEx.TextUnderlined($"Estimated Macro Length");
-                    });
-                    ImGuiEx.ImGuiLineCentered("MTimeArtisan", delegate
-                    {
-                        ImGuiEx.Text($"Artisan: {GetMacroLength(selectedMacro)} seconds");
-                    });
-                    ImGuiEx.ImGuiLineCentered("MTimeTeamcraft", delegate
-                    {
-                        ImGuiEx.Text($"Normal Macro: {GetTeamcraftMacroLength(selectedMacro)} seconds");
-                    });
-                    ImGui.EndChild();
                 }
-                else
-                {
-                    selectedActionIndex = -1;
-                }
-
                 ImGui.EndGroup();
             }
             else
@@ -415,8 +415,12 @@ namespace Artisan.MacroSystem
             var delay = (double)Service.Configuration.AutoDelay + (Service.Configuration.DelayRecommendation ? Service.Configuration.RecommendationDelay : 0);
             var delaySeconds = delay / 1000;
 
+            PluginLog.Debug($"{delaySeconds}");
+
             foreach (var act in m.MacroActions)
             {
+                PluginLog.Debug($"{output}");
+
                 if (ActionIsLengthyAnimation(act))
                 {
                     output += 2.5 + delaySeconds;
@@ -427,6 +431,7 @@ namespace Artisan.MacroSystem
                 }
             }
 
+            PluginLog.Debug($"{output}");
             return Math.Round(output, 2);
 
         }
@@ -475,7 +480,7 @@ namespace Artisan.MacroSystem
                 case Skills.ByregotsBlessing:
                 case Skills.MastersMend:
                     return true;
-                    default:
+                default:
                     return false;
             };
         }
@@ -552,7 +557,7 @@ namespace Artisan.MacroSystem
         {
             macro = new();
             macro.Name = _newMacroName;
-            if (string.IsNullOrWhiteSpace(text)) 
+            if (string.IsNullOrWhiteSpace(text))
             {
                 macro.ID = 1;
                 return;

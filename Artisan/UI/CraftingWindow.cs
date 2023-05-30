@@ -3,23 +3,24 @@ using Artisan.CraftingLists;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan.UI
 {
     internal class CraftingWindow : Window
     {
-#if DEBUG
         public bool repeatTrial = false;
-#endif
 
         public CraftingWindow() : base("Artisan Crafting Window###MainCraftWindow", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.AlwaysAutoResize)
         {
@@ -53,6 +54,7 @@ namespace Artisan.UI
             }
         }
 
+        public static TimeSpan MacroTime = new();
         public override void Draw()
         {
             if (!Service.Configuration.DisableHighlightedAction)
@@ -91,30 +93,44 @@ namespace Artisan.UI
                 bool enable = Handler.Enable;
                 if (ImGui.Checkbox("Endurance Mode Toggle", ref enable))
                 {
-                    Handler.Enable = enable;
+                    Handler.ToggleEndurance(enable);
                 }
             }
 
-            if (Service.Configuration.CraftingX && Handler.Enable)
+            if (!Handler.Enable && DoingTrial)
+                ImGui.Checkbox("Trial Craft Repeat", ref repeatTrial);
+
+            if (Service.Configuration.IRM.ContainsKey((uint)Handler.RecipeID))
             {
+                var macro = Service.Configuration.UserMacros.FirstOrDefault(x => x.ID == Service.Configuration.IRM[(uint)Handler.RecipeID]);
+                ImGui.TextWrapped($"Using Macro: {macro.Name} ({(MacroStep == macro.MacroActions.Count() ? MacroStep : MacroStep + 1)}/{macro.MacroActions.Count()})");
+            }
+            else
+            {
+                ImGui.TextColored(ImGuiColors.DalamudYellow, "No macro set");
+            }
+
+            if (Service.Configuration.AutoMode)
+            {
+                if (Service.Configuration.CraftingX)
                 ImGui.Text($"Remaining Crafts: {Service.Configuration.CraftX}");
+
                 if (Service.Configuration.IRM.TryGetValue((uint)Handler.RecipeID, out var prevMacro))
                 {
                     Macro? macro = Service.Configuration.UserMacros.First(x => x.ID == prevMacro);
                     if (macro != null)
                     {
-                        Double timeInSeconds = ((MacroUI.GetMacroLength(macro) * Service.Configuration.CraftX) + (Service.Configuration.CraftX * 2)); // Counting crafting duration + 2 seconds between crafts.
-                        TimeSpan t = TimeSpan.FromSeconds(timeInSeconds);
-                        string duration = string.Format("{0:D2}h {1:D2}m {2:D2}s", t.Hours, t.Minutes, t.Seconds);
+                        if (MacroTime.Ticks <= 0)
+                        {
+                            Double timeInSeconds = MacroUI.GetMacroLength(macro) + 2.5; // Counting crafting duration + 2 seconds between crafts.
+                            CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
+                        }
+                        string duration = string.Format("{0:D2}h {1:D2}m {2:D2}s", MacroTime.Hours, MacroTime.Minutes, MacroTime.Seconds);
 
                         ImGui.Text($"Approximate Remaining Duration: {duration}");
                     }
                 }
             }
-
-#if DEBUG
-            ImGui.Checkbox("Trial Craft Repeat", ref repeatTrial);
-#endif
 
             if (!Service.Configuration.AutoMode)
             {
