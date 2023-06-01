@@ -689,7 +689,7 @@ namespace Artisan.CraftingLists
                                             color.W -= 0.3f;
                                             ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                                         }
-                                        else if (retainerCount >= count)
+                                        else if (retainerCount + invCount >= count)
                                         {
                                             var color = ImGuiColors.DalamudOrange;
                                             color.W -= 0.6f;
@@ -807,7 +807,7 @@ namespace Artisan.CraftingLists
                                             color.W -= 0.3f;
                                             ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                                         }
-                                        else if (retainerCount >= count)
+                                        else if (retainerCount + invCount >= count)
                                         {
                                             var color = ImGuiColors.DalamudOrange;
                                             color.W -= 0.6f;

@@ -55,5 +55,20 @@ namespace Artisan.MacroSystem
             Service.Configuration.Save();
             return true;
         }
+
+        public static bool GetMacro(uint recipeID, out Macro macro)
+        {
+            macro = null;
+            if (P.config.IRM.ContainsKey(recipeID))
+            {
+                if (P.config.UserMacros.Any(x => x.ID == P.config.IRM[recipeID]))
+                {
+                    macro = P.config.UserMacros.First(x => x.ID == P.config.IRM[recipeID]);
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

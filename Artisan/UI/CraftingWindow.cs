@@ -1,5 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.CraftingLogic;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Interface;
@@ -88,12 +89,12 @@ namespace Artisan.UI
             }
 
 
-            if (Handler.RecipeID != 0 && !CraftingListUI.Processing)
+            if (Handler.RecipeID != 0 && !CraftingListUI.Processing && Handler.Enable)
             {
                 bool enable = Handler.Enable;
-                if (ImGui.Checkbox("Endurance Mode Toggle", ref enable))
+                if (ImGui.Checkbox("Disable Endurance", ref enable))
                 {
-                    Handler.ToggleEndurance(enable);
+                    Handler.Enable = false;
                 }
             }
 
@@ -103,7 +104,12 @@ namespace Artisan.UI
             if (Service.Configuration.IRM.ContainsKey((uint)Handler.RecipeID))
             {
                 var macro = Service.Configuration.UserMacros.FirstOrDefault(x => x.ID == Service.Configuration.IRM[(uint)Handler.RecipeID]);
-                ImGui.TextWrapped($"Using Macro: {macro.Name} ({(MacroStep == macro.MacroActions.Count() ? MacroStep : MacroStep + 1)}/{macro.MacroActions.Count()})");
+                ImGui.TextWrapped($"Using Macro: {macro.Name} ({(MacroStep >= macro.MacroActions.Count() ? macro.MacroActions.Count() : MacroStep + 1)}/{macro.MacroActions.Count()})");
+
+                if (MacroStep >= macro.MacroActions.Count())
+                {
+                    ImGui.TextWrapped($"Macro has completed. {(!P.config.DisableMacroArtisanRecommendation ? "Now continuing with solver." : "Please continue to manually craft.")}");
+                }
             }
             else
             {
@@ -120,11 +126,7 @@ namespace Artisan.UI
                     Macro? macro = Service.Configuration.UserMacros.First(x => x.ID == prevMacro);
                     if (macro != null)
                     {
-                        if (MacroTime.Ticks <= 0)
-                        {
-                            Double timeInSeconds = MacroUI.GetMacroLength(macro) + 2.5; // Counting crafting duration + 2 seconds between crafts.
-                            CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
-                        }
+
                         string duration = string.Format("{0:D2}h {1:D2}m {2:D2}s", MacroTime.Hours, MacroTime.Minutes, MacroTime.Seconds);
 
                         ImGui.Text($"Approximate Remaining Duration: {duration}");

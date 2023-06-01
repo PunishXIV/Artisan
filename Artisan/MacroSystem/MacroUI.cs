@@ -454,7 +454,7 @@ namespace Artisan.MacroSystem
             return output;
 
         }
-        private static bool ActionIsLengthyAnimation(uint id)
+        public static bool ActionIsLengthyAnimation(uint id)
         {
             switch (id)
             {

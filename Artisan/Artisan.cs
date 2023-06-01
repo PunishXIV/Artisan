@@ -3,6 +3,7 @@ using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.CustomDeliveries;
 using Artisan.IPC;
+using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
@@ -20,6 +21,7 @@ using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.Logging;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 using PunishLib;
 using System;
@@ -301,10 +303,8 @@ public unsafe class Artisan : IDalamudPlugin
         {
             if (Service.Configuration.UserMacros.Count > 0)
             {
-                if (Service.Configuration.IRM.TryGetValue(CurrentRecipe.RowId, out var id))
+                if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId, out var macro))
                 {
-                    var macro = Service.Configuration.UserMacros.First(x => x.ID == id);
-
                     if (MacroStep < macro.MacroActions.Count)
                     {
                         if (macro.MacroOptions.SkipQualityIfMet)

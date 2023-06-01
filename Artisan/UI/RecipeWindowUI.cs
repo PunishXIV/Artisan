@@ -371,9 +371,10 @@ namespace Artisan
                 var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
                 //position += ImGuiHelpers.MainViewport.Pos;
                 var textHeight = ImGui.CalcTextSize("Craft X Times:");
+                var craftableCount = addonPtr->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString() == "" ? 0 : Convert.ToInt32(addonPtr->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString().GetNumbers());
 
                 ImGuiHelpers.ForceNextWindowMainViewport();
-                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + (4f * scale.X), position.Y - textHeight.Y - (17f * scale.Y)));
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + (4f * scale.X) - 40f, position.Y - textHeight.Y - (17f * scale.Y)));
 
                 //Dalamud.Logging.PluginLog.Debug($"Length: {size.Length()}, Width: {node->Width}, Scale: {scale.Y}");
 
@@ -412,8 +413,10 @@ namespace Artisan
                 }
                 else
                 {
-                    if (ImGui.Button("Craft All"))
+                    if (ImGui.Button($"Craft All ({craftableCount})"))
                     {
+                        Service.Configuration.CraftX = craftableCount;
+                        Service.Configuration.CraftingX = true;
                         Handler.Enable = true;
                     }
                 }

@@ -1,8 +1,10 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.CraftingLogic.CraftData;
+using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Artisan.UI;
 using ClickLib.Clicks;
 using ECommons;
 using ECommons.Logging;
@@ -89,8 +91,22 @@ namespace Artisan.CraftingLogic
                             DuoLog.Error("You crafted a non-HQ item. Disabling Endurance.");
                         }
                     }
-                }
 
+
+                    if (value == CraftingState.NotCrafting || value == CraftingState.PreparingToCraft)
+                    {
+                        CraftingWindow.MacroTime = new();
+                    }
+
+                    if (value == CraftingState.Crafting)
+                    {
+                        if (CraftingWindow.MacroTime.Ticks <= 0 && P.config.IRM.ContainsKey((uint)Handler.RecipeID) && P.config.UserMacros.TryGetFirst(x => x.ID == P.config.IRM[(uint)Handler.RecipeID], out var macro))
+                        {
+                            Double timeInSeconds = MacroUI.GetMacroLength(macro) + 3; // Counting crafting duration + 2 seconds between crafts.
+                            CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
+                        }
+                    }
+                }
                 state = value;
             }
         }

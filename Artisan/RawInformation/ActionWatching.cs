@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLogic;
+using Artisan.MacroSystem;
 using Artisan.RawInformation.Character;
 using Dalamud.Hooking;
 using Dalamud.Logging;
@@ -20,6 +21,7 @@ namespace Artisan.RawInformation
         public delegate byte UseActionDelegate(ActionManager* actionManager, uint actionType, uint actionID, long targetObjectID, uint param, uint useType, int pvp, bool* isGroundTarget);
         public static Hook<UseActionDelegate> UseActionHook;
         public static uint LastUsedAction = 0;
+        public static TaskManager ATM = new();
 
         private delegate void* ClickSynthesisButton(void* a1, void* a2);
         private static Hook<ClickSynthesisButton> clickSysnthesisButtonHook;
@@ -29,13 +31,15 @@ namespace Artisan.RawInformation
             {
                 if (CurrentCraftMethods.CanUse(actionID))
                 {
-                    PluginLog.Debug($"{actionID.NameOfAction()}");
                     PreviousAction = actionID;
+
+                    var allOfSameName = LuminaSheets.ActionSheet.ContainsKey(actionID) ? LuminaSheets.ActionSheet.Where(x => x.Value.Name == actionID.NameOfAction()).Select(x => x.Key) :
+                        LuminaSheets.CraftActions!.Where(x => x.Value.Name == actionID.NameOfAction())
+                                                 .Select(x => x.Key);
 
                     if (LuminaSheets.ActionSheet.TryGetValue(actionID, out var act1))
                     {
                         string skillName = act1.Name;
-                        var allOfSameName = LuminaSheets.ActionSheet.Where(x => x.Value.Name == skillName).Select(x => x.Key);
 
                         if (allOfSameName.Any(x => x == Skills.Manipulation))
                             ManipulationUsed = true;
@@ -72,7 +76,6 @@ namespace Artisan.RawInformation
                     if (LuminaSheets.CraftActions.TryGetValue(actionID, out var act2))
                     {
                         string skillName = act2.Name;
-                        var allOfSameName = LuminaSheets.CraftActions.Where(x => x.Value.Name == skillName).Select(x => x.Key);
 
                         if (allOfSameName.Any(x => x == Skills.Observe))
                             JustUsedObserve = true;
@@ -108,7 +111,18 @@ namespace Artisan.RawInformation
                             Artisan.Tasks.Clear();
                         }
                     }
-                    MacroStep++;
+
+                    if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId, out var macro))
+                    {
+                        if (MacroStep < macro.MacroActions.Count())
+                        {
+                            if (allOfSameName.Any(x => x == macro.MacroActions[MacroStep]))
+                            {
+                                ATM.DelayNext("MacroStepIncrease", 800);
+                                ATM.Enqueue(() => MacroStep++);
+                            }
+                        }
+                    }
                 }
                 return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
             }

@@ -11,6 +11,9 @@ namespace Artisan.RawInformation
     {
         public static string GetNumbers(this string input)
         {
+            if (input == null) return "";
+            if (input.Length == 0) return "";
+
             var numbers = new string(input.Where(c => char.IsDigit(c)).ToArray());
             return numbers;
         }

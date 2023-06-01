@@ -455,7 +455,8 @@ namespace Artisan.UI
             bool useAlternative = Service.Configuration.UseAlternativeRotation;
 
             ImGui.Separator();
-            if (ImGui.CollapsingHeader("Mode Selections"))
+
+            if (ImGui.CollapsingHeader("General Settings"))
             {
                 if (ImGui.Checkbox("Automatic Action Execution Mode", ref autoEnabled))
                 {
@@ -467,7 +468,7 @@ namespace Artisan.UI
                 {
                     var delay = Service.Configuration.AutoDelay;
                     ImGui.PushItemWidth(200);
-                    if (ImGui.SliderInt("Set delay (ms)###ActionDelay", ref delay, 0, 1000))
+                    if (ImGui.SliderInt("Execution Delay (ms)###ActionDelay", ref delay, 0, 1000))
                     {
                         if (delay < 0) delay = 0;
                         if (delay > 1000) delay = 1000;
@@ -476,18 +477,7 @@ namespace Artisan.UI
                         Service.Configuration.Save();
                     }
                 }
-            }
 
-            if (ImGui.CollapsingHeader("Macro Settings"))
-            {
-                if (ImGui.Checkbox("Skip Macro Steps if Unable To Use Action", ref Service.Configuration.SkipMacroStepIfUnable))
-                    Service.Configuration.Save();
-
-                if (ImGui.Checkbox($"Prevent Artisan from Continuing After Macro Finishes", ref Service.Configuration.DisableMacroArtisanRecommendation))
-                    Service.Configuration.Save();
-            }
-            if (ImGui.CollapsingHeader("Execution Settings"))
-            {
                 if (ImGui.Checkbox("Delay Getting Recommendations", ref delayRec))
                 {
                     Service.Configuration.DelayRecommendation = delayRec;
@@ -499,7 +489,7 @@ namespace Artisan.UI
                 {
                     var delay = Service.Configuration.RecommendationDelay;
                     ImGui.PushItemWidth(200);
-                    if (ImGui.SliderInt("Set delay (ms)###RecommendationDelay", ref delay, 0, 1000))
+                    if (ImGui.SliderInt("Set Delay (ms)###RecommendationDelay", ref delay, 0, 1000))
                     {
                         if (delay < 0) delay = 0;
                         if (delay > 1000) delay = 1000;
@@ -507,32 +497,6 @@ namespace Artisan.UI
                         Service.Configuration.RecommendationDelay = delay;
                         Service.Configuration.Save();
                     }
-                }
-
-                if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[227].Text.RawString}", ref useTricksGood))
-                {
-                    Service.Configuration.UseTricksGood = useTricksGood;
-                    Service.Configuration.Save();
-                }
-                ImGui.SameLine();
-                if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[228].Text.RawString}", ref useTricksExcellent))
-                {
-                    Service.Configuration.UseTricksExcellent = useTricksExcellent;
-                    Service.Configuration.Save();
-                }
-                ImGuiComponents.HelpMarker($"These 2 options allow you to make Tricks of the Trade a priority when condition is Good or Excellent.\nOther skills that rely on these conditions will not be used.");
-                if (ImGui.Checkbox("Use Specialist Actions", ref useSpecialist))
-                {
-                    Service.Configuration.UseSpecialist = useSpecialist;
-                    Service.Configuration.Save();
-                }
-                ImGuiComponents.HelpMarker("If the current job is a specialist, spends any Crafter's Delineation you may have.\nCareful Observation replaces Observe.");
-                ImGui.TextWrapped("Max Quality%%");
-                ImGuiComponents.HelpMarker($"Once quality has reached the below percentage, Artisan will focus on progress only.");
-                if (ImGui.SliderInt("###SliderMaxQuality", ref maxQuality, 0, 100, $"%d%%"))
-                {
-                    Service.Configuration.MaxPercentage = maxQuality;
-                    Service.Configuration.Save();
                 }
 
                 bool requestStop = Service.Configuration.RequestToStopDuty;
@@ -560,6 +524,43 @@ namespace Artisan.UI
                             Service.Configuration.RequestToResumeDelay = resumeDelay;
                         }
                     }
+                }
+            }
+
+            if (ImGui.CollapsingHeader("Macro Settings"))
+            {
+                if (ImGui.Checkbox("Skip Macro Steps if Unable To Use Action", ref Service.Configuration.SkipMacroStepIfUnable))
+                    Service.Configuration.Save();
+
+                if (ImGui.Checkbox($"Prevent Artisan from Continuing After Macro Finishes", ref Service.Configuration.DisableMacroArtisanRecommendation))
+                    Service.Configuration.Save();
+            }
+            if (ImGui.CollapsingHeader("Solver Settings"))
+            {
+                if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[227].Text.RawString}", ref useTricksGood))
+                {
+                    Service.Configuration.UseTricksGood = useTricksGood;
+                    Service.Configuration.Save();
+                }
+                ImGui.SameLine();
+                if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[228].Text.RawString}", ref useTricksExcellent))
+                {
+                    Service.Configuration.UseTricksExcellent = useTricksExcellent;
+                    Service.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker($"These 2 options allow you to make Tricks of the Trade a priority when condition is Good or Excellent.\nOther skills that rely on these conditions will not be used.");
+                if (ImGui.Checkbox("Use Specialist Actions", ref useSpecialist))
+                {
+                    Service.Configuration.UseSpecialist = useSpecialist;
+                    Service.Configuration.Save();
+                }
+                ImGuiComponents.HelpMarker("If the current job is a specialist, spends any Crafter's Delineation you may have.\nCareful Observation replaces Observe.");
+                ImGui.TextWrapped("Max Quality%%");
+                ImGuiComponents.HelpMarker($"Once quality has reached the below percentage, Artisan will focus on progress only.");
+                if (ImGui.SliderInt("###SliderMaxQuality", ref maxQuality, 0, 100, $"%d%%"))
+                {
+                    Service.Configuration.MaxPercentage = maxQuality;
+                    Service.Configuration.Save();
                 }
 
                 if (ImGui.Checkbox("Use Alternative Quality Rotation (Level 84+)", ref useAlternative))

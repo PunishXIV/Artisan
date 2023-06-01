@@ -293,10 +293,14 @@ namespace Artisan.IPC
                     var diffcheck = material.Value - invCount;
                     requiredItems.Add(material.Key, diffcheck);
                 }
+
+                //Refresh retainer cache if empty
+                GetRetainerItemCount((uint)material.Key);
             }
 
             if (RetainerData.SelectMany(x => x.Value).Any(x => requiredItems.Any(y => y.Key == x.Value.ItemID)))
             {
+                PluginLog.Debug($"Here");
                 TM.Enqueue(() => Svc.Framework.Update += Tick);
                 TM.Enqueue(() => AutoRetainer.Suppress());
                 TM.EnqueueBell();
