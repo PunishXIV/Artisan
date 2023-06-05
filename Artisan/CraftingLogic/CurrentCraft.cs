@@ -105,6 +105,14 @@ namespace Artisan.CraftingLogic
                             Double timeInSeconds = MacroUI.GetMacroLength(macro) + 3; // Counting crafting duration + 2 seconds between crafts.
                             CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
                         }
+
+                        if (P.ws.Windows.Any(x => x.GetType() == typeof(MacroEditor)))
+                        {
+                            foreach (var window in P.ws.Windows.Where(x => x.GetType() == typeof(MacroEditor)))
+                            {
+                                window.IsOpen = false;
+                            }
+                        }
                     }
                 }
                 state = value;

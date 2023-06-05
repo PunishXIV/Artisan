@@ -373,6 +373,8 @@ namespace Artisan
                 var textHeight = ImGui.CalcTextSize("Craft X Times:");
                 var craftableCount = addonPtr->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString() == "" ? 0 : Convert.ToInt32(addonPtr->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString().GetNumbers());
 
+                if (craftableCount == 0) return;
+
                 ImGuiHelpers.ForceNextWindowMainViewport();
                 ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + (4f * scale.X) - 40f, position.Y - textHeight.Y - (17f * scale.Y)));
 
@@ -400,6 +402,9 @@ namespace Artisan
                 {
                     if (Service.Configuration.CraftX < 0)
                         Service.Configuration.CraftX = 0;
+
+                    if (Service.Configuration.CraftX > craftableCount)
+                        Service.Configuration.CraftX = craftableCount;
 
                 }
                 ImGui.SameLine();

@@ -94,6 +94,8 @@ namespace Artisan
         public bool SkipMacroStepIfUnable = false;
         public bool DisableAllaganTools = false;
         public bool DisableMacroArtisanRecommendation = false;
+        public bool UseQualityStarter = false;
+        public bool ShowMacroAssignResults = false;
 
         public bool DontEquipItems = false;
 

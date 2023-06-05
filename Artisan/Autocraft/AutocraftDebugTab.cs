@@ -1,4 +1,5 @@
-﻿using Artisan.CraftingLogic;
+﻿using Artisan.CraftingLists;
+using Artisan.CraftingLogic;
 using Artisan.CustomDeliveries;
 using Artisan.IPC;
 using Artisan.QuestSync;
@@ -238,16 +239,16 @@ namespace Artisan.Autocraft
 
                 ImGui.InputInt("Debug Value", ref DebugValue);
 
-                if (ImGui.Button("Accept Leve (Use Debug Value for ID)"))
-                {
-                    if (Svc.GameGui.GetAddonByName("GuildLeve") != IntPtr.Zero)
-                    {
-                        var addon = (AtkUnitBase*)Svc.GameGui.GetAddonByName("GuildLeve");
-                        Callback.Fire(addon, true, 13, 13, DebugValue);
-                    }
-                }
+                //if (ImGui.Button("Accept Leve (Use Debug Value for ID)"))
+                //{
+                //    if (Svc.GameGui.GetAddonByName("GuildLeve") != IntPtr.Zero)
+                //    {
+                //        var addon = (AtkUnitBase*)Svc.GameGui.GetAddonByName("GuildLeve");
+                //        Callback.Fire(addon, true, 13, 13, DebugValue);
+                //    }
+                //}
 
-                ImGui.Text($"Item Count? {InventoryManager.Instance()->GetInventoryItemCount((uint)DebugValue)}");
+                ImGui.Text($"Item Count? {CraftingListUI.NumberOfIngredient((uint)DebugValue)}");
 
                 if (ImGui.Button($"Open And Quick Synth"))
                 {
@@ -265,7 +266,6 @@ namespace Artisan.Autocraft
                 {
                     Spiritbond.ExtractFirstMateria();
                 }
-
 
                 /*ImGui.InputInt("id", ref SelRecId);
                 if (ImGui.Button("OpenRecipeByRecipeId"))

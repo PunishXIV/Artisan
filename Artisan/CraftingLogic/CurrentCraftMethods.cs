@@ -2,6 +2,7 @@
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using ClickLib.Clicks;
+using Dalamud.Logging;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -55,13 +56,26 @@ namespace Artisan.CraftingLogic
                     return progressActions->FocusedSynthesis.CanComplete(remainingProgress)!.Value;
                 }
 
-                // Prudent:
-                // Not MP efficient unless we're intentionally conserving Durability
-                //if (progressActions->PrudentSynthesis.CanComplete(remainingProgress) == allowComplete)
-                //    return ActionId.PrudentSynthesis;
+                if (progressActions->PrudentSynthesis.IsAvailable() && CharacterInfo.CurrentCP < 88)
+                {
+                    if (CurrentDurability <= 5 && !progressActions->PrudentSynthesis.CanComplete(remainingProgress)!.Value)
+                    {
+                        action = Skills.RapidSynthesis;
+                        return progressActions->RapidSynthesis.CanComplete(remainingProgress)!.Value;
+                    }
+
+                    action = Skills.PrudentSynthesis;
+                    return progressActions->PrudentSynthesis.CanComplete(remainingProgress)!.Value;
+                }
 
                 if (progressActions->CarefulSynthesis.IsAvailable())
                 {
+                    if (CurrentDurability <= 10 && !progressActions->CarefulSynthesis.CanComplete(remainingProgress)!.Value)
+                    {
+                        action = Skills.RapidSynthesis;
+                        return progressActions->RapidSynthesis.CanComplete(remainingProgress)!.Value;
+                    }
+
                     action = Skills.CarefulSynthesis;
                     return progressActions->CarefulSynthesis.CanComplete(remainingProgress)!.Value;
                 }
@@ -93,11 +107,6 @@ namespace Artisan.CraftingLogic
                     return false;
                 }
 
-                // Prudent:
-                // Not MP efficient unless we're intentionally conserving Durability
-                //if (progressActions->PrudentSynthesis.CanComplete(remainingProgress) == allowComplete)
-                //    return ActionId.PrudentSynthesis;
-
                 if (progressActions->CarefulSynthesis.CanComplete(remainingProgress) == false)
                 {
                     action = Skills.CarefulSynthesis;
@@ -105,8 +114,49 @@ namespace Artisan.CraftingLogic
                 }
             }
 
-            action = Skills.BasicSynth;
-            return progressActions->BasicSynthesis.CanComplete(remainingProgress)!.Value;
+            if (CanSpamBasicToComplete())
+            {
+                action = Skills.BasicSynth;
+                return progressActions->BasicSynthesis.CanComplete(remainingProgress)!.Value;
+            }
+
+            action = Skills.RapidSynthesis;
+            return progressActions->RapidSynthesis.CanComplete(remainingProgress)!.Value;
+        }
+
+        private unsafe static bool CanSpamBasicToComplete()
+        {
+            var agentCraftActionSimulator = AgentModule.Instance()->GetAgentCraftActionSimulator();
+            var remainingProgress = (uint)RemainingProgress();
+            var progressActions = agentCraftActionSimulator->Progress;
+
+            var firstUse = progressActions->BasicSynthesis.ProgressIncrease;
+            if (progressActions->BasicSynthesis.CanComplete(remainingProgress)!.Value)
+                return true;
+
+            var progressAfterFirst = remainingProgress - firstUse;
+            var durabilityAfterFirst = CurrentDurability - (10 / (GetStatus(Buffs.WasteNot) != null || GetStatus(Buffs.WasteNot2) != null ? 2 : 1)) + (GetStatus(Buffs.Manipulation) != null ? 5 : 0);
+
+            var manipStacks = GetStatus(Buffs.Manipulation) != null ? GetStatus(Buffs.Manipulation).StackCount - 1 : 0;
+            var wasteNotStacks = GetStatus(Buffs.WasteNot) != null ? GetStatus(Buffs.WasteNot).StackCount - 1 : 0;
+            var wasteNot2Stacks = GetStatus(Buffs.WasteNot2) != null ? GetStatus(Buffs.WasteNot2).StackCount - 1 : 0;
+            var totalwastestacks = wasteNot2Stacks + wasteNotStacks;
+
+            var basicIncrease = Math.Floor(Calculations.BaseProgression() * Calculations.GetMultiplier(Skills.BasicSynth));
+
+            while (durabilityAfterFirst > 0)
+            {
+                var progressAfterNext = progressAfterFirst - basicIncrease;
+                if (progressAfterNext <= 0)
+                    return true;
+
+                durabilityAfterFirst = durabilityAfterFirst - (10 / (totalwastestacks > 0 ? 2 : 1) + (manipStacks > 0 ? 5 : 0));
+
+                PluginLog.Debug($"{durabilityAfterFirst} {progressAfterNext}");
+            }
+
+            return false;
+
         }
 
         public static uint GetExpertRecommendation()
@@ -149,6 +199,7 @@ namespace Artisan.CraftingLogic
             if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || CurrentRecipe.ItemResult.Value.IsCollectable) && CurrentRecipe.CanHq) return Skills.TrainedEye;
             if (CanUse(Skills.Tricks) && CurrentStep > 2 && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent))) return Skills.Tricks;
 
+            if (CharacterInfo.CurrentCP < 7 && CanUse(Skills.Tricks)) return Skills.Tricks;
             if (CurrentDurability <= 10 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
 
             if (MaxQuality == 0 || Service.Configuration.MaxPercentage == 0 || !CurrentRecipe.CanHq)
@@ -161,7 +212,7 @@ namespace Artisan.CraftingLogic
 
             if (CharacterInfo.CurrentCP > 0)
             {
-                if (MaxDurability >= 60)
+                if (!Service.Configuration.UseQualityStarter)
                 {
                     if (CurrentQuality < MaxQuality && (HighQualityPercentage < Service.Configuration.MaxPercentage || CurrentRecipe.ItemResult.Value.IsCollectable || CurrentRecipe.IsExpert))
                     {
@@ -187,7 +238,7 @@ namespace Artisan.CraftingLogic
                     }
                 }
 
-                if (MaxDurability >= 35 && MaxDurability < 60)
+                if (Service.Configuration.UseQualityStarter)
                 {
                     if (CurrentQuality < MaxQuality && (HighQualityPercentage < Service.Configuration.MaxPercentage || CurrentRecipe.ItemResult.Value.IsCollectable || CurrentRecipe.IsExpert))
                     {

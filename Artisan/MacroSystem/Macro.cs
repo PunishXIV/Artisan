@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Artisan.MacroSystem
 {
@@ -16,7 +14,7 @@ namespace Artisan.MacroSystem
 
         public MacroOptions MacroOptions { get; set; } = new();
 
-        public List<MacroStepOptions> MacroStepOptions { get; set; }= new();
+        public List<MacroStepOptions> MacroStepOptions { get; set; } = new();
     }
 
     public class MacroOptions
@@ -28,11 +26,25 @@ namespace Artisan.MacroSystem
         public bool UpgradeProgressActions { get; set; } = false;
 
         public bool SkipObservesIfNotPoor { get; set; } = false;
+
+        public int MinCraftsmanship = 0;
+        public int MinControl = 0;
+        public int MinCP = 0;
     }
 
     public class MacroStepOptions
     {
-        public bool ExcludeFromUpgrade { get; set; } = false;
+        public bool ExcludeFromUpgrade = false;
+        public bool ExcludeNormal = false;
+        public bool ExcludePoor = false;
+        public bool ExcludeGood = false;
+        public bool ExcludeExcellent = false;
+        public bool ExcludeCentered = false;
+        public bool ExcludeSturdy = false;
+        public bool ExcludePliant = false;
+        public bool ExcludeMalleable = false;
+        public bool ExcludePrimed = false;
+        public bool ExcludeGoodOmen = false;
     }
     public static class MacroFunctions
     {

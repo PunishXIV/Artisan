@@ -434,19 +434,6 @@ namespace Artisan.CraftingLists
                     if (addon->UldManager.NodeListCount <= 35) return false;
                     if (string.IsNullOrEmpty(addon->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString())) return false;
 
-                    if (addon->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString().GetNumbers().Trim() == "0")
-                    {
-                        DuoLog.Error("You do not have materials for this recipe.");
-                        if (Handler.Enable)
-                        {
-                            Handler.Enable = false;
-                            P.TM.Abort();
-                        }
-
-                        return true;
-                    }
-
-
                     for (var i = 0; i <= 5; i++)
                     {
                         try

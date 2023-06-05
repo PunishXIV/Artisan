@@ -422,11 +422,9 @@ namespace Artisan.Autocraft
                     if (addon->UldManager.NodeList[49]->IsVisible)
                     {
                         var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
-                        var jobText = addon->UldManager.NodeList[101]->GetAsAtkTextNode()->NodeText.ExtractText();
-                        uint jobTab = GetSelectedJobTab(addon);
                         var firstCrystal = GetCrystal(addon, 1);
                         var secondCrystal = GetCrystal(addon, 2);
-                        var str = MemoryHelper.ReadSeString(&text).ExtractText();
+                        var str = text.ExtractText();
                         var rName = "";
 
                         /*
@@ -464,12 +462,20 @@ namespace Artisan.Autocraft
 
                         if (rName.Length == 0) return;
 
-                        if (firstCrystal > 0)
+                        if (firstCrystal > 0 && secondCrystal > 0)
                         {
-                            if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.ExtractText() == rName && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
+                            if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.RawString == rName && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
                             {
                                 RecipeID = (int)id.RowId;
-                                RecipeName = id.ItemResult.Value.Name.ExtractText();
+                                RecipeName = id.ItemResult.Value.Name;
+                            }
+                        }
+                        else if (firstCrystal > 0)
+                        {
+                            if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.RawString == rName && x.UnkData5[8].ItemIngredient == firstCrystal, out var id))
+                            {
+                                RecipeID = (int)id.RowId;
+                                RecipeName = id.ItemResult.Value.Name;
                             }
                         }
                     }

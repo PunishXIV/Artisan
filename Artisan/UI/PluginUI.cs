@@ -573,6 +573,8 @@ namespace Artisan.UI
                 if (ImGui.Checkbox("Disable Automatically Equipping Required Items for Crafts", ref Service.Configuration.DontEquipItems))
                     Service.Configuration.Save();
 
+                if (ImGui.Checkbox($"Use Quality Starter ({Skills.Reflect.NameOfAction()})", ref Service.Configuration.UseQualityStarter))
+                    Service.Configuration.Save();
             }
 
             if (ImGui.CollapsingHeader("UI Settings"))

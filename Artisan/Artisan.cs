@@ -208,6 +208,7 @@ public unsafe class Artisan : IDalamudPlugin
             ExpertCraftOpenerFinish = false;
             MacroStep = 0;
             warningMessage = false;
+            macroWarning = false;
         }
         if (e > 0)
             Tasks.Clear();
@@ -305,6 +306,17 @@ public unsafe class Artisan : IDalamudPlugin
             {
                 if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId, out var macro))
                 {
+                    if (macro.MacroOptions.MinCraftsmanship > (int)CharacterInfo.Craftsmanship() ||
+                        macro.MacroOptions.MinControl > (int)CharacterInfo.Control() ||
+                        macro.MacroOptions.MinCP > (int)CharacterInfo.MaxCP)
+                    {
+                        if (!macroWarning)
+                            Svc.Chat.PrintError("You do not meet the minimum stats for this macro. Artisan will not continue.");
+
+                        macroWarning = true;
+                        return;
+                    }
+
                     if (MacroStep < macro.MacroActions.Count)
                     {
                         if (macro.MacroOptions.SkipQualityIfMet)
@@ -332,6 +344,20 @@ public unsafe class Artisan : IDalamudPlugin
                             {
                                 MacroStep++;
                             }
+                        }
+
+                        while ((macro.MacroStepOptions[MacroStep].ExcludeNormal && CurrentCondition == CraftingLogic.CraftData.Condition.Normal) ||
+                            (macro.MacroStepOptions[MacroStep].ExcludeGood && CurrentCondition == CraftingLogic.CraftData.Condition.Good) ||
+                            (macro.MacroStepOptions[MacroStep].ExcludePoor && CurrentCondition == CraftingLogic.CraftData.Condition.Poor) ||
+                            (macro.MacroStepOptions[MacroStep].ExcludeExcellent && CurrentCondition == CraftingLogic.CraftData.Condition.Excellent) ||
+                            (macro.MacroStepOptions[MacroStep].ExcludeCentered && CurrentCondition == CraftingLogic.CraftData.Condition.Centered) ||
+                            (macro.MacroStepOptions[MacroStep].ExcludeSturdy && CurrentCondition == CraftingLogic.CraftData.Condition.Sturdy) ||
+                            (macro.MacroStepOptions[MacroStep].ExcludePliant && CurrentCondition == CraftingLogic.CraftData.Condition.Pliant) ||
+                            (macro.MacroStepOptions[MacroStep].ExcludeMalleable && CurrentCondition == CraftingLogic.CraftData.Condition.Malleable) ||
+                            (macro.MacroStepOptions[MacroStep].ExcludePrimed && CurrentCondition == CraftingLogic.CraftData.Condition.Primed) ||
+                            (macro.MacroStepOptions[MacroStep].ExcludeGoodOmen && CurrentCondition == CraftingLogic.CraftData.Condition.GoodOmen))
+                        {
+                            MacroStep++;
                         }
 
                         CurrentRecommendation = macro.MacroActions[MacroStep] == 0 ? (CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation()) : macro.MacroActions[MacroStep];
@@ -517,6 +543,7 @@ public unsafe class Artisan : IDalamudPlugin
         ws = null!;
         ECommonsMain.Dispose();
         CustomFont = null;
+        LuminaSheets.Dispose();
         P = null;
 
     }

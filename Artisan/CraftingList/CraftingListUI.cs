@@ -1256,6 +1256,30 @@ namespace Artisan.CraftingLists
                 var invNumberNQ = invManager->GetInventoryItemCount(ingredient, false, false);
                 var invNumberHQ = invManager->GetInventoryItemCount(ingredient, true, false, false);
                 //PluginLog.Debug($"{invNumberNQ + invNumberHQ}");
+
+                if (LuminaSheets.ItemSheet[ingredient].IsCollectable)
+                {
+                    var inventories = new List<InventoryType>
+                    {
+                        InventoryType.Inventory1,
+                        InventoryType.Inventory2,
+                        InventoryType.Inventory3,
+                        InventoryType.Inventory4,
+                    };
+
+                    foreach (var inv in inventories)
+                    {
+                        var container = invManager->GetInventoryContainer(inv);
+                        for (int i = 0; i < container->Size; i++)
+                        {
+                            var item = container->GetInventorySlot(i);
+
+                            if (item->ItemID == ingredient)
+                                invNumberNQ++;
+                        }
+
+                    }
+                }
                 return invNumberHQ + invNumberNQ;
             }
             catch

@@ -91,8 +91,7 @@ namespace Artisan.UI
 
             if (Handler.RecipeID != 0 && !CraftingListUI.Processing && Handler.Enable)
             {
-                bool enable = Handler.Enable;
-                if (ImGui.Checkbox("Disable Endurance", ref enable))
+                if (ImGui.Button("Disable Endurance"))
                 {
                     Handler.Enable = false;
                 }

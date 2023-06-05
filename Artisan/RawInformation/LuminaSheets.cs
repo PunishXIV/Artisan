@@ -86,6 +86,15 @@ namespace Artisan.RawInformation
 
         public static Dictionary<uint, CompanyCraftSupplyItem>? WorkshopSupplyItemSheet = Service.DataManager?.GetExcelSheet<CompanyCraftSupplyItem>()?
             .ToDictionary(i => i.RowId, i => i);
+
+        public static void Dispose()
+        {
+            var type = typeof(LuminaSheets);
+            foreach (var prop in type.GetFields(System.Reflection.BindingFlags.Static))
+            {
+                prop.SetValue(null, null);  
+            }
+        }
     }
 
     public static class SheetExtensions
