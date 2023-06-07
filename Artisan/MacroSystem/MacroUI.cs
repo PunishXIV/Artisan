@@ -2,7 +2,6 @@
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
-using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
 using ImGuiNET;
@@ -27,6 +26,8 @@ namespace Artisan.MacroSystem
         private static string _rawMacro = string.Empty;
         private static bool reorderMode = false;
         private static Macro selectedAssignMacro = new();
+        private static bool showNonHQ = false;
+        private static bool showHQ = false;
 
         private static int level = 1;
         private static int difficulty = 9;
@@ -37,7 +38,7 @@ namespace Artisan.MacroSystem
 
         private static bool CannotHQ = false;
         private static Dictionary<uint, bool> JobSelected = LuminaSheets.ClassJobSheet.Values.Where(x => x.RowId >= 8 && x.RowId <= 15).ToDictionary(x => x.RowId, x => false);
-        private static Dictionary<ushort, bool> Durabilities = LuminaSheets.RecipeSheet.Values.Where(x => x.Number > 0).Select(x => (ushort)(x.RecipeLevelTable.Value.Durability * ((float)x.DurabilityFactor / 100))).Distinct().Order().ToDictionary(x => x, x => false);
+        private static Dictionary<ushort, bool> Durabilities = LuminaSheets.RecipeSheet.Values.Where(x => x.Number > 0 && x.RecipeLevelTable.Value.ClassJobLevel == level && Math.Floor(x.RecipeLevelTable.Value.Difficulty * (x.DifficultyFactor / 100f)) == difficulty).Select(x => (ushort)(x.RecipeLevelTable.Value.Durability * ((float)x.DurabilityFactor / 100))).Distinct().Order().ToDictionary(x => x, x => false);
 
         internal static void Draw()
         {
@@ -150,6 +151,7 @@ namespace Artisan.MacroSystem
             if (ImGui.SliderInt($"{LuminaSheets.AddonSheet[335].Text}", ref level, 1, 90))
             {
                 PossibleDifficulties.Clear();
+                Durabilities.Clear();
             }
 
             if (PossibleDifficulties.Count == 0)
@@ -157,7 +159,7 @@ namespace Artisan.MacroSystem
                 foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => x.RecipeLevelTable.Value.ClassJobLevel == level))
                 {
                     float diffFactor = recipe.DifficultyFactor / 100f;
-                    short actualDiff = (short)(diffFactor * recipe.RecipeLevelTable.Value.Difficulty);
+                    var actualDiff = (int)Math.Floor(diffFactor * recipe.RecipeLevelTable.Value.Difficulty);
                     if (actualDiff == 0) continue;
 
                     if (!PossibleDifficulties.Contains(actualDiff))
@@ -179,11 +181,15 @@ namespace Artisan.MacroSystem
                 difficulty = nearest;
             }
 
-            ImGui.SliderInt($"{LuminaSheets.AddonSheet[1431].Text}###RecipeDiff", ref difficulty, PossibleDifficulties.Min(), PossibleDifficulties.Max());
+            if (ImGui.SliderInt($"{LuminaSheets.AddonSheet[1431].Text}###RecipeDiff", ref difficulty, PossibleDifficulties.Min(), PossibleDifficulties.Max()))
+            {
+                Durabilities.Clear();
+            }
 
             if (ImGui.BeginListBox($"{LuminaSheets.AddonSheet[5400].Text}###AssignJobBox", new Vector2(0, 55)))
             {
                 ImGui.Columns(4, null, false);
+
                 foreach (var item in JobSelected)
                 {
                     string jobName = LuminaSheets.ClassJobSheet[item.Key].Abbreviation.ToString().ToUpper();
@@ -201,6 +207,13 @@ namespace Artisan.MacroSystem
             if (ImGui.BeginListBox($"{LuminaSheets.AddonSheet[1430].Text}###AssignDurabilities", new Vector2(0, 55)))
             {
                 ImGui.Columns(4, null, false);
+
+                foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => x.RecipeLevelTable.Value.ClassJobLevel == level &&
+                Math.Floor(x.RecipeLevelTable.Value.Difficulty * (x.DifficultyFactor / 100f))  == difficulty))
+                {
+                    Durabilities.TryAdd((ushort)(recipe.RecipeLevelTable.Value.Durability * (recipe.DurabilityFactor / 100f)), false);
+                }
+
                 foreach (var dur in Durabilities)
                 {
                     var val = dur.Value;
@@ -210,20 +223,54 @@ namespace Artisan.MacroSystem
                     }
                     ImGui.NextColumn();
                 }
+
+                if (Durabilities.Count == 1)
+                {
+                    var key = Durabilities.First().Key;
+                    Durabilities[key] = true;
+                }
                 ImGui.EndListBox();
             }
 
             if (ImGui.BeginListBox($"{LuminaSheets.AddonSheet[1419].Text}###HQable", new Vector2(0, 28f)))
             {
-                ImGui.Columns(2, null, false);
-                if (ImGui.RadioButton($"{LuminaSheets.AddonSheet[3].Text}", CannotHQ))
+                showHQ = false;
+                showNonHQ = false;
+
+                foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => x.RecipeLevelTable.Value.ClassJobLevel == level &&
+                Math.Floor(x.RecipeLevelTable.Value.Difficulty * (x.DifficultyFactor / 100f)) == difficulty))
                 {
-                    CannotHQ = true;
+                    if (recipe.CanHq)
+                    {
+                        showHQ = true;
+                    }
+                    else
+                    {
+                        showNonHQ = true;
+                    }
+                }
+
+                ImGui.Columns(2, null, false);
+                if (showNonHQ)
+                {
+                    if (!showHQ)
+                        CannotHQ = true;
+
+                    if (ImGui.RadioButton($"{LuminaSheets.AddonSheet[3].Text.RawString.Replace(".", "")}", CannotHQ))
+                    {
+                        CannotHQ = true;
+                    }
                 }
                 ImGui.NextColumn();
-                if (ImGui.RadioButton($"{LuminaSheets.AddonSheet[4].Text}", !CannotHQ))
+                if (showHQ)
                 {
-                    CannotHQ = false;
+                    if (!showNonHQ)
+                        CannotHQ = false;
+
+                    if (ImGui.RadioButton($"{LuminaSheets.AddonSheet[4].Text.RawString.Replace(".", "")}", !CannotHQ))
+                    {
+                        CannotHQ = false;
+                    }
                 }
                 ImGui.Columns(1, null, false);
                 ImGui.EndListBox();
@@ -232,7 +279,7 @@ namespace Artisan.MacroSystem
             if (ImGui.Checkbox($"Show All Recipes Assigned To", ref Service.Configuration.ShowMacroAssignResults))
                 Service.Configuration.Save();
 
-            if (ImGui.Button($"Assign Macro To Recipes", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
+            if (ImGui.Button($"Assign Macro To Recipes", new Vector2(ImGui.GetContentRegionAvail().X / 2, 24f.Scale())))
             {
                 int numberFound = 0;
                 foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => x.RecipeLevelTable.Value.ClassJobLevel == level))
@@ -276,6 +323,23 @@ namespace Artisan.MacroSystem
                 {
                     Notify.Error("No recipes match your parameters. No macros assigned.");
                 }
+            }
+            ImGui.SameLine();
+            if (ImGui.Button($"Unassign Macro From All Recipes (Hold Ctrl)", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())) && ImGui.GetIO().KeyCtrl)
+            {
+                var count = P.config.IRM.Where(x => x.Value == selectedAssignMacro.ID).Count();
+                foreach (var macro in P.config.IRM.ToList())
+                {
+                    if (macro.Value ==  selectedAssignMacro.ID) 
+                    {
+                        P.config.IRM.Remove(macro.Key);
+                    }
+                }
+                P.config.Save();
+                if (count > 0)
+                    Notify.Success($"Removed from {count} recipes.");
+                else
+                    Notify.Error($"This macro was not assigned to any recipes.");
             }
         }
 

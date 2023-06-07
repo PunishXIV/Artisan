@@ -58,24 +58,12 @@ namespace Artisan.CraftingLogic
 
                 if (progressActions->PrudentSynthesis.IsAvailable() && CharacterInfo.CurrentCP < 88)
                 {
-                    if (CurrentDurability <= 5 && !progressActions->PrudentSynthesis.CanComplete(remainingProgress)!.Value)
-                    {
-                        action = Skills.RapidSynthesis;
-                        return progressActions->RapidSynthesis.CanComplete(remainingProgress)!.Value;
-                    }
-
                     action = Skills.PrudentSynthesis;
                     return progressActions->PrudentSynthesis.CanComplete(remainingProgress)!.Value;
                 }
 
                 if (progressActions->CarefulSynthesis.IsAvailable())
                 {
-                    if (CurrentDurability <= 10 && !progressActions->CarefulSynthesis.CanComplete(remainingProgress)!.Value)
-                    {
-                        action = Skills.RapidSynthesis;
-                        return progressActions->RapidSynthesis.CanComplete(remainingProgress)!.Value;
-                    }
-
                     action = Skills.CarefulSynthesis;
                     return progressActions->CarefulSynthesis.CanComplete(remainingProgress)!.Value;
                 }

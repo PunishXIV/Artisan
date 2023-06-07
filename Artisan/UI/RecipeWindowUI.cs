@@ -2,7 +2,9 @@
 using Artisan.FCWorkshops;
 using Artisan.RawInformation;
 using Dalamud.Interface;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
+using Dalamud.Logging;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
@@ -31,6 +33,8 @@ namespace Artisan
 
         public override void Draw()
         {
+           
+
             if (!Service.Configuration.DisableMiniMenu)
             {
                 if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] || Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
@@ -77,11 +81,11 @@ namespace Artisan
                 float oldSize = ImGui.GetFont().Scale;
                 ImGui.GetFont().Scale *= scale.X;
                 ImGui.PushFont(ImGui.GetFont());
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f.Scale());
-                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(10f.Scale(), 5f.Scale()));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f.Scale(), 3f.Scale()));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f.Scale(), 0f.Scale()));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f.Scale());
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
+                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(10f, 5f));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f, 3f));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
                 ImGui.Begin($"###WorkshopButton{node->NodeID}", ImGuiWindowFlags.NoScrollbar
                     | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
                     | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
@@ -295,7 +299,6 @@ namespace Artisan
                 var scale = AtkResNodeFunctions.GetNodeScale(node);
                 var size = new Vector2(node->Width, node->Height) * scale;
                 var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
-                //position += ImGuiHelpers.MainViewport.Pos;
 
                 ImGuiHelpers.ForceNextWindowMainViewport();
                 if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || Service.Configuration.LockMiniMenu)
@@ -376,28 +379,29 @@ namespace Artisan
                 if (craftableCount == 0) return;
 
                 ImGuiHelpers.ForceNextWindowMainViewport();
-                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + (4f * scale.X) - 40f, position.Y - textHeight.Y - (17f * scale.Y)));
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + (4f * scale.X) - 40f, position.Y - 16f - (17f * scale.Y)));
 
                 //Dalamud.Logging.PluginLog.Debug($"Length: {size.Length()}, Width: {node->Width}, Scale: {scale.Y}");
 
                 ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
-                float oldSize = ImGui.GetFont().Scale;
-                float oldFPont = ImGui.GetFont().FontSize;
-                ImGui.GetFont().Scale *= scale.X;
-                ImGui.GetFont().FontSize = 12f;
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
+                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(5f, 2.5f));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f, 3f));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
+                ImGui.GetFont().Scale = scale.X;
+                var oldScale = ImGui.GetIO().FontGlobalScale;
+                ImGui.GetIO().FontGlobalScale = 1f;
                 ImGui.PushFont(ImGui.GetFont());
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f.Scale());
-                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(5f.Scale(), 2.5f.Scale()));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f.Scale(), 3f.Scale()));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f.Scale(), 0f.Scale()));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f.Scale());
+
                 ImGui.Begin($"###Repeat{node->NodeID}", ImGuiWindowFlags.NoScrollbar
                     | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
                     | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
 
+                ImGui.AlignTextToFramePadding();
                 ImGui.Text("Craft X Times:");
                 ImGui.SameLine();
-                ImGui.PushItemWidth(110f.Scale() * scale.X);
+                ImGui.PushItemWidth(110f * scale.X);
                 if (ImGui.InputInt($"###TimesRepeat{node->NodeID}", ref Service.Configuration.CraftX))
                 {
                     if (Service.Configuration.CraftX < 0)
@@ -427,10 +431,11 @@ namespace Artisan
                 }
 
                 ImGui.End();
-                ImGui.PopStyleVar(5);
-                ImGui.GetFont().Scale = oldSize;
-                ImGui.GetFont().FontSize = oldFPont;
+
+                ImGui.GetFont().Scale = 1;
+                ImGui.GetIO().FontGlobalScale = oldScale;
                 ImGui.PopFont();
+                ImGui.PopStyleVar(5);
                 ImGui.PopStyleColor();
             }
         }

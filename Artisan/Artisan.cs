@@ -71,7 +71,7 @@ public unsafe class Artisan : IDalamudPlugin
         PunishLibMain.Init(pluginInterface, this);
 
         TM = new();
-        TM.TimeLimitMS = 200;
+        TM.TimeLimitMS = 1000;
         CTM = new();
 #if !DEBUG
         TM.ShowDebug = false;

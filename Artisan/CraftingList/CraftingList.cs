@@ -329,7 +329,7 @@ namespace Artisan.CraftingLists
                 RecipeWindowOpen();
                 SetIngredients();
 
-                if (options.NQOnly && recipe.CanQuickSynth)
+                if (options.NQOnly && recipe.CanQuickSynth && P.ri.HasRecipeCrafted(recipe.RowId))
                 {
                     var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
                     var count = lastIndex - CurrentIndex + 1;
@@ -372,7 +372,7 @@ namespace Artisan.CraftingLists
 
             if (isCrafting)
             {
-                if (options.NQOnly && recipe.CanQuickSynth)
+                if (options.NQOnly && recipe.CanQuickSynth && P.ri.HasRecipeCrafted(recipe.RowId))
                 {
                     var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
                     var count = lastIndex - CurrentIndex + 1;
