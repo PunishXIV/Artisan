@@ -26,28 +26,22 @@ namespace Artisan.CraftingLists
 
         internal static void DrawTeamCraftListButtons()
         {
-            ImGui.SetCursorPosY(ImGui.GetWindowSize().Y - 93);
-            if (ImGui.BeginChild("###TeamCraftSection", new Vector2(0, 0), false))
+            string labelText = "Teamcraft Lists";
+            var labelLength = ImGui.CalcTextSize(labelText);
+            ImGui.SetCursorPosX((ImGui.GetContentRegionMax().X - labelLength.X) * 0.5f);
+            ImGui.TextColored(ImGuiColors.ParsedGreen, labelText);
+            if (IconButtons.IconTextButton(Dalamud.Interface.FontAwesomeIcon.Download, "Import", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
             {
-                string labelText = "Teamcraft Lists";
-                var labelLength = ImGui.CalcTextSize(labelText);
-                ImGui.SetCursorPosX((ImGui.GetContentRegionMax().X - labelLength.X) * 0.5f);
-                ImGui.TextColored(ImGuiColors.ParsedGreen, labelText);
-                if (IconButtons.IconTextButton(Dalamud.Interface.FontAwesomeIcon.Download, "Import", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
-                {
-                    openImportWindow = true;
-                }
-                OpenTeamcraftImportWindow();
-                if (CraftingListUI.selectedList.ID != 0)
-                {
-                    if (IconButtons.IconTextButton(Dalamud.Interface.FontAwesomeIcon.Upload, "Export", new Vector2(ImGui.GetContentRegionAvail().X, 30), true))
-                    {
-                        ExportSelectedListToTC();
-                    }
-                }
-
+                openImportWindow = true;
             }
-            ImGui.EndChild();
+            OpenTeamcraftImportWindow();
+            if (CraftingListUI.selectedList.ID != 0)
+            {
+                if (IconButtons.IconTextButton(Dalamud.Interface.FontAwesomeIcon.Upload, "Export", new Vector2(ImGui.GetContentRegionAvail().X, 30), true))
+                {
+                    ExportSelectedListToTC();
+                }
+            }
         }
 
         private static void ExportSelectedListToTC()

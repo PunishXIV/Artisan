@@ -1,11 +1,11 @@
 ﻿using Artisan.Autocraft;
 using Artisan.IPC;
 using Artisan.RawInformation;
+using Artisan.UI;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Logging;
-using ECommons;
 using ECommons.Automation;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
@@ -43,6 +43,7 @@ namespace Artisan.CraftingLists
         private static string? renameList;
         public static bool Minimized = false;
         private static int timesToAdd = 1;
+        private static ListFolders ListsUI = new();
         private static bool GatherBuddy => DalamudReflector.TryGetDalamudPlugin("GatherBuddy", out var gb, false, true);
         private static bool ItemVendor => DalamudReflector.TryGetDalamudPlugin("Item Vendor Location", out var ivl, false, true);
 
@@ -52,17 +53,13 @@ namespace Artisan.CraftingLists
         private unsafe static void SearchItem(uint item) => ItemFinderModule.Instance()->SearchForItem(item);
         internal static void Draw()
         {
-            string hoverText = "!! HOVER FOR INFORMATION !!";
-            var hoverLength = ImGui.CalcTextSize(hoverText);
-            ImGui.SetCursorPosX((ImGui.GetContentRegionAvail().X / 2) - (hoverLength.Length() / 2));
-            ImGui.TextColored(ImGuiColors.DalamudYellow, hoverText);
-            if (ImGui.IsItemHovered())
-            {
-                ImGui.TextWrapped($"You can use this tab to see what items you can craft with the items in your inventory. You can also use it to create a quick crafting list that Artisan will try and work through.");
-                ImGui.TextWrapped($"Please note that due to heavy computational requirements, filtering the recipe list to show only recipes you have ingredients for will not take into account raw ingredients for any crafted items. This may be addressed in the future. For now, it will only look at final ingredients *only* for a given recipe.");
-                ImGui.TextWrapped($"Crafting lists process from top to bottom, so ensure any pre-requsite crafts come first.");
-                ImGui.TextWrapped("Please ensure that you have gearsets saved for each job you have items to craft.");
-            }
+
+            ImGui.TextWrapped($"Crafting lists are a fantastic way to queue up different crafts and have them craft one-by-one. Create a list by importing from Teamcraft using the button at the bottom, or click the '+' icon and give your list a name." +
+                $" You can also right click an item from the game's recipe menu to either add it to a new list if one is not selected, or to create a new list with it as the first item if a list is not selected.");
+
+            ImGui.Dummy(new Vector2(0, 14f));
+            ImGui.TextWrapped($"Left click a list to open the editor. Right click a list to select it without opening the editor.");
+
             ImGui.Separator();
 
             if (Minimized)
@@ -92,516 +89,168 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if (!Minimized)
-            {
-                if (ImGui.Button("New List"))
-                {
-                    keyboardFocus = true;
-                    ImGui.OpenPopup("NewCraftingList");
-                }
+            ImGui.BeginChild("ListsSelector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 170f));
+            ListsUI.Draw(ImGui.GetContentRegionAvail().X);
+            ImGui.EndChild();
 
-                DrawNewListPopup();
-
-                if (Service.Configuration.CraftingLists.Count > 0)
-                {
-                    float longestName = 0;
-                    foreach (var list in Service.Configuration.CraftingLists)
-                    {
-                        if (ImGui.CalcTextSize($"{list.Name}").Length() > longestName)
-                            longestName = ImGui.CalcTextSize($"{list.Name}").Length();
-                    }
-
-                    longestName = Math.Max(150, longestName);
-                    if (ImGui.BeginChild("###craftListSelector", new Vector2(longestName + 40, 0), true))
-                    {
-                        if (ImGuiEx.IconButton(FontAwesomeIcon.ArrowLeft, "MinimizeButton", new Vector2(longestName + 20, 0)))
-                        {
-                            Minimized = true;
-                        }
-
-                        ImGui.Separator();
-                        if (ImGui.BeginChild("###craftingLists", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 90)))
-                        {
-                            foreach (CraftingList l in Service.Configuration.CraftingLists)
-                            {
-                                if (ImGui.Selectable($"{l.Name}###list{l.ID}", l.ID == selectedList.ID))
-                                {
-                                    if (l.ID == selectedList.ID)
-                                    {
-                                        selectedList = new();
-                                    }
-                                    else
-                                    {
-                                        selectedList = l;
-                                        CraftingListHelpers.SelectedListMateralsNew.Clear();
-                                        listMaterialsNew.Clear();
-                                        selectedListItem = 0;
-                                    }
-                                }
-                            }
-                        }
-                        ImGui.EndChild();
-                        Teamcraft.DrawTeamCraftListButtons();
-                    }
-                    ImGui.EndChild();
-                }
-                else
-                {
-                    Teamcraft.DrawTeamCraftListButtons();
-                }
-
-
-            }
-
+            ImGui.BeginChild("ListButtons", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 100f));
             if (selectedList.ID != 0)
             {
-                if (!Minimized)
-                    ImGui.SameLine();
-                if (ImGui.BeginChild("###selectedList", new Vector2(0, ImGui.GetContentRegionAvail().Y), false))
+                if (ImGui.Button("Start Crafting List", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
                 {
-                    if (!renameMode)
+                    StartList();
+                }
+                if (RetainerInfo.ATools)
+                {
+                    if (RetainerInfo.TM.IsBusy)
                     {
-                        ImGui.Text($"Selected List: {selectedList.Name}");
-                        ImGui.SameLine();
-                        if (ImGuiComponents.IconButton(FontAwesomeIcon.Pen))
+                        if (ImGui.Button("Abort Collecting From Retainer", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
                         {
-                            renameMode = true;
+                            RetainerInfo.TM.Abort();
                         }
                     }
                     else
                     {
-                        renameList = selectedList.Name;
-                        if (ImGui.InputText("", ref renameList, 64, ImGuiInputTextFlags.EnterReturnsTrue))
+                        if (ImGui.Button("Restock Inventory From Retainers", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
                         {
-                            selectedList.Name = renameList;
-                            Service.Configuration.Save();
-
-                            renameMode = false;
-                            renameList = String.Empty;
+                            RetainerInfo.RestockFromRetainers(selectedList);
                         }
                     }
-                    if (ImGui.Button("Delete List (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
-                    {
-                        Service.Configuration.CraftingLists.Remove(selectedList);
-
-                        Service.Configuration.Save();
-                        selectedList = new();
-                        CraftingListHelpers.
-                                                SelectedListMateralsNew.Clear();
-                        listMaterialsNew.Clear();
-                    }
-
-                    bool skipIfEnough = selectedList.SkipIfEnough;
-                    if (ImGui.Checkbox("Skip items you already have enough of", ref skipIfEnough))
-                    {
-                        selectedList.SkipIfEnough = skipIfEnough;
-                        Service.Configuration.Save();
-                    }
-
-                    bool materia = selectedList.Materia;
-                    if (ImGui.Checkbox("Automatically Extract Materia", ref materia))
-                    {
-                        selectedList.Materia = materia;
-                        Service.Configuration.Save();
-                    }
-                    ImGuiComponents.HelpMarker("Will automatically extract materia from any equipped gear once it's spiritbond is 100%");
-
-                    bool repair = selectedList.Repair;
-                    if (ImGui.Checkbox("Automatic Repairs", ref repair))
-                    {
-                        selectedList.Repair = repair;
-                        Service.Configuration.Save();
-                    }
-
-                    ImGuiComponents.HelpMarker("If enabled, Artisan will automatically repair your gear using Dark Matter when any piece reaches the configured repair threshold.");
-                    if (selectedList.Repair)
-                    {
-                        ImGui.PushItemWidth(200);
-                        if (ImGui.SliderInt("##repairp", ref selectedList.RepairPercent, 10, 100, $"%d%%"))
-                        {
-                            Service.Configuration.Save();
-                        }
-                    }
-                    if (ImGui.Checkbox("Set new items added to list as quick synth", ref selectedList.AddAsQuickSynth))
-                    {
-                        Service.Configuration.Save();
-                    }
-
-                    if (selectedList.Items.Count > 0)
-                    {
-                        if (ImGui.CollapsingHeader("List Items"))
-                        {
-
-                            ImGui.Columns(2, null, false);
-                            ImGui.Text("Current Items");
-                            ImGui.Indent();
-                            var loop = 1;
-                            foreach (var item in CollectionsMarshal.AsSpan(selectedList.Items.Distinct().ToList()))
-                            {
-                                var selected = ImGui.Selectable($"{loop}. {CraftingListHelpers.FilteredList[item].ItemResult.Value.Name.RawString} x{selectedList.Items.Count(x => x == item)} {(CraftingListHelpers.FilteredList[item].AmountResult > 1 ? $"({CraftingListHelpers.FilteredList[item].AmountResult * selectedList.Items.Count(x => x == item)} total)" : $"")}", selectedListItem == item);
-
-                                if (selected)
-                                {
-                                    selectedListItem = item;
-                                }
-
-                                loop++;
-                            }
-                            ImGui.Unindent();
-                            ImGui.NextColumn();
-                            if (selectedListItem != 0)
-                            {
-                                var recipe = CraftingListHelpers.FilteredList[selectedListItem];
-                                ImGui.Text("Options");
-                                if (ImGuiComponents.IconButton(FontAwesomeIcon.Trash))
-                                {
-                                    selectedList.Items.RemoveAll(x => x == selectedListItem);
-                                    selectedListItem = 0;
-                                    Service.Configuration.Save();
-                                    CraftingListHelpers.
-                                                                        SelectedListMateralsNew.Clear();
-                                    listMaterialsNew.Clear();
-                                }
-                                ImGui.SameLine();
-                                var count = selectedList.Items.Count(x => x == selectedListItem);
-
-                                ImGui.PushItemWidth(150);
-                                if (ImGui.InputInt("Adjust quantity", ref count))
-                                {
-                                    if (count > 0)
-                                    {
-                                        var oldCount = selectedList.Items.Count(x => x == selectedListItem);
-                                        if (oldCount < count)
-                                        {
-                                            var diff = count - oldCount;
-                                            for (int i = 1; i <= diff; i++)
-                                            {
-                                                selectedList.Items.Insert(selectedList.Items.IndexOf(selectedListItem), selectedListItem);
-                                            }
-                                            Service.Configuration.Save();
-                                            CraftingListHelpers.
-                                                                                        SelectedListMateralsNew.Clear();
-                                            listMaterialsNew.Clear();
-                                        }
-                                        if (count < oldCount)
-                                        {
-                                            var diff = oldCount - count;
-                                            for (int i = 1; i <= diff; i++)
-                                            {
-                                                selectedList.Items.Remove(selectedListItem);
-                                            }
-                                            Service.Configuration.Save();
-                                            CraftingListHelpers.
-                                                                                        SelectedListMateralsNew.Clear();
-                                            listMaterialsNew.Clear();
-                                        }
-                                    }
-                                }
-
-
-                                if (!selectedList.ListItemOptions.ContainsKey(selectedListItem))
-                                {
-                                    selectedList.ListItemOptions.TryAdd(selectedListItem, new ListItemOptions());
-                                    if (selectedList.AddAsQuickSynth && recipe.CanQuickSynth)
-                                        selectedList.ListItemOptions[selectedListItem].NQOnly = true;
-                                }
-                                selectedList.ListItemOptions.TryGetValue(selectedListItem, out var options);
-
-                                if (recipe.CanQuickSynth)
-                                {
-                                    bool NQOnly = options.NQOnly;
-                                    if (ImGui.Checkbox("Quick Synthesis this item", ref NQOnly))
-                                    {
-                                        options.NQOnly = NQOnly;
-                                        Service.Configuration.Save();
-                                    }
-                                }
-                                else
-                                {
-                                    ImGui.TextWrapped("This item cannot be quick synthed.");
-                                }
-
-                                if (LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.Name.RawString == selectedListItem.NameOfRecipe()).Count() > 1)
-                                {
-                                    string pre = $"{LuminaSheets.ClassJobSheet[recipe.CraftType.Row + 8].Abbreviation.RawString}";
-                                    ImGui.TextWrapped("Switch crafted job");
-                                    if (ImGui.BeginCombo("###SwitchJobCombo", pre))
-                                    {
-                                        foreach (var altJob in LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.Name.RawString == selectedListItem.NameOfRecipe()))
-                                        {
-                                            string altJ = $"{LuminaSheets.ClassJobSheet[altJob.CraftType.Row + 8].Abbreviation.RawString}";
-                                            if (ImGui.Selectable($"{altJ}"))
-                                            {
-                                                for (int i = 0; i < selectedList.Items.Count; i++)
-                                                {
-                                                    if (selectedList.Items[i] == selectedListItem)
-                                                        selectedList.Items[i] = altJob.RowId;
-                                                }
-
-                                                selectedListItem = altJob.RowId;
-                                                Service.Configuration.Save();
-                                            }
-
-                                        }
-
-                                        ImGui.EndCombo();
-                                    }
-
-                                }
-
-                                if (true)
-                                {
-                                    ImGui.Spacing();
-                                    ImGui.TextWrapped($"Use a food item for this recipe");
-                                    if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == options.Food, out var item) ? $"{(options.FoodHQ ? " " : "")}{item.Name}" : $"{(options.Food == 0 ? "Disabled" : $"{(options.FoodHQ ? " " : "")}{options.Food}")}"))
-                                    {
-                                        if (ImGui.Selectable("Disable"))
-                                        {
-                                            options.Food = 0;
-                                            Service.Configuration.Save();
-                                        }
-                                        foreach (var x in ConsumableChecker.GetFood(true))
-                                        {
-                                            if (ImGui.Selectable($"{x.Name}"))
-                                            {
-                                                options.Food = x.Id;
-                                                options.FoodHQ = false;
-                                                Service.Configuration.Save();
-                                            }
-                                        }
-                                        foreach (var x in ConsumableChecker.GetFood(true, true))
-                                        {
-                                            if (ImGui.Selectable($" {x.Name}"))
-                                            {
-                                                options.Food = x.Id;
-                                                options.FoodHQ = true;
-                                                Service.Configuration.Save();
-                                            }
-                                        }
-
-                                        ImGui.EndCombo();
-                                    }
-                                }
-
-                                if (true)
-                                {
-                                    ImGui.Spacing();
-                                    ImGuiEx.SetNextItemFullWidth();
-                                    ImGui.TextWrapped($"Use a potion item for this recipe");
-                                    if (ImGui.BeginCombo("##potBuff", ConsumableChecker.Pots.TryGetFirst(x => x.Id == options.Potion, out var item) ? $"{(options.PotHQ ? " " : "")}{item.Name}" : $"{(options.Potion == 0 ? "Disabled" : $"{(options.PotHQ ? " " : "")}{options.Potion}")}"))
-                                    {
-                                        if (ImGui.Selectable("Disable"))
-                                        {
-                                            options.Potion = 0;
-                                            Service.Configuration.Save();
-                                        }
-                                        foreach (var x in ConsumableChecker.GetPots(true))
-                                        {
-                                            if (ImGui.Selectable($"{x.Name}"))
-                                            {
-                                                options.Potion = x.Id;
-                                                options.PotHQ = false;
-                                                Service.Configuration.Save();
-                                            }
-                                        }
-                                        foreach (var x in ConsumableChecker.GetPots(true, true))
-                                        {
-                                            if (ImGui.Selectable($" {x.Name}"))
-                                            {
-                                                options.Potion = x.Id;
-                                                options.PotHQ = true;
-                                                Service.Configuration.Save();
-                                            }
-                                        }
-
-                                        ImGui.EndCombo();
-                                    }
-                                }
-
-
-                                if (Service.Configuration.UserMacros.Count > 0)
-                                {
-                                    ImGui.Spacing();
-                                    ImGui.TextWrapped($"Use a macro for this recipe");
-
-                                    string? preview = Service.Configuration.IRM.TryGetValue((uint)selectedListItem, out var prevMacro) ? Service.Configuration.UserMacros.First(x => x.ID == prevMacro).Name : "";
-                                    if (ImGui.BeginCombo("", preview))
-                                    {
-                                        if (ImGui.Selectable(""))
-                                        {
-                                            Service.Configuration.IRM.Remove(selectedListItem);
-                                            Service.Configuration.Save();
-                                        }
-                                        foreach (var macro in Service.Configuration.UserMacros)
-                                        {
-                                            bool selected = Service.Configuration.IRM.TryGetValue((uint)selectedListItem, out var selectedMacro);
-                                            if (ImGui.Selectable(macro.Name, selected))
-                                            {
-                                                Service.Configuration.IRM[(uint)selectedListItem] = macro.ID;
-                                                Service.Configuration.Save();
-                                            }
-                                        }
-
-                                        ImGui.EndCombo();
-                                    }
-                                }
-                                ImGui.Spacing();
-
-                                if (selectedList.Items.Distinct().Count() > 1)
-                                {
-                                    ImGui.Text("Re-order list");
-                                    ImGui.SameLine();
-
-                                    bool isFirstItem = selectedList.Items.IndexOf(selectedListItem) == 0;
-                                    bool isLastItem = selectedList.Items.LastIndexOf(selectedListItem) == selectedList.Items.Count - 1;
-
-                                    if (!isFirstItem)
-                                    {
-                                        if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowUp))
-                                        {
-                                            var loops = selectedList.Items.Count(x => x == selectedListItem);
-                                            var previousNum = selectedList.Items[selectedList.Items.IndexOf(selectedListItem) - 1];
-                                            var insertionIndex = selectedList.Items.IndexOf(previousNum);
-
-                                            selectedList.Items.RemoveAll(x => x == selectedListItem);
-                                            for (int i = 1; i <= loops; i++)
-                                            {
-                                                selectedList.Items.Insert(insertionIndex, selectedListItem);
-                                            }
-
-                                        }
-                                        if (!isLastItem) ImGui.SameLine();
-                                    }
-
-                                    if (!isLastItem)
-                                    {
-                                        if (isFirstItem)
-                                        {
-                                            ImGui.Dummy(new Vector2(22));
-                                            ImGui.SameLine();
-                                        }
-
-                                        if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowDown))
-                                        {
-                                            var nextNum = selectedList.Items[selectedList.Items.LastIndexOf(selectedListItem) + 1];
-                                            var loops = selectedList.Items.Count(x => x == nextNum);
-                                            var insertionIndex = selectedList.Items.IndexOf(selectedListItem);
-
-                                            selectedList.Items.RemoveAll(x => x == nextNum);
-                                            for (int i = 1; i <= loops; i++)
-                                            {
-                                                selectedList.Items.Insert(insertionIndex, nextNum);
-                                            }
-
-                                        }
-                                    }
-                                }
-
-                            }
-                        }
-                        ImGui.Columns(1, null, false);
-                        if (ImGui.CollapsingHeader("Total Ingredients"))
-                        {
-                            ImGui.Columns(2, "###ListClickFunctions", false);
-                            ImGui.TextWrapped("Left Click Name");
-                            ImGui.NextColumn();
-                            ImGui.TextWrapped("Copy to Clipboard");
-                            ImGui.NextColumn();
-                            ImGui.TextWrapped($"Ctrl + Left Click Name");
-                            ImGui.NextColumn();
-                            ImGui.TextWrapped($"Perform an Item Search command for the item");
-                            ImGui.NextColumn();
-
-                            if (GatherBuddy)
-                            {
-                                ImGui.TextWrapped($"Shift + Left Click Name");
-                                ImGui.NextColumn();
-                                ImGui.TextWrapped($"Perform a GatherBuddy /gather command");
-                                ImGui.NextColumn();
-                            }
-                            else
-                            {
-                                ImGui.TextWrapped($"Install GatherBuddy for more functionality.");
-                                ImGui.NextColumn();
-                                ImGui.NextColumn();
-                            }
-
-                            if (ItemVendor)
-                            {
-                                ImGui.TextWrapped($"Alt + Left Click Name");
-                                ImGui.NextColumn();
-                                ImGui.TextWrapped($"Perform an Item Vendor Lookup.");
-                                ImGui.NextColumn();
-                            }
-                            else
-                            {
-                                ImGui.TextWrapped($"Install Item Vendor Location for more functionality.");
-                                ImGui.NextColumn();
-                                ImGui.NextColumn();
-                            }
-
-                            if (MonsterLookup)
-                            {
-                                ImGui.TextWrapped($"Right Click Name");
-                                ImGui.NextColumn();
-                                ImGui.TextWrapped($"Perform a /mloot command.");
-                                ImGui.NextColumn();
-                            }
-                            else
-                            {
-                                ImGui.TextWrapped($"Install Monster Loot Hunter for more functionality.");
-                                ImGui.NextColumn();
-                                ImGui.NextColumn();
-                            }
-
-                            ImGui.Columns(1);
-                            ImGui.Spacing();
-                            ImGui.Separator();
-                            DrawTotalIngredientsTable();
-                        }
-                        if (ImGui.Button("Start Crafting List", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
-                        {
-                            CraftingListFunctions.CurrentIndex = 0;
-                            if (CraftingListFunctions.RecipeWindowOpen())
-                                CraftingListFunctions.CloseCraftingMenu();
-
-                            Processing = true;
-                            Handler.Enable = false;
-                        }
-                        if (RetainerInfo.ATools)
-                        {
-                            if (RetainerInfo.TM.IsBusy)
-                            {
-                                if (ImGui.Button("Abort Collecting From Retainer", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
-                                {
-                                    RetainerInfo.TM.Abort();
-                                }
-                            }
-                            else
-                            {
-                                if (ImGui.Button("Restock Inventory From Retainers", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
-                                {
-                                    RetainerInfo.RestockFromRetainers(selectedList);
-                                }
-                            }
-                        }
-
-                    }
-                    ImGui.Spacing();
-                    ImGui.Separator();
-
-                    DrawRecipeData();
-
-
                 }
-
-                ImGui.EndChild();
             }
+
+            ImGui.EndChild();
+
+            ImGui.BeginChild("TeamCraftSection", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 5f), false);
+            Teamcraft.DrawTeamCraftListButtons();
+            ImGui.EndChild();
+
+            //if (selectedList.ID != 0)
+            //{
+            //    if (!Minimized)
+            //        ImGui.SameLine();
+            //    if (ImGui.BeginChild("###selectedList", new Vector2(0, ImGui.GetContentRegionAvail().Y), false))
+            //    {
+            //        if (!renameMode)
+            //        {
+            //            ImGui.Text($"Selected List: {selectedList.Name}");
+            //            ImGui.SameLine();
+            //            if (ImGuiComponents.IconButton(FontAwesomeIcon.Pen))
+            //            {
+            //                renameMode = true;
+            //            }
+            //        }
+            //        else
+            //        {
+            //            renameList = selectedList.Name;
+            //            if (ImGui.InputText("", ref renameList, 64, ImGuiInputTextFlags.EnterReturnsTrue))
+            //            {
+            //                selectedList.Name = renameList;
+            //                Service.Configuration.Save();
+
+            //                renameMode = false;
+            //                renameList = String.Empty;
+            //            }
+            //        }
+            //        if (ImGui.Button("Delete List (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
+            //        {
+            //            Service.Configuration.CraftingLists.Remove(selectedList);
+
+            //            Service.Configuration.Save();
+            //            selectedList = new();
+            //            CraftingListHelpers.
+            //                                    SelectedListMateralsNew.Clear();
+            //            listMaterialsNew.Clear();
+            //        }
+
+            //        if (selectedList.Items.Count > 0)
+            //        {
+            //            ImGui.Columns(1, null, false);
+            //            if (ImGui.CollapsingHeader("Total Ingredients"))
+            //            {
+            //                ImGui.Columns(2, "###ListClickFunctions", false);
+            //                ImGui.TextWrapped("Left Click Name");
+            //                ImGui.NextColumn();
+            //                ImGui.TextWrapped("Copy to Clipboard");
+            //                ImGui.NextColumn();
+            //                ImGui.TextWrapped($"Ctrl + Left Click Name");
+            //                ImGui.NextColumn();
+            //                ImGui.TextWrapped($"Perform an Item Search command for the item");
+            //                ImGui.NextColumn();
+
+            //                if (GatherBuddy)
+            //                {
+            //                    ImGui.TextWrapped($"Shift + Left Click Name");
+            //                    ImGui.NextColumn();
+            //                    ImGui.TextWrapped($"Perform a GatherBuddy /gather command");
+            //                    ImGui.NextColumn();
+            //                }
+            //                else
+            //                {
+            //                    ImGui.TextWrapped($"Install GatherBuddy for more functionality.");
+            //                    ImGui.NextColumn();
+            //                    ImGui.NextColumn();
+            //                }
+
+            //                if (ItemVendor)
+            //                {
+            //                    ImGui.TextWrapped($"Alt + Left Click Name");
+            //                    ImGui.NextColumn();
+            //                    ImGui.TextWrapped($"Perform an Item Vendor Lookup.");
+            //                    ImGui.NextColumn();
+            //                }
+            //                else
+            //                {
+            //                    ImGui.TextWrapped($"Install Item Vendor Location for more functionality.");
+            //                    ImGui.NextColumn();
+            //                    ImGui.NextColumn();
+            //                }
+
+            //                if (MonsterLookup)
+            //                {
+            //                    ImGui.TextWrapped($"Right Click Name");
+            //                    ImGui.NextColumn();
+            //                    ImGui.TextWrapped($"Perform a /mloot command.");
+            //                    ImGui.NextColumn();
+            //                }
+            //                else
+            //                {
+            //                    ImGui.TextWrapped($"Install Monster Loot Hunter for more functionality.");
+            //                    ImGui.NextColumn();
+            //                    ImGui.NextColumn();
+            //                }
+
+            //                ImGui.Columns(1);
+            //                ImGui.Spacing();
+            //                ImGui.Separator();
+            //                DrawTotalIngredientsTable();
+            //            }
+                        
+
+            //        }
+            //        ImGui.Spacing();
+            //        ImGui.Separator();
+
+            //        DrawRecipeData();
+
+
+            //    }
+
+            //    ImGui.EndChild();
+            //}
 
 
         }
 
+        public static void StartList()
+        {
+            CraftingListFunctions.CurrentIndex = 0;
+            if (CraftingListFunctions.RecipeWindowOpen())
+                CraftingListFunctions.CloseCraftingMenu();
 
+            Processing = true;
+            Handler.Enable = false;
+        }
 
         private async static void DrawTotalIngredientsTable()
         {
