@@ -31,10 +31,12 @@ namespace Artisan.MacroSystem
 
         private static int level = 1;
         private static int difficulty = 9;
+        private static int quality = 80;
 
         private static int maxDifficulty = LuminaSheets.RecipeLevelTableSheet.Values.Where(x => x.ClassJobLevel == level).Max(x => x.Difficulty);
         private static int minDifficulty = LuminaSheets.RecipeLevelTableSheet.Values.Where(x => x.ClassJobLevel == level).Min(x => x.Difficulty);
         private static List<int> PossibleDifficulties = new();
+        private static List<int> PossibleQualities = new();
 
         private static bool CannotHQ = false;
         private static Dictionary<uint, bool> JobSelected = LuminaSheets.ClassJobSheet.Values.Where(x => x.RowId >= 8 && x.RowId <= 15).ToDictionary(x => x.RowId, x => false);
@@ -152,6 +154,7 @@ namespace Artisan.MacroSystem
             {
                 PossibleDifficulties.Clear();
                 Durabilities.Clear();
+                PossibleQualities.Clear();
             }
 
             if (PossibleDifficulties.Count == 0)
@@ -167,12 +170,12 @@ namespace Artisan.MacroSystem
                 }
             }
 
+
             if (difficulty < PossibleDifficulties.Min())
-                difficulty = minDifficulty;
+                difficulty = PossibleDifficulties.Min();
 
             if (difficulty > PossibleDifficulties.Max())
-                difficulty = maxDifficulty;
-
+                difficulty = PossibleDifficulties.Max();
 
 
             if (!PossibleDifficulties.Any(x => x == difficulty))
@@ -184,6 +187,48 @@ namespace Artisan.MacroSystem
             if (ImGui.SliderInt($"{LuminaSheets.AddonSheet[1431].Text}###RecipeDiff", ref difficulty, PossibleDifficulties.Min(), PossibleDifficulties.Max()))
             {
                 Durabilities.Clear();
+
+                if (PossibleDifficulties.Any())
+                    PossibleQualities.Clear();
+            }
+
+            if (PossibleQualities.Count == 0 && PossibleDifficulties.Any(x => x == difficulty))
+            {
+                foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => x.RecipeLevelTable.Value.ClassJobLevel == level &&
+                Math.Floor(x.RecipeLevelTable.Value.Difficulty * (x.DifficultyFactor / 100f)) == difficulty))
+                {
+                    float diffFactor = recipe.QualityFactor / 100f;
+                    var actualDiff = (int)Math.Floor(diffFactor * recipe.RecipeLevelTable.Value.Quality);
+                    if (actualDiff == 0) continue;
+
+                    if (!PossibleQualities.Contains(actualDiff))
+                        PossibleQualities.Add(actualDiff);
+                }
+
+                if (PossibleQualities.Any())
+                {
+                    if (quality < PossibleQualities.Min())
+                        quality = PossibleQualities.Min();
+
+                    if (quality > PossibleQualities.Max())
+                        quality = PossibleQualities.Max();
+                }
+            }
+
+
+
+            if (!PossibleQualities.Any(x => x == quality))
+            {
+                var nearest = PossibleQualities.OrderBy(x => Math.Abs(x - quality)).FirstOrDefault();
+                quality = nearest;
+            }
+
+            if (PossibleQualities.Any())
+            {
+                if (ImGui.SliderInt($"{LuminaSheets.AddonSheet[216].Text}###RecipeQuality", ref quality, PossibleQualities.Min(), PossibleQualities.Max()))
+                {
+                    Durabilities.Clear();
+                }
             }
 
             if (ImGui.BeginListBox($"{LuminaSheets.AddonSheet[5400].Text}###AssignJobBox", new Vector2(0, 55)))
@@ -209,7 +254,8 @@ namespace Artisan.MacroSystem
                 ImGui.Columns(4, null, false);
 
                 foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => x.RecipeLevelTable.Value.ClassJobLevel == level &&
-                Math.Floor(x.RecipeLevelTable.Value.Difficulty * (x.DifficultyFactor / 100f))  == difficulty))
+                Math.Floor(x.RecipeLevelTable.Value.Difficulty * (x.DifficultyFactor / 100f)) == difficulty &&
+                Math.Floor(x.RecipeLevelTable.Value.Quality * (x.QualityFactor / 100f)) == quality))
                 {
                     Durabilities.TryAdd((ushort)(recipe.RecipeLevelTable.Value.Durability * (recipe.DurabilityFactor / 100f)), false);
                 }
@@ -238,7 +284,8 @@ namespace Artisan.MacroSystem
                 showNonHQ = false;
 
                 foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => x.RecipeLevelTable.Value.ClassJobLevel == level &&
-                Math.Floor(x.RecipeLevelTable.Value.Difficulty * (x.DifficultyFactor / 100f)) == difficulty))
+                Math.Floor(x.RecipeLevelTable.Value.Difficulty * (x.DifficultyFactor / 100f)) == difficulty &&
+                Math.Floor(x.RecipeLevelTable.Value.Quality * (x.QualityFactor / 100f)) == quality))
                 {
                     if (recipe.CanHq)
                     {
@@ -290,6 +337,11 @@ namespace Artisan.MacroSystem
 
                     if (actualDiff != difficulty) continue;
 
+                    float qualFactor = recipe.QualityFactor / 100f;
+                    short qualDiff = (short)(qualFactor * recipe.RecipeLevelTable.Value.Quality);
+
+                    if (qualDiff != quality) continue;
+
                     foreach (var job in JobSelected.Where(x => x.Value))
                     {
                         if (recipe.CraftType.Row != job.Key - 8) continue;
@@ -330,7 +382,7 @@ namespace Artisan.MacroSystem
                 var count = P.config.IRM.Where(x => x.Value == selectedAssignMacro.ID).Count();
                 foreach (var macro in P.config.IRM.ToList())
                 {
-                    if (macro.Value ==  selectedAssignMacro.ID) 
+                    if (macro.Value == selectedAssignMacro.ID)
                     {
                         P.config.IRM.Remove(macro.Key);
                     }

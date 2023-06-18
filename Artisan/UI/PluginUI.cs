@@ -460,6 +460,9 @@ namespace Artisan.UI
             {
                 if (ImGui.Checkbox("Automatic Action Execution Mode", ref autoEnabled))
                 {
+                    if (!autoEnabled)
+                        ActionWatching.BlockAction = false;
+
                     Service.Configuration.AutoMode = autoEnabled;
                     Service.Configuration.Save();
                 }
@@ -635,8 +638,13 @@ namespace Artisan.UI
                 if (ImGui.Checkbox("Disable Allagan Tools Integration With Lists", ref Service.Configuration.DisableAllaganTools))
                     Service.Configuration.Save();
 
+                if (ImGui.Checkbox("Disable Artisan Context Menu Options", ref Service.Configuration.HideContextMenus))
+                    Service.Configuration.Save();
+
+                ImGuiComponents.HelpMarker("These are the new options when you right click or press square on a recipe in the recipe list.");
+
             }
-            if (ImGui.CollapsingHeader("List Defaults"))
+            if (ImGui.CollapsingHeader("List Settings"))
             {
                 ImGui.TextWrapped($"These settings will automatically be applied when creating a crafting list.");
 
@@ -672,6 +680,14 @@ namespace Artisan.UI
 
                 if (ImGui.Checkbox($@"Reset ""Number of Times to Add"" after adding to list.", ref Service.Configuration.ResetTimesToAdd))
                     Service.Configuration.Save();
+
+                if (ImGui.InputInt("Times to Add with Context Menu", ref Service.Configuration.ContextMenuLoops))
+                {
+                    if (Service.Configuration.ContextMenuLoops <= 0)
+                        Service.Configuration.ContextMenuLoops = 1;
+
+                    Service.Configuration.Save();
+                }
             }
         }
     }

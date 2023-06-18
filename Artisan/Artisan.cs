@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using Artisan.ContextMenus;
 using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.CustomDeliveries;
@@ -108,6 +109,7 @@ public unsafe class Artisan : IDalamudPlugin
         Handler.Init();
         IPC.IPC.Init();
         RetainerInfo.Init();
+        CraftingListContextMenu.Init();
 
         ws.AddWindow(new RecipeWindowUI());
         ws.AddWindow(new ProcessingWindow());
@@ -154,6 +156,11 @@ public unsafe class Artisan : IDalamudPlugin
             if (flag == ConditionFlag.WaitingForDutyFinder && value)
             {
                 IPC.IPC.StopCraftingRequest = true;
+            }
+
+            if (flag == ConditionFlag.WaitingForDutyFinder && !value)
+            {
+                IPC.IPC.StopCraftingRequest = false;
             }
 
             if (flag == ConditionFlag.BoundByDuty && !value && IPC.IPC.StopCraftingRequest && Service.Configuration.RequestToResumeDuty)
@@ -323,7 +330,7 @@ public unsafe class Artisan : IDalamudPlugin
                         {
                             if (CurrentQuality >= MaxQuality)
                             {
-                                while (ActionIsQuality(macro) && (!Service.Configuration.SkipMacroStepIfUnable || (Service.Configuration.SkipMacroStepIfUnable && CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))))
+                                while (MacroStep < macro.MacroActions.Count() && ActionIsQuality(macro) && (!Service.Configuration.SkipMacroStepIfUnable || (Service.Configuration.SkipMacroStepIfUnable && CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))))
                                 {
                                     MacroStep++;
                                 }
@@ -332,7 +339,7 @@ public unsafe class Artisan : IDalamudPlugin
 
                         if (macro.MacroOptions.SkipObservesIfNotPoor && CurrentCondition != CraftingLogic.CraftData.Condition.Poor)
                         {
-                            while (macro.MacroActions[MacroStep] == Skills.Observe || macro.MacroActions[MacroStep] == Skills.CarefulObservation)
+                            while (MacroStep < macro.MacroActions.Count() && macro.MacroActions[MacroStep] == Skills.Observe || macro.MacroActions[MacroStep] == Skills.CarefulObservation)
                             {
                                 MacroStep++;
                             }
@@ -340,13 +347,13 @@ public unsafe class Artisan : IDalamudPlugin
 
                         if (Service.Configuration.SkipMacroStepIfUnable)
                         {
-                            while (!CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))
+                            while (MacroStep < macro.MacroActions.Count() && !CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))
                             {
                                 MacroStep++;
                             }
                         }
 
-                        while ((macro.MacroStepOptions[MacroStep].ExcludeNormal && CurrentCondition == CraftingLogic.CraftData.Condition.Normal) ||
+                        while (MacroStep < macro.MacroActions.Count() && ((macro.MacroStepOptions[MacroStep].ExcludeNormal && CurrentCondition == CraftingLogic.CraftData.Condition.Normal) ||
                             (macro.MacroStepOptions[MacroStep].ExcludeGood && CurrentCondition == CraftingLogic.CraftData.Condition.Good) ||
                             (macro.MacroStepOptions[MacroStep].ExcludePoor && CurrentCondition == CraftingLogic.CraftData.Condition.Poor) ||
                             (macro.MacroStepOptions[MacroStep].ExcludeExcellent && CurrentCondition == CraftingLogic.CraftData.Condition.Excellent) ||
@@ -355,24 +362,27 @@ public unsafe class Artisan : IDalamudPlugin
                             (macro.MacroStepOptions[MacroStep].ExcludePliant && CurrentCondition == CraftingLogic.CraftData.Condition.Pliant) ||
                             (macro.MacroStepOptions[MacroStep].ExcludeMalleable && CurrentCondition == CraftingLogic.CraftData.Condition.Malleable) ||
                             (macro.MacroStepOptions[MacroStep].ExcludePrimed && CurrentCondition == CraftingLogic.CraftData.Condition.Primed) ||
-                            (macro.MacroStepOptions[MacroStep].ExcludeGoodOmen && CurrentCondition == CraftingLogic.CraftData.Condition.GoodOmen))
+                            (macro.MacroStepOptions[MacroStep].ExcludeGoodOmen && CurrentCondition == CraftingLogic.CraftData.Condition.GoodOmen)))
                         {
                             MacroStep++;
                         }
 
-                        CurrentRecommendation = macro.MacroActions[MacroStep] == 0 ? (CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation()) : macro.MacroActions[MacroStep];
+                        CurrentRecommendation = MacroStep >= macro.MacroActions.Count() || macro.MacroActions[MacroStep] == 0 ? (CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation()) : macro.MacroActions[MacroStep];
 
                         try
                         {
-                            if (macro.MacroStepOptions.Count == 0 || !macro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
+                            if (MacroStep < macro.MacroStepOptions.Count())
                             {
-                                if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(macro) && ActionUpgradable(macro, out uint newAction))
+                                if (macro.MacroStepOptions.Count == 0 || !macro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
                                 {
-                                    CurrentRecommendation = newAction;
-                                }
-                                if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(macro) && ActionUpgradable(macro, out newAction))
-                                {
-                                    CurrentRecommendation = newAction;
+                                    if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(macro) && ActionUpgradable(macro, out uint newAction))
+                                    {
+                                        CurrentRecommendation = newAction;
+                                    }
+                                    if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(macro) && ActionUpgradable(macro, out newAction))
+                                    {
+                                        CurrentRecommendation = newAction;
+                                    }
                                 }
                             }
                         }
@@ -445,6 +455,7 @@ public unsafe class Artisan : IDalamudPlugin
 
                 if (Service.Configuration.AutoMode)
                 {
+                    ActionWatching.BlockAction = true;
                     P.CTM.DelayNext(Service.Configuration.AutoDelay);
                     P.CTM.Enqueue(() => Hotbars.ExecuteRecommended(CurrentRecommendation));
                     //Service.Framework.RunOnTick(() => , TimeSpan.FromMilliseconds(Service.Configuration.AutoDelay));
@@ -544,6 +555,7 @@ public unsafe class Artisan : IDalamudPlugin
         ECommonsMain.Dispose();
         CustomFont = null;
         LuminaSheets.Dispose();
+        CraftingListContextMenu.Dispose();
         P = null;
 
     }

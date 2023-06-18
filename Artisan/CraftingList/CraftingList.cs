@@ -457,7 +457,7 @@ namespace Artisan.CraftingLists
                             int hqMaterials = Convert.ToInt32(hqNodeText->NodeText.ToString().GetNumbers());
                             int requiredMaterials = Convert.ToInt32(required->NodeText.ToString().GetNumbers());
 
-                            if ((setHQint + setNQint) == requiredMaterials) continue;
+                            //if ((setHQint + setNQint) == requiredMaterials) continue;
 
                             for (int m = 0; m <= requiredMaterials && m <= nqMaterials; m++)
                             {

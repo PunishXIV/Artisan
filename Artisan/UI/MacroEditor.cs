@@ -243,6 +243,7 @@ namespace Artisan.UI
                         ImGuiEx.CenterColumnText($"Skip on these conditions", true);
 
                         ImGui.BeginChild("ConditionalExcludes", new Vector2(ImGui.GetContentRegionAvail().X, 100f), false, ImGuiWindowFlags.AlwaysAutoResize);
+                        ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0, 0));
                         ImGui.Columns(3, null, false);
                         if (ImGui.Checkbox($"Normal", ref macroStepOpts.ExcludeNormal))
                             Service.Configuration.Save();
@@ -272,6 +273,7 @@ namespace Artisan.UI
                             Service.Configuration.Save();
 
                         ImGui.Columns(1);
+                        ImGui.PopStyleVar();
                         ImGui.EndChild();   
                         if (ImGui.Button("Delete Action (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                         {
@@ -382,18 +384,18 @@ namespace Artisan.UI
                 }
 
 
-                //ImGuiEx.ImGuiLineCentered("MTimeHead", delegate
-                //{
-                //    ImGuiEx.TextUnderlined($"Estimated Macro Length");
-                //});
-                //ImGuiEx.ImGuiLineCentered("MTimeArtisan", delegate
-                //{
-                //    ImGuiEx.Text($"Artisan: {MacroUI.GetMacroLength(SelectedMacro)} seconds");
-                //});
-                //ImGuiEx.ImGuiLineCentered("MTimeTeamcraft", delegate
-                //{
-                //    ImGuiEx.Text($"Normal Macro: {MacroUI.GetTeamcraftMacroLength(SelectedMacro)} seconds");
-                //});
+                ImGuiEx.ImGuiLineCentered("MTimeHead", delegate
+                {
+                    ImGuiEx.TextUnderlined($"Estimated Macro Length");
+                });
+                ImGuiEx.ImGuiLineCentered("MTimeArtisan", delegate
+                {
+                    ImGuiEx.Text($"Artisan: {MacroUI.GetMacroLength(SelectedMacro)} seconds");
+                });
+                ImGuiEx.ImGuiLineCentered("MTimeTeamcraft", delegate
+                {
+                    ImGuiEx.Text($"Normal Macro: {MacroUI.GetTeamcraftMacroLength(SelectedMacro)} seconds");
+                });
             }
             else
             {

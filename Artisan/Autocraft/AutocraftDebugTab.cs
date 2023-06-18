@@ -5,15 +5,18 @@ using Artisan.IPC;
 using Artisan.QuestSync;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Dalamud.Logging;
 using Dalamud.Utility.Signatures;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.MJI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,7 +31,6 @@ namespace Artisan.Autocraft
         internal static int offset = 0;
         internal static int SelRecId = 0;
         internal static bool Debug = false;
-
         public static int DebugValue = 1;
 
         internal static void Draw()
@@ -250,6 +252,8 @@ namespace Artisan.Autocraft
 
                 ImGui.Text($"Item Count? {CraftingListUI.NumberOfIngredient((uint)DebugValue)}");
 
+                ImGui.Text($"Completed Recipe? {((uint)DebugValue).NameOfRecipe()} {P.ri.HasRecipeCrafted((uint)DebugValue)}");
+
                 if (ImGui.Button($"Open And Quick Synth"))
                 {
                     CurrentCraftMethods.QuickSynthItem(DebugValue);
@@ -266,6 +270,12 @@ namespace Artisan.Autocraft
                 {
                     Spiritbond.ExtractFirstMateria();
                 }
+
+                var restDays1 = MJIManager.Instance()->CraftworksRestDays[0];
+                var restDays2 = MJIManager.Instance()->CraftworksRestDays[1];
+                var restDays3 = MJIManager.Instance()->CraftworksRestDays[2];
+                var restDays4 = MJIManager.Instance()->CraftworksRestDays[3];
+                ImGui.Text($"{restDays1} {restDays2} {restDays3} {restDays4}");
 
                 /*ImGui.InputInt("id", ref SelRecId);
                 if (ImGui.Button("OpenRecipeByRecipeId"))
@@ -286,6 +296,14 @@ namespace Artisan.Autocraft
             }
             
 
+        }
+
+        public class Item
+        {
+            public uint Key { get; set; }
+            public string Name { get; set; }
+            public ushort CraftingTime { get; set; }
+            public uint UIIndex { get; set; }
         }
     }
 }

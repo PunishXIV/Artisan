@@ -108,8 +108,14 @@ namespace Artisan.CraftingLogic
                 return progressActions->BasicSynthesis.CanComplete(remainingProgress)!.Value;
             }
 
-            action = Skills.RapidSynthesis;
-            return progressActions->RapidSynthesis.CanComplete(remainingProgress)!.Value;
+            if (progressActions->RapidSynthesis.IsAvailable() && !CanUse(Skills.MastersMend))
+            {
+                action = Skills.RapidSynthesis;
+                return progressActions->RapidSynthesis.CanComplete(remainingProgress)!.Value;
+            }
+
+            action = Skills.BasicSynth;
+            return progressActions->BasicSynthesis.CanComplete(remainingProgress)!.Value;
         }
 
         private unsafe static bool CanSpamBasicToComplete()
@@ -282,17 +288,20 @@ namespace Artisan.CraftingLogic
         {
             try
             {
-                var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
-                if (recipeWindow == IntPtr.Zero)
-                    return;
+                if (Throttler.Throttle(500))
+                {
+                    var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+                    if (recipeWindow == IntPtr.Zero)
+                        return;
 
-                var addonPtr = (AddonRecipeNote*)recipeWindow;
-                if (addonPtr == null)
-                    return;
+                    var addonPtr = (AddonRecipeNote*)recipeWindow;
+                    if (addonPtr == null)
+                        return;
 
-                var synthButton = addonPtr->TrialSynthesisButton;
-                ClickRecipeNote.Using(recipeWindow).TrialSynthesis();
-                Handler.Tasks.Clear();
+                    var synthButton = addonPtr->TrialSynthesisButton;
+                    ClickRecipeNote.Using(recipeWindow).TrialSynthesis();
+                    Handler.Tasks.Clear();
+                }
             }
             catch (Exception ex)
             {

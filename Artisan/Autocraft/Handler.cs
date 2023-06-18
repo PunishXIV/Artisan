@@ -19,6 +19,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static ECommons.GenericHelpers;
 using PluginLog = Dalamud.Logging.PluginLog;
@@ -155,7 +157,7 @@ namespace Artisan.Autocraft
                         P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredients");
                         P.TM.Enqueue(() => UpdateMacroTimer(), "UpdateEnduranceMacroTimer");
                         P.TM.DelayNext("EnduranceThrottle", 100);
-                        P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraftMethods.RepeatActualCraft(); }, "EnduranceStartCraft");
+                        P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraftMethods.RepeatActualCraft(); else Enable = false; }, "EnduranceStartCraft");
 
 
                     }
@@ -451,6 +453,10 @@ namespace Artisan.Autocraft
 
                         if (str.Length == 0) return;
 
+                        str = str
+                            .Replace($"{(char)13}", "")
+                            .Replace("-", "");
+
                         if (str[^1] == '')
                         {
                             rName += str.Remove(str.Length - 1, 1).Trim();
@@ -464,7 +470,7 @@ namespace Artisan.Autocraft
 
                         if (firstCrystal > 0 && secondCrystal > 0)
                         {
-                            if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.RawString == rName && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
+                            if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.RawString.Replace("-", "") == rName && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
                             {
                                 RecipeID = (int)id.RowId;
                                 RecipeName = id.ItemResult.Value.Name;

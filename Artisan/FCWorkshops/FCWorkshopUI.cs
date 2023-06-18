@@ -3,12 +3,11 @@ using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Interface.Colors;
 using Dalamud.Logging;
-using ECommons;
 using ECommons.ImGuiMethods;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -83,7 +82,7 @@ namespace Artisan.FCWorkshops
 
                         ImGui.EndTable();
                     }
-                    if (ImGui.BeginTable($"###FCWorkshopProjectItemsContainer", RetainerInfo.ATools ? 4: 3, ImGuiTableFlags.Borders))
+                    if (ImGui.BeginTable($"###FCWorkshopProjectItemsContainer", RetainerInfo.ATools ? 4 : 3, ImGuiTableFlags.Borders))
                     {
                         ImGui.TableSetupColumn($"Item", ImGuiTableColumnFlags.WidthFixed);
                         ImGui.TableSetupColumn($"Total Required", ImGuiTableColumnFlags.WidthFixed);
@@ -92,17 +91,26 @@ namespace Artisan.FCWorkshops
 
                         ImGui.TableHeadersRow();
 
+                        Dictionary<uint, int> TotalItems = new Dictionary<uint, int>();
                         foreach (var item in project.CompanyCraftPart.Where(x => x.Row > 0).SelectMany(x => x.Value.CompanyCraftProcess).Where(x => x.Row > 0).SelectMany(x => x.Value.UnkData0).Where(x => x.SupplyItem > 0).GroupBy(x => x.SupplyItem))
+                        {
+                            if (TotalItems.ContainsKey(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row))
+                                TotalItems[LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row] += item.Sum(x => x.SetQuantity * x.SetsRequired);
+                            else
+                                TotalItems.TryAdd(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row, item.Sum(x => x.SetQuantity * x.SetsRequired));
+                        }
+
+                        foreach (var item in TotalItems)
                         {
                             ImGui.TableNextRow();
                             ImGui.TableNextColumn();
-                            ImGui.Text($"{LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Value.Name.RawString}");
+                            ImGui.Text($"{LuminaSheets.ItemSheet[item.Key].Name.RawString}");
                             ImGui.TableNextColumn();
-                            ImGui.Text($"{item.Sum(x => x.SetQuantity * x.SetsRequired)}");
+                            ImGui.Text($"{item.Value}");
                             ImGui.TableNextColumn();
-                            int invCount = CraftingListUI.NumberOfIngredient(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row);
+                            int invCount = CraftingListUI.NumberOfIngredient(LuminaSheets.ItemSheet[item.Key].RowId);
                             ImGui.Text($"{invCount}");
-                            bool hasEnoughInInv = invCount >= item.Sum(x => x.SetQuantity * x.SetsRequired);
+                            bool hasEnoughInInv = invCount >= item.Value;
                             if (hasEnoughInInv)
                             {
                                 var color = ImGuiColors.HealerGreen;
@@ -112,9 +120,9 @@ namespace Artisan.FCWorkshops
                             if (RetainerInfo.ATools)
                             {
                                 ImGui.TableNextColumn();
-                                ImGui.Text($"{RetainerInfo.GetRetainerItemCount(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row)}");
+                                ImGui.Text($"{RetainerInfo.GetRetainerItemCount(LuminaSheets.ItemSheet[item.Key].RowId)}");
 
-                                bool hasEnoughWithRetainer = (invCount + RetainerInfo.GetRetainerItemCount(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row)) >= item.Sum(x => x.SetQuantity * x.SetsRequired);
+                                bool hasEnoughWithRetainer = (invCount + RetainerInfo.GetRetainerItemCount(LuminaSheets.ItemSheet[item.Key].RowId) >= item.Value);
                                 if (!hasEnoughInInv && hasEnoughWithRetainer)
                                 {
                                     var color = ImGuiColors.DalamudOrange;
@@ -173,17 +181,27 @@ namespace Artisan.FCWorkshops
                                 if (RetainerInfo.ATools) ImGui.TableSetupColumn($"Retainers", ImGuiTableColumnFlags.WidthFixed);
                                 ImGui.TableHeadersRow();
 
+                                Dictionary<uint, int> TotalItems = new Dictionary<uint, int>();
                                 foreach (var item in part.CompanyCraftProcess.Where(x => x.Row > 0).SelectMany(x => x.Value.UnkData0).Where(x => x.SupplyItem > 0).GroupBy(x => x.SupplyItem))
                                 {
+                                    if (TotalItems.ContainsKey(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row))
+                                        TotalItems[LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row] += item.Sum(x => x.SetQuantity * x.SetsRequired);
+                                    else
+                                        TotalItems.TryAdd(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row, item.Sum(x => x.SetQuantity * x.SetsRequired));
+
+                                }
+
+                                foreach (var item in TotalItems) 
+                                { 
                                     ImGui.TableNextRow();
                                     ImGui.TableNextColumn();
-                                    ImGui.Text($"{LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Value.Name.RawString}");
+                                    ImGui.Text($"{LuminaSheets.ItemSheet[item.Key].Name.RawString}");
                                     ImGui.TableNextColumn();
-                                    ImGui.Text($"{item.Sum(x => x.SetQuantity * x.SetsRequired)}");
+                                    ImGui.Text($"{item.Value}");
                                     ImGui.TableNextColumn();
-                                    int invCount = CraftingListUI.NumberOfIngredient(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row);
+                                    int invCount = CraftingListUI.NumberOfIngredient(item.Key);
                                     ImGui.Text($"{invCount}");
-                                    bool hasEnoughInInv = invCount >= item.Sum(x => x.SetQuantity * x.SetsRequired);
+                                    bool hasEnoughInInv = invCount >= item.Value;
                                     if (hasEnoughInInv)
                                     {
                                         var color = ImGuiColors.HealerGreen;
@@ -193,9 +211,9 @@ namespace Artisan.FCWorkshops
                                     if (RetainerInfo.ATools)
                                     {
                                         ImGui.TableNextColumn();
-                                        ImGui.Text($"{RetainerInfo.GetRetainerItemCount(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row)}");
+                                        ImGui.Text($"{RetainerInfo.GetRetainerItemCount(item.Key)}");
 
-                                        bool hasEnoughWithRetainer = (invCount + RetainerInfo.GetRetainerItemCount(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row)) >= item.Sum(x => x.SetQuantity * x.SetsRequired);
+                                        bool hasEnoughWithRetainer = (invCount + RetainerInfo.GetRetainerItemCount(item.Key)) >= item.Value;
                                         if (!hasEnoughInInv && hasEnoughWithRetainer)
                                         {
                                             var color = ImGuiColors.DalamudOrange;
@@ -340,9 +358,9 @@ namespace Artisan.FCWorkshops
                     CreatePhaseList(phase.Value!, partNum, phaseNum, includePrecraft, existingList);
                     phaseNum++;
                 }
-               
+
             }
-            
+
 
         }
 

@@ -96,6 +96,8 @@ namespace Artisan
         public bool DisableMacroArtisanRecommendation = false;
         public bool UseQualityStarter = false;
         public bool ShowMacroAssignResults = false;
+        public bool HideContextMenus = false;
+        public int ContextMenuLoops = 1;
 
         public bool DontEquipItems = false;
 

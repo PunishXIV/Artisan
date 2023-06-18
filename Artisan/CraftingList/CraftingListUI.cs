@@ -124,14 +124,19 @@ namespace Artisan.CraftingLists
                         {
                             foreach (CraftingList l in Service.Configuration.CraftingLists)
                             {
-                                var selected = ImGui.Selectable($"{l.Name}###list{l.ID}", l.ID == selectedList.ID);
-
-                                if (selected)
+                                if (ImGui.Selectable($"{l.Name}###list{l.ID}", l.ID == selectedList.ID))
                                 {
-                                    selectedList = l;
-                                    CraftingListHelpers.SelectedListMateralsNew.Clear();
-                                    listMaterialsNew.Clear();
-                                    selectedListItem = 0;
+                                    if (l.ID == selectedList.ID)
+                                    {
+                                        selectedList = new();
+                                    }
+                                    else
+                                    {
+                                        selectedList = l;
+                                        CraftingListHelpers.SelectedListMateralsNew.Clear();
+                                        listMaterialsNew.Clear();
+                                        selectedListItem = 0;
+                                    }
                                 }
                             }
                         }
@@ -960,7 +965,7 @@ namespace Artisan.CraftingLists
                         timesToAdd = 1;
                 }
                 ImGui.SameLine();
-                if (ImGui.Button("Add to List (with all subcrafts)", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
+                if (ImGui.Button("Add to List (with all sub-crafts)", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
                 {
                     CraftingListHelpers.SelectedListMateralsNew.Clear();
                     listMaterialsNew.Clear();

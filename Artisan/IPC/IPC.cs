@@ -20,6 +20,7 @@ namespace Artisan.IPC
                 }
                 else
                 {
+                    if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.WaitingForDutyFinder] && !Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.BoundByDuty])
                     ResumeCrafting();
                 }
                 stopCraftingRequest = value;

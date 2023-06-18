@@ -136,7 +136,11 @@ namespace Artisan.RawInformation
 
             ActionType actionType = currentRecommendation >= 100000 ? ActionType.CraftAction : ActionType.Spell;
             if (actionManager->GetActionStatus(actionType, currentRecommendation, Svc.ClientState.LocalPlayer.ObjectId) != 0) return false;
-            return actionManager->UseAction(actionType, currentRecommendation);
+            ActionWatching.BlockAction = false;
+            actionManager->UseAction(actionType, currentRecommendation);
+            if (Service.Configuration.AutoMode)
+                ActionWatching.BlockAction = true;
+            return true;
         }
     }
 }

@@ -70,6 +70,9 @@ namespace Artisan.UI
 
             if (ImGui.Checkbox("Auto Action Mode", ref autoMode))
             {
+                if (!autoMode)
+                    ActionWatching.BlockAction = false;
+
                 Service.Configuration.AutoMode = autoMode;
                 Service.Configuration.Save();
             }

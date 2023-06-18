@@ -22,6 +22,7 @@ namespace Artisan.RawInformation
         public static Hook<UseActionDelegate> UseActionHook;
         public static uint LastUsedAction = 0;
         public static TaskManager ATM = new();
+        public static bool BlockAction = false;
 
         private delegate void* ClickSynthesisButton(void* a1, void* a2);
         private static Hook<ClickSynthesisButton> clickSysnthesisButtonHook;
@@ -29,6 +30,9 @@ namespace Artisan.RawInformation
         {
             try
             {
+                if (BlockAction)
+                    return UseActionHook!.Original(actionManager, (uint)ActionType.Spell, 7, targetObjectID, param, useType, pvp, isGroundTarget);
+
                 if (CurrentCraftMethods.CanUse(actionID))
                 {
                     PreviousAction = actionID;
@@ -116,11 +120,8 @@ namespace Artisan.RawInformation
                     {
                         if (MacroStep < macro.MacroActions.Count())
                         {
-                            if (allOfSameName.Any(x => x == macro.MacroActions[MacroStep]))
-                            {
-                                ATM.DelayNext("MacroStepIncrease", 800);
-                                ATM.Enqueue(() => MacroStep++);
-                            }
+                            ATM.DelayNext("MacroStepIncrease", 800);
+                            ATM.Enqueue(() => MacroStep++);
                         }
                     }
                 }
