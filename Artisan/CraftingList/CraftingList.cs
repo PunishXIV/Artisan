@@ -1,30 +1,37 @@
-﻿using Artisan.Autocraft;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+using Artisan.Autocraft;
 using Artisan.CraftingLogic;
 using Artisan.RawInformation;
+
 using ClickLib.Clicks;
+
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+
 using ECommons;
 using ECommons.DalamudServices;
+using static ECommons.GenericHelpers;
 using ECommons.Logging;
+
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+
 using Lumina.Excel.GeneratedSheets;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using static ECommons.GenericHelpers;
+
 using PluginLog = Dalamud.Logging.PluginLog;
 
 namespace Artisan.CraftingLists
 {
     public class CraftingList
     {
-        public int ID { get; set; } = 0;
+        public int ID { get; set; }
 
         public string? Name { get; set; }
 
@@ -32,20 +39,20 @@ namespace Artisan.CraftingLists
 
         public Dictionary<uint, ListItemOptions> ListItemOptions { get; set; } = new();
 
-        public bool SkipIfEnough { get; set; } = false;
+        public bool SkipIfEnough { get; set; }
 
-        public bool Materia { get; set; } = false;
+        public bool Materia { get; set; }
 
-        public bool Repair { get; set; } = false;
+        public bool Repair { get; set; }
 
         public int RepairPercent = 50;
 
-        public bool AddAsQuickSynth = false;
+        public bool AddAsQuickSynth;
     }
 
     public class ListItemOptions
     {
-        public bool NQOnly { get; set; } = false;
+        public bool NQOnly { get; set; }
         public uint Food = 0;
         public bool FoodHQ { get; set; } = false;
         public uint Potion = 0;
@@ -53,7 +60,7 @@ namespace Artisan.CraftingLists
     }
     public static class CraftingListFunctions
     {
-        public static int CurrentIndex = 0;
+        public static int CurrentIndex;
 
         public static bool Paused { get; set; } = false;
 
@@ -65,6 +72,7 @@ namespace Artisan.CraftingLists
             {
                 proposedRNG = rng.Next(1, 50000);
             }
+
             list.ID = proposedRNG;
         }
 
@@ -91,7 +99,7 @@ namespace Artisan.CraftingLists
             return true;
         }
 
-        public unsafe static void OpenCraftingMenu()
+        public static unsafe void OpenCraftingMenu()
         {
             if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
             {
@@ -102,12 +110,12 @@ namespace Artisan.CraftingLists
             }
         }
 
-        public unsafe static bool RecipeWindowOpen()
+        public static unsafe bool RecipeWindowOpen()
         {
             return TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) && addon->AtkUnitBase.IsVisible;
         }
 
-        public unsafe static void CloseCraftingMenu()
+        public static unsafe void CloseCraftingMenu()
         {
             if (TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) && addon->AtkUnitBase.IsVisible)
             {
@@ -118,7 +126,7 @@ namespace Artisan.CraftingLists
             }
         }
 
-        public unsafe static void OpenRecipeByID(uint recipeID, bool skipThrottle = false)
+        public static unsafe void OpenRecipeByID(uint recipeID, bool skipThrottle = false)
         {
             if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
             {
@@ -138,7 +146,7 @@ namespace Artisan.CraftingLists
             return CraftingListUI.CheckForIngredients(recipe, false);
         }
 
-        internal unsafe static void ProcessList(CraftingList selectedList)
+        internal static unsafe void ProcessList(CraftingList selectedList)
         {
             var isCrafting = Service.Condition[ConditionFlag.Crafting];
             var preparing = Service.Condition[ConditionFlag.PreparingToCraft];
@@ -147,13 +155,14 @@ namespace Artisan.CraftingLists
             {
                 return;
             }
+
             if (CurrentIndex < selectedList.Items.Count)
             {
                 CraftingListUI.CurrentProcessedItem = selectedList.Items[CurrentIndex];
             }
             else
             {
-                PluginLog.Verbose($"End of Index");
+                PluginLog.Verbose("End of Index");
                 CurrentIndex = 0;
                 CraftingListUI.Processing = false;
                 return;
@@ -194,7 +203,7 @@ namespace Artisan.CraftingLists
                 CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= CraftingListHelpers.SelectedListMateralsNew.FirstOrDefault(x => x.Key == recipe.ItemResult.Row).Value &&
                 (preparing || !isCrafting))
             {
-                //Probably a final craft, treat like before
+                // Probably a final craft, treat like before
                 if (CraftingListHelpers.SelectedListMateralsNew.Count(x => x.Key == recipe.ItemResult.Row) == 0)
                 {
                     if (CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult)
@@ -208,6 +217,7 @@ namespace Artisan.CraftingLists
                                 if (CurrentIndex == selectedList.Items.Count)
                                     return;
                             }
+
                             return;
                         }
 
@@ -225,6 +235,7 @@ namespace Artisan.CraftingLists
                             if (CurrentIndex == selectedList.Items.Count)
                                 return;
                         }
+
                         return;
                     }
                 }
@@ -243,6 +254,7 @@ namespace Artisan.CraftingLists
                         if (CurrentIndex == selectedList.Items.Count)
                             return;
                     }
+
                     return;
                 }
             }
@@ -260,6 +272,7 @@ namespace Artisan.CraftingLists
                         if (CurrentIndex == selectedList.Items.Count)
                             return;
                     }
+
                     return;
                 }
 
@@ -276,8 +289,10 @@ namespace Artisan.CraftingLists
                     if (CurrentIndex == selectedList.Items.Count)
                         return;
                 }
+
                 return;
             }
+
             if (Svc.Condition[ConditionFlag.Occupied39])
             {
                 Throttler.Rethrottle(1000);
@@ -297,7 +312,7 @@ namespace Artisan.CraftingLists
                 }
                 else
                 {
-                    if (!Svc.Condition[ConditionFlag.Crafting]) RepairManager.ProcessRepair(true);
+                    if (!Svc.Condition[ConditionFlag.Crafting]) RepairManager.ProcessRepair();
                 }
             }
 
@@ -319,6 +334,7 @@ namespace Artisan.CraftingLists
                         if (!isCrafting)
                             ConsumableChecker.CheckConsumables(true, options);
                     }
+
                     return;
                 }
             }
@@ -396,7 +412,7 @@ namespace Artisan.CraftingLists
             }
         }
 
-        private static unsafe int CheckWhatExpected(CraftingList selectedList, Recipe recipe, int count)
+        private static int CheckWhatExpected(CraftingList selectedList, Recipe recipe, int count)
         {
             if (selectedList.SkipIfEnough)
             {
@@ -406,7 +422,7 @@ namespace Artisan.CraftingLists
                 var totalToCraft = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult;
                 if (CraftingListHelpers.SelectedListMateralsNew.Count(x => x.Key == recipe.ItemResult.Row) == 0)
                 {
-                    //var previousCrafted = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString && selectedList.Items.IndexOf(x) < CurrentIndex) * recipe.AmountResult;
+                    // var previousCrafted = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString && selectedList.Items.IndexOf(x) < CurrentIndex) * recipe.AmountResult;
                     stillToCraft = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString && selectedList.Items.IndexOf(x) >= CurrentIndex) * recipe.AmountResult - inventoryitems;
                     expectedNumber = stillToCraft > 0 ? Math.Min(selectedList.Items.Count(x => x == CraftingListUI.CurrentProcessedItem) * recipe.AmountResult, stillToCraft) : selectedList.Items.Count(x => x == CraftingListUI.CurrentProcessedItem);
 
@@ -425,7 +441,7 @@ namespace Artisan.CraftingLists
             return count;
         }
 
-        public unsafe static bool SetIngredients()
+        public static unsafe bool SetIngredients()
         {
             try
             {
@@ -457,8 +473,7 @@ namespace Artisan.CraftingLists
                             int hqMaterials = Convert.ToInt32(hqNodeText->NodeText.ToString().GetNumbers());
                             int requiredMaterials = Convert.ToInt32(required->NodeText.ToString().GetNumbers());
 
-                            //if ((setHQint + setNQint) == requiredMaterials) continue;
-
+                            // if ((setHQint + setNQint) == requiredMaterials) continue;
                             for (int m = 0; m <= requiredMaterials && m <= nqMaterials; m++)
                             {
                                 ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
@@ -475,6 +490,7 @@ namespace Artisan.CraftingLists
                         }
                     }
                 }
+
                 return false;
             }
             catch
@@ -483,7 +499,7 @@ namespace Artisan.CraftingLists
             }
         }
 
-        private unsafe static bool SwitchJobGearset(uint cjID)
+        private static bool SwitchJobGearset(uint cjID)
         {
             var gs = GetGearsetForClassJob(cjID);
             if (gs is null) return false;
@@ -492,10 +508,11 @@ namespace Artisan.CraftingLists
             {
                 CommandProcessor.ExecuteThrottled($"/gearset change {gs.Value + 1}");
             }
+
             return true;
         }
 
-        private unsafe static byte? GetGearsetForClassJob(uint cjId)
+        private static unsafe byte? GetGearsetForClassJob(uint cjId)
         {
             var gearsetModule = RaptureGearsetModule.Instance();
             for (var i = 0; i < 100; i++)
@@ -506,6 +523,7 @@ namespace Artisan.CraftingLists
                 if (gearset->ID != i) continue;
                 if (gearset->ClassJob == cjId) return gearset->ID;
             }
+
             return null;
         }
     }

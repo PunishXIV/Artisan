@@ -1,17 +1,22 @@
-﻿using Artisan.Autocraft;
+﻿using System.Linq;
+
+using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.RawInformation;
+
 using Dalamud.ContextMenu;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Logging;
+
 using ECommons.DalamudServices;
+
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using System.Linq;
 
 namespace Artisan.ContextMenus
 {
+    using System;
 
     internal static class CraftingListContextMenu
     {
@@ -40,7 +45,7 @@ namespace Artisan.ContextMenus
 
             if (args.ParentAddonName == "RecipeNote")
             {
-                nint recipeNoteAgent = Svc.GameGui.FindAgentInterface(args.ParentAddonName);
+                IntPtr recipeNoteAgent = Svc.GameGui.FindAgentInterface(args.ParentAddonName);
                 var itemId = *(uint*)(recipeNoteAgent + 0x398);
 
                 if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == itemId)) return;
@@ -56,9 +61,10 @@ namespace Artisan.ContextMenus
                     args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to Current Crafting List (with Sub-crafts)")), _ => AddToList(itemId, true)));
                 }
             }
+
             if (args.ParentAddonName == "CharacterInspect")
             {
-                nint agent = (nint)Framework.Instance()->GetUiModule()->GetAgentModule()->GetAgentByInternalId(FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentId.Inspect);
+                IntPtr agent = (nint)Framework.Instance()->GetUiModule()->GetAgentModule()->GetAgentByInternalId(FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentId.Inspect);
 
             }
 
@@ -101,7 +107,7 @@ namespace Artisan.ContextMenus
             }
             else
             {
-                CraftingListUI.selectedList.ListItemOptions.TryAdd(LuminaSheets.RecipeSheet[(uint)Handler.RecipeID].RowId, new ListItemOptions() { NQOnly = CraftingListUI.selectedList.AddAsQuickSynth });
+                CraftingListUI.selectedList.ListItemOptions.TryAdd(LuminaSheets.RecipeSheet[(uint)Handler.RecipeID].RowId, new ListItemOptions { NQOnly = CraftingListUI.selectedList.AddAsQuickSynth });
             }
 
             CraftingListHelpers.TidyUpList(CraftingListUI.selectedList);
