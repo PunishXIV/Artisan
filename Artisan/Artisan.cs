@@ -24,6 +24,7 @@ using ECommons.DalamudServices;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
+using OtterGui.Classes;
 using PunishLib;
 using System;
 using System.Collections.Generic;
@@ -47,6 +48,7 @@ public unsafe class Artisan : IDalamudPlugin
     internal RecipeInformation ri;
     internal TaskManager TM;
     internal TaskManager CTM;
+    internal IconStorage Icons;
 
     public static bool currentCraftFinished = false;
     public static readonly object _lockObj = new();
@@ -82,6 +84,7 @@ public unsafe class Artisan : IDalamudPlugin
         ws = new();
         cw = new();
         ri = new();
+        Icons = new(pluginInterface, Svc.Data);
         PluginUi = new();
         config = Service.Configuration;
         fm = new FontManager();

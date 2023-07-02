@@ -168,7 +168,7 @@ namespace Artisan.CraftingLists
             foreach (var subItem in selectedRecipe.UnkData5.Where(x => x.AmountIngredient > 0))
             {
                 PluginLog.Debug($"Sub-item: {LuminaSheets.ItemSheet[(uint)subItem.ItemIngredient].Name.RawString} * {subItem.AmountIngredient}");
-                var subRecipe = CraftingListHelpers.GetIngredientRecipe(subItem.ItemIngredient);
+                var subRecipe = CraftingListHelpers.GetIngredientRecipe((uint)subItem.ItemIngredient);
                 if (subRecipe != null)
                 {
                     AddAllSubcrafts(subRecipe, selectedList, subItem.AmountIngredient * amounts, loops);
@@ -214,7 +214,7 @@ namespace Artisan.CraftingLists
                     {
                         if (LuminaSheets.ItemSheet.ContainsKey((uint)item.Key))
                         {
-                            if (CraftingListHelpers.SelectedRecipesCraftable[item.Key]) continue;
+                            if (CraftingListHelpers.SelectedRecipesCraftable[(uint)item.Key]) continue;
                             ImGui.PushID($"###SubTableItem{item}");
                             var sheetItem = LuminaSheets.ItemSheet[(uint)item.Key];
                             var name = sheetItem.Name.RawString;
@@ -239,7 +239,7 @@ namespace Artisan.CraftingLists
                             if (RetainerInfo.ATools && RetainerInfo.CacheBuilt)
                             {
                                 ImGui.TableNextColumn();
-                                uint retainerCount = 0;
+                                int retainerCount = 0;
                                 retainerCount = RetainerInfo.GetRetainerItemCount(sheetItem.RowId);
 
                                 ImGuiEx.Text($"{retainerCount}");
@@ -276,14 +276,14 @@ namespace Artisan.CraftingLists
                 foreach (var ing in recipe.UnkData5.Where(x => x.AmountIngredient > 0 && x.ItemIngredient != 0))
                 {
                     var name = LuminaSheets.ItemSheet[(uint)ing.ItemIngredient].Name.RawString;
-                    CraftingListHelpers.SelectedRecipesCraftable[ing.ItemIngredient] = CraftingListHelpers.FilteredList.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
+                    CraftingListHelpers.SelectedRecipesCraftable[(uint)ing.ItemIngredient] = CraftingListHelpers.FilteredList.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
 
                     for (int i = 1; i <= ing.AmountIngredient; i++)
                     {
                         ingredientList.Add(ing.ItemIngredient);
-                        if (CraftingListHelpers.GetIngredientRecipe(ing.ItemIngredient).RowId != 0 && addSubList)
+                        if (CraftingListHelpers.GetIngredientRecipe((uint)ing.ItemIngredient).RowId != 0 && addSubList)
                         {
-                            AddRecipeIngredientsToList(CraftingListHelpers.GetIngredientRecipe(ing.ItemIngredient), ref ingredientList);
+                            AddRecipeIngredientsToList(CraftingListHelpers.GetIngredientRecipe((uint)ing.ItemIngredient), ref ingredientList);
                         }
                     }
                 }
@@ -320,7 +320,7 @@ namespace Artisan.CraftingLists
                     }
                     else
                     {
-                        uint retainerCount = RetainerInfo.GetRetainerItemCount((uint)value.ItemIngredient);
+                        int retainerCount = RetainerInfo.GetRetainerItemCount((uint)value.ItemIngredient);
                         if (value.AmountIngredient > (invNumberNQ + invNumberHQ + retainerCount))
                         {
                             invNumberHQ = null;
@@ -347,9 +347,9 @@ namespace Artisan.CraftingLists
 
         private static bool HasRawIngredients(int itemIngredient, byte amountIngredient)
         {
-            if (CraftingListHelpers.GetIngredientRecipe(itemIngredient) == null) return false;
+            if (CraftingListHelpers.GetIngredientRecipe((uint)itemIngredient) == null) return false;
 
-            return CheckForIngredients(CraftingListHelpers.GetIngredientRecipe(itemIngredient));
+            return CheckForIngredients(CraftingListHelpers.GetIngredientRecipe((uint)itemIngredient));
 
         }
 

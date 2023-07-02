@@ -84,14 +84,14 @@ namespace Artisan.CraftingLists
         {
             foreach (var ing in recipe.UnkData5.Where(x => x.AmountIngredient > 0))
             {
-                var subRec = CraftingListHelpers.GetIngredientRecipe(ing.ItemIngredient);
+                var subRec = CraftingListHelpers.GetIngredientRecipe((uint)ing.ItemIngredient);
                 if (subRec != null)
                 {
                     if (sublist.Contains(subRec.RowId))
                     {
                         foreach (var subIng in subRec.UnkData5.Where(x => x.AmountIngredient > 0))
                         {
-                            var subSubRec = CraftingListHelpers.GetIngredientRecipe(subIng.ItemIngredient);
+                            var subSubRec = CraftingListHelpers.GetIngredientRecipe((uint)subIng.ItemIngredient);
                             if (subSubRec != null)
                             {
                                 if (sublist.Contains(subSubRec.RowId))

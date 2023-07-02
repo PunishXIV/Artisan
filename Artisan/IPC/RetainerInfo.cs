@@ -16,7 +16,6 @@ using ECommons.Reflection;
 using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
@@ -84,17 +83,6 @@ namespace Artisan.IPC
             _OnItemAdded.Subscribe(OnItemAdded);
             _OnItemRemoved.Subscribe(OnItemRemoved);
             TM.TimeoutSilently = true;
-
-            if (Svc.ClientState.IsLoggedIn)
-                TM.Enqueue(async () => await LoadCache(true));
-            Svc.ClientState.Login += LoadCacheLogin;
-
-        }
-
-        private static void LoadCacheLogin(object? sender, EventArgs e)
-        {
-            TM.DelayNext("LoadCacheLogin", 5000);
-            TM.Enqueue(async () => await LoadCache(true));
         }
 
         public async static Task<bool?> LoadCache(bool onLoad = false)
@@ -151,7 +139,6 @@ namespace Artisan.IPC
             _OnItemAdded = null;
             _OnItemRemoved = null;
             _ItemCount = null;
-            Svc.ClientState.Login -= LoadCacheLogin;
         }
 
         public static Dictionary<ulong, Dictionary<uint, ItemInfo>> RetainerData = new Dictionary<ulong, Dictionary<uint, ItemInfo>>();
@@ -188,87 +175,86 @@ namespace Artisan.IPC
             }
             return 0;
         }
-        public static unsafe uint GetRetainerItemCount(uint itemId, bool tryCache = true)
+        public static unsafe int GetRetainerItemCount(uint itemId, bool tryCache = true)
         {
-            lock (_lockObj)
+
+            if (ATools)
             {
-                if (ATools)
+                try
                 {
-                    try
+                    if (tryCache)
                     {
-                        if (tryCache)
+                        if (RetainerData.SelectMany(x => x.Value).Any(x => x.Key == itemId))
                         {
-                            if (RetainerData.SelectMany(x => x.Value).Any(x => x.Key == itemId))
-                            {
-                                return (uint)RetainerData.Values.SelectMany(x => x.Values).Where(x => x.ItemID == itemId).Sum(x => x.Quantity);
-                            }
+                            return (int)RetainerData.Values.SelectMany(x => x.Values).Where(x => x.ItemID == itemId).Sum(x => x.Quantity);
+                        }
+                    }
+
+                    for (int i = 0; i < 10; i++)
+                    {
+                        ulong retainerId = 0;
+                        var retainer = RetainerManager.Instance()->GetRetainerBySortedIndex((uint)i);
+                        if (Service.Configuration.RetainerIDs.Count(x => x.Value == Svc.ClientState.LocalContentId) > i)
+                        {
+                            retainerId = Service.Configuration.RetainerIDs.Where(x => x.Value == Svc.ClientState.LocalContentId).Select(x => x.Key).ToArray()[i];
+                        }
+                        else
+                        {
+                            retainerId = RetainerManager.Instance()->GetRetainerBySortedIndex((uint)i)->RetainerID;
                         }
 
-                        for (int i = 0; i < 10; i++)
+                        if (retainer->RetainerID > 0 && !Service.Configuration.RetainerIDs.Any(x => x.Key == retainer->RetainerID && x.Value == Svc.ClientState.LocalContentId))
                         {
-                            ulong retainerId = 0;
-                            var retainer = RetainerManager.Instance()->GetRetainerBySortedIndex((uint)i);
-                            if (Service.Configuration.RetainerIDs.Count(x => x.Value == Svc.ClientState.LocalContentId) > i)
-                            {
-                                retainerId = Service.Configuration.RetainerIDs.Where(x => x.Value == Svc.ClientState.LocalContentId).Select(x => x.Key).ToArray()[i];
-                            }
-                            else
-                            {
-                                retainerId = RetainerManager.Instance()->GetRetainerBySortedIndex((uint)i)->RetainerID;
-                            }
+                            Service.Configuration.RetainerIDs.Add(retainer->RetainerID, Svc.ClientState.LocalContentId);
+                            Service.Configuration.Save();
+                        }
 
-                            if (retainer->RetainerID > 0 && !Service.Configuration.RetainerIDs.Any(x => x.Key == retainer->RetainerID && x.Value == Svc.ClientState.LocalContentId))
+                        if (retainerId > 0)
+                        {
+                            if (RetainerData.ContainsKey(retainerId))
                             {
-                                Service.Configuration.RetainerIDs.Add(retainer->RetainerID, Svc.ClientState.LocalContentId);
-                                Service.Configuration.Save();
-                            }
-
-                            if (retainerId > 0)
-                            {
-                                if (RetainerData.ContainsKey(retainerId))
+                                var ret = RetainerData[retainerId];
+                                if (ret.ContainsKey(itemId))
                                 {
-                                    var ret = RetainerData[retainerId];
-                                    if (ret.ContainsKey(itemId))
-                                    {
-                                        var item = ret[itemId];
-                                        item.ItemID = itemId;
-                                        item.Quantity = GetRetainerInventoryItem(itemId, retainerId);
+                                    var item = ret[itemId];
+                                    item.ItemID = itemId;
+                                    item.Quantity = GetRetainerInventoryItem(itemId, retainerId);
 
-                                    }
-                                    else
-                                    {
-                                        ret.TryAdd(itemId, new ItemInfo(itemId, GetRetainerInventoryItem(itemId, retainerId)));
-                                    }
                                 }
                                 else
                                 {
-                                    RetainerData.TryAdd(retainerId, new Dictionary<uint, ItemInfo>());
-                                    var ret = RetainerData[retainerId];
-                                    if (ret.ContainsKey(itemId))
-                                    {
-                                        var item = ret[itemId];
-                                        item.ItemID = itemId;
-                                        item.Quantity = GetRetainerInventoryItem(itemId, retainerId);
+                                    ret.TryAdd(itemId, new ItemInfo(itemId, GetRetainerInventoryItem(itemId, retainerId)));
+                                }
+                            }
+                            else
+                            {
+                                RetainerData.TryAdd(retainerId, new Dictionary<uint, ItemInfo>());
+                                var ret = RetainerData[retainerId];
+                                if (ret.ContainsKey(itemId))
+                                {
+                                    var item = ret[itemId];
+                                    item.ItemID = itemId;
+                                    item.Quantity = GetRetainerInventoryItem(itemId, retainerId);
 
-                                    }
-                                    else
-                                    {
-                                        ret.TryAdd(itemId, new ItemInfo(itemId, GetRetainerInventoryItem(itemId, retainerId)));
+                                }
+                                else
+                                {
+                                    ret.TryAdd(itemId, new ItemInfo(itemId, GetRetainerInventoryItem(itemId, retainerId)));
 
-                                    }
                                 }
                             }
                         }
+                    }
 
-                        return (uint)RetainerData.SelectMany(x => x.Value).Where(x => x.Key == itemId).Sum(x => x.Value.Quantity);
-                    }
-                    catch (Exception ex)
-                    {
-                        PluginLog.Error(ex, "RetainerInfoItemCount");
-                        return 0;
-                    }
+                    return (int)RetainerData.SelectMany(x => x.Value).Where(x => x.Key == itemId).Sum(x => x.Value.Quantity);
+                }
+                catch (Exception ex)
+                {
+                    PluginLog.Error(ex, "RetainerInfoItemCount");
+                    return 0;
                 }
             }
+
             return 0;
         }
 
@@ -277,7 +263,7 @@ namespace Artisan.IPC
             if (GetReachableRetainerBell() == null) return;
 
             Dictionary<int, int> requiredItems = new();
-            Dictionary<int, int> materialList = new();
+            Dictionary<uint, int> materialList = new();
 
             foreach (var item in list.Items)
             {
@@ -291,7 +277,7 @@ namespace Artisan.IPC
                 if (invCount < material.Value)
                 {
                     var diffcheck = material.Value - invCount;
-                    requiredItems.Add(material.Key, diffcheck);
+                    requiredItems.Add((int)material.Key, diffcheck);
                 }
 
                 //Refresh retainer cache if empty

@@ -76,6 +76,18 @@ namespace Artisan.CraftingLists
             list.ID = proposedRNG;
         }
 
+        public static Dictionary<uint, int> ListMaterials(this CraftingList list)
+        {
+            var output = new Dictionary<uint, int>();
+            foreach (var item in list.Items.Distinct())
+            {
+                Recipe r = CraftingListHelpers.FilteredList[item];
+                CraftingListHelpers.AddRecipeIngredientsToList(r, ref output, false, list);
+            }
+
+            return output;
+        }
+
         public static bool Save(this CraftingList list, bool isNew = false)
         {
             if (list.Items.Count() == 0 && !isNew) return false;
@@ -200,11 +212,11 @@ namespace Artisan.CraftingLists
             }
 
             if (selectedList.SkipIfEnough &&
-                CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= CraftingListHelpers.SelectedListMateralsNew.FirstOrDefault(x => x.Key == recipe.ItemResult.Row).Value &&
+                CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= selectedList.ListMaterials().FirstOrDefault(x => x.Key == recipe.ItemResult.Row).Value &&
                 (preparing || !isCrafting))
             {
                 // Probably a final craft, treat like before
-                if (CraftingListHelpers.SelectedListMateralsNew.Count(x => x.Key == recipe.ItemResult.Row) == 0)
+                if (selectedList.ListMaterials().Count(x => x.Key == recipe.ItemResult.Row) == 0)
                 {
                     if (CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult)
                     {
@@ -225,7 +237,7 @@ namespace Artisan.CraftingLists
                 }
                 else
                 {
-                    PluginLog.Debug($"{recipe.RowId.NameOfRecipe()} {CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId)} {CraftingListHelpers.SelectedListMateralsNew.First(x => x.Key == recipe.ItemResult.Row).Value}");
+                    PluginLog.Debug($"{recipe.RowId.NameOfRecipe()} {CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId)} {selectedList.ListMaterials().First(x => x.Key == recipe.ItemResult.Row).Value}");
                     if (Throttler.Throttle(500))
                     {
                         var currentRecipe = selectedList.Items[CurrentIndex];
@@ -420,7 +432,7 @@ namespace Artisan.CraftingLists
                 var expectedNumber = 0;
                 var stillToCraft = 0;
                 var totalToCraft = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult;
-                if (CraftingListHelpers.SelectedListMateralsNew.Count(x => x.Key == recipe.ItemResult.Row) == 0)
+                if (selectedList.ListMaterials().Count(x => x.Key == recipe.ItemResult.Row) == 0)
                 {
                     // var previousCrafted = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString && selectedList.Items.IndexOf(x) < CurrentIndex) * recipe.AmountResult;
                     stillToCraft = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString && selectedList.Items.IndexOf(x) >= CurrentIndex) * recipe.AmountResult - inventoryitems;
@@ -429,7 +441,7 @@ namespace Artisan.CraftingLists
                 }
                 else
                 {
-                    expectedNumber = CraftingListHelpers.SelectedListMateralsNew.First(x => x.Key == recipe.ItemResult.Row).Value;
+                    expectedNumber = selectedList.ListMaterials().First(x => x.Key == recipe.ItemResult.Row).Value;
                 }
 
                 var difference = Math.Min(totalToCraft - inventoryitems, expectedNumber);

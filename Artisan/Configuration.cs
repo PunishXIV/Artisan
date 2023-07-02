@@ -2,6 +2,7 @@
 using Artisan.CraftingLogic;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
+using Artisan.UI.Tables;
 using Dalamud.Configuration;
 using Dalamud.Game.Gui.FlyText;
 using Dalamud.Plugin;
@@ -98,6 +99,7 @@ namespace Artisan
         public bool ShowMacroAssignResults = false;
         public bool HideContextMenus = false;
         public int ContextMenuLoops = 1;
+        public ItemFilter ShowItems { get; set; } = ItemFilter.All;
 
         public bool DontEquipItems = false;
 

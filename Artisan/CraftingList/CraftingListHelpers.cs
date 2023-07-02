@@ -1,6 +1,7 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.RawInformation;
 using Lumina.Excel.GeneratedSheets;
+using OtterGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +15,10 @@ internal static class CraftingListHelpers
                 .OrderBy(x => x.RecipeLevelTable.Value.ClassJobLevel)
                 .ThenBy(x => x.ItemResult.Value.Name.RawString)
                 .ToDictionary(x => x.RowId, x => x);
-    internal static Dictionary<int, int> SelectedListMateralsNew = new();
-    internal static Dictionary<int, bool> SelectedRecipesCraftable = new();
+    
+    internal static Dictionary<uint, bool> SelectedRecipesCraftable = new();
 
-    public static void AddRecipeIngredientsToList(Recipe? recipe, ref Dictionary<int, int> ingredientList, bool addSublist = true, CraftingList selectedList = null)
+    public static void AddRecipeIngredientsToList(Recipe? recipe, ref Dictionary<uint, int> ingredientList, bool addSublist = true, CraftingList selectedList = null)
     {
         try
         {
@@ -27,21 +28,21 @@ internal static class CraftingListHelpers
             {
                 foreach (var ing in recipe.UnkData5.Where(x => x.AmountIngredient > 0 && x.ItemIngredient != 0))
                 {
-                    if (ingredientList.ContainsKey(ing.ItemIngredient))
+                    if (ingredientList.ContainsKey((uint)ing.ItemIngredient))
                     {
-                        ingredientList[ing.ItemIngredient] += ing.AmountIngredient * selectedList.Items.Count(x => x == recipe.RowId);
+                        ingredientList[(uint)ing.ItemIngredient] += ing.AmountIngredient * selectedList.Items.Count(x => x == recipe.RowId);
                     }
                     else
                     {
-                        ingredientList.TryAdd(ing.ItemIngredient, ing.AmountIngredient * selectedList.Items.Count(x => x == recipe.RowId));
+                        ingredientList.TryAdd((uint)ing.ItemIngredient, ing.AmountIngredient * selectedList.Items.Count(x => x == recipe.RowId));
                     }
 
                     var name = LuminaSheets.ItemSheet[(uint)ing.ItemIngredient].Name.RawString;
-                    SelectedRecipesCraftable[ing.ItemIngredient] = FilteredList.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
+                    SelectedRecipesCraftable[(uint)ing.ItemIngredient] = FilteredList.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
 
-                    if (GetIngredientRecipe(ing.ItemIngredient) != null && addSublist)
+                    if (GetIngredientRecipe((uint)ing.ItemIngredient) != null && addSublist)
                     {
-                        AddRecipeIngredientsToList(GetIngredientRecipe(ing.ItemIngredient), ref ingredientList);
+                        AddRecipeIngredientsToList(GetIngredientRecipe((uint)ing.ItemIngredient), ref ingredientList);
                     }
 
                 }
@@ -50,21 +51,21 @@ internal static class CraftingListHelpers
             {
                 foreach (var ing in recipe.UnkData5.Where(x => x.AmountIngredient > 0 && x.ItemIngredient != 0))
                 {
-                    if (ingredientList.ContainsKey(ing.ItemIngredient))
+                    if (ingredientList.ContainsKey((uint)ing.ItemIngredient))
                     {
-                        ingredientList[ing.ItemIngredient] += ing.AmountIngredient;
+                        ingredientList[(uint)ing.ItemIngredient] += ing.AmountIngredient;
                     }
                     else
                     {
-                        ingredientList.TryAdd(ing.ItemIngredient, ing.AmountIngredient);
+                        ingredientList.TryAdd((uint)ing.ItemIngredient, ing.AmountIngredient);
                     }
 
                     var name = LuminaSheets.ItemSheet[(uint)ing.ItemIngredient].Name.RawString;
-                    SelectedRecipesCraftable[ing.ItemIngredient] = FilteredList.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
+                    SelectedRecipesCraftable[(uint)ing.ItemIngredient] = FilteredList.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
 
-                    if (GetIngredientRecipe(ing.ItemIngredient) != null && addSublist)
+                    if (GetIngredientRecipe((uint)ing.ItemIngredient) != null && addSublist)
                     {
-                        AddRecipeIngredientsToList(GetIngredientRecipe(ing.ItemIngredient), ref ingredientList);
+                        AddRecipeIngredientsToList(GetIngredientRecipe((uint)ing.ItemIngredient), ref ingredientList);
                     }
                 }
             }
@@ -75,17 +76,17 @@ internal static class CraftingListHelpers
         }
     }
 
-    public static Recipe? GetIngredientRecipe(int ingredient)
+    public static Recipe? GetIngredientRecipe(uint ingredient)
     {
-        if (FilteredList.Values.Any(x => x.ItemResult.Value.RowId == ingredient))
-            return FilteredList.Values.First(x => x.ItemResult.Value.RowId == ingredient);
+        if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Value.RowId == ingredient, out var result))
+            return result;
 
         return null;
     }
 
     public static void TidyUpList(CraftingList list)
     {
-        var tempMaterialList = new Dictionary<int, int>();
+        var tempMaterialList = new Dictionary<uint, int>();
         foreach (var recipe in list.Items.Distinct())
         {
             Recipe r = FilteredList[recipe];

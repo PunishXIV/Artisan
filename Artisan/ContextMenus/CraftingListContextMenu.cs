@@ -82,7 +82,6 @@ namespace Artisan.ContextMenus
 
         private static void AddToList(uint itemId, bool withPrecraft = false)
         {
-            CraftingListHelpers.SelectedListMateralsNew.Clear();
             CraftingListUI.listMaterialsNew.Clear();
 
             if (withPrecraft)
