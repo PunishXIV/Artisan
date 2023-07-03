@@ -125,6 +125,7 @@ namespace Artisan.CraftingLists
 
         public static void StartList()
         {
+            CraftingListFunctions.Materials = null;
             CraftingListFunctions.CurrentIndex = 0;
             if (CraftingListFunctions.RecipeWindowOpen())
                 CraftingListFunctions.CloseCraftingMenu();
