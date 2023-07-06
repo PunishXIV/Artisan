@@ -1,8 +1,7 @@
-﻿using Artisan.CraftingLists;
-using Artisan.IPC;
+﻿using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Interface;
-using Dalamud.Logging;
+using Dalamud.Interface.Colors;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
@@ -16,9 +15,8 @@ using OtterGui.Raii;
 using OtterGui.Table;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 
 namespace Artisan.UI.Tables
 {
@@ -37,17 +35,17 @@ namespace Artisan.UI.Tables
         private static float _gatherItemLocationColumWidth = 0;
         private static float _craftingJobsColumnWidth = 100;
 
-        private readonly IdColumn _idColumn = new() { Label = "ID" };
-        private readonly NameColumn _nameColumn = new() { Label = "Item Name" };
-        private readonly RequiredColumn _requiredColumn = new() { Label = "Required" };
-        private readonly InventoryCountColumn _inventoryColumn = new() { Label = "Inventory" };
-        private readonly RetainerCountColumn _retainerColumn = new() { Label = "Retainers" };
-        private readonly RemaingCountColumn _remainingColumn = new() { Label = "Remaining Needed" };
-        private readonly CraftableColumn _craftableColumn = new() { Label = "Craftable" };
-        private readonly CraftableCountColumn _craftableCountColumn = new() { Label = "Number Craftable" };
-        private readonly CraftItemsColumn _craftItemsColumn = new() { Label = "Used to Craft" };
-        private readonly ItemCategoryColumn _itemCategoryColumn = new() { Label = "Category" };
-        private readonly GatherItemLocationColumn _gatherItemLocationColumn = new() { Label = "Gathered Zone" };
+        public readonly IdColumn _idColumn = new() { Label = "ID" };
+        public readonly NameColumn _nameColumn = new() { Label = "Item Name" };
+        public readonly RequiredColumn _requiredColumn = new() { Label = "Required" };
+        public readonly InventoryCountColumn _inventoryColumn = new() { Label = "Inventory" };
+        public readonly RetainerCountColumn _retainerColumn = new() { Label = "Retainers" };
+        public readonly RemaingCountColumn _remainingColumn = new() { Label = "Remaining Needed" };
+        public readonly CraftableColumn _craftableColumn = new() { Label = "Sources" };
+        public readonly CraftableCountColumn _craftableCountColumn = new() { Label = "Number Craftable" };
+        public readonly CraftItemsColumn _craftItemsColumn = new() { Label = "Used to Craft" };
+        public readonly ItemCategoryColumn _itemCategoryColumn = new() { Label = "Category" };
+        public readonly GatherItemLocationColumn _gatherItemLocationColumn = new() { Label = "Gathered Zone" };
 
         private static bool GatherBuddy =>
             DalamudReflector.TryGetDalamudPlugin("GatherBuddy", out var gb, false, true);
@@ -76,7 +74,7 @@ namespace Artisan.UI.Tables
             Headers.Add(_itemCategoryColumn);
             Headers.Add(_gatherItemLocationColumn);
             Headers.Add(_idColumn);
-            
+
             Sortable = true;
             ListItems = ingredientList;
             Flags |= ImGuiTableFlags.Hideable | ImGuiTableFlags.Reorderable | ImGuiTableFlags.Resizable;
@@ -104,7 +102,7 @@ namespace Artisan.UI.Tables
             }
         }
 
-        private sealed class NameColumn : ColumnString<Ingredient>
+        public sealed class NameColumn : ColumnString<Ingredient>
         {
             public NameColumn()
                => Flags |= ImGuiTableColumnFlags.NoHide;
@@ -114,10 +112,29 @@ namespace Artisan.UI.Tables
                 return item.Data.Name.RawString;
             }
 
+            public bool ShowColour;
+
             public override float Width => _nameColumnWidth * ImGuiHelpers.GlobalScale;
 
             public override void DrawColumn(Ingredient item, int _)
             {
+                if (ShowColour)
+                {
+                    if (item.RetainerCount + item.Inventory >= item.Required)
+                    {
+                        var color = ImGuiColors.DalamudOrange;
+                        color.W -= 0.6f;
+                        ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                    }
+
+                    if (item.Inventory >= item.Required)
+                    {
+                        var color = ImGuiColors.HealerGreen;
+                        color.W -= 0.3f;
+                        ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                    }
+                }
+
                 ImGuiUtil.HoverIcon(item.Icon, Interface.LineIconSize);
                 ImGui.SameLine();
 
@@ -132,7 +149,7 @@ namespace Artisan.UI.Tables
             }
         }
 
-        private sealed class RequiredColumn : ColumnString<Ingredient>
+        public sealed class RequiredColumn : ColumnString<Ingredient>
         {
             public override float Width
                 => _requiredColumnWidth;
@@ -149,7 +166,7 @@ namespace Artisan.UI.Tables
             }
         }
 
-        private sealed class IdColumn : ColumnString<Ingredient>
+        public sealed class IdColumn : ColumnString<Ingredient>
         {
             public override float Width
                 => _idColumnWidth;
@@ -163,16 +180,20 @@ namespace Artisan.UI.Tables
             }
         }
 
-        private sealed class InventoryCountColumn : ColumnString<Ingredient>
+        public sealed class InventoryCountColumn : ColumnString<Ingredient>
         {
             public override float Width
                 => _inventoryColumnWidth;
+
+
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
                 => lhs.Inventory.CompareTo(rhs.Inventory);
 
             public override void DrawColumn(Ingredient item, int _)
-                => ImGuiUtil.Center($"{ToName(item)}");
+            {
+                ImGuiUtil.Center($"{ToName(item)}");
+            }
 
             public override string ToName(Ingredient item)
             {
@@ -180,7 +201,7 @@ namespace Artisan.UI.Tables
             }
         }
 
-        private sealed class RetainerCountColumn : ColumnString<Ingredient>
+        public sealed class RetainerCountColumn : ColumnString<Ingredient>
         {
             public override float Width
                 => _retainerColumnWidth;
@@ -197,7 +218,7 @@ namespace Artisan.UI.Tables
             }
         }
 
-        private sealed class CraftableCountColumn : ColumnString<Ingredient>
+        public sealed class CraftableCountColumn : ColumnString<Ingredient>
         {
             public override float Width
                 => _craftableCountColumnWidth;
@@ -211,11 +232,11 @@ namespace Artisan.UI.Tables
 
             public override string ToName(Ingredient item)
             {
-                return item.CanBeCrafted ? item.TotalCraftable.ToString() : "N/A";
+                return item.Sources.Contains(1) ? item.TotalCraftable.ToString() : "N/A";
             }
         }
 
-        private sealed class CraftItemsColumn : ColumnString<Ingredient>
+        public sealed class CraftItemsColumn : ColumnString<Ingredient>
         {
             public override float Width
                 => _craftItemsColumnWidth;
@@ -230,9 +251,9 @@ namespace Artisan.UI.Tables
 
         }
 
-        private sealed class GatherItemLocationColumn : ItemFilterColumn
+        public sealed class GatherItemLocationColumn : ItemFilterColumn
         {
-            public GatherItemLocationColumn() 
+            public GatherItemLocationColumn()
             {
                 Flags -= ImGuiTableColumnFlags.NoResize;
                 SetFlags(ItemFilter.GatherZone, ItemFilter.NoGatherZone, ItemFilter.TimedNode, ItemFilter.NonTimedNode);
@@ -253,7 +274,7 @@ namespace Artisan.UI.Tables
             public override bool FilterFunc(Ingredient item)
             {
                 bool zone = item.GatherZone.RowId switch
-                {                 
+                {
                     1 => FilterValue.HasFlag(ItemFilter.NoGatherZone),
                     _ => FilterValue.HasFlag(ItemFilter.GatherZone)
                 };
@@ -268,7 +289,7 @@ namespace Artisan.UI.Tables
             }
         }
 
-        private sealed class ItemCategoryColumn : ItemFilterColumn
+        public sealed class ItemCategoryColumn : ItemFilterColumn
         {
             public ItemCategoryColumn()
             {
@@ -299,7 +320,7 @@ namespace Artisan.UI.Tables
             }
         }
 
-        private class ItemFilterColumn : ColumnFlags<ItemFilter, Ingredient>
+        public class ItemFilterColumn : ColumnFlags<ItemFilter, Ingredient>
         {
             private ItemFilter[] FlagValues = Array.Empty<ItemFilter>();
             private string[] FlagNames = Array.Empty<string>();
@@ -326,7 +347,7 @@ namespace Artisan.UI.Tables
                 => FlagNames;
 
             public sealed override ItemFilter FilterValue
-                => P.config.ShowItems;
+                => P.config.ShowItemsV1;
 
             protected sealed override void SetValue(ItemFilter f, bool v)
             {
@@ -334,12 +355,12 @@ namespace Artisan.UI.Tables
                 if (tmp == FilterValue)
                     return;
 
-                P.config.ShowItems = tmp;
+                P.config.ShowItemsV1 = tmp;
                 P.config.Save();
             }
         }
 
-        private sealed class RemaingCountColumn : ItemFilterColumn
+        public sealed class RemaingCountColumn : ItemFilterColumn
         {
             public RemaingCountColumn()
             {
@@ -360,7 +381,7 @@ namespace Artisan.UI.Tables
 
                 if (ImGui.IsItemHovered())
                 {
-                    if (item.CanBeCrafted)
+                    if (item.Sources.Contains(1))
                     {
                         if (RetainerInfo.ATools)
                             ImGuiUtil.HoverTooltip("Adds the number in your inventory, retainers and craftable amounts and subtracts from required.");
@@ -373,7 +394,7 @@ namespace Artisan.UI.Tables
                             "Example: You have both Maple Logs and Maple Lumber on the ingredient list.\nFor every Maple Lumber you already have, the remaining Maple Log count is reduced by 3 (the amount required per lumber)");
                     }
                 }
-                
+
             }
 
             public override bool FilterFunc(Ingredient item)
@@ -386,31 +407,47 @@ namespace Artisan.UI.Tables
             }
         }
 
-        private sealed class CraftableColumn : ItemFilterColumn
+        public sealed class CraftableColumn : ItemFilterColumn
         {
             public CraftableColumn()
             {
                 Flags -= ImGuiTableColumnFlags.NoResize;
-                SetFlags(ItemFilter.True, ItemFilter.False);
-                SetNames("Can Craft", "Only Gathered");
+                SetFlags(ItemFilter.Crafted, ItemFilter.Gathered, ItemFilter.Fishing, ItemFilter.Vendor, ItemFilter.MonsterDrop, ItemFilter.Unknown);
+                SetNames("Crafted", "Gathered", "Fishing", "Vendor", "Monster Drop", "Unknown");
             }
+
 
             public override float Width
                 => _canCraftColumnWidth;
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
-                => lhs.CanBeCrafted.CompareTo(rhs.CanBeCrafted);
+                => string.Join(", ", lhs.Sources).CompareTo(string.Join(", ", rhs.Sources));
 
             public override void DrawColumn(Ingredient item, int idx)
-                => ImGui.Text($"{(item.CanBeCrafted ? "Crafted" : (ItemVendor && ItemVendorLocation.ItemHasVendor(item.Data.RowId) ? "Vendor" : "Gathered"))}");
+            {
+                List<string> outputs = new();
+
+                if (item.Sources.Contains(1)) outputs.Add("Crafted");
+                if (item.Sources.Contains(2)) outputs.Add("Gathered");
+                if (item.Sources.Contains(3)) outputs.Add("Fishing");
+                if (item.Sources.Contains(4)) outputs.Add("Vendor");
+                if (item.Sources.Contains(5)) outputs.Add("Monster Drop");
+                if (item.Sources.Contains(-1)) outputs.Add("Unknown");
+
+                ImGui.Text($"{string.Join(", ", outputs)}");
+            }
 
             public override bool FilterFunc(Ingredient item)
             {
-                return item.CanBeCrafted switch
-                {
-                    true => FilterValue.HasFlag(ItemFilter.True),
-                    false => FilterValue.HasFlag(ItemFilter.False)
-                };
+                if (item.Sources.Contains(1) && FilterValue.HasFlag(ItemFilter.Crafted)) return true;
+                if (item.Sources.Contains(2) && FilterValue.HasFlag(ItemFilter.Gathered)) return true;
+                if (item.Sources.Contains(3) && FilterValue.HasFlag(ItemFilter.Fishing)) return true;
+                if (item.Sources.Contains(4) && FilterValue.HasFlag(ItemFilter.Vendor)) return true;
+                if (item.Sources.Contains(5) && FilterValue.HasFlag(ItemFilter.MonsterDrop)) return true;
+                if (item.Sources.Contains(-1) && FilterValue.HasFlag(ItemFilter.Unknown)) return true;
+
+
+                return false;
             }
         }
 
@@ -428,6 +465,35 @@ namespace Artisan.UI.Tables
             DrawItemVendorLookup(item);
             DrawMonsterLootLookup(item);
             DrawFilterOnCrafts(item);
+            DrawRestockFromRetainer(item);
+        }
+
+        private void DrawRestockFromRetainer(Ingredient item)
+        {
+            if (item.Data.RowId == 0 || item.RetainerCount == 0 || item.Required <= item.Inventory)
+                return;
+
+            if (RetainerInfo.GetReachableRetainerBell() == null)
+            {
+                ImGui.TextDisabled($"Fetch From Retainer (please stand by a bell)");
+            }
+            else
+            {
+                if (RetainerInfo.TM.IsBusy)
+                {
+                    ImGui.TextDisabled($"Currently fetching. Please wait.");
+                    return;
+                }
+
+                if (!ImGui.Selectable("Fetch From Retainer"))
+                    return;
+
+                var howManyToGet = item.Required - item.Inventory;
+                if (howManyToGet > 0)
+                {
+                    RetainerInfo.RestockFromRetainers(item.Data.RowId, howManyToGet);
+                }
+            }
         }
 
         private void DrawFilterOnCrafts(Ingredient item)
@@ -435,9 +501,9 @@ namespace Artisan.UI.Tables
             if (item.Data.RowId == 0)
                 return;
 
-            if (FilteredItems.Count() == Items.Count() || Headers.Any(x => x.FilterFunc(item)) && !FilteredItems.All(x => !x.Item1.CanBeCrafted))
+            if (FilteredItems.Count() == Items.Count() || Headers.Any(x => x.FilterFunc(item)) && !FilteredItems.All(x => !x.Item1.Sources.Contains(1)))
             {
-                if (item.CanBeCrafted && item.OriginList.Items.Any(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == item.Data.RowId && y.RowId == x)))
+                if (item.Sources.Contains(1) && item.OriginList.Items.Any(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == item.Data.RowId && y.RowId == x)))
                 {
                     if (!ImGui.Selectable($"Show ingredients used for this"))
                         return;
@@ -458,7 +524,7 @@ namespace Artisan.UI.Tables
                     return;
 
                 FilterDirty = true;
-                
+
             }
         }
 
@@ -536,7 +602,7 @@ namespace Artisan.UI.Tables
 
         private static void DrawGatherItem(Ingredient item)
         {
-            if (item.Data.RowId == 0 || item.CanBeCrafted)
+            if (item.Data.RowId == 0 || item.Sources.Contains(1))
                 return;
 
             if (GatherBuddy)
@@ -567,20 +633,27 @@ namespace Artisan.UI.Tables
     public enum ItemFilter
     {
         NoItems = 0,
-        MissingItems = 0x000001,
-        NoMissingItems = 0x000002,
+        MissingItems = 1,
+        NoMissingItems = 2,
 
-        True = 0x000010,
-        False = 0x000020,
+        Crafted = 4,
+        Gathered = 8,
+        Fishing = 16,
+        Vendor = 32,
+        MonsterDrop = 64,
+        Unknown = 128,
 
-        NonCrystals = 0x000100,
-        Crystals = 0x000200,
+        NonCrystals = 256,
+        Crystals = 512,
 
-        GatherZone = 0x001000,
-        NoGatherZone = 0x002000,
-        TimedNode = 0x004000,
-        NonTimedNode = 0x008000,
+        GatherZone = 4096,
+        NoGatherZone = 8192,
+        TimedNode = 16384,
+        NonTimedNode = 32768,
 
-        All = 0x071FFF,
+        All =   MissingItems + NoMissingItems +
+                Crafted + Gathered + Fishing + Vendor + MonsterDrop + Unknown +
+                NonCrystals + Crystals +
+                GatherZone + NoGatherZone + TimedNode + NonTimedNode,
     }
 }

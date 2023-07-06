@@ -429,12 +429,8 @@ namespace Artisan.MacroSystem
             var delay = (double)Service.Configuration.AutoDelay + (Service.Configuration.DelayRecommendation ? Service.Configuration.RecommendationDelay : 0);
             var delaySeconds = delay / 1000;
 
-            PluginLog.Debug($"{delaySeconds}");
-
             foreach (var act in m.MacroActions)
             {
-                PluginLog.Debug($"{output}");
-
                 if (ActionIsLengthyAnimation(act))
                 {
                     output += 2.5 + delaySeconds;
@@ -445,7 +441,6 @@ namespace Artisan.MacroSystem
                 }
             }
 
-            PluginLog.Debug($"{output}");
             return Math.Round(output, 2);
 
         }

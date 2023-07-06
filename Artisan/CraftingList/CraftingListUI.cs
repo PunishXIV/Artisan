@@ -346,14 +346,6 @@ namespace Artisan.CraftingLists
             return true;
         }
 
-        private static bool HasRawIngredients(int itemIngredient, byte amountIngredient)
-        {
-            if (CraftingListHelpers.GetIngredientRecipe((uint)itemIngredient) == null) return false;
-
-            return CheckForIngredients(CraftingListHelpers.GetIngredientRecipe((uint)itemIngredient));
-
-        }
-
         public static unsafe int NumberOfIngredient(uint ingredient)
         {
             try

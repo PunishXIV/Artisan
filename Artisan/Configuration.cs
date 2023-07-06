@@ -99,7 +99,7 @@ namespace Artisan
         public bool ShowMacroAssignResults = false;
         public bool HideContextMenus = false;
         public int ContextMenuLoops = 1;
-        public ItemFilter ShowItems { get; set; } = ItemFilter.All;
+        public ItemFilter ShowItemsV1 { get; set; } = ItemFilter.All;
 
         public bool DontEquipItems = false;
 

@@ -18,12 +18,12 @@ using Lumina.Excel.GeneratedSheets;
 using OtterGui;
 using OtterGui.Filesystem;
 using OtterGui.Raii;
-using OtterGui.Table;
 using PunishLib.ImGuiMethods;
 using RawInformation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -75,6 +75,8 @@ internal class ListEditor : Window, IDisposable
     public Dictionary<uint, int> SelectedListMateralsNew = new();
 
     public IngredientTable Table;
+
+    private bool ColourValidation = false;
 
     public ListEditor(int listId)
         : base($"List Editor###{listId}")
@@ -401,6 +403,7 @@ internal class ListEditor : Window, IDisposable
                     ImGui.TableNextColumn();
                     var invCount = CraftingListUI.NumberOfIngredient((uint)value.ItemIngredient);
                     ImGuiEx.Text($"{invCount}");
+
                     if (invCount >= value.AmountIngredient)
                     {
                         var color = ImGuiColors.HealerGreen;
@@ -528,7 +531,38 @@ internal class ListEditor : Window, IDisposable
             ImGui.Text($"Ingredient table is still populating. Please wait.");
             return;
         }
+        ImGui.BeginChild("###IngredientsListTable", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 30f));
+        Table._nameColumn.ShowColour = ColourValidation;
         Table.Draw(ImGui.GetTextLineHeightWithSpacing());
+        ImGui.EndChild();
+
+        ImGui.Checkbox("Enable Colour Validation", ref ColourValidation);
+
+        if (ColourValidation)
+        {
+            ImGui.SameLine();
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.HealerGreen);
+            ImGui.BeginDisabled(true);
+            ImGui.Button("", new Vector2(23, 23));
+            ImGui.EndDisabled();
+            ImGui.PopStyleColor();
+            ImGui.SameLine();
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
+            ImGui.Text($" - Inventory has all required items");
+
+            if (RetainerInfo.ATools)
+            {
+                ImGui.SameLine();
+                ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.DalamudOrange);
+                ImGui.BeginDisabled(true);
+                ImGui.Button("", new Vector2(23, 23));
+                ImGui.EndDisabled();
+                ImGui.PopStyleColor();
+                ImGui.SameLine();
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
+                ImGui.Text($" - Combination of Retainer & Inventory has all required items");
+            }
+        }
     }
 
     private void DrawListSettings()
@@ -584,7 +618,8 @@ internal class ListEditor : Window, IDisposable
 
     private void DrawRecipeSettings()
     {
-        var selectedListItem = RecipeSelector.Current;
+
+        var selectedListItem = RecipeSelector.Items[RecipeSelector.CurrentIdx];
         var recipe = CraftingListHelpers.FilteredList[RecipeSelector.Current];
         var count = SelectedList.Items.Count(x => x == selectedListItem);
 
@@ -654,10 +689,27 @@ internal class ListEditor : Window, IDisposable
                     if (ImGui.Selectable($"{altJ}"))
                     {
                         for (var i = 0; i < SelectedList.Items.Count; i++)
+                        {
                             if (SelectedList.Items[i] == selectedListItem)
+                            {
                                 SelectedList.Items[i] = altJob.RowId;
+                            }
+                        }
 
-                        selectedListItem = altJob.RowId;
+                        RecipeSelector.Items[RecipeSelector.CurrentIdx] = altJob.RowId;
+                        RecipeSelector.Current = RecipeSelector.Items[RecipeSelector.CurrentIdx];
+
+                        if (RecipeSelector.Items.Count(x => x == altJob.RowId) > 1)
+                        {
+                            var lastindex = RecipeSelector.Items.ToList().LastIndexOf(altJob.RowId);
+                            RecipeSelector.Items.RemoveAt(lastindex);
+                            var first = RecipeSelector.Items.ToList().IndexOf(altJob.RowId);
+                            RecipeSelector.Current = RecipeSelector.Items[first];
+                            RecipeSelector.CurrentIdx = first;
+                        }
+
+                        Table = new(Ingredient.GenerateList(SelectedList).Result);
+
                         Service.Configuration.Save();
                     }
                 }
@@ -893,7 +945,7 @@ internal class RecipeSelector : ItemSelector<uint>
                 List.Items.Insert(index, item1);
             }
         }
-        
+
         Items.Move(idx1, idx2);
         P.config.Save();
         return true;

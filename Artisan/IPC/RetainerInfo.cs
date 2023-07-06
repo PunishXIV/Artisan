@@ -258,6 +258,82 @@ namespace Artisan.IPC
             return 0;
         }
 
+        public static void RestockFromRetainers(uint itemId, int howManyToGet)
+        {
+            if (RetainerData.SelectMany(x => x.Value).Any(x => x.Value.ItemID == itemId && x.Value.Quantity > 0))
+            {
+                TM.Enqueue(() => Svc.Framework.Update += Tick);
+                TM.Enqueue(() => AutoRetainer.Suppress());
+                TM.EnqueueBell();
+                TM.DelayNext("BellInteracted", 200);
+                foreach (var retainer in RetainerData)
+                {
+                    if (retainer.Value.Values.Any(x => x.ItemID == itemId && x.Quantity > 0))
+                    {
+                        TM.Enqueue(() => RetainerListHandlers.SelectRetainerByID(retainer.Key));
+                        TM.DelayNext("WaitToSelectEntrust", 200);
+                        TM.Enqueue(() => RetainerHandlers.SelectEntrustItems());
+                        TM.DelayNext("EntrustSelected", 200);
+                        TM.Enqueue(() =>
+                        {
+                            ExtractSingular(itemId, howManyToGet);
+                        });
+
+                        TM.DelayNext("CloseRetainer", 200);
+                        TM.Enqueue(() => RetainerHandlers.CloseAgentRetainer());
+                        TM.DelayNext("ClickQuit", 200);
+                        TM.Enqueue(() => RetainerHandlers.SelectQuit());
+                    }
+                }
+                TM.DelayNext("CloseRetainerList", 200);
+                TM.Enqueue(() => RetainerListHandlers.CloseRetainerList());
+                TM.Enqueue(() => YesAlready.EnableIfNeeded());
+                TM.Enqueue(() => AutoRetainer.Unsuppress());
+                TM.Enqueue(() => Svc.Framework.Update -= Tick);
+            }
+        }
+
+        public static bool ExtractSingular(uint itemId, int howManyToGet)
+        {
+            if (howManyToGet != 0)
+            {
+                TM.DelayNextImmediate("WaitOnRetainerInventory", 500);
+                TM.EnqueueImmediate(() => RetainerHandlers.OpenItemContextMenu(itemId, out firstFoundQuantity), 300);
+                TM.DelayNextImmediate("WaitOnNumericPopup", 200);
+                TM.EnqueueImmediate(() =>
+                {
+                    var value = Math.Min(howManyToGet, (int)firstFoundQuantity);
+                    if (value == 0) return true;
+                    PluginLog.Debug($"Min withdrawing: {value}, found {firstFoundQuantity}");
+                    if (firstFoundQuantity == 1)
+                    {
+                        howManyToGet -= (int)firstFoundQuantity;
+                        TM.EnqueueImmediate(() =>
+                        {
+                            ExtractSingular(itemId, howManyToGet);
+                        }); 
+                        return true;
+                    }
+                    if (RetainerHandlers.InputNumericValue(value))
+                    {
+                        howManyToGet -= value;
+
+                        TM.EnqueueImmediate(() =>
+                        {
+                            ExtractSingular(itemId, howManyToGet);
+                        });
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }, 1000);
+            }
+
+            return true;
+        }
+
         public static void RestockFromRetainers(CraftingList list)
         {
             if (GetReachableRetainerBell() == null) return;
