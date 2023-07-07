@@ -28,10 +28,11 @@ namespace Artisan.RawInformation
         {
             get
             {
-                var current = Math.Max(0, Required - Inventory - RetainerCount - (Sources.Contains(1) ? TotalCraftable : 0) - AmountUsedForSubcrafts);
+                var current = Math.Max(0, Required - Inventory - RetainerCount - (CanBeCrafted ? TotalCraftable : 0) - AmountUsedForSubcrafts);
                 if (remaining != current)
                 {
                     remaining = current;
+                    AmountUsedForSubcrafts = GetSubCraftCount();
                     OnRemainingChange?.Invoke(this, true);
                 }
                 return remaining;
@@ -47,10 +48,11 @@ namespace Artisan.RawInformation
         public uint Category;
         public CraftingList OriginList;
         private Dictionary<uint, int> UsedInMaterialsList;
-        public int AmountUsedForSubcrafts => GetSubCraftCount();
+        public int AmountUsedForSubcrafts;
         public TerritoryType GatherZone;
         public bool TimedNode;
         private Dictionary<int, Recipe?> subRecipes = new();
+        public bool CanBeCrafted = false;
 
         public virtual event EventHandler<bool> OnRemainingChange;
 
@@ -73,7 +75,7 @@ namespace Artisan.RawInformation
             Data = LuminaSheets.ItemSheet.Values.First(x => x.RowId == itemId);
             Icon = P.Icons.LoadIcon(Data.Icon);
             Required = required;
-            if (LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == itemId)) Sources.Add(1);
+            if (LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == itemId)) { Sources.Add(1);  CanBeCrafted = true; }
             if (LuminaSheets.GatheringItemSheet.Values.Any(x => x.Item == itemId)) Sources.Add(2);
             if (Svc.Data.GetExcelSheet<FishingSpot>()!.Any(x => x.Item.Any(y => y.Value.RowId == itemId))) Sources.Add(3);
             if (ItemVendorLocation.ItemHasVendor(itemId)) Sources.Add(4);

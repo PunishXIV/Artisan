@@ -129,7 +129,7 @@ namespace Artisan.Autocraft
 
                 if (ImGui.CollapsingHeader("Crafting Stats"))
                 {
-                    CurrentCraftMethods.BestSynthesis(out var act, true);
+                    CurrentCraftMethods.BestSynthesis(out var act);
                     ImGui.Text($"Control: {CharacterInfo.Control()}");
                     ImGui.Text($"Craftsmanship: {CharacterInfo.Craftsmanship()}");
                     ImGui.Text($"Current Durability: {CurrentCraft.CurrentDurability}");
@@ -156,6 +156,7 @@ namespace Artisan.Autocraft
                     ImGui.Text($"Current Rec: {CurrentCraft.RecommendationName}");
                     ImGui.Text($"Previous Action: {CurrentCraft.PreviousAction.NameOfAction()}");
                     ImGui.Text($"Tasks?: {Artisan.Tasks.Count}");
+                    ImGui.Text($"{CurrentCraft.HighQualityPercentage}");
                 }
 
                 if (ImGui.CollapsingHeader("Spiritbonds"))

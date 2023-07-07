@@ -207,6 +207,9 @@ namespace Artisan.CraftingLogic
         {
             if (CurrentCraftMethods.GetStatus(Buffs.InnerQuiet) is null) return 0;
 
+            if (!Skills.ByregotsBlessing.LevelChecked()) return 0;
+            if (CharacterInfo.CurrentCP < 56) return 0;
+
             double efficiency = GetMultiplier(Skills.ByregotsBlessing);
             double IQStacks = 1 + (CurrentCraftMethods.GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
             double innovation = (CurrentCraftMethods.GetStatus(Buffs.Innovation)?.StackCount >= 2 && CurrentCondition != Condition.Excellent) || (CurrentCraftMethods.GetStatus(Buffs.Innovation)?.StackCount >= 3 && CurrentCondition == Condition.Excellent) || (JustUsedGreatStrides && CurrentCraftMethods.GetStatus(Buffs.Innovation)?.StackCount >= 1) ? 0.5 : 0;

@@ -57,6 +57,8 @@ namespace Artisan.RawInformation.Character
 
         public static uint HighestLevelTouch()
         {
+            bool wasteNots = CurrentCraftMethods.GetStatus(Buffs.WasteNot) != null || CurrentCraftMethods.GetStatus(Buffs.WasteNot2) != null;
+
             if (CurrentRecipe.IsExpert)
             {
                 if (CurrentCraftMethods.CanUse(Skills.HastyTouch) && CurrentCondition is Condition.Centered) return Skills.HastyTouch;
@@ -70,10 +72,8 @@ namespace Artisan.RawInformation.Character
             {
                 if (CurrentCraftMethods.CanUse(Skills.FocusedTouch) && JustUsedObserve) return Skills.FocusedTouch;
                 if (CurrentCraftMethods.CanUse(Skills.PreciseTouch) && CurrentCondition is Condition.Good or Condition.Excellent) return Skills.PreciseTouch;
-                if (CurrentCraftMethods.CanUse(Skills.PreparatoryTouch) && CurrentDurability > 20 && (CurrentCraftMethods.GetStatus(Buffs.InnerQuiet)?.StackCount < 10 || CurrentCraftMethods.GetStatus(Buffs.InnerQuiet) is null)) return Skills.PreparatoryTouch;
-                if (CurrentCraftMethods.CanUse(Skills.PrudentTouch) && CurrentCraftMethods.GetStatus(Buffs.WasteNot2) == null && CurrentCraftMethods.GetStatus(Buffs.WasteNot) == null) return Skills.PrudentTouch;
-                if (CurrentCraftMethods.CanUse(Skills.AdvancedTouch) && StandardTouchUsed) return Skills.AdvancedTouch;
-                if (CurrentCraftMethods.CanUse(Skills.StandardTouch) && BasicTouchUsed) return Skills.StandardTouch;
+                if (CurrentCraftMethods.CanUse(Skills.PreparatoryTouch) && CurrentDurability > (wasteNots ? 10 : 20) && (CurrentCraftMethods.GetStatus(Buffs.InnerQuiet)?.StackCount < 10 || CurrentCraftMethods.GetStatus(Buffs.InnerQuiet) is null)) return Skills.PreparatoryTouch;
+                if (CurrentCraftMethods.CanUse(Skills.PrudentTouch) && !wasteNots) return Skills.PrudentTouch;
                 if (CurrentCraftMethods.CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
             }
 
@@ -84,7 +84,7 @@ namespace Artisan.RawInformation.Character
         {
             if (CurrentCraftMethods.CanUse(Skills.IntensiveSynthesis)) return Skills.IntensiveSynthesis;
             if (CurrentCraftMethods.CanUse(Skills.FocusedSynthesis) && JustUsedObserve) return Skills.FocusedSynthesis;
-            if (CurrentCraftMethods.CanUse(Skills.Groundwork) && CurrentDurability > 20 && MaxDurability > 35) return Skills.Groundwork;
+            if (CurrentCraftMethods.CanUse(Skills.Groundwork) && CurrentDurability > 20) return Skills.Groundwork;
             if (CurrentCraftMethods.CanUse(Skills.PrudentSynthesis)) return Skills.PrudentSynthesis;
             if (CurrentCraftMethods.CanUse(Skills.CarefulSynthesis)) return Skills.CarefulSynthesis;
             if (CurrentCraftMethods.CanUse(Skills.BasicSynth)) return Skills.BasicSynth;

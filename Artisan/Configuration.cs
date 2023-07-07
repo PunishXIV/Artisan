@@ -78,8 +78,6 @@ namespace Artisan
 
         [NonSerialized]
         public bool CraftingX = false;
-
-        public bool UseAlternativeRotation { get; set; } = false;
         public bool HideQuestHelper { get; set; } = false;
         public bool DisableTheme { get; set; } = true;
         public bool RequestToStopDuty { get; set; } = false;
@@ -99,6 +97,8 @@ namespace Artisan
         public bool ShowMacroAssignResults = false;
         public bool HideContextMenus = false;
         public int ContextMenuLoops = 1;
+
+        public int SolverCollectibleMode = 3;
         public ItemFilter ShowItemsV1 { get; set; } = ItemFilter.All;
 
         public bool DontEquipItems = false;

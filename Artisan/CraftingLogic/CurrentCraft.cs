@@ -239,9 +239,9 @@ namespace Artisan.CraftingLogic
 
                 CurrentStep = Convert.ToInt32(cs.NodeText.ToString());
                 HQLiteral = hql.NodeText.ToString();
-                CollectabilityLow = collectLow.NodeText.ToString();
-                CollectabilityMid = collectMid.NodeText.ToString();
-                CollectabilityHigh = collectHigh.NodeText.ToString();
+                CollectabilityLow = collectLow.NodeText.ToString().GetNumbers();
+                CollectabilityMid = collectMid.NodeText.ToString().GetNumbers();
+                CollectabilityHigh = collectHigh.NodeText.ToString().GetNumbers();
 
                 return true;
 

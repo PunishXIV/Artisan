@@ -452,8 +452,7 @@ namespace Artisan.UI
             bool disableGlow = Service.Configuration.DisableHighlightedAction;
             bool disableToasts = Service.Configuration.DisableToasts;
             bool disableMini = Service.Configuration.DisableMiniMenu;
-            bool useAlternative = Service.Configuration.UseAlternativeRotation;
-
+            
             ImGui.Separator();
 
             if (ImGui.CollapsingHeader("General Settings"))
@@ -566,18 +565,34 @@ namespace Artisan.UI
                     Service.Configuration.Save();
                 }
 
-                if (ImGui.Checkbox("Use Alternative Quality Rotation (Level 84+)", ref useAlternative))
+                ImGui.Text($"Collectible Threshold Breakpoint");
+                ImGuiComponents.HelpMarker("The solver will stop going for quality once a collectible has hit a certain breakpoint.");
+
+                if (ImGui.RadioButton($"Minimum", Service.Configuration.SolverCollectibleMode == 1))
                 {
-                    Service.Configuration.UseAlternativeRotation = useAlternative;
+                    Service.Configuration.SolverCollectibleMode = 1;
                     Service.Configuration.Save();
                 }
-                ImGuiComponents.HelpMarker("Switches to Basic -> Standard -> Advanced touch instead of highest level touch.");
+                ImGui.SameLine();
+                if (ImGui.RadioButton($"Middle", Service.Configuration.SolverCollectibleMode == 2))
+                {
+                    Service.Configuration.SolverCollectibleMode = 2;
+                    Service.Configuration.Save();
+                }
+                ImGui.SameLine();
+                if (ImGui.RadioButton($"Maximum", Service.Configuration.SolverCollectibleMode == 3))
+                {
+                    Service.Configuration.SolverCollectibleMode = 3;
+                    Service.Configuration.Save();
+                }
 
                 if (ImGui.Checkbox("Disable Automatically Equipping Required Items for Crafts", ref Service.Configuration.DontEquipItems))
                     Service.Configuration.Save();
 
                 if (ImGui.Checkbox($"Use Quality Starter ({Skills.Reflect.NameOfAction()})", ref Service.Configuration.UseQualityStarter))
                     Service.Configuration.Save();
+
+
             }
 
             if (ImGui.CollapsingHeader("UI Settings"))
