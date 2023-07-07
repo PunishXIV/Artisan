@@ -550,7 +550,7 @@ namespace Artisan.UI
                     Service.Configuration.UseTricksExcellent = useTricksExcellent;
                     Service.Configuration.Save();
                 }
-                ImGuiComponents.HelpMarker($"These 2 options allow you to make Tricks of the Trade a priority when condition is Good or Excellent.\nOther skills that rely on these conditions will not be used.");
+                ImGuiComponents.HelpMarker($"These 2 options allow you to make {Skills.Tricks.NameOfAction()} a priority when condition is {LuminaSheets.AddonSheet[227].Text.RawString} or {LuminaSheets.AddonSheet[228].Text.RawString}.\n\nThis will replace {Skills.PreciseTouch.NameOfAction()} & {Skills.IntensiveSynthesis.NameOfAction()} usage.\n\n{Skills.Tricks.NameOfAction()} will still be used before learning these or under certain circumstances regardless of settings.");
                 if (ImGui.Checkbox("Use Specialist Actions", ref useSpecialist))
                 {
                     Service.Configuration.UseSpecialist = useSpecialist;

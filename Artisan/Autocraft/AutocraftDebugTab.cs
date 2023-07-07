@@ -156,7 +156,7 @@ namespace Artisan.Autocraft
                     ImGui.Text($"Current Rec: {CurrentCraft.RecommendationName}");
                     ImGui.Text($"Previous Action: {CurrentCraft.PreviousAction.NameOfAction()}");
                     ImGui.Text($"Tasks?: {Artisan.Tasks.Count}");
-                    ImGui.Text($"{CurrentCraft.HighQualityPercentage}");
+                    ImGui.Text($"{CurrentCraft.CurrentStep == 1 && Calculations.CalculateNewProgress(Skills.DelicateSynthesis) >= CurrentCraft.MaxProgress && Calculations.CalculateNewQuality(Skills.DelicateSynthesis) >= CurrentCraft.MaxQuality}");
                 }
 
                 if (ImGui.CollapsingHeader("Spiritbonds"))

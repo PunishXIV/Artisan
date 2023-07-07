@@ -22,6 +22,8 @@ namespace Artisan.CraftingLogic
         private static StatusList statusList => Service.ClientState.LocalPlayer!.StatusList;
         private static bool InTouchRotation => (PreviousActionSameAs(Skills.BasicTouch) && Skills.StandardTouch.LevelChecked()) || (PreviousActionSameAs(Skills.StandardTouch) && Skills.AdvancedTouch.LevelChecked());
 
+        private static bool goingForQuality = true;
+
         public static unsafe bool BestSynthesis(out uint action, bool allowComplete = true)
         {
             var lastActionId = PreviousAction;
@@ -112,14 +114,15 @@ namespace Artisan.CraftingLogic
             var totalwastestacks = wasteNot2Stacks + wasteNotStacks;
 
             var basicIncrease = Math.Floor(Calculations.BaseProgression() * Calculations.GetMultiplier(Skills.BasicSynth));
+            var progressAfterNext = progressAfterFirst - basicIncrease;
 
             while (durabilityAfterFirst > 0)
             {
-                var progressAfterNext = progressAfterFirst - basicIncrease;
                 if (progressAfterNext <= 0)
                     return true;
 
                 durabilityAfterFirst = durabilityAfterFirst - (10 / (totalwastestacks > 0 ? 2 : 1) + (manipStacks > 0 ? 5 : 0));
+                progressAfterNext = progressAfterNext - basicIncrease;
 
                 PluginLog.Debug($"{durabilityAfterFirst} {progressAfterNext}");
             }
@@ -162,16 +165,29 @@ namespace Artisan.CraftingLogic
         public static uint GetRecommendation()
         {
             BestSynthesis(out var act);
+
+            int collectibilityCheck = 0;
+            if (CurrentRecipe.ItemResult.Value.IsCollectable)
+            {
+                collectibilityCheck = Service.Configuration.SolverCollectibleMode switch
+                {
+                    1 => Convert.ToInt32(CollectabilityLow),
+                    2 => Convert.ToInt32(CollectabilityMid),
+                    3 => Convert.ToInt32(CollectabilityHigh)
+                };
+            }
+
+            goingForQuality = (!CurrentRecipe.ItemResult.Value.IsCollectable && HighQualityPercentage < Service.Configuration.MaxPercentage) ||
+                  (CurrentRecipe.ItemResult.Value.IsCollectable && HighQualityPercentage < collectibilityCheck);
+
             if (CurrentStep == 1 && Calculations.CalculateNewProgress(Skills.DelicateSynthesis) >= MaxProgress && Calculations.CalculateNewQuality(Skills.DelicateSynthesis) >= MaxQuality && CanUse(Skills.DelicateSynthesis)) return Skills.DelicateSynthesis;
             if (CanFinishCraft(act)) return act;
 
             if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || CurrentRecipe.ItemResult.Value.IsCollectable) && CurrentRecipe.CanHq) return Skills.TrainedEye;
             if (CanUse(Skills.Tricks) && CurrentStep > 2 && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent))) return Skills.Tricks;
 
-            if ((CharacterInfo.CurrentCP < 7 || ShouldMend(act)) && CanUse(Skills.Tricks)) return Skills.Tricks;
+            if ((CharacterInfo.CurrentCP < 7 || ShouldMend(act) || (!Skills.PreciseTouch.LevelChecked() && CurrentCondition == Condition.Good && GetStatus(Buffs.Innovation) is null)) && CanUse(Skills.Tricks) && !InTouchRotation) return Skills.Tricks;
             if (ShouldMend(act) && CanUse(Skills.MastersMend)) return Skills.MastersMend;
-
-
 
             if (MaxQuality == 0 || Service.Configuration.MaxPercentage == 0 || !CurrentRecipe.CanHq)
             {
@@ -181,18 +197,6 @@ namespace Artisan.CraftingLogic
                 return act;
             }
 
-            int collectibilityCheck = Service.Configuration.SolverCollectibleMode switch
-            {
-                1 => Convert.ToInt32(CollectabilityLow),
-                2 => Convert.ToInt32(CollectabilityMid),
-                3 => Convert.ToInt32(CollectabilityHigh)
-            };
-
-            bool goingForQuality = CurrentQuality < MaxQuality &&
-                                   ((!CurrentRecipe.ItemResult.Value.IsCollectable && HighQualityPercentage < Service.Configuration.MaxPercentage) ||
-                                   (CurrentRecipe.ItemResult.Value.IsCollectable && HighQualityPercentage < collectibilityCheck));
-
-            PluginLog.Debug($"{goingForQuality}");
             if (goingForQuality)
             {
                 if (!Service.Configuration.UseQualityStarter)
@@ -209,15 +213,22 @@ namespace Artisan.CraftingLogic
                 }
 
                 if (CanUse(Skills.PreciseTouch) && !statusList.HasStatus(out _, CraftingPlayerStatuses.GreatStrides) && CurrentCondition is Condition.Good or Condition.Excellent) return Skills.PreciseTouch;
+                if (!Skills.PreciseTouch.LevelChecked() && !statusList.HasStatus(out _, CraftingPlayerStatuses.GreatStrides) && CurrentCondition is Condition.Excellent)
+                {
+                    if (BasicTouchUsed && CanUse(Skills.StandardTouch)) return Skills.StandardTouch;
+                    return Skills.BasicTouch;
+                }
+
                 if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation) && CurrentDurability < MaxDurability && !InTouchRotation) return Skills.Manipulation;
                 if (!WasteNotUsed && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
+                if (!WasteNotUsed && GetStatus(Buffs.WasteNot) is null && CanUse(Skills.WasteNot) && !Skills.WasteNot2.LevelChecked()) return Skills.WasteNot;
                 if (Calculations.CalculateNewQuality(Skills.ByregotsBlessing) >= MaxQuality && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                 if (GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation) && !InTouchRotation) return Skills.Innovation;
                 if (Calculations.GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides) && CurrentCondition != Condition.Excellent) return Skills.GreatStrides;
                 if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
                 if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe))
                 {
-                    if (statusList.HasStatus(out int innovationstacks, CraftingPlayerStatuses.Innovation) && innovationstacks >= 2)
+                    if (statusList.HasStatus(out int innovationstacks, CraftingPlayerStatuses.Innovation) && innovationstacks >= 2 && !Skills.FocusedTouch.LevelChecked())
                         return Skills.Observe;
 
                     if (!CanFinishCraft(act))
@@ -226,6 +237,7 @@ namespace Artisan.CraftingLogic
                     return Skills.Observe;
                 }
                 if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
+                if (JustUsedObserve && CanUse(Skills.FocusedTouch)) return Skills.FocusedTouch;
                 if (CanCompleteTouchCombo())
                 {
                     if (PreviousActionSameAs(Skills.BasicTouch) && CanUse(Skills.StandardTouch)) return Skills.StandardTouch;
@@ -235,8 +247,10 @@ namespace Artisan.CraftingLogic
                 if (CharacterInfo.HighestLevelTouch() != 0) return CharacterInfo.HighestLevelTouch();
             }
 
+            if (CanFinishCraft(act))
+                return act;
 
-            if (CanUse(Skills.Veneration) && GetStatus(Buffs.Veneration) == null && !VenerationUsed) return Skills.Veneration;
+            if (CanUse(Skills.Veneration) && GetStatus(Buffs.Veneration) == null && CurrentCondition != Condition.Excellent) return Skills.Veneration;
             return act;
         }
 
@@ -245,9 +259,9 @@ namespace Artisan.CraftingLogic
             bool wasteNots = GetStatus(Buffs.WasteNot) != null || GetStatus(Buffs.WasteNot2) != null;
             var nextReduction = wasteNots ? 5 : 10;
 
-            if (CurrentQuality < MaxQuality && (HighQualityPercentage < Service.Configuration.MaxPercentage || CurrentRecipe.ItemResult.Value.IsCollectable || CurrentRecipe.IsExpert))
+            if (goingForQuality)
             {
-                if (!Skills.AdvancedTouch.LevelChecked() && StandardTouchUsed && CurrentDurability <= 20 && MaxDurability >= 50) return true;
+                if (!Skills.AdvancedTouch.LevelChecked() && Skills.StandardTouch.LevelChecked() && CurrentDurability <= 20 && MaxDurability >= 50) return true;
             }
             else
             {
@@ -331,9 +345,7 @@ namespace Artisan.CraftingLogic
             if (!CurrentRecipe.CanHq)
                 return Calculations.CalculateNewProgress(act) >= MaxProgress;
 
-            var metMaxProg = CurrentQuality >= MaxQuality;
-            var usingPercentage = HighQualityPercentage >= Service.Configuration.MaxPercentage && !CurrentRecipe.ItemResult.Value.IsCollectable && !CurrentRecipe.IsExpert;
-            return Calculations.CalculateNewProgress(act) >= MaxProgress && (metMaxProg || usingPercentage);
+            return Calculations.CalculateNewProgress(act) >= MaxProgress && !goingForQuality;
         }
 
         public unsafe static void RepeatTrialCraft()
