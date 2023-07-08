@@ -1,4 +1,5 @@
 ﻿using Artisan.IPC;
+using Artisan.RawInformation;
 using ClickLib.Clicks;
 using ClickLib.Enums;
 using ClickLib.Structures;
@@ -309,15 +310,35 @@ internal unsafe static class RetainerHandlers
                     var ag = AgentInventoryContext.Instance();
                     ag->OpenForItemSlot(inv, i, AgentModule.Instance()->GetAgentByInternalId(AgentId.Retainer)->GetAddonID());
                     var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu", 1);
+                    var contextAgent = AgentInventoryContext.Instance();
+                    var indexOfRetrieveAll = -1;
+                    var indexOfRetrieveQuantity = -1;
+
+                    int looper = 0;
+                    foreach (var contextObj in contextAgent->EventParamsSpan)
+                    {
+                        if (contextObj.Type == FFXIVClientStructs.FFXIV.Component.GUI.ValueType.String)
+                        {
+                            var label = MemoryHelper.ReadSeStringNullTerminated(new IntPtr(contextObj.String));
+
+                            if (LuminaSheets.AddonSheet[98].Text == label.TextValue) indexOfRetrieveAll = looper;
+                            if (LuminaSheets.AddonSheet[773].Text == label.TextValue) indexOfRetrieveQuantity = looper;
+
+                            looper++;
+                        }
+                    }
+
                     if (contextMenu != null)
                     {
                         if (item->Quantity == 1 || item->ItemID <= 19)
                         {
-                            Callback.Fire(contextMenu, true, 0, 0, 0, 0, 0);
+                            if (indexOfRetrieveAll == -1) return true;
+                            Callback.Fire(contextMenu, true, 0, indexOfRetrieveAll, 0, 0, 0);
                         }
                         else
                         {
-                            Callback.Fire(contextMenu, true, 0, 1, 0, 0, 0);
+                            if (indexOfRetrieveQuantity == -1) return true;
+                            Callback.Fire(contextMenu, true, 0, indexOfRetrieveQuantity, 0, 0, 0);
                         }
                         return true;
                     }

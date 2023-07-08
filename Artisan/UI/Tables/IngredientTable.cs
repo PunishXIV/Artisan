@@ -120,6 +120,13 @@ namespace Artisan.UI.Tables
             {
                 if (ShowColour)
                 {
+                    if (item.CanBeCrafted && item.RetainerCount + item.Inventory + item.TotalCraftable >= item.Required)
+                    {
+                        var color = ImGuiColors.TankBlue;
+                        color.W -= 0.6f;
+                        ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                    }
+
                     if (item.RetainerCount + item.Inventory >= item.Required)
                     {
                         var color = ImGuiColors.DalamudOrange;

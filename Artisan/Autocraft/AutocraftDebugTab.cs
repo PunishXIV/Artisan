@@ -6,6 +6,7 @@ using Artisan.QuestSync;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Logging;
+using Dalamud.Memory;
 using Dalamud.Utility.Signatures;
 using ECommons;
 using ECommons.Automation;
@@ -18,6 +19,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -242,15 +244,6 @@ namespace Artisan.Autocraft
 
                 ImGui.InputInt("Debug Value", ref DebugValue);
 
-                //if (ImGui.Button("Accept Leve (Use Debug Value for ID)"))
-                //{
-                //    if (Svc.GameGui.GetAddonByName("GuildLeve") != IntPtr.Zero)
-                //    {
-                //        var addon = (AtkUnitBase*)Svc.GameGui.GetAddonByName("GuildLeve");
-                //        Callback.Fire(addon, true, 13, 13, DebugValue);
-                //    }
-                //}
-
                 ImGui.Text($"Item Count? {CraftingListUI.NumberOfIngredient((uint)DebugValue)}");
 
                 ImGui.Text($"Completed Recipe? {((uint)DebugValue).NameOfRecipe()} {P.ri.HasRecipeCrafted((uint)DebugValue)}");
@@ -272,11 +265,6 @@ namespace Artisan.Autocraft
                     Spiritbond.ExtractFirstMateria();
                 }
 
-                var restDays1 = MJIManager.Instance()->CraftworksRestDays[0];
-                var restDays2 = MJIManager.Instance()->CraftworksRestDays[1];
-                var restDays3 = MJIManager.Instance()->CraftworksRestDays[2];
-                var restDays4 = MJIManager.Instance()->CraftworksRestDays[3];
-                ImGui.Text($"{restDays1} {restDays2} {restDays3} {restDays4}");
 
                 /*ImGui.InputInt("id", ref SelRecId);
                 if (ImGui.Button("OpenRecipeByRecipeId"))

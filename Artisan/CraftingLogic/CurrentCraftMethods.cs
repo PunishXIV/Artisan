@@ -5,11 +5,13 @@ using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Statuses;
 using Dalamud.Logging;
 using ECommons;
+using FFXIVClientStructs.FFXIV.Application.Network.WorkDefinitions;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
+using System.Dynamic;
 using System.Linq;
 using static Artisan.CraftingLogic.CurrentCraft;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
@@ -97,35 +99,30 @@ namespace Artisan.CraftingLogic
 
         private unsafe static bool CanSpamBasicToComplete()
         {
-            var agentCraftActionSimulator = AgentModule.Instance()->GetAgentCraftActionSimulator();
-            var remainingProgress = (uint)RemainingProgress();
-            var progressActions = agentCraftActionSimulator->Progress;
+            var multiplier = Calculations.GetMultiplier(Skills.BasicSynth);
+            statusList.HasStatus(out int venestacks, CraftingPlayerStatuses.Veneration);
+            statusList.HasStatus(out int wasteStacks, CraftingPlayerStatuses.WasteNot, CraftingPlayerStatuses.WasteNot2);
+            statusList.HasStatus(out int manipStacks, CraftingPlayerStatuses.Manipulation);
+            var copyOfDura = CurrentDurability;
+            int newProgress = CurrentProgress;
 
-            var firstUse = progressActions->BasicSynthesis.ProgressIncrease;
-            if (progressActions->BasicSynthesis.CanComplete(remainingProgress)!.Value)
-                return true;
-
-            var progressAfterFirst = remainingProgress - firstUse;
-            var durabilityAfterFirst = CurrentDurability - (10 / (GetStatus(Buffs.WasteNot) != null || GetStatus(Buffs.WasteNot2) != null ? 2 : 1)) + (GetStatus(Buffs.Manipulation) != null ? 5 : 0);
-
-            var manipStacks = GetStatus(Buffs.Manipulation) != null ? GetStatus(Buffs.Manipulation).StackCount - 1 : 0;
-            var wasteNotStacks = GetStatus(Buffs.WasteNot) != null ? GetStatus(Buffs.WasteNot).StackCount - 1 : 0;
-            var wasteNot2Stacks = GetStatus(Buffs.WasteNot2) != null ? GetStatus(Buffs.WasteNot2).StackCount - 1 : 0;
-            var totalwastestacks = wasteNot2Stacks + wasteNotStacks;
-
-            var basicIncrease = Math.Floor(Calculations.BaseProgression() * Calculations.GetMultiplier(Skills.BasicSynth));
-            var progressAfterNext = progressAfterFirst - basicIncrease;
-
-            while (durabilityAfterFirst > 0)
+            while (copyOfDura > 0)
             {
-                if (progressAfterNext <= 0)
-                    return true;
+                newProgress = (int)Math.Floor(newProgress + (Calculations.BaseProgression() * multiplier * (venestacks > 0 ? 1.5 : 1)));
+                PluginLog.Debug($"{newProgress}");
+                if (newProgress >= MaxProgress) return true;
 
-                durabilityAfterFirst = durabilityAfterFirst - (10 / (totalwastestacks > 0 ? 2 : 1) + (manipStacks > 0 ? 5 : 0));
-                progressAfterNext = progressAfterNext - basicIncrease;
+                copyOfDura -= wasteStacks > 0 ? 5 : 10;
+                if (copyOfDura <= 0) return false;
 
-                PluginLog.Debug($"{durabilityAfterFirst} {progressAfterNext}");
+                copyOfDura += manipStacks > 0 ? 5 : 0;
+
+                manipStacks--;
+                wasteStacks--;
+                venestacks--;
+
             }
+
 
             return false;
 
@@ -184,10 +181,18 @@ namespace Artisan.CraftingLogic
             if (CanFinishCraft(act)) return act;
 
             if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || CurrentRecipe.ItemResult.Value.IsCollectable) && CurrentRecipe.CanHq) return Skills.TrainedEye;
-            if (CanUse(Skills.Tricks) && CurrentStep > 2 && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent))) return Skills.Tricks;
-
-            if ((CharacterInfo.CurrentCP < 7 || ShouldMend(act) || (!Skills.PreciseTouch.LevelChecked() && CurrentCondition == Condition.Good && GetStatus(Buffs.Innovation) is null)) && CanUse(Skills.Tricks) && !InTouchRotation) return Skills.Tricks;
             if (ShouldMend(act) && CanUse(Skills.MastersMend)) return Skills.MastersMend;
+
+            if (CanUse(Skills.Tricks))
+            {
+                if (CurrentStep > 2 && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent)))
+                    return Skills.Tricks;
+
+                if ((CharacterInfo.CurrentCP < 7 ||
+                    (!Skills.PreciseTouch.LevelChecked() && CurrentCondition == Condition.Good && GetStatus(Buffs.Innovation) is null) && !statusList.HasStatus(out _, CraftingPlayerStatuses.WasteNot2, CraftingPlayerStatuses.WasteNot)) &&
+                    !InTouchRotation)
+                    return Skills.Tricks;
+            }
 
             if (MaxQuality == 0 || Service.Configuration.MaxPercentage == 0 || !CurrentRecipe.CanHq)
             {
@@ -216,22 +221,22 @@ namespace Artisan.CraftingLogic
                 if (!Skills.PreciseTouch.LevelChecked() && !statusList.HasStatus(out _, CraftingPlayerStatuses.GreatStrides) && CurrentCondition is Condition.Excellent)
                 {
                     if (BasicTouchUsed && CanUse(Skills.StandardTouch)) return Skills.StandardTouch;
-                    return Skills.BasicTouch;
+                    if (CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
                 }
 
                 if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation) && CurrentDurability < MaxDurability && !InTouchRotation) return Skills.Manipulation;
                 if (!WasteNotUsed && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
                 if (!WasteNotUsed && GetStatus(Buffs.WasteNot) is null && CanUse(Skills.WasteNot) && !Skills.WasteNot2.LevelChecked()) return Skills.WasteNot;
                 if (Calculations.CalculateNewQuality(Skills.ByregotsBlessing) >= MaxQuality && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
-                if (GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation) && !InTouchRotation) return Skills.Innovation;
+                if (GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation) && !InTouchRotation && CharacterInfo.CurrentCP >= 36) return Skills.Innovation;
                 if (Calculations.GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides) && CurrentCondition != Condition.Excellent) return Skills.GreatStrides;
                 if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
                 if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe))
                 {
-                    if (statusList.HasStatus(out int innovationstacks, CraftingPlayerStatuses.Innovation) && innovationstacks >= 2 && !Skills.FocusedTouch.LevelChecked())
+                    if (statusList.HasStatus(out int innovationstacks, CraftingPlayerStatuses.Innovation) && innovationstacks >= 2 && Skills.FocusedTouch.LevelChecked())
                         return Skills.Observe;
 
-                    if (!CanFinishCraft(act))
+                    if (Calculations.CalculateNewProgress(act) < MaxProgress)
                         return act;
 
                     return Skills.Observe;
@@ -261,7 +266,8 @@ namespace Artisan.CraftingLogic
 
             if (goingForQuality)
             {
-                if (!Skills.AdvancedTouch.LevelChecked() && Skills.StandardTouch.LevelChecked() && CurrentDurability <= 20 && MaxDurability >= 50) return true;
+                if (!Skills.AdvancedTouch.LevelChecked() && Skills.StandardTouch.LevelChecked() && CurrentDurability <= 20 && MaxDurability >= 50 && CurrentCondition != Condition.Excellent) return true;
+                if (Skills.AdvancedTouch.LevelChecked() && CurrentDurability <= 30 && !InTouchRotation && MaxDurability >= 50 && CurrentCondition != Condition.Excellent) return true;
             }
             else
             {

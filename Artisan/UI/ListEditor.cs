@@ -531,7 +531,7 @@ internal class ListEditor : Window, IDisposable
             ImGui.Text($"Ingredient table is still populating. Please wait.");
             return;
         }
-        ImGui.BeginChild("###IngredientsListTable", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 30f));
+        ImGui.BeginChild("###IngredientsListTable", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 60f));
         Table._nameColumn.ShowColour = ColourValidation;
         Table.Draw(ImGui.GetTextLineHeightWithSpacing());
         ImGui.EndChild();
@@ -562,7 +562,44 @@ internal class ListEditor : Window, IDisposable
                 ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
                 ImGui.Text($" - Combination of Retainer & Inventory has all required items");
             }
+
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedBlue);
+            ImGui.BeginDisabled(true);
+            ImGui.Button("", new Vector2(23, 23));
+            ImGui.EndDisabled();
+            ImGui.PopStyleColor();
+            ImGui.SameLine();
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
+            ImGui.Text($" - Combination of Inventory & Craftable has all required items.");
         }
+
+        ImGui.SameLine();
+        if (ImGui.Button("Need Help?"))
+            ImGui.OpenPopup("HelpPopup");
+
+        var windowSize = new Vector2(1024 * ImGuiHelpers.GlobalScale,
+            ImGui.GetTextLineHeightWithSpacing() * 13 + 2 * ImGui.GetFrameHeightWithSpacing());
+        ImGui.SetNextWindowSize(windowSize);
+        ImGui.SetNextWindowPos((ImGui.GetIO().DisplaySize - windowSize) / 2);
+
+        using var popup = ImRaii.Popup("HelpPopup",
+            ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.Modal);
+        if (!popup)
+            return;
+
+        ImGui.TextWrapped($"This ingredients table shows you everything needed to craft the items on your list. The basic functionality of the table shows you information such as how many of an ingredient is in your inventory, sources of an ingredient, if it has a zone it can be gathered in etc.");
+        ImGui.Dummy(new Vector2(0));
+        ImGui.BulletText($"You can click on the column headers to filter the results, either through typing or on a pre-determined filter.");
+        ImGui.BulletText($"Right clicking on a header will allow you to show/hide different columns or resize columns.");
+        ImGui.BulletText($"Right clicking on an ingredient name opens a context menu with further options.");
+        ImGui.BulletText($"Clicking and dragging on the space on the headers between columns (as shown by it lighting up) allows you to re-order the columns.");
+        ImGui.BulletText($"Don't see any items? Check the table headers for a red heading. This indicates this column is being filtered on. Right clicking the header will clear the filter.");
+        ImGui.BulletText($"You can extend the functionality of the table by installing the following plugins:\n- Allagan Tools (Enables all retainer features)\n- Item Vendor Lookup\n- Gatherbuddy\n- Monster Loot Hunter");
+        ImGui.BulletText($"Tip: Filter on \"Remaining Needed\" and \"Sources\" when gathering to help filter on items missing, along with sorting by gathered zone\nto help reduce travel times.");
+
+        ImGui.SetCursorPosY(windowSize.Y - ImGui.GetFrameHeight() - ImGui.GetStyle().WindowPadding.Y);
+        if (ImGui.Button("Close Help", -Vector2.UnitX))
+            ImGui.CloseCurrentPopup();
     }
 
     private void DrawListSettings()
