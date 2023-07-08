@@ -527,6 +527,9 @@ namespace Artisan.UI
                         }
                     }
                 }
+
+                if (ImGui.Checkbox("Disable Automatically Equipping Required Items for Crafts", ref Service.Configuration.DontEquipItems))
+                    Service.Configuration.Save();
             }
 
             if (ImGui.CollapsingHeader("Macro Settings"))
@@ -585,9 +588,6 @@ namespace Artisan.UI
                     Service.Configuration.SolverCollectibleMode = 3;
                     Service.Configuration.Save();
                 }
-
-                if (ImGui.Checkbox("Disable Automatically Equipping Required Items for Crafts", ref Service.Configuration.DontEquipItems))
-                    Service.Configuration.Save();
 
                 if (ImGui.Checkbox($"Use Quality Starter ({Skills.Reflect.NameOfAction()})", ref Service.Configuration.UseQualityStarter))
                     Service.Configuration.Save();
@@ -696,6 +696,7 @@ namespace Artisan.UI
                 if (ImGui.Checkbox($@"Reset ""Number of Times to Add"" after adding to list.", ref Service.Configuration.ResetTimesToAdd))
                     Service.Configuration.Save();
 
+                ImGui.PushItemWidth(100);
                 if (ImGui.InputInt("Times to Add with Context Menu", ref Service.Configuration.ContextMenuLoops))
                 {
                     if (Service.Configuration.ContextMenuLoops <= 0)
