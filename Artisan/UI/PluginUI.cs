@@ -190,7 +190,7 @@ namespace Artisan.UI
 
                         if (OpenWindow == OpenWindow.Endurance)
                         {
-                            Handler.Draw();
+                            Endurance.Draw();
                         }
 
                         if (OpenWindow == OpenWindow.Lists)
@@ -703,6 +703,18 @@ namespace Artisan.UI
                         Service.Configuration.ContextMenuLoops = 1;
 
                     Service.Configuration.Save();
+                }
+
+                ImGui.PushItemWidth(400);
+                if (ImGui.SliderFloat("Delay Between Same Crafts", ref P.config.ListCraftThrottle, 0.2f, 2f, "%.1f"))
+                {
+                    if (P.config.ListCraftThrottle < 0.2f)
+                        P.config.ListCraftThrottle = 0.2f;
+
+                    if (P.config.ListCraftThrottle > 2f)
+                        P.config.ListCraftThrottle = 2f;
+
+                    P.config.Save();
                 }
             }
         }

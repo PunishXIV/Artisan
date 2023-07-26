@@ -5,13 +5,11 @@ using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Statuses;
 using Dalamud.Logging;
 using ECommons;
-using FFXIVClientStructs.FFXIV.Application.Network.WorkDefinitions;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
-using System.Dynamic;
 using System.Linq;
 using static Artisan.CraftingLogic.CurrentCraft;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
@@ -56,7 +54,7 @@ namespace Artisan.CraftingLogic
             }
 
             // Only use Groundwork to speed up if it'll complete or if under muscle memory
-            if (progressActions->Groundwork.CanComplete(remainingProgress) == true || statusList.HasStatus(out int _, CraftingPlayerStatuses.MuscleMemory))
+            if (Skills.Groundwork.LevelChecked() && (progressActions->Groundwork.CanComplete(remainingProgress) == true || statusList.HasStatus(out int _, CraftingPlayerStatuses.MuscleMemory)))
             {
                 action = Skills.Groundwork;
                 return true;
@@ -164,23 +162,52 @@ namespace Artisan.CraftingLogic
             BestSynthesis(out var act);
 
             int collectibilityCheck = 0;
-            if (CurrentRecipe.ItemResult.Value.IsCollectable)
+            if (CurrentRecipe.ItemResult.Value.AlwaysCollectable)
             {
-                collectibilityCheck = Service.Configuration.SolverCollectibleMode switch
+                switch (Service.Configuration.SolverCollectibleMode)
                 {
-                    1 => Convert.ToInt32(CollectabilityLow),
-                    2 => Convert.ToInt32(CollectabilityMid),
-                    3 => Convert.ToInt32(CollectabilityHigh)
-                };
+                    case 1:
+                        collectibilityCheck = Convert.ToInt32(CollectabilityLow);
+                        break;
+                    case 2:
+                        if (CollectabilityMid == "0")
+                        {
+                            collectibilityCheck = Convert.ToInt32(CollectabilityLow);
+                        }
+                        else
+                        {
+                            collectibilityCheck = Convert.ToInt32(CollectabilityMid);
+                        }
+                        break;
+                    case 3:
+                        if (CollectabilityHigh == "0")
+                        {
+                            if (CollectabilityMid == "0")
+                            {
+                                collectibilityCheck = Convert.ToInt32(CollectabilityLow);
+                            }
+                            else
+                            {
+                                collectibilityCheck = Convert.ToInt32(CollectabilityMid);
+                            }
+                        }
+                        else
+                        {
+                            collectibilityCheck = Convert.ToInt32(CollectabilityHigh);
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
 
-            goingForQuality = (!CurrentRecipe.ItemResult.Value.IsCollectable && HighQualityPercentage < Service.Configuration.MaxPercentage) ||
-                  (CurrentRecipe.ItemResult.Value.IsCollectable && HighQualityPercentage < collectibilityCheck);
+            goingForQuality = (!CurrentRecipe.ItemResult.Value.AlwaysCollectable && HighQualityPercentage < Service.Configuration.MaxPercentage) ||
+                  (CurrentRecipe.ItemResult.Value.AlwaysCollectable && HighQualityPercentage < collectibilityCheck);
 
             if (CurrentStep == 1 && Calculations.CalculateNewProgress(Skills.DelicateSynthesis) >= MaxProgress && Calculations.CalculateNewQuality(Skills.DelicateSynthesis) >= MaxQuality && CanUse(Skills.DelicateSynthesis)) return Skills.DelicateSynthesis;
             if (CanFinishCraft(act)) return act;
 
-            if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || CurrentRecipe.ItemResult.Value.IsCollectable) && CurrentRecipe.CanHq) return Skills.TrainedEye;
+            if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || CurrentRecipe.ItemResult.Value.AlwaysCollectable) && CurrentRecipe.CanHq) return Skills.TrainedEye;
             if (ShouldMend(act) && CanUse(Skills.MastersMend)) return Skills.MastersMend;
 
             if (CanUse(Skills.Tricks))
@@ -370,7 +397,7 @@ namespace Artisan.CraftingLogic
 
                     var synthButton = addonPtr->TrialSynthesisButton;
                     ClickRecipeNote.Using(recipeWindow).TrialSynthesis();
-                    Handler.Tasks.Clear();
+                    Endurance.Tasks.Clear();
                 }
             }
             catch (Exception ex)
@@ -387,15 +414,17 @@ namespace Artisan.CraftingLogic
                 if (recipeWindow == IntPtr.Zero)
                     return;
 
+                GenericHelpers.TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon);
+
+                if (!int.TryParse(addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory->NodeText.ToString(), out int trueNumberCraftable) || trueNumberCraftable == 0)
+                {
+                    return;
+                }
+
                 var addonPtr = (AddonRecipeNote*)recipeWindow;
                 if (addonPtr == null)
                     return;
                 var synthButton = addonPtr->SynthesizeButton;
-
-                if (synthButton != null && !synthButton->IsEnabled)
-                {
-                    synthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
-                }
 
                 try
                 {
@@ -415,7 +444,7 @@ namespace Artisan.CraftingLogic
                         values[0] = new()
                         {
                             Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int,
-                            Int = crafts,
+                            Int = Math.Min(trueNumberCraftable, crafts),
                         };
                         values[1] = new()
                         {
@@ -445,24 +474,20 @@ namespace Artisan.CraftingLogic
         {
             try
             {
-                if (Throttler.Throttle(500))
+                var quickSynthPTR = Service.GameGui.GetAddonByName("SynthesisSimple", 1);
+                if (quickSynthPTR == IntPtr.Zero)
+                    return;
+
+                var quickSynthWindow = (AtkUnitBase*)quickSynthPTR;
+                if (quickSynthWindow == null)
+                    return;
+
+                var qsynthButton = (AtkComponentButton*)quickSynthWindow->UldManager.NodeList[2];
+                if (qsynthButton != null && !qsynthButton->IsEnabled)
                 {
-                    var quickSynthPTR = Service.GameGui.GetAddonByName("SynthesisSimple", 1);
-                    if (quickSynthPTR == IntPtr.Zero)
-                        return;
-
-                    var quickSynthWindow = (AtkUnitBase*)quickSynthPTR;
-                    if (quickSynthWindow == null)
-                        return;
-
-                    var qsynthButton = (AtkComponentButton*)quickSynthWindow->UldManager.NodeList[2];
-                    if (qsynthButton != null && !qsynthButton->IsEnabled)
-                    {
-                        qsynthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
-                    }
-                    AtkResNodeFunctions.ClickButton(quickSynthWindow, qsynthButton, 0);
+                    qsynthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
                 }
-
+                AtkResNodeFunctions.ClickButton(quickSynthWindow, qsynthButton, 0);
             }
             catch (Exception e)
             {
@@ -482,6 +507,8 @@ namespace Artisan.CraftingLogic
                 if (addonPtr == null)
                     return;
                 var synthButton = addonPtr->SynthesizeButton;
+                if (synthButton == null)
+                    return;
 
                 if (synthButton != null && !synthButton->IsEnabled)
                 {
@@ -496,7 +523,7 @@ namespace Artisan.CraftingLogic
                         Dalamud.Logging.PluginLog.Verbose("AddonRecipeNote: Selecting synth");
                         ClickRecipeNote.Using(recipeWindow).Synthesize();
 
-                        Handler.Tasks.Clear();
+                        Endurance.Tasks.Clear();
                     }
                     catch (Exception e)
                     {

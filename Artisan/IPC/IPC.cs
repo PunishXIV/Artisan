@@ -56,12 +56,12 @@ namespace Artisan.IPC
 
         static bool GetEnduranceStatus()
         {
-            return Handler.Enable;
+            return Endurance.Enable;
         }
 
         static void SetEnduranceStatus(bool s)
         {
-            Handler.Enable = s;
+            Endurance.Enable = s;
         }
 
         static bool IsListRunning()

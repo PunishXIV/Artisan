@@ -1,34 +1,30 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
-using Artisan.CustomDeliveries;
 using Artisan.IPC;
-using Artisan.QuestSync;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
-using Dalamud.Logging;
-using Dalamud.Memory;
-using Dalamud.Utility.Signatures;
 using ECommons;
-using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
+using FFXIVClientStructs.Attributes;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.MJI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
+using Newtonsoft.Json;
 using System;
-using System.Buffers;
-using System.Collections.Generic;
+using System.Collections;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 using static ECommons.GenericHelpers;
 
 namespace Artisan.Autocraft
 {
-    internal unsafe static class AutocraftDebugTab
+    internal unsafe class AutocraftDebugTab
     {
         internal static int offset = 0;
         internal static int SelRecId = 0;
@@ -236,10 +232,10 @@ namespace Artisan.Autocraft
                 }
                 ImGuiEx.Text($"Gear condition: {RepairManager.GetMinEquippedPercent()}");
 
-                ImGui.Text($"Endurance Item: {Handler.RecipeID} {Handler.RecipeName}");
+                ImGui.Text($"Endurance Item: {Endurance.RecipeID} {Endurance.RecipeName}");
                 if (ImGui.Button($"Open Endurance Item"))
                 {
-                    CraftingLists.CraftingListFunctions.OpenRecipeByID((uint)Handler.RecipeID);
+                    CraftingLists.CraftingListFunctions.OpenRecipeByID((uint)Endurance.RecipeID);
                 }
 
                 ImGui.InputInt("Debug Value", ref DebugValue);
@@ -265,6 +261,38 @@ namespace Artisan.Autocraft
                     Spiritbond.ExtractFirstMateria();
                 }
 
+                if (TryGetAddonByName<AddonGathering>("Gathering", out var addon))
+                {
+                    try
+                    {
+                        ImGui.Text($"{addon->InventoryQuantityTextNode->NodeText}");
+                        for (int i = 0; i <= 800; i += 8)
+                        {
+                            try
+                            {
+                                var ptr = IntPtr.Add((IntPtr)addon, i);
+                                var bytes = Dalamud.Memory.MemoryHelper.ReadRaw(ptr, 16);
+                                var node = ptr.As<AtkTextNode>();
+
+
+                                if (i == 616)
+                                {
+                                    ImGui.Text($"??? {*addon->InventoryQuantityTextNode} {ptr}");
+                                    ImGui.Text($"{node->NodeText}");
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                ImGui.Text($"{e.Message}");
+                            }
+                        }
+
+                    }
+                    catch
+                    {
+
+                    }
+                }
 
                 /*ImGui.InputInt("id", ref SelRecId);
                 if (ImGui.Button("OpenRecipeByRecipeId"))
@@ -283,7 +311,7 @@ namespace Artisan.Autocraft
             {
                 e.Log();
             }
-            
+
 
         }
 

@@ -10,6 +10,7 @@ using System.Linq;
 using OtterGui;
 using Artisan.IPC;
 using Artisan.Autocraft;
+using Dalamud.Logging;
 
 namespace Artisan.ContextMenus;
 
@@ -45,12 +46,13 @@ internal static class CraftingListContextMenu
             var craftTypeIndex = *(uint*)(recipeNoteAgent + 944);
 
 
+            PluginLog.Debug($"{RetainerInfo.GetRetainerItemCount(itemId)} {RetainerInfo.GetReachableRetainerBell()}");
             if (RetainerInfo.GetRetainerItemCount(itemId) > 0 && RetainerInfo.GetReachableRetainerBell() != null)
             {
                 int amountToGet = 1;
-                if (LuminaSheets.RecipeSheet[(uint)Handler.RecipeID].ItemResult.Row != itemId)
+                if (LuminaSheets.RecipeSheet[(uint)Endurance.RecipeID].ItemResult.Row != itemId)
                 {
-                    amountToGet = LuminaSheets.RecipeSheet[(uint)Handler.RecipeID].UnkData5.First(y => y.ItemIngredient == itemId).AmountIngredient;
+                    amountToGet = LuminaSheets.RecipeSheet[(uint)Endurance.RecipeID].UnkData5.First(y => y.ItemIngredient == itemId).AmountIngredient;
                 }
 
                 args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Withdraw from Retainer")), _ => RetainerInfo.RestockFromRetainers(itemId, amountToGet)));

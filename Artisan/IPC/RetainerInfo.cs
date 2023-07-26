@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 using System.Threading.Tasks;
 using static ECommons.GenericHelpers;
@@ -34,6 +35,7 @@ namespace Artisan.IPC
         private static ICallGateSubscriber<(uint, InventoryItem.ItemFlags, ulong, uint), bool>? _OnItemAdded;
         private static ICallGateSubscriber<(uint, InventoryItem.ItemFlags, ulong, uint), bool>? _OnItemRemoved;
         private static ICallGateSubscriber<uint, ulong, uint, uint>? _ItemCount;
+        private static ICallGateSubscriber<uint, ulong, uint, uint>? _ItemCountHQ;
         private static ICallGateSubscriber<bool, bool>? _Initialized;
         private static ICallGateSubscriber<bool>? _IsInitialized;
 
@@ -49,7 +51,7 @@ namespace Artisan.IPC
             {
                 try
                 {
-                    return !Service.Configuration.DisableAllaganTools && DalamudReflector.TryGetDalamudPlugin("Allagan Tools", out var it, false, true) && _IsInitialized != null && _IsInitialized.InvokeFunc();
+                    return !Service.Configuration.DisableAllaganTools && (DalamudReflector.TryGetDalamudPlugin("Allagan Tools", out var at, false, true) || DalamudReflector.TryGetDalamudPlugin("InventoryTools", out var it, false, true)) && _IsInitialized != null && _IsInitialized.InvokeFunc();
                 }
                 catch
                 {
@@ -80,6 +82,7 @@ namespace Artisan.IPC
             _OnItemRemoved = Svc.PluginInterface.GetIpcSubscriber<(uint, InventoryItem.ItemFlags, ulong, uint), bool>("AllaganTools.ItemRemoved");
 
             _ItemCount = Svc.PluginInterface.GetIpcSubscriber<uint, ulong, uint, uint>("AllaganTools.ItemCount");
+            _ItemCountHQ = Svc.PluginInterface.GetIpcSubscriber<uint, ulong, uint, uint>("AllaganTools.ItemCountHQ");
             _OnItemAdded.Subscribe(OnItemAdded);
             _OnItemRemoved.Subscribe(OnItemRemoved);
             TM.TimeoutSilently = true;
@@ -131,11 +134,11 @@ namespace Artisan.IPC
         internal static void Dispose()
         {
             _Initialized?.Unsubscribe(SetupIPC);
+            _OnItemAdded?.Unsubscribe(OnItemAdded);
+            _OnItemRemoved?.Unsubscribe(OnItemRemoved);
             _Initialized = null;
             _IsInitialized = null;
             _OnRetainerChanged = null;
-            _OnItemAdded?.Unsubscribe(OnItemAdded);
-            _OnItemRemoved?.Unsubscribe(OnItemRemoved);
             _OnItemAdded = null;
             _OnItemRemoved = null;
             _ItemCount = null;
@@ -148,10 +151,13 @@ namespace Artisan.IPC
 
             public uint Quantity { get; set; }
 
-            public ItemInfo(uint itemId, uint quantity)
+            public uint HQQuantity { get; set; }
+
+            public ItemInfo(uint itemId, uint quantity, uint hqQuantity)
             {
                 ItemID = itemId;
                 Quantity = quantity;
+                HQQuantity = hqQuantity;
             }
         }
 
@@ -160,22 +166,35 @@ namespace Artisan.IPC
             RetainerData.Each(x => x.Value.Clear());
         }
 
-        public static unsafe uint GetRetainerInventoryItem(uint itemID, ulong retainerId)
+        public static unsafe uint GetRetainerInventoryItem(uint itemID, ulong retainerId, bool hqonly = false)
         {
             if (ATools)
             {
-                return _ItemCount.InvokeFunc(itemID, retainerId, 10000) +
-                        _ItemCount.InvokeFunc(itemID, retainerId, 10001) +
-                        _ItemCount.InvokeFunc(itemID, retainerId, 10002) +
-                        _ItemCount.InvokeFunc(itemID, retainerId, 10003) +
-                        _ItemCount.InvokeFunc(itemID, retainerId, 10004) +
-                        _ItemCount.InvokeFunc(itemID, retainerId, 10005) +
-                        _ItemCount.InvokeFunc(itemID, retainerId, 10006) +
-                        _ItemCount.InvokeFunc(itemID, retainerId, (uint)InventoryType.RetainerCrystals);
+                if (!hqonly)
+                {
+                    return _ItemCount.InvokeFunc(itemID, retainerId, 10000) +
+                            _ItemCount.InvokeFunc(itemID, retainerId, 10001) +
+                            _ItemCount.InvokeFunc(itemID, retainerId, 10002) +
+                            _ItemCount.InvokeFunc(itemID, retainerId, 10003) +
+                            _ItemCount.InvokeFunc(itemID, retainerId, 10004) +
+                            _ItemCount.InvokeFunc(itemID, retainerId, 10005) +
+                            _ItemCount.InvokeFunc(itemID, retainerId, 10006) +
+                            _ItemCount.InvokeFunc(itemID, retainerId, (uint)InventoryType.RetainerCrystals);
+                }
+                else
+                {
+                    return _ItemCountHQ.InvokeFunc(itemID, retainerId, 10000) +
+                            _ItemCountHQ.InvokeFunc(itemID, retainerId, 10001) +
+                            _ItemCountHQ.InvokeFunc(itemID, retainerId, 10002) +
+                            _ItemCountHQ.InvokeFunc(itemID, retainerId, 10003) +
+                            _ItemCountHQ.InvokeFunc(itemID, retainerId, 10004) +
+                            _ItemCountHQ.InvokeFunc(itemID, retainerId, 10005) +
+                            _ItemCountHQ.InvokeFunc(itemID, retainerId, 10006);
+                }
             }
             return 0;
         }
-        public static unsafe int GetRetainerItemCount(uint itemId, bool tryCache = true)
+        public static unsafe int GetRetainerItemCount(uint itemId, bool tryCache = true, bool hqOnly = false)
         {
 
             if (ATools)
@@ -186,6 +205,11 @@ namespace Artisan.IPC
                     {
                         if (RetainerData.SelectMany(x => x.Value).Any(x => x.Key == itemId))
                         {
+                            if (hqOnly)
+                            {
+                                return (int)RetainerData.Values.SelectMany(x => x.Values).Where(x => x.ItemID == itemId).Sum(x => x.HQQuantity);
+                            }
+
                             return (int)RetainerData.Values.SelectMany(x => x.Values).Where(x => x.ItemID == itemId).Sum(x => x.Quantity);
                         }
                     }
@@ -223,7 +247,7 @@ namespace Artisan.IPC
                                 }
                                 else
                                 {
-                                    ret.TryAdd(itemId, new ItemInfo(itemId, GetRetainerInventoryItem(itemId, retainerId)));
+                                    ret.TryAdd(itemId, new ItemInfo(itemId, GetRetainerInventoryItem(itemId, retainerId), GetRetainerInventoryItem(itemId, retainerId, true)));
                                 }
                             }
                             else
@@ -239,11 +263,16 @@ namespace Artisan.IPC
                                 }
                                 else
                                 {
-                                    ret.TryAdd(itemId, new ItemInfo(itemId, GetRetainerInventoryItem(itemId, retainerId)));
+                                    ret.TryAdd(itemId, new ItemInfo(itemId, GetRetainerInventoryItem(itemId, retainerId), GetRetainerInventoryItem(itemId, retainerId, true)));
 
                                 }
                             }
                         }
+                    }
+
+                    if (hqOnly)
+                    {
+                        return (int)RetainerData.Values.SelectMany(x => x.Values).Where(x => x.ItemID == itemId).Sum(x => x.HQQuantity);
                     }
 
                     return (int)RetainerData.SelectMany(x => x.Value).Where(x => x.Key == itemId).Sum(x => x.Value.Quantity);
@@ -266,25 +295,39 @@ namespace Artisan.IPC
                 TM.Enqueue(() => AutoRetainer.Suppress());
                 TM.EnqueueBell();
                 TM.DelayNext("BellInteracted", 200);
-                foreach (var retainer in RetainerData)
-                {
-                    if (retainer.Value.Values.Any(x => x.ItemID == itemId && x.Quantity > 0))
-                    {
-                        TM.Enqueue(() => RetainerListHandlers.SelectRetainerByID(retainer.Key));
-                        TM.DelayNext("WaitToSelectEntrust", 200);
-                        TM.Enqueue(() => RetainerHandlers.SelectEntrustItems());
-                        TM.DelayNext("EntrustSelected", 200);
-                        TM.Enqueue(() =>
-                        {
-                            ExtractSingular(itemId, howManyToGet);
-                        });
 
-                        TM.DelayNext("CloseRetainer", 200);
-                        TM.Enqueue(() => RetainerHandlers.CloseAgentRetainer());
-                        TM.DelayNext("ClickQuit", 200);
-                        TM.Enqueue(() => RetainerHandlers.SelectQuit());
-                    }
+                var retainerListSorted = RetainerData.Where(x => x.Value.Values.Any(y => y.ItemID == itemId && y.HQQuantity > 0)).ToDictionary(x => x.Key, x => x.Value);
+                RetainerData.Where(x => x.Value.Values.Any(y => y.ItemID == itemId && y.Quantity > 0)).ToList().ForEach(x => retainerListSorted.TryAdd(x.Key, x.Value));
+
+                foreach (var retainer in retainerListSorted)
+                {
+                    TM.Enqueue(() => RetainerListHandlers.SelectRetainerByID(retainer.Key), 5000, true, "SelectRetainer");
+                    TM.DelayNext("WaitToSelectEntrust", 200);
+                    TM.Enqueue(() => RetainerHandlers.SelectEntrustItems());
+                    TM.DelayNext("EntrustSelected", 200);
+                    TM.Enqueue(() =>
+                    {
+                        ExtractSingular(itemId, howManyToGet, retainer.Key);
+                    }, "ExtractSingularEntry");
+
+                    TM.DelayNext("CloseRetainer", 200);
+                    TM.Enqueue(() => RetainerHandlers.CloseAgentRetainer());
+                    TM.DelayNext("ClickQuit", 200);
+                    TM.Enqueue(() => RetainerHandlers.SelectQuit());
+                    TM.Enqueue(() => 
+                    { 
+                        if (CraftingListUI.NumberOfIngredient(itemId) >= howManyToGet)
+                        {
+                            TM.DelayNextImmediate("CloseRetainerList", 200);
+                            TM.EnqueueImmediate(() => RetainerListHandlers.CloseRetainerList());
+                            TM.EnqueueImmediate(() => YesAlready.EnableIfNeeded());
+                            TM.EnqueueImmediate(() => AutoRetainer.Unsuppress());
+                            TM.EnqueueImmediate(() => Svc.Framework.Update -= Tick);
+                            TM.EnqueueImmediate(() => TM.Abort());
+                        }
+                    });
                 }
+
                 TM.DelayNext("CloseRetainerList", 200);
                 TM.Enqueue(() => RetainerListHandlers.CloseRetainerList());
                 TM.Enqueue(() => YesAlready.EnableIfNeeded());
@@ -293,12 +336,14 @@ namespace Artisan.IPC
             }
         }
 
-        public static bool ExtractSingular(uint itemId, int howManyToGet)
+        public static bool ExtractSingular(uint itemId, int howManyToGet, ulong retainerKey)
         {
+            PluginLog.Debug($"{howManyToGet}");
             if (howManyToGet != 0)
             {
+                bool lookingForHQ = RetainerData[retainerKey].Values.Any(x => x.ItemID == itemId && x.HQQuantity > 0);
                 TM.DelayNextImmediate("WaitOnRetainerInventory", 500);
-                TM.EnqueueImmediate(() => RetainerHandlers.OpenItemContextMenu(itemId, out firstFoundQuantity), 300);
+                TM.EnqueueImmediate(() => RetainerHandlers.OpenItemContextMenu(itemId, lookingForHQ, out firstFoundQuantity), 300);
                 TM.DelayNextImmediate("WaitOnNumericPopup", 200);
                 TM.EnqueueImmediate(() =>
                 {
@@ -310,8 +355,8 @@ namespace Artisan.IPC
                         howManyToGet -= (int)firstFoundQuantity;
                         TM.EnqueueImmediate(() =>
                         {
-                            ExtractSingular(itemId, howManyToGet);
-                        }); 
+                            ExtractSingular(itemId, howManyToGet, retainerKey);
+                        });
                         return true;
                     }
                     if (RetainerHandlers.InputNumericValue(value))
@@ -320,7 +365,7 @@ namespace Artisan.IPC
 
                         TM.EnqueueImmediate(() =>
                         {
-                            ExtractSingular(itemId, howManyToGet);
+                            ExtractSingular(itemId, howManyToGet, retainerKey);
                         });
                         return true;
                     }
@@ -367,6 +412,7 @@ namespace Artisan.IPC
                 TM.Enqueue(() => AutoRetainer.Suppress());
                 TM.EnqueueBell();
                 TM.DelayNext("BellInteracted", 200);
+
                 foreach (var retainer in RetainerData)
                 {
                     if (retainer.Value.Values.Any(x => requiredItems.Any(y => y.Value > 0 && y.Key == x.ItemID && x.Quantity > 0)))
@@ -382,7 +428,7 @@ namespace Artisan.IPC
                                 TM.DelayNext("SwitchItems", 200);
                                 TM.Enqueue(() =>
                                 {
-                                    ExtractItem(requiredItems, item);
+                                    ExtractItem(requiredItems, item, retainer.Key);
                                 });
                             }
                         }
@@ -411,13 +457,13 @@ namespace Artisan.IPC
             }
         }
 
-        private static bool ExtractItem(Dictionary<int, int> requiredItems, KeyValuePair<int, int> item)
+        private static bool ExtractItem(Dictionary<int, int> requiredItems, KeyValuePair<int, int> item, ulong key)
         {
             if (requiredItems[item.Key] != 0)
             {
-                PluginLog.Debug($"{requiredItems[item.Key]}");
+                bool lookingForHQ = RetainerData[key].Values.Any(x => x.ItemID == item.Key && x.HQQuantity > 0);
                 TM.DelayNextImmediate("WaitOnRetainerInventory", 500);
-                TM.EnqueueImmediate(() => RetainerHandlers.OpenItemContextMenu((uint)item.Key, out firstFoundQuantity), 300);
+                TM.EnqueueImmediate(() => RetainerHandlers.OpenItemContextMenu((uint)item.Key, lookingForHQ, out firstFoundQuantity), 300);
                 TM.DelayNextImmediate("WaitOnNumericPopup", 200);
                 TM.EnqueueImmediate(() =>
                 {
@@ -432,7 +478,7 @@ namespace Artisan.IPC
 
                         TM.EnqueueImmediate(() =>
                         {
-                            ExtractItem(requiredItems, item);
+                            ExtractItem(requiredItems, item, key);
                         });
                         return true;
                     }

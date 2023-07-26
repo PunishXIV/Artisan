@@ -74,7 +74,7 @@ public unsafe class Artisan : IDalamudPlugin
         Service.Configuration.Initialize(Service.Interface);
 
         ECommonsMain.Init(pluginInterface, this, Module.All);
-        PunishLibMain.Init(pluginInterface, this);
+        PunishLibMain.Init(pluginInterface, this, new AboutPlugin() { Sponsor = "https://ko-fi.com/taurenkey" });
 
         TM = new();
         TM.TimeLimitMS = 1000;
@@ -112,7 +112,7 @@ public unsafe class Artisan : IDalamudPlugin
         ActionWatching.Enable();
         StepChanged += ResetRecommendation;
         ConsumableChecker.Init();
-        Handler.Init();
+        Endurance.Init();
         IPC.IPC.Init();
         RetainerInfo.Init();
         CraftingListContextMenu.Init();
@@ -154,7 +154,7 @@ public unsafe class Artisan : IDalamudPlugin
 
     private void Condition_ConditionChange(ConditionFlag flag, bool value)
     {
-        Handler.Tasks.Clear();
+        Endurance.Tasks.Clear();
 
         if (Service.Configuration.RequestToStopDuty)
         {
@@ -199,7 +199,7 @@ public unsafe class Artisan : IDalamudPlugin
 
     private void DisableEndurance(object? sender, EventArgs e)
     {
-        Handler.Enable = false;
+        Endurance.Enable = false;
         CraftingListUI.Processing = false;
     }
 
@@ -243,7 +243,7 @@ public unsafe class Artisan : IDalamudPlugin
 
         if (!Service.ClientState.IsLoggedIn)
         {
-            Handler.Enable = false;
+            Endurance.Enable = false;
             CraftingListUI.Processing = false;
         }
         PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting] && !Service.Condition[ConditionFlag.PreparingToCraft];
@@ -252,8 +252,8 @@ public unsafe class Artisan : IDalamudPlugin
         else
             ActionWatching.TryEnable();
 
-        if (!Handler.Enable)
-            Handler.DrawRecipeData();
+        if (!Endurance.Enable)
+            Endurance.DrawRecipeData();
 
         GetCraft();
         if (CurrentCraftMethods.CanUse(Skills.BasicSynth) && CurrentRecommendation == 0 && Tasks.Count == 0 && CurrentStep >= 1)
@@ -287,20 +287,20 @@ public unsafe class Artisan : IDalamudPlugin
             }
 
 
-            if (Handler.Enable && Service.Configuration.CraftingX && Service.Configuration.CraftX > 0)
+            if (Endurance.Enable && Service.Configuration.CraftingX && Service.Configuration.CraftX > 0)
             {
                 Service.Configuration.CraftX -= 1;
                 if (Service.Configuration.CraftX == 0)
                 {
                     Service.Configuration.CraftingX = false;
-                    Handler.Enable = false;
+                    Endurance.Enable = false;
                     DuoLog.Information("Craft X has completed.");
 
                 }
             }
         }
 
-        if (cw.repeatTrial && !Handler.Enable)
+        if (cw.repeatTrial && !Endurance.Enable)
         {
             CurrentCraftMethods.RepeatTrialCraft();
         }
@@ -547,7 +547,7 @@ public unsafe class Artisan : IDalamudPlugin
     public void Dispose()
     {
         PluginUi.Dispose();
-        Handler.Dispose();
+        Endurance.Dispose();
         RetainerInfo.Dispose();
         IPC.IPC.Dispose();
 
@@ -590,7 +590,7 @@ public unsafe class Artisan : IDalamudPlugin
         switch (IPC.IPC.CurrentMode)
         {
             case IPC.IPC.ArtisanMode.Endurance:
-                Handler.Enable = false;
+                Endurance.Enable = false;
                 break;
             case IPC.IPC.ArtisanMode.Lists:
                 CraftingListFunctions.Paused = true;
@@ -602,7 +602,7 @@ public unsafe class Artisan : IDalamudPlugin
 
     private static void SetMode()
     {
-        if (Handler.Enable)
+        if (Endurance.Enable)
         {
             IPC.IPC.CurrentMode = IPC.IPC.ArtisanMode.Endurance;
             return;
@@ -622,7 +622,7 @@ public unsafe class Artisan : IDalamudPlugin
         switch (IPC.IPC.CurrentMode)
         {
             case IPC.IPC.ArtisanMode.Endurance:
-                Handler.Enable = true;
+                Endurance.Enable = true;
                 break;
             case IPC.IPC.ArtisanMode.Lists:
                 CraftingListFunctions.Paused = false;

@@ -17,13 +17,14 @@ using Dalamud.Logging;
 using ECommons.Automation;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
-
+using ECommons.StringHelpers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 
 using ImGuiNET;
 
 using Lumina.Excel.GeneratedSheets;
+using Newtonsoft.Json;
 
 namespace Artisan.CraftingLists
 {
@@ -72,7 +73,7 @@ namespace Artisan.CraftingLists
 
         private static void DrawListOptions()
         {
-            if (Handler.Enable)
+            if (Endurance.Enable)
             {
                 Processing = false;
                 ImGui.Text("Endurance mode enabled...");
@@ -85,11 +86,11 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            ImGui.BeginChild("ListsSelector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 170f));
+            ImGui.BeginChild("ListsSelector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 200f));
             ListsUI.Draw(ImGui.GetContentRegionAvail().X);
             ImGui.EndChild();
 
-            ImGui.BeginChild("ListButtons", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 100f));
+            ImGui.BeginChild("ListButtons", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 95f));
             if (selectedList.ID != 0)
             {
                 if (ImGui.Button("Start Crafting List", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
@@ -116,6 +117,18 @@ namespace Artisan.CraftingLists
                 }
             }
 
+            if (ImGui.Button("Import List From Clipboard (Artisan Export)", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
+            {
+                var clipboard = ImGui.GetClipboardText();
+                var import = JsonConvert.DeserializeObject<CraftingList>(clipboard.FromBase64());
+                if (import != null)
+                {
+                    import.SetID();
+                    import.Save(true);
+                }
+            }
+
+
             ImGui.EndChild();
 
             ImGui.BeginChild("TeamCraftSection", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 5f), false);
@@ -127,11 +140,11 @@ namespace Artisan.CraftingLists
         {
             CraftingListFunctions.Materials = null;
             CraftingListFunctions.CurrentIndex = 0;
-            if (CraftingListFunctions.RecipeWindowOpen())
+            if (CraftingListFunctions.RecipeWindowOpen() && selectedList.Items[0] != Endurance.RecipeID)
                 CraftingListFunctions.CloseCraftingMenu();
 
             Processing = true;
-            Handler.Enable = false;
+            Endurance.Enable = false;
         }
 
         
@@ -354,7 +367,7 @@ namespace Artisan.CraftingLists
                 var invNumberHQ = invManager->GetInventoryItemCount(ingredient, true, false, false);
 
                 // PluginLog.Debug($"{invNumberNQ + invNumberHQ}");
-                if (LuminaSheets.ItemSheet[ingredient].IsCollectable)
+                if (LuminaSheets.ItemSheet[ingredient].AlwaysCollectable)
                 {
                     var inventories = new List<InventoryType>
                                           {

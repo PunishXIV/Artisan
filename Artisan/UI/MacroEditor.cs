@@ -14,6 +14,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Numerics;
 using Artisan.RawInformation;
+using Newtonsoft.Json;
+using ECommons.StringHelpers;
 
 namespace Artisan.UI
 {
@@ -112,6 +114,16 @@ namespace Artisan.UI
                 {
                     _rawMacro = string.Join("\r\n", SelectedMacro.MacroActions.Select(x => $"{x.NameOfAction()}"));
                     Raweditor = !Raweditor;
+                }
+
+                ImGui.SameLine();
+                var exportButton = ImGuiHelpers.GetButtonSize("Export Macro");
+                ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - exportButton.X);
+
+                if (ImGui.Button("Export Macro###ExportButton"))
+                {
+                    ImGui.SetClipboardText(JsonConvert.SerializeObject(SelectedMacro).ToBase64());
+                    Notify.Success("Macro Copied to Clipboard.");
                 }
 
                 ImGui.Spacing();

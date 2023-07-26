@@ -2,80 +2,42 @@
 using Artisan.IPC;
 using Dalamud.Logging;
 using ECommons.DalamudServices;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiScene;
 using Lumina.Excel.GeneratedSheets;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using OtterGui;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Artisan.RawInformation
 {
     public class Ingredient
     {
-        public Item Data;
-        public TextureWrap Icon;
-        public int Required;
-        public int Inventory => CraftingListUI.NumberOfIngredient(Data.RowId);
-        public int RetainerCount => RetainerInfo.GetRetainerItemCount(Data.RowId);
-        public int Remaining
-        {
-            get
-            {
-                var current = Math.Max(0, Required - Inventory - RetainerCount - (CanBeCrafted ? TotalCraftable : 0) - AmountUsedForSubcrafts);
-                if (remaining != current)
-                {
-                    remaining = current;
-                    AmountUsedForSubcrafts = GetSubCraftCount();
-                    OnRemainingChange?.Invoke(this, true);
-                }
-                return remaining;
-            }
-        }
-        private int remaining;
-
-        public List<int> Sources = new();
-        public string CraftingJobs;
-        public int TotalCraftable => NumberCraftable(Data.RowId);
-        public List<uint> UsedInCrafts = new();
-        public int MaterialIndex;
-        public uint Category;
-        public CraftingList OriginList;
-        private Dictionary<uint, int> UsedInMaterialsList;
         public int AmountUsedForSubcrafts;
-        public TerritoryType GatherZone;
-        public bool TimedNode;
-        private Dictionary<int, Recipe?> subRecipes = new();
         public bool CanBeCrafted = false;
-
-        public virtual event EventHandler<bool> OnRemainingChange;
-
-        private int GetSubCraftCount()
-        {
-            int output = 0;
-            foreach (var material in UsedInMaterialsList)
-            {
-                var owned = RetainerInfo.GetRetainerItemCount(material.Key) + CraftingListUI.NumberOfIngredient(material.Key);
-                var recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == material.Key && x.UnkData5.Any(y => y.ItemIngredient == Data.RowId));
-                var numberUsedInRecipe = recipe.UnkData5.First(x => x.ItemIngredient == Data.RowId).AmountIngredient;
-
-                output += Math.Min(owned * numberUsedInRecipe, material.Value * numberUsedInRecipe);
-            }
-            return output;
-        }
+        public uint Category;
+        public Recipe? CraftedRecipe;
+        public Item Data;
+        public TerritoryType GatherZone;
+        public TextureWrap Icon;
+        public int MaterialIndex;
+        public CraftingList OriginList;
+        public int Required;
+        public List<int> Sources = new();
+        public bool TimedNode;
+        public List<uint> UsedInCrafts = new();
+        private int remaining;
+        private Dictionary<int, Recipe?> subRecipes = new();
+        public Dictionary<uint, int> UsedInMaterialsList;
 
         public Ingredient(uint itemId, int required, CraftingList originList, Dictionary<uint, int> materials)
         {
             Data = LuminaSheets.ItemSheet.Values.First(x => x.RowId == itemId);
             Icon = P.Icons.LoadIcon(Data.Icon);
             Required = required;
-            if (LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == itemId)) { Sources.Add(1);  CanBeCrafted = true; }
+            if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId, out CraftedRecipe)) { Sources.Add(1); CanBeCrafted = true; }
             if (LuminaSheets.GatheringItemSheet.Values.Any(x => x.Item == itemId)) Sources.Add(2);
             if (Svc.Data.GetExcelSheet<FishingSpot>()!.Any(x => x.Item.Any(y => y.Value.RowId == itemId))) Sources.Add(3);
             if (ItemVendorLocation.ItemHasVendor(itemId)) Sources.Add(4);
@@ -127,9 +89,54 @@ namespace Artisan.RawInformation
             UsedInMaterialsList = materials.Where(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == x.Key && y.UnkData5.Any(z => z.ItemIngredient == Data.RowId))).ToDictionary(x => x.Key, x => x.Value);
         }
 
-        private string JobFromCraftType(uint row)
+        public virtual event EventHandler<bool>? OnRemainingChange;
+
+        public int Inventory => CraftingListUI.NumberOfIngredient(Data.RowId);
+        public unsafe int InventoryHQ => InventoryManager.Instance()->GetInventoryItemCount(Data.RowId, true, false, false);
+
+        public int Remaining
         {
-            return LuminaSheets.ClassJobSheet[row + 8].Abbreviation;
+            get
+            {
+                var current = Math.Max(0, Required - Inventory - RetainerCount - (CanBeCrafted ? TotalCraftable : 0) - AmountUsedForSubcrafts);
+                if (remaining != current)
+                {
+                    remaining = current;
+                    AmountUsedForSubcrafts = GetSubCraftCount();
+                    OnRemainingChange?.Invoke(this, true);
+                }
+                return remaining;
+            }
+        }
+
+        public int RetainerCount => RetainerInfo.GetRetainerItemCount(Data.RowId);
+        public int ReainterCountHQ => RetainerInfo.GetRetainerItemCount(Data.RowId, true, true);
+        public int TotalCraftable => NumberCraftable(Data.RowId);
+
+        public static async Task<List<Ingredient>> GenerateList(CraftingList originList)
+        {
+            var materials = originList.ListMaterials();
+            List<Ingredient> output = new();
+            foreach (var item in materials)
+            {
+                await Task.Run(() => output.Add(new Ingredient(item.Key, item.Value, originList, materials)));
+            }
+
+            return output;
+        }
+
+        private int GetSubCraftCount()
+        {
+            int output = 0;
+            foreach (var material in UsedInMaterialsList)
+            {
+                var owned = RetainerInfo.GetRetainerItemCount(material.Key) + CraftingListUI.NumberOfIngredient(material.Key);
+                var recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == material.Key && x.UnkData5.Any(y => y.ItemIngredient == Data.RowId));
+                var numberUsedInRecipe = recipe.UnkData5.First(x => x.ItemIngredient == Data.RowId).AmountIngredient;
+
+                output += Math.Min(owned * numberUsedInRecipe, material.Value * numberUsedInRecipe);
+            }
+            return output;
         }
 
         private int NumberCraftable(uint itemId)
@@ -171,69 +178,5 @@ namespace Artisan.RawInformation
             else
                 return -1;
         }
-
-        public async static Task<List<Ingredient>> GenerateList(CraftingList originList)
-        {
-            var materials = originList.ListMaterials();
-            List<Ingredient> output = new();
-            foreach (var item in materials)
-            {
-               await Task.Run(() => output.Add(new Ingredient(item.Key, item.Value, originList, materials)));
-            }
-
-            return output;
-        }
-
-
     }
-
-    public class DropSources
-    {
-        public uint ItemId { get; set; }
-
-        public List<uint> MonsterId { get; set; }
-
-        public bool CanObtainFromRetainer { get; set; }
-
-        public bool UsedInRecipes { get; set; }
-
-        public DropSources(uint itemId, List<uint> monsterId)
-        {
-            ItemId = itemId;
-            MonsterId = monsterId;
-            CanObtainFromRetainer = Svc.Data.GetExcelSheet<RetainerTaskNormal>()!.Any(x => x.Item.Row == itemId);
-            UsedInRecipes = LuminaSheets.RecipeSheet.Values.Any(y => y.UnkData5.Any(x => x.ItemIngredient == itemId));
-        }
-
-        private static List<DropSources>? DropList()
-        {
-            List<DropSources>? output = new();
-            using HttpResponseMessage sources = Dalamud.Utility.Util.HttpClient.GetAsync("https://raw.githubusercontent.com/ffxiv-teamcraft/ffxiv-teamcraft/0170e596eb9fb1b7027616fd380ab85a3b6bb717/libs/data/src/lib/json/drop-sources.json").Result;
-            sources.EnsureSuccessStatusCode();
-            string? data = sources.Content.ReadAsStringAsync().Result;
-
-            if (data != null)
-            {
-                JObject file = JsonConvert.DeserializeObject<JObject>(data);
-                foreach (var item in file)
-                {
-                    List<uint> monsters = new();
-                    foreach (var monster in item.Value)
-                    {
-                        monsters.Add((uint)monster);
-                    }
-                    DropSources source = new DropSources(Convert.ToUInt32(item.Key), monsters);
-                    if (source.UsedInRecipes && !source.CanObtainFromRetainer)
-                    PluginLog.Debug($"{source.ItemId.NameOfItem()}");
-                    output.Add(source);
-                }
-            }
-           
-            return output;
-
-        }
-
-        public static List<DropSources>? Sources = DropList()?.ToList();
-    }
-
 }

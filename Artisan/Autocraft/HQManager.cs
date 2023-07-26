@@ -74,7 +74,7 @@ namespace Artisan.Autocraft
                     if (nqMaterials + hqMaterials < requiredMaterials)
                     {
                         if (AutocraftDebugTab.Debug) PluginLog.Verbose("Insufficient Materials");
-                        Handler.Enable = false;
+                        Endurance.Enable = false;
                         InsufficientMaterials = true;
                         dataFinalized = true;
                         DuoLog.Error("Insufficient materials set to craft. Disabling endurance mode.");

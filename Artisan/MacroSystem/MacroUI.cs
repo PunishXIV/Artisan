@@ -4,7 +4,9 @@ using Artisan.RawInformation.Character;
 using Artisan.UI;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
+using ECommons.StringHelpers;
 using ImGuiNET;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,6 +57,17 @@ namespace Artisan.MacroSystem
             ImGui.Spacing();
             if (ImGui.Button("Import Macro From Clipboard"))
                 OpenMacroNamePopup(MacroNameUse.FromClipboard);
+
+            if (ImGui.Button("Import Macro From Clipboard (Artisan Export)"))
+            {
+                var clipboard = ImGui.GetClipboardText();
+                var import = JsonConvert.DeserializeObject<Macro>(clipboard.FromBase64());
+                if (import != null)
+                {
+                    import.SetID();
+                    import.Save(true);
+                }
+            }
 
             if (ImGui.Button("New Macro"))
                 OpenMacroNamePopup(MacroNameUse.NewMacro);

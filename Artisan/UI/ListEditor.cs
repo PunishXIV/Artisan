@@ -10,11 +10,13 @@ using Dalamud.Logging;
 using ECommons;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
+using ECommons.StringHelpers;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using global::Artisan.UI.Tables;
 using ImGuiNET;
 using IPC;
 using Lumina.Excel.GeneratedSheets;
+using Newtonsoft.Json;
 using OtterGui;
 using OtterGui.Filesystem;
 using OtterGui.Raii;
@@ -78,6 +80,7 @@ internal class ListEditor : Window, IDisposable
 
     private bool ColourValidation = false;
 
+    private bool HQSubcraftsOnly = false;
     public ListEditor(int listId)
         : base($"List Editor###{listId}")
     {
@@ -141,6 +144,7 @@ internal class ListEditor : Window, IDisposable
 
     public override void Draw()
     {
+        var topRowY = ImGui.GetCursorPosY();
         if (ImGui.BeginTabBar("CraftingListEditor", ImGuiTabBarFlags.None))
         {
             if (ImGui.BeginTabItem("Recipes"))
@@ -160,6 +164,27 @@ internal class ListEditor : Window, IDisposable
                 DrawListSettings();
                 ImGui.EndTabItem();
             }
+
+            ImGui.EndTabBar();
+        }
+
+        var btn = ImGuiHelpers.GetButtonSize("Begin Crafting List");
+        ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - btn.X);
+        ImGui.SetCursorPosY(topRowY - 5f);
+        if (ImGui.Button("Begin Crafting List"))
+        {
+            CraftingListUI.selectedList = this.SelectedList;
+            CraftingListUI.StartList();
+            this.IsOpen = false;
+        }
+
+        ImGui.SameLine();
+        var export = ImGuiHelpers.GetButtonSize("Export List");
+        ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - export.X - btn.X - 3f);
+        if (ImGui.Button("Export List"))
+        {
+            ImGui.SetClipboardText(JsonConvert.SerializeObject(P.config.CraftingLists.Where(x => x.ID == SelectedList.ID).First()).ToBase64());
+            Notify.Success("List exported to clipboard.");
         }
     }
 
@@ -533,9 +558,17 @@ internal class ListEditor : Window, IDisposable
         }
         ImGui.BeginChild("###IngredientsListTable", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 60f));
         Table._nameColumn.ShowColour = ColourValidation;
+        Table._inventoryColumn.HQOnlyCrafts = HQSubcraftsOnly;
+        Table._retainerColumn.HQOnlyCrafts = HQSubcraftsOnly;
+        Table._nameColumn.ShowHQOnly = HQSubcraftsOnly;
         Table.Draw(ImGui.GetTextLineHeightWithSpacing());
         ImGui.EndChild();
 
+        ImGui.Checkbox($"Only show HQ crafts", ref HQSubcraftsOnly);
+
+        ImGuiComponents.HelpMarker($"For ingredients that can be crafted, this will only show inventory{(RetainerInfo.ATools ? " and retainer" : "")} counts that are HQ.");
+
+        ImGui.SameLine();
         ImGui.Checkbox("Enable Colour Validation", ref ColourValidation);
 
         if (ColourValidation)
@@ -604,6 +637,7 @@ internal class ListEditor : Window, IDisposable
 
     private void DrawListSettings()
     {
+        ImGui.BeginChild("ListSettings", ImGui.GetContentRegionAvail(), false);
         var skipIfEnough = SelectedList.SkipIfEnough;
         if (ImGui.Checkbox("Skip items you already have enough of", ref skipIfEnough))
         {
@@ -630,6 +664,7 @@ internal class ListEditor : Window, IDisposable
 
         ImGuiComponents.HelpMarker(
             "If enabled, Artisan will automatically repair your gear using Dark Matter when any piece reaches the configured repair threshold.");
+
         if (SelectedList.Repair)
         {
             ImGui.PushItemWidth(200);
@@ -639,6 +674,8 @@ internal class ListEditor : Window, IDisposable
 
         if (ImGui.Checkbox("Set new items added to list as quick synth", ref SelectedList.AddAsQuickSynth))
             Service.Configuration.Save();
+
+        ImGui.EndChild();
     }
 
     private void DrawRecipes()

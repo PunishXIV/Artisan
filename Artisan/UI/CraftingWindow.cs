@@ -23,7 +23,7 @@ namespace Artisan.UI
     {
         public bool repeatTrial = false;
 
-        public CraftingWindow() : base("Artisan Crafting Window###MainCraftWindow", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.AlwaysAutoResize)
+        public CraftingWindow() : base("Artisan Crafting Window###MainCraftWindow", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
         {
             IsOpen = true;
             ShowCloseButton = false;
@@ -92,20 +92,20 @@ namespace Artisan.UI
             }
 
 
-            if (Handler.RecipeID != 0 && !CraftingListUI.Processing && Handler.Enable)
+            if (Endurance.RecipeID != 0 && !CraftingListUI.Processing && Endurance.Enable)
             {
                 if (ImGui.Button("Disable Endurance"))
                 {
-                    Handler.Enable = false;
+                    Endurance.Enable = false;
                 }
             }
 
-            if (!Handler.Enable && DoingTrial)
+            if (!Endurance.Enable && DoingTrial)
                 ImGui.Checkbox("Trial Craft Repeat", ref repeatTrial);
 
-            if (Service.Configuration.IRM.ContainsKey((uint)Handler.RecipeID))
+            if (Service.Configuration.IRM.ContainsKey((uint)Endurance.RecipeID))
             {
-                var macro = Service.Configuration.UserMacros.FirstOrDefault(x => x.ID == Service.Configuration.IRM[(uint)Handler.RecipeID]);
+                var macro = Service.Configuration.UserMacros.FirstOrDefault(x => x.ID == Service.Configuration.IRM[(uint)Endurance.RecipeID]);
                 ImGui.TextWrapped($"Using Macro: {macro.Name} ({(MacroStep >= macro.MacroActions.Count() ? macro.MacroActions.Count() : MacroStep + 1)}/{macro.MacroActions.Count()})");
 
                 if (MacroStep >= macro.MacroActions.Count())
@@ -123,7 +123,7 @@ namespace Artisan.UI
                 if (Service.Configuration.CraftingX)
                 ImGui.Text($"Remaining Crafts: {Service.Configuration.CraftX}");
 
-                if (Service.Configuration.IRM.TryGetValue((uint)Handler.RecipeID, out var prevMacro))
+                if (Service.Configuration.IRM.TryGetValue((uint)Endurance.RecipeID, out var prevMacro))
                 {
                     Macro? macro = Service.Configuration.UserMacros.First(x => x.ID == prevMacro);
                     if (macro != null)

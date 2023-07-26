@@ -1,12 +1,19 @@
-﻿using Artisan.IPC;
+﻿using Artisan.Autocraft;
+using Artisan.CraftingLists;
+using Artisan.CraftingLogic;
+using Artisan.IPC;
 using Artisan.RawInformation;
+using Artisan.Tasks;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Components;
+using Dalamud.Logging;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -15,8 +22,8 @@ using OtterGui.Raii;
 using OtterGui.Table;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text;
 
 namespace Artisan.UI.Tables
 {
@@ -60,6 +67,8 @@ namespace Artisan.UI.Tables
 
         public List<Ingredient> ListItems;
 
+        private bool CraftFiltered = false;
+
         public IngredientTable(List<Ingredient> ingredientList)
             : base("IngredientTable", ingredientList)
         {
@@ -75,6 +84,7 @@ namespace Artisan.UI.Tables
             Headers.Add(_gatherItemLocationColumn);
             Headers.Add(_idColumn);
 
+            
             Sortable = true;
             ListItems = ingredientList;
             Flags |= ImGuiTableFlags.Hideable | ImGuiTableFlags.Reorderable | ImGuiTableFlags.Resizable;
@@ -112,7 +122,8 @@ namespace Artisan.UI.Tables
                 return item.Data.Name.RawString;
             }
 
-            public bool ShowColour;
+            public bool ShowColour = false;
+            public bool ShowHQOnly = false;
 
             public override float Width => _nameColumnWidth * ImGuiHelpers.GlobalScale;
 
@@ -120,21 +131,24 @@ namespace Artisan.UI.Tables
             {
                 if (ShowColour)
                 {
-                    if (item.CanBeCrafted && item.RetainerCount + item.Inventory + item.TotalCraftable >= item.Required)
+                    int invAmount = ShowHQOnly && item.CanBeCrafted ? item.InventoryHQ : item.Inventory;
+                    int retainerAmount = ShowHQOnly && item.CanBeCrafted ? item.ReainterCountHQ : item.RetainerCount;
+
+                    if (item.CanBeCrafted && retainerAmount + invAmount + item.TotalCraftable >= item.Required)
                     {
                         var color = ImGuiColors.TankBlue;
                         color.W -= 0.6f;
                         ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                     }
 
-                    if (item.RetainerCount + item.Inventory >= item.Required)
+                    if (retainerAmount + invAmount >= item.Required)
                     {
                         var color = ImGuiColors.DalamudOrange;
                         color.W -= 0.6f;
                         ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                     }
 
-                    if (item.Inventory >= item.Required)
+                    if (invAmount >= item.Required)
                     {
                         var color = ImGuiColors.HealerGreen;
                         color.W -= 0.3f;
@@ -153,6 +167,21 @@ namespace Artisan.UI.Tables
                     ImGui.SetClipboardText(item.Data.Name.RawString);
                     Notify.Success("Name copied to clipboard");
                 }
+
+                if (ImGui.IsItemHovered())
+                {
+                    StringBuilder sb = new();
+                    foreach (var usedin in item.UsedInCrafts)
+                    {
+                        var recipe = LuminaSheets.RecipeSheet[usedin];
+                        var amountUsed = recipe.UnkData5.FirstOrDefault(x => x.ItemIngredient == item.Data.RowId).AmountIngredient * item.OriginList.Items.Count(x => x == recipe.RowId);
+
+                        sb.Append($"{usedin.NameOfRecipe()} - {amountUsed}\r\n");
+                    }
+                    ImGui.BeginTooltip();
+                    ImGui.Text($"Used in:\r\n{sb}");
+                    ImGui.EndTooltip();
+                }
             }
         }
 
@@ -165,7 +194,9 @@ namespace Artisan.UI.Tables
                 => lhs.Required.CompareTo(rhs.Required);
 
             public override void DrawColumn(Ingredient item, int _)
-                => ImGuiUtil.Center($"{ToName(item)}");
+            {
+                ImGuiUtil.Center($"{ToName(item)}");
+            }
 
             public override string ToName(Ingredient item)
             {
@@ -192,7 +223,7 @@ namespace Artisan.UI.Tables
             public override float Width
                 => _inventoryColumnWidth;
 
-
+            public bool HQOnlyCrafts = false;
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
                 => lhs.Inventory.CompareTo(rhs.Inventory);
@@ -202,9 +233,13 @@ namespace Artisan.UI.Tables
                 ImGuiUtil.Center($"{ToName(item)}");
             }
 
-            public override string ToName(Ingredient item)
+            public unsafe override string ToName(Ingredient item)
             {
+                if (!HQOnlyCrafts || !item.CanBeCrafted)
                 return item.Inventory.ToString();
+
+                int HQ = InventoryManager.Instance()->GetInventoryItemCount(item.Data.RowId, true, false, false);
+                return HQ.ToString();
             }
         }
 
@@ -212,6 +247,8 @@ namespace Artisan.UI.Tables
         {
             public override float Width
                 => _retainerColumnWidth;
+
+            public bool HQOnlyCrafts = false;
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
                 => lhs.RetainerCount.CompareTo(rhs.RetainerCount);
@@ -221,7 +258,11 @@ namespace Artisan.UI.Tables
 
             public override string ToName(Ingredient item)
             {
-                return item.RetainerCount.ToString();
+                if (!HQOnlyCrafts || !item.CanBeCrafted)
+                    return item.RetainerCount.ToString();
+
+                int retainerHQ = item.ReainterCountHQ;
+                return retainerHQ.ToString();
             }
         }
 
@@ -254,6 +295,11 @@ namespace Artisan.UI.Tables
             public override string ToName(Ingredient item)
             {
                 return string.Join(", ", item.UsedInCrafts.Select(x => x.NameOfRecipe()));
+            }
+
+            public override void DrawColumn(Ingredient item, int _)
+            {
+                ImGui.Text(ToName(item));   
             }
 
         }
@@ -473,6 +519,62 @@ namespace Artisan.UI.Tables
             DrawMonsterLootLookup(item);
             DrawFilterOnCrafts(item);
             DrawRestockFromRetainer(item);
+            //DrawCraftThisItem(item);
+        }
+
+        private void DrawCraftThisItem(Ingredient item)
+        {
+            if (item.Data.RowId == 0 || !item.CanBeCrafted)
+                return;
+
+            if (item.TotalCraftable == 0)
+            {
+                using var disabled = ImRaii.Disabled();
+            }
+
+
+            if (ImGui.GetIO().KeyShift)
+            {
+                if (ImGui.Selectable("Craft this Item (Buffless)"))
+                {
+                    Endurance.RecipeID = item.CraftedRecipe.RowId;
+                }
+
+                ImGuiComponents.HelpMarker("Starts crafting this item skipping applying food/potion buffs.");
+                return;
+            }
+
+            if (ImGui.GetIO().KeyCtrl)
+            {
+                bool disabled = !item.CraftedRecipe.CanQuickSynth;
+
+                if (disabled)
+                    ImGui.BeginDisabled();
+
+                if (ImGui.Selectable("Craft this Item (Quick Synth)"))
+                {
+                    P.TM.Enqueue(() => CraftingListFunctions.OpenRecipeByID(item.CraftedRecipe.RowId));
+                    P.TM.Enqueue(() => CraftingListFunctions.SwitchJobGearset(item.CraftedRecipe.CraftType.Row + 8));
+                    P.TM.Enqueue(() => CurrentCraftMethods.QuickSynthItem(item.Required));
+                }
+
+                ImGuiComponents.HelpMarker("Quick Synths up to the required amount.");
+
+                if (disabled)
+                    ImGui.EndDisabled();
+
+                return;
+            }
+
+
+            if (ImGui.Selectable("Craft this Item"))
+            {
+                Endurance.RecipeID = item.CraftedRecipe.RowId;
+            }
+
+            ImGuiComponents.HelpMarker("Hold Shift to craft without applying food/potion buffs.\r\nHold Ctrl to quick synth this item.");
+
+
         }
 
         private void DrawRestockFromRetainer(Ingredient item)
@@ -508,28 +610,34 @@ namespace Artisan.UI.Tables
             if (item.Data.RowId == 0)
                 return;
 
-            if (FilteredItems.Count() == Items.Count() || Headers.Any(x => x.FilterFunc(item)) && !FilteredItems.All(x => !x.Item1.Sources.Contains(1)))
+            if (FilteredItems.Count() == Items.Count() || Headers.Any(x => x.FilterFunc(item)))
             {
                 if (item.Sources.Contains(1) && item.OriginList.Items.Any(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == item.Data.RowId && y.RowId == x)))
                 {
-                    if (!ImGui.Selectable($"Show ingredients used for this"))
-                        return;
-
-                    FilteredItems.Clear();
-                    var idx = 0;
-                    foreach (var ingredient in CraftingListHelpers.GetIngredientRecipe(item.Data.RowId).UnkData5.Where(x => x.AmountIngredient > 0))
+                    if (ImGui.Selectable($"Show ingredients used for this"))
                     {
-                        if (Items.FindFirst(x => x.Data.RowId == ingredient.ItemIngredient, out var result))
-                            FilteredItems.Add((result, idx));
+                        FilteredItems.Clear();
+                        var idx = 0;
+                        FilteredItems.Add((item, idx));
                         idx++;
+                        foreach (var ingredient in CraftingListHelpers.GetIngredientRecipe(item.Data.RowId).UnkData5.Where(x => x.AmountIngredient > 0))
+                        {
+                            if (Items.FindFirst(x => x.Data.RowId == ingredient.ItemIngredient, out var result))
+                                FilteredItems.Add((result, idx));
+                            idx++;
+                        }
+
+                        CraftFiltered = true;
                     }
                 }
             }
-            else
+
+            if (CraftFiltered)
             {
                 if (!ImGui.Selectable($"Clear Filters"))
                     return;
 
+                CraftFiltered = false;
                 FilterDirty = true;
 
             }
@@ -658,7 +766,7 @@ namespace Artisan.UI.Tables
         TimedNode = 16384,
         NonTimedNode = 32768,
 
-        All =   MissingItems + NoMissingItems +
+        All = MissingItems + NoMissingItems +
                 Crafted + Gathered + Fishing + Vendor + MonsterDrop + Unknown +
                 NonCrystals + Crystals +
                 GatherZone + NoGatherZone + TimedNode + NonTimedNode,

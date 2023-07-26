@@ -19,20 +19,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static ECommons.GenericHelpers;
 using PluginLog = Dalamud.Logging.PluginLog;
 
 namespace Artisan.Autocraft
 {
-    internal unsafe class Handler
+    internal unsafe class Endurance
     {
         private static bool enable = false;
         internal static List<int>? HQData = null;
-        internal static int RecipeID = 0;
-        internal static string RecipeName { get => recipeName; set { if (value != recipeName) PluginLog.Verbose($"{value}"); recipeName = value; } }
+        internal static uint RecipeID = 0;
+        internal static string RecipeName
+        {
+            get => RecipeID == 0 ? "No Recipe Selected" : LuminaSheets.RecipeSheet[RecipeID].ItemResult.Value.Name.RawString;
+        }
 
         internal static bool Enable
         {
@@ -45,13 +46,12 @@ namespace Artisan.Autocraft
         }
 
         internal static CircularBuffer<long> Errors = new(5);
-        private static string recipeName = "No Recipe Picked";
         public static List<Task> Tasks = new();
 
-
+        public static bool SkipBuffs = false;
         internal static void Init()
         {
-            SignatureHelper.Initialise(new Handler());
+            SignatureHelper.Initialise(new Endurance());
             Svc.Framework.Update += Framework_Update;
             Svc.Toasts.ErrorToast += Toasts_ErrorToast;
         }
@@ -206,7 +206,7 @@ namespace Artisan.Autocraft
             {
                 if (ImGui.Checkbox("Enable Endurance Mode", ref enable))
                 {
-                    Handler.ToggleEndurance(enable);
+                    Endurance.ToggleEndurance(enable);
                 }
                 ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
 
@@ -399,98 +399,92 @@ namespace Artisan.Autocraft
                 HQData = d;
             }
             var addonPtr = Service.GameGui.GetAddonByName("RecipeNote", 1);
-            if (addonPtr == IntPtr.Zero)
+            if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon))
             {
-                return;
-            }
-
-            var addon = (AtkUnitBase*)addonPtr;
-            if (addon == null)
-            {
-                return;
-            }
-
-            if (addon->IsVisible && addon->UldManager.NodeListCount >= 49)
-            {
-                try
+                if (addonPtr == IntPtr.Zero)
                 {
-                    if (addon->UldManager.NodeList[88]->IsVisible)
-                    {
-                        RecipeID = 0;
-                        RecipeName = "";
-                        return;
-                    }
-
-                    if (addon->UldManager.NodeList[49]->IsVisible)
-                    {
-                        var text = addon->UldManager.NodeList[49]->GetAsAtkTextNode()->NodeText;
-                        var firstCrystal = GetCrystal(addon, 1);
-                        var secondCrystal = GetCrystal(addon, 2);
-                        var str = text.ExtractText();
-                        var rName = "";
-
-                        /*
-                         *  0	3	2	Woodworking
-                            1	1	5	Smithing
-                            2	3	1	Armorcraft
-                            3	2	4	Goldsmithing
-                            4	3	4	Leatherworking
-                            5	2	5	Clothcraft
-                            6	4	6	Alchemy
-                            7	5	6	Cooking
-
-                            8	carpenter
-                            9	blacksmith
-                            10	armorer
-                            11	goldsmith
-                            12	leatherworker
-                            13	weaver
-                            14	alchemist
-                            15	culinarian
-                            (ClassJob - 8)
-                         * 
-                         * */
-
-                        if (str.Length == 0) return;
-
-                        str = str
-                            .Replace($"{(char)13}", "")
-                            .Replace("-", "");
-
-                        if (str[^1] == '')
-                        {
-                            rName += str.Remove(str.Length - 1, 1).Trim();
-                        }
-                        else
-                        {
-                            rName += str;
-                        }
-
-                        if (rName.Length == 0) return;
-
-                        if (firstCrystal > 0 && secondCrystal > 0)
-                        {
-                            if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.RawString.Replace("-", "") == rName && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
-                            {
-                                RecipeID = (int)id.RowId;
-                                RecipeName = id.ItemResult.Value.Name;
-                            }
-                        }
-                        else if (firstCrystal > 0)
-                        {
-                            if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.RawString == rName && x.UnkData5[8].ItemIngredient == firstCrystal, out var id))
-                            {
-                                RecipeID = (int)id.RowId;
-                                RecipeName = id.ItemResult.Value.Name;
-                            }
-                        }
-                    }
+                    return;
                 }
-                catch (Exception ex)
+
+                if (addon->AtkUnitBase.IsVisible && addon->AtkUnitBase.UldManager.NodeListCount >= 49)
                 {
-                    PluginLog.Error(ex, "Setting Recipe ID");
-                    RecipeID = 0;
-                    RecipeName = "";
+                    try
+                    {
+                        if (addon->AtkUnitBase.UldManager.NodeList[88]->IsVisible)
+                        {
+                            RecipeID = 0;
+                            return;
+                        }
+
+                        if (addon->SelectedRecipeName is null)
+                            return;
+
+                        if (addon->AtkUnitBase.UldManager.NodeList[49]->IsVisible)
+                        {
+                            var text = addon->SelectedRecipeName->NodeText.ExtractText().Replace('', ' ').Trim();
+                            var firstCrystal = GetCrystal(addon, 1);
+                            var secondCrystal = GetCrystal(addon, 2);
+
+                            /*
+                             *  0	3	2	Woodworking
+                                1	1	5	Smithing
+                                2	3	1	Armorcraft
+                                3	2	4	Goldsmithing
+                                4	3	4	Leatherworking
+                                5	2	5	Clothcraft
+                                6	4	6	Alchemy
+                                7	5	6	Cooking
+
+                                8	carpenter
+                                9	blacksmith
+                                10	armorer
+                                11	goldsmith
+                                12	leatherworker
+                                13	weaver
+                                14	alchemist
+                                15	culinarian
+                                (ClassJob - 8)
+                             * 
+                             * */
+
+                            //if (str.Length == 0) return;
+
+                            //str = str
+                            //    .Replace($"{(char)13}", "")
+                            //    .Replace("-", "");
+
+                            //if (str[^1] == '')
+                            //{
+                            //    rName += str.Remove(str.Length - 1, 1).Trim();
+                            //}
+                            //else
+                            //{
+                            //    rName += str;
+                            //}
+
+                            //if (rName.Length == 0) return;
+
+                            if (firstCrystal > 0 && secondCrystal > 0)
+                            {
+                                if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.RawString == text && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
+                                {
+                                    RecipeID = id.RowId;
+                                }
+                            }
+                            else if (firstCrystal > 0)
+                            {
+                                if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.RawString == text && x.UnkData5[8].ItemIngredient == firstCrystal, out var id))
+                                {
+                                    RecipeID = id.RowId;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        PluginLog.Error(ex, "Setting Recipe ID");
+                        RecipeID = 0;
+                    }
                 }
             }
         }
@@ -519,11 +513,11 @@ namespace Artisan.Autocraft
             return 0;
         }
 
-        private static int GetCrystal(AtkUnitBase* addon, int slot)
+        private static int GetCrystal(AddonRecipeNoteFixed* addon, int slot)
         {
             try
             {
-                var node = slot == 1 ? addon->UldManager.NodeList[29]->GetComponent()->UldManager.NodeList[1]->GetAsAtkImageNode() : addon->UldManager.NodeList[28]->GetComponent()->UldManager.NodeList[1]->GetAsAtkImageNode();
+                var node = slot == 1 ? addon->AtkUnitBase.UldManager.NodeList[29]->GetComponent()->UldManager.NodeList[1]->GetAsAtkImageNode() : addon->AtkUnitBase.UldManager.NodeList[28]->GetComponent()->UldManager.NodeList[1]->GetAsAtkImageNode();
                 if (slot == 2 && !node->AtkResNode.IsVisible)
                     return -1;
 
@@ -576,7 +570,7 @@ namespace Artisan.Autocraft
                     UpdateMacroTimer();
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ex.Log();
             }

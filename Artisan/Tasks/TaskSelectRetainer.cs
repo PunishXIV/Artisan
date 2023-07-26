@@ -3,7 +3,6 @@ using Artisan.RawInformation;
 using ClickLib.Clicks;
 using ClickLib.Enums;
 using ClickLib.Structures;
-using Dalamud.Configuration;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
@@ -281,7 +280,7 @@ internal unsafe static class RetainerHandlers
         return TrySelectSpecificEntry(text);
     }
 
-    internal static bool? OpenItemContextMenu(uint itemId, out uint quantity)
+    internal static bool? OpenItemContextMenu(uint itemId, bool lookingForHQ, out uint quantity)
     {
         quantity = 0;
         var inventories = new List<InventoryType>
@@ -303,7 +302,7 @@ internal unsafe static class RetainerHandlers
             {
                 var item = InventoryManager.Instance()->GetInventoryContainer(inv)->GetInventorySlot(i);
                 //PluginLog.Debug($"ITEM {item->ItemID.NameOfItem()} IN {item->Slot}");
-                if (item->ItemID == itemId)
+                if (item->ItemID == itemId && ((lookingForHQ && item->Flags == InventoryItem.ItemFlags.HQ) || (!lookingForHQ)))
                 {
                     quantity = item->Quantity;
                     PluginLog.Debug($"Found item? {item->Quantity}");

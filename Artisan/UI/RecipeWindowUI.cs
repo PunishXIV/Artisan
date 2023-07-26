@@ -264,10 +264,10 @@ namespace Artisan
                 Service.Configuration.Save();
             }
 
-            bool enable = Handler.Enable;
+            bool enable = Endurance.Enable;
             if (ImGui.Checkbox("Endurance Mode Toggle", ref enable))
             {
-                Handler.ToggleEndurance(enable);
+                Endurance.ToggleEndurance(enable);
             }
 
         }
@@ -318,23 +318,23 @@ namespace Artisan
                     | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding);
 
                 ImGui.Spacing();
-                if (Handler.RecipeID != 0)
+                if (Endurance.RecipeID != 0)
                 {
-                    ImGui.Text($"Use a macro for this recipe ({Handler.RecipeName})");
-                    string? preview = Service.Configuration.IRM.TryGetValue((uint)Handler.RecipeID, out var prevMacro) ? Service.Configuration.UserMacros.First(x => x.ID == prevMacro).Name : "";
+                    ImGui.Text($"Use a macro for this recipe ({Endurance.RecipeName})");
+                    string? preview = Service.Configuration.IRM.TryGetValue((uint)Endurance.RecipeID, out var prevMacro) ? Service.Configuration.UserMacros.First(x => x.ID == prevMacro).Name : "";
                     if (ImGui.BeginCombo("", preview))
                     {
                         if (ImGui.Selectable(""))
                         {
-                            Service.Configuration.IRM.Remove((uint)Handler.RecipeID);
+                            Service.Configuration.IRM.Remove((uint)Endurance.RecipeID);
                             Service.Configuration.Save();
                         }
                         foreach (var macro in Service.Configuration.UserMacros)
                         {
-                            bool selected = Service.Configuration.IRM.TryGetValue((uint)Handler.RecipeID, out var selectedMacro);
+                            bool selected = Service.Configuration.IRM.TryGetValue((uint)Endurance.RecipeID, out var selectedMacro);
                             if (ImGui.Selectable(macro.Name, selected))
                             {
-                                Service.Configuration.IRM[(uint)Handler.RecipeID] = macro.ID;
+                                Service.Configuration.IRM[(uint)Endurance.RecipeID] = macro.ID;
                                 Service.Configuration.Save();
                             }
                         }
@@ -349,7 +349,7 @@ namespace Artisan
 
         internal static unsafe void DrawEnduranceCounter()
         {
-            if (Handler.RecipeID == 0)
+            if (Endurance.RecipeID == 0)
                 return;
 
             var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
@@ -417,7 +417,7 @@ namespace Artisan
                     if (ImGui.Button($"Craft {Service.Configuration.CraftX}"))
                     {
                         Service.Configuration.CraftingX = true;
-                        Handler.Enable = true;
+                        Endurance.Enable = true;
                     }
                 }
                 else
@@ -426,7 +426,7 @@ namespace Artisan
                     {
                         Service.Configuration.CraftX = craftableCount;
                         Service.Configuration.CraftingX = true;
-                        Handler.Enable = true;
+                        Endurance.Enable = true;
                     }
                 }
 

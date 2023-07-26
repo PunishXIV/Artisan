@@ -66,7 +66,7 @@ namespace Artisan.CraftingLogic
         public static bool AdvancedTouchUsed { get; set; } = false;
         public static bool ExpertCraftOpenerFinish { get; set; } = false;
         public static int QuickSynthCurrent { get => quickSynthCurrent; set { if (value != 0 && quickSynthCurrent != value) { CraftingListFunctions.CurrentIndex++; } quickSynthCurrent = value; } }
-        public static int QuickSynthMax { get => quickSynthMax; set => quickSynthMax = value; }
+        public static int QuickSynthMax { get; set; } = 0;
         public static int MacroStep { get; set; } = 0;
         public static bool DoingTrial { get; set; } = false;
         public static CraftingState State
@@ -79,15 +79,15 @@ namespace Artisan.CraftingLogic
                     if (state == CraftingState.Crafting)
                     {
                         bool wasSuccess = CurrentCraftMethods.CheckForSuccess();
-                        if (!wasSuccess && Service.Configuration.EnduranceStopFail && Handler.Enable)
+                        if (!wasSuccess && Service.Configuration.EnduranceStopFail && Endurance.Enable)
                         {
-                            Handler.Enable = false;
+                            Endurance.Enable = false;
                             DuoLog.Error("You failed a craft. Disabling Endurance.");
                         }
 
-                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && LastCraftedItem.CanBeHq && Handler.Enable)
+                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && LastCraftedItem.CanBeHq && Endurance.Enable)
                         {
-                            Handler.Enable = false;
+                            Endurance.Enable = false;
                             DuoLog.Error("You crafted a non-HQ item. Disabling Endurance.");
                         }
                     }
@@ -100,7 +100,7 @@ namespace Artisan.CraftingLogic
 
                     if (value == CraftingState.Crafting)
                     {
-                        if (CraftingWindow.MacroTime.Ticks <= 0 && P.config.IRM.ContainsKey((uint)Handler.RecipeID) && P.config.UserMacros.TryGetFirst(x => x.ID == P.config.IRM[(uint)Handler.RecipeID], out var macro))
+                        if (CraftingWindow.MacroTime.Ticks <= 0 && P.config.IRM.ContainsKey((uint)Endurance.RecipeID) && P.config.UserMacros.TryGetFirst(x => x.ID == P.config.IRM[(uint)Endurance.RecipeID], out var macro))
                         {
                             Double timeInSeconds = MacroUI.GetMacroLength(macro) + 3; // Counting crafting duration + 2 seconds between crafts.
                             CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
@@ -121,7 +121,6 @@ namespace Artisan.CraftingLogic
 
         private static int currentStep = 0;
         private static int quickSynthCurrent = 0;
-        private static int quickSynthMax = 0;
         private static CraftingState state = CraftingState.NotCrafting;
         public static bool LastItemWasHQ = false;
         public static Item? LastCraftedItem;
@@ -239,9 +238,9 @@ namespace Artisan.CraftingLogic
 
                 CurrentStep = Convert.ToInt32(cs.NodeText.ToString());
                 HQLiteral = hql.NodeText.ToString();
-                CollectabilityLow = collectLow.NodeText.ToString().GetNumbers();
-                CollectabilityMid = collectMid.NodeText.ToString().GetNumbers();
-                CollectabilityHigh = collectHigh.NodeText.ToString().GetNumbers();
+                CollectabilityLow = collectLow.NodeText.ToString().GetNumbers().Length == 0 ? "0" : collectLow.NodeText.ToString().GetNumbers();
+                CollectabilityMid = collectMid.NodeText.ToString().GetNumbers().Length == 0 ? "0" : collectMid.NodeText.ToString().GetNumbers();
+                CollectabilityHigh = collectHigh.NodeText.ToString().GetNumbers().Length == 0 ? "0" : collectHigh.NodeText.ToString().GetNumbers();
 
                 return true;
 

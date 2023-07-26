@@ -13,11 +13,12 @@ namespace Artisan.UI
 {
     internal class ProcessingWindow : Window
     {
-        public ProcessingWindow() : base("Processing List###ProcessingList", ImGuiWindowFlags.AlwaysAutoResize)
+        public ProcessingWindow() : base("Processing List###ProcessingList", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
         {
             IsOpen = true;
             ShowCloseButton = false;
             RespectCloseHotkey = false;
+            SizeCondition = ImGuiCond.Appearing;
         }
 
         public override bool DrawConditions()
@@ -56,7 +57,7 @@ namespace Artisan.UI
 
                 if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
                 {
-                    P.PluginUi.Visible = true;
+                    P.PluginUi.IsOpen = true;
                 }
 
                 ImGui.Text($"Now Processing: {CraftingListUI.selectedList.Name}");
