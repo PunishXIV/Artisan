@@ -205,7 +205,7 @@ namespace Artisan.UI
 
                         if (OpenWindow == OpenWindow.Debug)
                         {
-                            AutocraftDebugTab.Draw();
+                            DebugTab.Draw();
                         }
 
                         if (OpenWindow == OpenWindow.Macro)

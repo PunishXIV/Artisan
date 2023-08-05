@@ -8,6 +8,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Logging;
+using Dalamud.Utility;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
@@ -62,6 +63,9 @@ namespace Artisan.UI.Tables
 
         private static bool MonsterLookup =>
             DalamudReflector.TryGetDalamudPlugin("Monster Loot Hunter", out var mlh, false, true);
+
+        private static bool Marketboard =>
+            DalamudReflector.TryGetDalamudPlugin("Market board", out var mb, false, true);
 
         private static unsafe void SearchItem(uint item) => ItemFinderModule.Instance()->SearchForItem(item);
 
@@ -517,9 +521,25 @@ namespace Artisan.UI.Tables
             DrawSearchItem(item);
             DrawItemVendorLookup(item);
             DrawMonsterLootLookup(item);
+            DrawMarketBoardLookup(item);
             DrawFilterOnCrafts(item);
             DrawRestockFromRetainer(item);
             //DrawCraftThisItem(item);
+        }
+
+        private void DrawMarketBoardLookup(Ingredient item)
+        {
+
+            if (item.Data.RowId == 0)
+                return;
+
+            if (Marketboard)
+            {
+                if (ImGui.Selectable("Market Board Lookup"))
+                {
+                    Chat.Instance.SendMessage($"/pmb {item.Data.Name.ToDalamudString()}");
+                }
+            }
         }
 
         private void DrawCraftThisItem(Ingredient item)

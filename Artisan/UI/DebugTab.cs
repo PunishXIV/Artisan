@@ -21,10 +21,11 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using static ECommons.GenericHelpers;
+using Artisan.Autocraft;
 
-namespace Artisan.Autocraft
+namespace Artisan.UI
 {
-    internal unsafe class AutocraftDebugTab
+    internal unsafe class DebugTab
     {
         internal static int offset = 0;
         internal static int SelRecId = 0;
@@ -235,7 +236,7 @@ namespace Artisan.Autocraft
                 ImGui.Text($"Endurance Item: {Endurance.RecipeID} {Endurance.RecipeName}");
                 if (ImGui.Button($"Open Endurance Item"))
                 {
-                    CraftingLists.CraftingListFunctions.OpenRecipeByID((uint)Endurance.RecipeID);
+                    CraftingListFunctions.OpenRecipeByID(Endurance.RecipeID);
                 }
 
                 ImGui.InputInt("Debug Value", ref DebugValue);
@@ -261,6 +262,8 @@ namespace Artisan.Autocraft
                     Spiritbond.ExtractFirstMateria();
                 }
 
+                ImGui.Text($"{SimpleTweaks.IsFocusTweakEnabled()}");
+
                 if (TryGetAddonByName<AddonGathering>("Gathering", out var addon))
                 {
                     try
@@ -270,7 +273,7 @@ namespace Artisan.Autocraft
                         {
                             try
                             {
-                                var ptr = IntPtr.Add((IntPtr)addon, i);
+                                var ptr = nint.Add((nint)addon, i);
                                 var bytes = Dalamud.Memory.MemoryHelper.ReadRaw(ptr, 16);
                                 var node = ptr.As<AtkTextNode>();
 
@@ -293,17 +296,6 @@ namespace Artisan.Autocraft
 
                     }
                 }
-
-                /*ImGui.InputInt("id", ref SelRecId);
-                if (ImGui.Button("OpenRecipeByRecipeId"))
-                {
-                    AgentRecipeNote.Instance()->OpenRecipeByRecipeId((uint)SelRecId);
-                }
-                if (ImGui.Button("OpenRecipeByItemId"))
-                {
-                    AgentRecipeNote.Instance()->OpenRecipeByItemId((uint)SelRecId);
-                }*/
-                //ImGuiEx.Text($"Selected recipe id: {*(int*)(((IntPtr)AgentRecipeNote.Instance()) + 528)}");
 
 
             }

@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using Artisan.UI;
 using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Logging;
@@ -111,13 +112,13 @@ namespace Artisan.RawInformation
         {
             if (option && IsSpiritbondReadyAny())
             {
-                if (AutocraftDebugTab.Debug) PluginLog.Verbose("Entered materia extraction");
+                if (DebugTab.Debug) PluginLog.Verbose("Entered materia extraction");
                 if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                 {
-                    if (AutocraftDebugTab.Debug) PluginLog.Verbose("Crafting");
+                    if (DebugTab.Debug) PluginLog.Verbose("Crafting");
                     if (Throttler.Throttle(1000))
                     {
-                        if (AutocraftDebugTab.Debug) PluginLog.Verbose("Closing crafting log");
+                        if (DebugTab.Debug) PluginLog.Verbose("Closing crafting log");
                         CommandProcessor.ExecuteThrottled("/clog");
                     }
                 }

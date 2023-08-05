@@ -1,7 +1,9 @@
 ﻿using Artisan.Autocraft;
 using Artisan.FCWorkshops;
+using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
@@ -33,8 +35,6 @@ namespace Artisan
 
         public override void Draw()
         {
-           
-
             if (!Service.Configuration.DisableMiniMenu)
             {
                 if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] || Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
@@ -318,6 +318,11 @@ namespace Artisan
                     | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding);
 
                 ImGui.Spacing();
+
+                if (SimpleTweaks.IsFocusTweakEnabled())
+                {
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, $@"Warning: You have the ""Auto Focus Recipe Search"" SimpleTweak enabled. This is highly incompatible with Artisan and is recommended to disable it.");
+                }
                 if (Endurance.RecipeID != 0)
                 {
                     ImGui.Text($"Use a macro for this recipe ({Endurance.RecipeName})");

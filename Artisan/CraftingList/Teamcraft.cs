@@ -1,5 +1,5 @@
-﻿using Artisan.Autocraft;
-using Artisan.RawInformation;
+﻿using Artisan.RawInformation;
+using Artisan.UI;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Utility;
@@ -238,7 +238,7 @@ namespace Artisan.CraftingLists
                             builder.Append(" ");
                         }
                         var item = builder.ToString().Trim();
-                        if (AutocraftDebugTab.Debug) Dalamud.Logging.PluginLog.Debug($"{numberOfItem} x {item}");
+                        if (DebugTab.Debug) Dalamud.Logging.PluginLog.Debug($"{numberOfItem} x {item}");
 
                         var recipe = LuminaSheets.RecipeSheet?.Where(x => x.Value.ItemResult.Row > 0 && x.Value.ItemResult.Value.Name.RawString == item).Select(x => x.Value).FirstOrDefault();
                         if (recipe is not null)

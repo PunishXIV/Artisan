@@ -1,4 +1,5 @@
 ﻿using Artisan.RawInformation;
+using Artisan.UI;
 using ClickLib.Clicks;
 using Dalamud.Logging;
 using ECommons;
@@ -73,7 +74,7 @@ namespace Artisan.Autocraft
 
                     if (nqMaterials + hqMaterials < requiredMaterials)
                     {
-                        if (AutocraftDebugTab.Debug) PluginLog.Verbose("Insufficient Materials");
+                        if (DebugTab.Debug) PluginLog.Verbose("Insufficient Materials");
                         Endurance.Enable = false;
                         InsufficientMaterials = true;
                         dataFinalized = true;

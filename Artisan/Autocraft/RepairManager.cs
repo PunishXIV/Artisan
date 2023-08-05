@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.RawInformation;
+using Artisan.UI;
 using ClickLib.Clicks;
 using Dalamud.Logging;
 using ECommons;
@@ -55,26 +56,26 @@ namespace Artisan.Autocraft
             int repairPercent = CraftingList != null ? CraftingList.RepairPercent : Service.Configuration.RepairPercent;
             if (GetMinEquippedPercent() >= repairPercent)
             {
-                if (AutocraftDebugTab.Debug) PluginLog.Verbose("Condition good");
+                if (DebugTab.Debug) PluginLog.Verbose("Condition good");
                 if (TryGetAddonByName<AddonRepair>("Repair", out var r) && r->AtkUnitBase.IsVisible)
                 {
-                    if (AutocraftDebugTab.Debug) PluginLog.Verbose("Repair visible");
+                    if (DebugTab.Debug) PluginLog.Verbose("Repair visible");
                     if (Throttler.Throttle(500))
                     {
-                        if (AutocraftDebugTab.Debug) PluginLog.Verbose("Closing repair window");
+                        if (DebugTab.Debug) PluginLog.Verbose("Closing repair window");
                         Hotbars.actionManager->UseAction(ActionType.General, 6);
                     }
                     return false;
                 }
-                if (AutocraftDebugTab.Debug) PluginLog.Verbose("return true");
+                if (DebugTab.Debug) PluginLog.Verbose("return true");
                 return true;
             }
             else
             {
-                if (AutocraftDebugTab.Debug) PluginLog.Verbose($"Condition bad, condition is {GetMinEquippedPercent()}, config is {Service.Configuration.RepairPercent}");
+                if (DebugTab.Debug) PluginLog.Verbose($"Condition bad, condition is {GetMinEquippedPercent()}, config is {Service.Configuration.RepairPercent}");
                 if (use)
                 {
-                    if (AutocraftDebugTab.Debug) PluginLog.Verbose($"Doing repair");
+                    if (DebugTab.Debug) PluginLog.Verbose($"Doing repair");
                     if (TryGetAddonByName<AddonRepair>("Repair", out var r) && r->AtkUnitBase.IsVisible)
                     {
                         //PluginLog.Verbose($"Repair visible");
@@ -83,15 +84,15 @@ namespace Artisan.Autocraft
                     }
                     else
                     {
-                        if (AutocraftDebugTab.Debug) PluginLog.Verbose($"Repair not visible");
+                        if (DebugTab.Debug) PluginLog.Verbose($"Repair not visible");
                         if (Throttler.Throttle(500))
                         {
-                            if (AutocraftDebugTab.Debug) PluginLog.Verbose($"Opening repair");
+                            if (DebugTab.Debug) PluginLog.Verbose($"Opening repair");
                             Hotbars.actionManager->UseAction(ActionType.General, 6);
                         }
                     }
                 }
-                if (AutocraftDebugTab.Debug) PluginLog.Verbose($"Returning false");
+                if (DebugTab.Debug) PluginLog.Verbose($"Returning false");
                 return false;
             }
         }
