@@ -76,6 +76,17 @@ namespace Artisan.UI.Tables
         public IngredientTable(List<Ingredient> ingredientList)
             : base("IngredientTable", ingredientList)
         {
+
+            if (P.config.DefaultHideInventoryColumn)        _inventoryColumn.Flags          |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.config.DefaultHideRetainerColumn)         _retainerColumn.Flags           |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.config.DefaultHideRemainingColumn)        _remainingColumn.Flags          |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.config.DefaultHideCraftableColumn)        _craftableColumn.Flags          |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.config.DefaultHideCraftableCountColumn)   _craftableCountColumn.Flags     |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.config.DefaultHideCraftItemsColumn)       _craftItemsColumn.Flags         |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.config.DefaultHideCategoryColumn)         _itemCategoryColumn.Flags       |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.config.DefaultHideGatherLocationColumn)   _gatherItemLocationColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.config.DefaultHideIdColumn)               _idColumn.Flags                 |= ImGuiTableColumnFlags.DefaultHide;
+
             Headers.Add(_nameColumn);
             Headers.Add(_requiredColumn);
             Headers.Add(_inventoryColumn);
@@ -88,12 +99,12 @@ namespace Artisan.UI.Tables
             Headers.Add(_gatherItemLocationColumn);
             Headers.Add(_idColumn);
 
-            
             Sortable = true;
             ListItems = ingredientList;
             Flags |= ImGuiTableFlags.Hideable | ImGuiTableFlags.Reorderable | ImGuiTableFlags.Resizable;
 
             _nameColumn.OnContextMenuRequest += OpenContextMenu;
+            _remainingColumn.SourceList = ListItems;
 
             foreach (var item in Items)
             {
@@ -432,23 +443,27 @@ namespace Artisan.UI.Tables
             public override int Compare(Ingredient lhs, Ingredient rhs)
                 => lhs.Remaining.CompareTo(rhs.Remaining);
 
+            public List<Ingredient> SourceList = new();
+
             public override void DrawColumn(Ingredient item, int idx)
             {
                 ImGuiUtil.Center($"{item.Remaining}");
 
                 if (ImGui.IsItemHovered())
                 {
-                    if (item.Sources.Contains(1))
+                    StringBuilder sb = new StringBuilder();
+                    if (item.UsedInMaterialsListCount.Count > 0)
                     {
-                        if (RetainerInfo.ATools)
-                            ImGuiUtil.HoverTooltip("Adds the number in your inventory, retainers and craftable amounts and subtracts from required.");
-                        else
-                            ImGuiUtil.HoverTooltip("Adds the number in your inventory and craftable amounts and subtracts from required.");
-                    }
-                    else
-                    {
-                        ImGuiUtil.HoverTooltip($"Factors in crafted materials on this list that uses this ingredient you already have in your inventory{(RetainerInfo.ATools ? " or retainer" : "")}.\r\n" +
-                            "Example: You have both Maple Logs and Maple Lumber on the ingredient list.\nFor every Maple Lumber you already have, the remaining Maple Log count is reduced by 3 (the amount required per lumber)");
+                        foreach (var i in item.UsedInMaterialsListCount.Where(x => x.Value > 0))
+                        {
+                            var owned = RetainerInfo.GetRetainerItemCount(LuminaSheets.RecipeSheet[i.Key].ItemResult.Row) + CraftingListUI.NumberOfIngredient(LuminaSheets.RecipeSheet[i.Key].ItemResult.Row);
+                            if (SourceList.FindFirst(x => x.CraftedRecipe?.RowId == i.Key, out var ingredient))
+                            {
+                                sb.Append($"{i.Value} less is required due to having {(owned > ingredient.Required ? "at least " : "")}{Math.Min(ingredient.Required, owned)}x {i.Key.NameOfRecipe()}\r\n");
+                            }
+                        }
+
+                        ImGuiUtil.HoverTooltip(sb.ToString().Trim());
                     }
                 }
 

@@ -28,9 +28,10 @@ namespace Artisan.RawInformation
         public List<int> Sources = new();
         public bool TimedNode;
         public List<uint> UsedInCrafts = new();
-        private int remaining;
+        private int remaining = -1;
         private Dictionary<int, Recipe?> subRecipes = new();
         public Dictionary<uint, int> UsedInMaterialsList;
+        public Dictionary<uint, int> UsedInMaterialsListCount = new();
 
         public Ingredient(uint itemId, int required, CraftingList originList, Dictionary<uint, int> materials)
         {
@@ -117,7 +118,7 @@ namespace Artisan.RawInformation
         {
             var materials = originList.ListMaterials();
             List<Ingredient> output = new();
-            foreach (var item in materials)
+            foreach (var item in materials.OrderBy(x => x.Key))
             {
                 await Task.Run(() => output.Add(new Ingredient(item.Key, item.Value, originList, materials)));
             }
@@ -133,6 +134,8 @@ namespace Artisan.RawInformation
                 var owned = RetainerInfo.GetRetainerItemCount(material.Key) + CraftingListUI.NumberOfIngredient(material.Key);
                 var recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == material.Key && x.UnkData5.Any(y => y.ItemIngredient == Data.RowId));
                 var numberUsedInRecipe = recipe.UnkData5.First(x => x.ItemIngredient == Data.RowId).AmountIngredient;
+
+                UsedInMaterialsListCount[recipe.RowId] = Math.Min(owned * numberUsedInRecipe, material.Value * numberUsedInRecipe);
 
                 output += Math.Min(owned * numberUsedInRecipe, material.Value * numberUsedInRecipe);
             }

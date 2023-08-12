@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using Artisan.CraftingLists;
 using Artisan.FCWorkshops;
 using Artisan.IPC;
 using Artisan.RawInformation;
@@ -10,11 +11,16 @@ using Dalamud.Logging;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
+using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using OtterGui;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Security.Cryptography.Pkcs;
+using static ECommons.GenericHelpers;
 
 namespace Artisan
 {
@@ -44,8 +50,230 @@ namespace Artisan
 
                 DrawWorkshopOverlay();
 
+                DrawSupplyMissionOverlay();
+
             }
             DrawMacroOptions();
+        }
+
+        private unsafe void DrawSupplyMissionOverlay()
+        {
+            if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon)) 
+            {
+                try
+                {
+                    var subcontext = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu");
+                    if (subcontext != null && subcontext->IsVisible)
+                        return;
+
+                    if (addon->SupplyRadioButton->AtkComponentBase.UldManager.NodeList[1]->IsVisible)
+                        return;
+
+                    var timerWindow = Service.GameGui.GetAddonByName("GrandCompanySupplyList");
+                    if (timerWindow == IntPtr.Zero)
+                        return;
+
+                    var atkUnitBase = (AtkUnitBase*)timerWindow;
+                    var node = atkUnitBase->UldManager.NodeList[19];
+
+                    if (!node->IsVisible)
+                        return;
+
+                    var position = AtkResNodeFunctions.GetNodePosition(node);
+                    var scale = AtkResNodeFunctions.GetNodeScale(node);
+                    var size = new Vector2(node->Width, node->Height) * scale;
+                    var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
+
+                    var oldScale = ImGui.GetIO().FontGlobalScale;
+                    ImGui.GetIO().FontGlobalScale = 1f * scale.X;
+
+                    var textSize = ImGui.CalcTextSize("Create Crafting List");
+
+                    ImGuiHelpers.ForceNextWindowMainViewport();
+                    ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y + (textSize.Y * scale.Y) + (14f * scale.Y)));
+
+                    ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
+                    ImGui.PushFont(ImGui.GetFont());
+                    ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
+                    ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0f, 2f * scale.Y));
+                    ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f * scale.X, 3f * scale.Y));
+                    ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
+                    ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
+
+                    ImGui.Begin($"###SupplyTimerWindow", ImGuiWindowFlags.NoNavFocus | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings
+                        | ImGuiWindowFlags.AlwaysAutoResize);
+
+                    if (ImGui.Button($"Create Crafting List", new Vector2(size.X / 2, 0)))
+                    {
+                        CreateGCListAgent(atkUnitBase, false);
+                    }
+                    ImGui.SameLine();
+                    if (ImGui.Button($"Create Crafting List (with subcrafts)", new Vector2(size.X / 2, 0)))
+                    {
+                        CreateGCListAgent(atkUnitBase, true);
+                    }
+
+                    ImGui.End();
+                    ImGui.PopStyleVar(5);
+                    ImGui.GetIO().FontGlobalScale = oldScale;
+                    ImGui.PopFont();
+                    ImGui.PopStyleColor();
+
+
+                }
+                catch (Exception ex)
+                {
+                    ex.Log();
+                }
+            }
+            else
+            {
+
+
+                try
+                {
+                    var subcontext = (AtkUnitBase*)Service.GameGui.GetAddonByName("AddonContextSub");
+
+                    if (subcontext->IsVisible)
+                        return;
+
+                    var timerWindow = Service.GameGui.GetAddonByName("ContentsInfoDetail");
+                    if (timerWindow == IntPtr.Zero)
+                        return;
+
+                    var atkUnitBase = (AtkUnitBase*)timerWindow;
+
+                    if (atkUnitBase->AtkValues[233].Type != FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int)
+                        return;
+
+                    var node = atkUnitBase->UldManager.NodeList[97];
+
+                    if (!node->IsVisible)
+                        return;
+
+                    var position = AtkResNodeFunctions.GetNodePosition(node);
+                    var scale = AtkResNodeFunctions.GetNodeScale(node);
+                    var size = new Vector2(node->Width, node->Height) * scale;
+                    var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
+
+                    var oldScale = ImGui.GetIO().FontGlobalScale;
+                    ImGui.GetIO().FontGlobalScale = 1f * scale.X;
+
+                    var textSize = ImGui.CalcTextSize("Create Crafting List");
+
+                    ImGuiHelpers.ForceNextWindowMainViewport();
+                    ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y - (textSize.Y * scale.Y) - (5f * scale.Y)));
+
+                    ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
+                    ImGui.PushFont(ImGui.GetFont());
+                    ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
+                    ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0f, 2f * scale.Y));
+                    ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f * scale.X, 3f * scale.Y));
+                    ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
+                    ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
+
+                    ImGui.Begin($"###SupplyTimerWindow", ImGuiWindowFlags.NoNavFocus | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings
+                        | ImGuiWindowFlags.AlwaysAutoResize);
+
+                    if (ImGui.Button($"Create Crafting List", new Vector2(size.X / 2, 0)))
+                    {
+                        CreateGCList(atkUnitBase, false);
+                    }
+                    ImGui.SameLine();
+                    if (ImGui.Button($"Create Crafting List (with subcrafts)", new Vector2(size.X / 2, 0)))
+                    {
+                        CreateGCList(atkUnitBase, true);
+                    }
+
+                    ImGui.End();
+                    ImGui.PopStyleVar(5);
+                    ImGui.GetIO().FontGlobalScale = oldScale;
+                    ImGui.PopFont();
+                    ImGui.PopStyleColor();
+
+
+                }
+                catch (Exception ex)
+                {
+                    ex.Log();
+                }
+            }
+        }
+
+        private static unsafe void CreateGCListAgent(AtkUnitBase* atkUnitBase, bool withSubcrafts)
+        {
+            CraftingList craftingList = new CraftingList();
+            craftingList.Name = $"GC Supply List ({DateTime.Now.ToShortDateString()})";
+
+            for (int i = 425; i <= 432; i++)
+            {
+                var itemId = atkUnitBase->AtkValues[i].Int;
+                var requested = atkUnitBase->AtkValues[i - 40].Int;
+                if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row == i - 425, out var recipe))
+                {
+                    var timesToAdd = requested / recipe.AmountResult;
+
+                    if (withSubcrafts)
+                        CraftingListUI.AddAllSubcrafts(recipe, craftingList, timesToAdd);
+
+                    for (int p = 1; p <= timesToAdd; p++)
+                    {
+                        if (craftingList.Items.IndexOf(recipe.RowId) == -1)
+                        {
+                            craftingList.Items.Add(recipe.RowId);
+                        }
+                        else
+                        {
+                            var indexOfLast = craftingList.Items.IndexOf(recipe.RowId);
+                            craftingList.Items.Insert(indexOfLast, recipe.RowId);
+                        }
+                    }
+
+                }
+            }
+
+            craftingList.SetID();
+            craftingList.Save(true);
+
+            Notify.Success("Crafting List Created");
+        }
+
+        private static unsafe void CreateGCList(AtkUnitBase* atkUnitBase, bool withSubcrafts)
+        {
+            CraftingList craftingList = new CraftingList();
+            craftingList.Name = $"GC Supply List ({DateTime.Now.ToShortDateString()})";
+
+            for (int i = 233; i <= 240; i++)
+            {
+                var itemId = atkUnitBase->AtkValues[i].Int;
+                var requested = atkUnitBase->AtkValues[i + 16].Int;
+                if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row == i - 233, out var recipe))
+                {
+                    var timesToAdd = requested / recipe.AmountResult;
+
+                    if (withSubcrafts)
+                    CraftingListUI.AddAllSubcrafts(recipe, craftingList, timesToAdd);
+
+                    for (int p = 1; p <= timesToAdd; p++)
+                    {
+                        if (craftingList.Items.IndexOf(recipe.RowId) == -1)
+                        {
+                            craftingList.Items.Add(recipe.RowId);
+                        }
+                        else
+                        {
+                            var indexOfLast = craftingList.Items.IndexOf(recipe.RowId);
+                            craftingList.Items.Insert(indexOfLast, recipe.RowId);
+                        }
+                    }
+
+                }
+            }
+
+            craftingList.SetID();
+            craftingList.Save(true);
+
+            Notify.Success("Crafting List Created");
         }
 
         private unsafe void DrawWorkshopOverlay()

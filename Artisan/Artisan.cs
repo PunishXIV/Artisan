@@ -57,6 +57,7 @@ public unsafe class Artisan : IDalamudPlugin
     public static List<Task> Tasks = new();
     public static bool warningMessage = false;
     public static bool macroWarning = false;
+    public static bool brokenWarning = false;
 
     internal FontManager fm;
     internal StyleModel Style;
@@ -221,6 +222,7 @@ public unsafe class Artisan : IDalamudPlugin
             MacroStep = 0;
             warningMessage = false;
             macroWarning = false;
+            brokenWarning = false;
         }
         if (e > 0)
             Tasks.Clear();
@@ -314,6 +316,15 @@ public unsafe class Artisan : IDalamudPlugin
 
         try
         {
+            if (RepairManager.GetMinEquippedPercent() == 0)
+            {
+                if (!brokenWarning)
+                    Svc.Chat.PrintError("You have broken gear. Artisan will not continue.");
+
+                brokenWarning = true;
+                return;
+            }
+
             if (Service.Configuration.UserMacros.Count > 0)
             {
                 if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId, out var macro))

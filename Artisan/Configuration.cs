@@ -99,6 +99,19 @@ namespace Artisan
         public int ContextMenuLoops = 1;
         public float ListCraftThrottle = 1f;
 
+        public bool DefaultHideInventoryColumn = false;
+        public bool DefaultHideRetainerColumn = false;
+        public bool DefaultHideRemainingColumn = false;
+        public bool DefaultHideCraftableColumn = false;
+        public bool DefaultHideCraftableCountColumn = false;
+        public bool DefaultHideCraftItemsColumn = false;
+        public bool DefaultHideCategoryColumn = false;
+        public bool DefaultHideGatherLocationColumn = false;
+        public bool DefaultHideIdColumn = false;
+
+        public bool DefaultColourValidation = false;
+        public bool DefaultHQCrafts = false;
+
         public int SolverCollectibleMode = 3;
         public ItemFilter ShowItemsV1 { get; set; } = ItemFilter.All;
 

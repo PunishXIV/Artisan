@@ -231,7 +231,7 @@ namespace Artisan.CraftingLogic
 
             if (goingForQuality)
             {
-                if (!Service.Configuration.UseQualityStarter)
+                if (!Service.Configuration.UseQualityStarter && Skills.MuscleMemory.LevelChecked())
                 {
                     if (CurrentStep == 1 && CanUse(Skills.MuscleMemory) && Calculations.CalculateNewProgress(Skills.MuscleMemory) < MaxProgress) return Skills.MuscleMemory;
                     if (CurrentStep == 2 && CanUse(Skills.Veneration) && Calculations.CalculateNewProgress(act) < MaxProgress && GetStatus(Buffs.MuscleMemory) != null) return Skills.Veneration;

@@ -41,14 +41,17 @@ namespace Artisan.Autocraft
 
         internal static int GetMinEquippedPercent()
         {
-            var ret = int.MaxValue;
+            ushort ret = ushort.MaxValue;
             var equipment = InventoryManager.Instance()->GetInventoryContainer(InventoryType.EquippedItems);
             for(var i  = 0; i < equipment->Size; i++)
             {
                 var item = equipment->GetInventorySlot(i);
-                if (item->Condition < ret) ret = item->Condition;
+                if (item != null && item->ItemID > 0)
+                {
+                    if (item->Condition < ret) ret = item->Condition;
+                }
             }
-            return (ret / 300);
+            return (int)Math.Ceiling((double)ret / 300);
         }
 
         internal static bool ProcessRepair(bool use = true, CraftingList? CraftingList = null)

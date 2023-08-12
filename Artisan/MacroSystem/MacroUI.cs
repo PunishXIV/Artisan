@@ -2,6 +2,7 @@
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
+using ECommons;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
 using ECommons.StringHelpers;
@@ -60,12 +61,23 @@ namespace Artisan.MacroSystem
 
             if (ImGui.Button("Import Macro From Clipboard (Artisan Export)"))
             {
-                var clipboard = ImGui.GetClipboardText();
-                var import = JsonConvert.DeserializeObject<Macro>(clipboard.FromBase64());
-                if (import != null)
+                try
                 {
-                    import.SetID();
-                    import.Save(true);
+                    var clipboard = ImGui.GetClipboardText();
+                    if (clipboard != null)
+                    {
+                        var import = JsonConvert.DeserializeObject<Macro>(clipboard.FromBase64());
+                        if (import != null)
+                        {
+                            import.SetID();
+                            import.Save(true);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ex.Log();
+                    Notify.Error("Unable to import.");
                 }
             }
 

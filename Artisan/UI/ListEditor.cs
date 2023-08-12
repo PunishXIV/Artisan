@@ -95,6 +95,9 @@ internal class ListEditor : Window, IDisposable
         ShowCloseButton = true;
         RespectCloseHotkey = false;
         GenerateTableAsync();
+
+        if (P.config.DefaultHQCrafts) HQSubcraftsOnly = true;
+        if (P.config.DefaultColourValidation) ColourValidation = true;
     }
 
     private async Task GenerateTableAsync()
@@ -683,7 +686,7 @@ internal class ListEditor : Window, IDisposable
         DrawRecipeData();
 
         ImGui.Spacing();
-        RecipeSelector.Draw(RecipeSelector.maxSize + 10f);
+        RecipeSelector.Draw(RecipeSelector.maxSize + 16f + ImGui.GetStyle().ScrollbarSize);
         ImGui.SameLine();
 
         if (RecipeSelector.Current > 0)

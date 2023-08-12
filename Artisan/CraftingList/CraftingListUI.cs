@@ -13,7 +13,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Logging;
-
+using ECommons;
 using ECommons.Automation;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
@@ -119,12 +119,23 @@ namespace Artisan.CraftingLists
 
             if (ImGui.Button("Import List From Clipboard (Artisan Export)", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
             {
-                var clipboard = ImGui.GetClipboardText();
-                var import = JsonConvert.DeserializeObject<CraftingList>(clipboard.FromBase64());
-                if (import != null)
+                try
                 {
-                    import.SetID();
-                    import.Save(true);
+                    var clipboard = ImGui.GetClipboardText();
+                    if (clipboard != null)
+                    {
+                        var import = JsonConvert.DeserializeObject<CraftingList>(clipboard.FromBase64());
+                        if (import != null)
+                        {
+                            import.SetID();
+                            import.Save(true);
+                        }
+                    }
+                }
+                catch(Exception ex)
+                {
+                    ex.Log();
+                    Notify.Error("Unable to import.");
                 }
             }
 

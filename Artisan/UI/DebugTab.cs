@@ -22,6 +22,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json;
 using static ECommons.GenericHelpers;
 using Artisan.Autocraft;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace Artisan.UI
 {
@@ -262,7 +263,26 @@ namespace Artisan.UI
                     Spiritbond.ExtractFirstMateria();
                 }
 
-                ImGui.Text($"{SimpleTweaks.IsFocusTweakEnabled()}");
+                try
+                {
+                    var gcsupply = (AgentGrandCompanySupply*)AgentModule.Instance()->GetAgentByInternalId(AgentId.GrandCompanySupply);
+
+                    for (int i = 0; i < gcsupply->SupplyProvisioningData->SupplyDataSpan.Length; i++)
+                    {
+                        var item = gcsupply->SupplyProvisioningData->SupplyDataSpan[i];
+                        ImGui.Text($"{item.ItemName.ExtractText()}");
+                    }
+
+                    for (int i = 0; i < gcsupply->SupplyProvisioningData->ProvisioningDataSpan.Length; i++)
+                    {
+                        var item = gcsupply->SupplyProvisioningData->ProvisioningDataSpan[i];
+                        ImGui.Text($"{item.ItemName.ExtractText()}");
+                    }
+                }
+                catch
+                {
+
+                }
 
                 if (TryGetAddonByName<AddonGathering>("Gathering", out var addon))
                 {
