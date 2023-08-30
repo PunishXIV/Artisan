@@ -66,7 +66,10 @@ namespace Artisan
                     if (subcontext != null && subcontext->IsVisible)
                         return;
 
-                    if (addon->SupplyRadioButton->AtkComponentBase.UldManager.NodeList[1]->IsVisible)
+                    if (addon->SupplyRadioButton is null)
+                        return;
+
+                    if (addon->SupplyRadioButton->AtkComponentBase.UldManager.NodeList[1] != null && addon->SupplyRadioButton->AtkComponentBase.UldManager.NodeList[1]->IsVisible)
                         return;
 
                     var timerWindow = Service.GameGui.GetAddonByName("GrandCompanySupplyList");
@@ -128,13 +131,11 @@ namespace Artisan
             }
             else
             {
-
-
                 try
                 {
                     var subcontext = (AtkUnitBase*)Service.GameGui.GetAddonByName("AddonContextSub");
 
-                    if (subcontext->IsVisible)
+                    if (subcontext != null && subcontext->IsVisible)
                         return;
 
                     var timerWindow = Service.GameGui.GetAddonByName("ContentsInfoDetail");

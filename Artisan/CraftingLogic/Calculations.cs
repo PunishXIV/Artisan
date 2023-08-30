@@ -17,9 +17,9 @@ namespace Artisan.CraftingLogic
             {
                 if (CraftingWindowOpen)
                 {
-                    var baseValue = CharacterInfo.Craftsmanship() * 10 / CurrentRecipe.RecipeLevelTable.Value.ProgressDivider + 2;
+                    var baseValue = CharacterInfo.Craftsmanship * 10 / CurrentRecipe.RecipeLevelTable.Value.ProgressDivider + 2;
                     var p2 = baseValue;
-                    if (CharacterInfo.CharacterLevel() <= CurrentRecipe.RecipeLevelTable.Value.ClassJobLevel)
+                    if (CharacterInfo.CharacterLevel <= CurrentRecipe.RecipeLevelTable.Value.ClassJobLevel)
                     {
                         p2 = baseValue * CurrentRecipe.RecipeLevelTable.Value.ProgressModifier / 100;
                     }
@@ -47,8 +47,8 @@ namespace Artisan.CraftingLogic
                         return 0;
                 }
 
-                var baseValue = CharacterInfo.Control() * 10 / recipe.RecipeLevelTable.Value.QualityDivider + 35;
-                if (CharacterInfo.CharacterLevel() <= recipe.RecipeLevelTable.Value.ClassJobLevel)
+                var baseValue = CharacterInfo.Control * 10 / recipe.RecipeLevelTable.Value.QualityDivider + 35;
+                if (CharacterInfo.CharacterLevel <= recipe.RecipeLevelTable.Value.ClassJobLevel)
                 {
                     return baseValue * recipe.RecipeLevelTable.Value.QualityModifier * 0.01;
                 }
@@ -140,7 +140,7 @@ namespace Artisan.CraftingLogic
             }
             else
             {
-                var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == id.NameOfAction() && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
+                var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == id.NameOfAction() && x.ClassJob.Row == CharacterInfo.JobID).FirstOrDefault();
                 id = newAct.CRP.Row;
             }
 
@@ -170,13 +170,13 @@ namespace Artisan.CraftingLogic
                 _ => 1
             };
 
-            if (id == Skills.Groundwork && CharacterInfo.CharacterLevel() >= 86)
+            if (id == Skills.Groundwork && CharacterInfo.CharacterLevel >= 86)
                 baseMultiplier = 3.6;
-            if (id == Skills.CarefulSynthesis && CharacterInfo.CharacterLevel() >= 82)
+            if (id == Skills.CarefulSynthesis && CharacterInfo.CharacterLevel >= 82)
                 baseMultiplier = 1.8;
-            if (id == Skills.RapidSynthesis && CharacterInfo.CharacterLevel() >= 63)
+            if (id == Skills.RapidSynthesis && CharacterInfo.CharacterLevel >= 63)
                 baseMultiplier = 5;
-            if (id == Skills.BasicSynth && CharacterInfo.CharacterLevel() >= 31)
+            if (id == Skills.BasicSynth && CharacterInfo.CharacterLevel >= 31)
                 baseMultiplier = 1.2;
 
             if (!isQuality)

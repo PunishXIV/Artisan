@@ -118,11 +118,11 @@ namespace Artisan.UI
                 ImGui.TextColored(ImGuiColors.DalamudYellow, "No macro set");
             }
 
-            if (Service.Configuration.AutoMode)
-            {
-                if (Service.Configuration.CraftingX)
+            if (Service.Configuration.CraftingX && Endurance.Enable)
                 ImGui.Text($"Remaining Crafts: {Service.Configuration.CraftX}");
 
+            if (Service.Configuration.AutoMode)
+            {
                 if (Service.Configuration.IRM.TryGetValue((uint)Endurance.RecipeID, out var prevMacro))
                 {
                     Macro? macro = Service.Configuration.UserMacros.First(x => x.ID == prevMacro);

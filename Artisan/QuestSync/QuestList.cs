@@ -244,7 +244,7 @@ namespace Artisan.QuestSync
                 {
                     if (Quests.TryGetValue(questId, out var dict))
                     {
-                        switch (CharacterInfo.JobID())
+                        switch (CharacterInfo.JobID)
                         {
                             case 8:
                                 return dict.CRP;
@@ -276,7 +276,7 @@ namespace Artisan.QuestSync
 
                     if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(step1.CRP))
                     {
-                        switch (CharacterInfo.JobID())
+                        switch (CharacterInfo.JobID)
                         {
                             case 8:
                                 return step1.CRP;
@@ -299,7 +299,7 @@ namespace Artisan.QuestSync
 
                     if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(step2.CRP))
                     {
-                        switch (CharacterInfo.JobID())
+                        switch (CharacterInfo.JobID)
                         {
                             case 8:
                                 return step2.CRP;
@@ -325,7 +325,7 @@ namespace Artisan.QuestSync
                 {
                     if (Quests.TryGetValue(questId, out var dict))
                     {
-                        switch (CharacterInfo.JobID())
+                        switch (CharacterInfo.JobID)
                         {
                             case 8:
                                 return dict.CRP;

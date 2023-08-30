@@ -108,10 +108,10 @@ namespace Artisan.CustomDeliveries
         {
             get
             {
-                if (CharacterInfo.JobID() < 8 || CharacterInfo.JobID() > 15)
+                if (CharacterInfo.JobID < 8 || CharacterInfo.JobID > 15)
                     return 0;
 
-                return LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.RowId == CraftItemID && x.CraftType.Value.RowId == CharacterInfo.JobID() - 8).FirstOrDefault().RowId;
+                return LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.RowId == CraftItemID && x.CraftType.Value.RowId == CharacterInfo.JobID - 8).FirstOrDefault().RowId;
             }
         }
 

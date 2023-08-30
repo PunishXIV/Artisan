@@ -329,8 +329,8 @@ public unsafe class Artisan : IDalamudPlugin
             {
                 if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId, out var macro))
                 {
-                    if (macro.MacroOptions.MinCraftsmanship > (int)CharacterInfo.Craftsmanship() ||
-                        macro.MacroOptions.MinControl > (int)CharacterInfo.Control() ||
+                    if (macro.MacroOptions.MinCraftsmanship > (int)CharacterInfo.Craftsmanship ||
+                        macro.MacroOptions.MinControl > (int)CharacterInfo.Control ||
                         macro.MacroOptions.MinCP > (int)CharacterInfo.MaxCP)
                     {
                         if (!macroWarning)
@@ -431,9 +431,9 @@ public unsafe class Artisan : IDalamudPlugin
 
                 if (LuminaSheets.ActionSheet.TryGetValue(CurrentRecommendation, out var normalAct))
                 {
-                    if (normalAct.ClassJob.Value.RowId != CharacterInfo.JobID())
+                    if (normalAct.ClassJob.Value.RowId != CharacterInfo.JobID)
                     {
-                        var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == normalAct.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
+                        var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == normalAct.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID).FirstOrDefault();
                         CurrentRecommendation = newAct.RowId;
                         if (!Service.Configuration.DisableToasts)
                         {
@@ -454,9 +454,9 @@ public unsafe class Artisan : IDalamudPlugin
 
                 if (LuminaSheets.CraftActions.TryGetValue(CurrentRecommendation, out var craftAction))
                 {
-                    if (craftAction.ClassJob.Row != CharacterInfo.JobID())
+                    if (craftAction.ClassJob.Row != CharacterInfo.JobID)
                     {
-                        var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == craftAction.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID()).FirstOrDefault();
+                        var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == craftAction.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID).FirstOrDefault();
                         CurrentRecommendation = newAct.RowId;
                         if (!Service.Configuration.DisableToasts)
                         {

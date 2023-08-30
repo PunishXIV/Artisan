@@ -5,6 +5,7 @@ using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Statuses;
 using Dalamud.Logging;
 using ECommons;
+using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -13,6 +14,7 @@ using System;
 using System.Linq;
 using static Artisan.CraftingLogic.CurrentCraft;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
+using PluginLog = Dalamud.Logging.PluginLog;
 using Status = Dalamud.Game.ClientState.Statuses.Status;
 
 namespace Artisan.CraftingLogic
@@ -207,7 +209,7 @@ namespace Artisan.CraftingLogic
             if (CurrentStep == 1 && Calculations.CalculateNewProgress(Skills.DelicateSynthesis) >= MaxProgress && Calculations.CalculateNewQuality(Skills.DelicateSynthesis) >= MaxQuality && CanUse(Skills.DelicateSynthesis)) return Skills.DelicateSynthesis;
             if (CanFinishCraft(act)) return act;
 
-            if (CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || CurrentRecipe.ItemResult.Value.AlwaysCollectable) && CurrentRecipe.CanHq) return Skills.TrainedEye;
+            if (Skills.TrainedEye.LevelChecked() && CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || CurrentRecipe.ItemResult.Value.AlwaysCollectable) && CurrentRecipe.CanHq) return Skills.TrainedEye;
             if (ShouldMend(act) && CanUse(Skills.MastersMend)) return Skills.MastersMend;
 
             if (CanUse(Skills.Tricks))
@@ -233,10 +235,15 @@ namespace Artisan.CraftingLogic
             {
                 if (!Service.Configuration.UseQualityStarter && Skills.MuscleMemory.LevelChecked())
                 {
-                    if (CurrentStep == 1 && CanUse(Skills.MuscleMemory) && Calculations.CalculateNewProgress(Skills.MuscleMemory) < MaxProgress) return Skills.MuscleMemory;
-                    if (CurrentStep == 2 && CanUse(Skills.Veneration) && Calculations.CalculateNewProgress(act) < MaxProgress && GetStatus(Buffs.MuscleMemory) != null) return Skills.Veneration;
-                    if ((CurrentStep == 2 || CurrentStep == 3 && GetStatus(Buffs.MuscleMemory) != null) && CanUse(Skills.FinalAppraisal) && !JustUsedFinalAppraisal && Calculations.CalculateNewProgress(act) >= MaxProgress) return Skills.FinalAppraisal;
-                    if (GetStatus(Buffs.MuscleMemory) != null) return act;
+                    if (CanUse(Skills.MuscleMemory) && Calculations.CalculateNewProgress(Skills.MuscleMemory) < MaxProgress) return Skills.MuscleMemory;
+
+                    if (GetStatus(Buffs.MuscleMemory) != null)
+                    {
+                        if (!Skills.IntensiveSynthesis.LevelChecked() && (CurrentCondition == Condition.Good || CurrentCondition == Condition.Excellent) && CanUse(Skills.PreciseTouch)) return Skills.PreciseTouch;
+                        if (GetStatus(Buffs.Veneration) == null && CanUse(Skills.Veneration) && Calculations.CalculateNewProgress(act) < MaxProgress && GetStatus(Buffs.MuscleMemory) != null) return Skills.Veneration;
+                        if (CanUse(Skills.FinalAppraisal) && GetStatus(Buffs.FinalAppraisal) == null && Calculations.CalculateNewProgress(act) >= MaxProgress) return Skills.FinalAppraisal;
+                        return act;
+                    }
                 }
 
                 if (Service.Configuration.UseQualityStarter)

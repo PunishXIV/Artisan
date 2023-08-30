@@ -65,7 +65,7 @@ namespace Artisan.UI
                 ImGui.Spacing();
                 if (CraftingListUI.CurrentProcessedItem != 0)
                 {
-                    ImGuiEx.TextV($"Trying to craft: {CraftingListHelpers.FilteredList[CraftingListUI.CurrentProcessedItem].ItemResult.Value.Name.RawString}");
+                    ImGuiEx.TextV($"Crafting: {CraftingListHelpers.FilteredList[CraftingListUI.CurrentProcessedItem].ItemResult.Value.Name.RawString}");
                     ImGuiEx.TextV($"Overall Progress: {CraftingListFunctions.CurrentIndex + 1} / {CraftingListUI.selectedList.Items.Count}");
                 }
 

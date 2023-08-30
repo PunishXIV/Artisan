@@ -23,6 +23,8 @@ using System.Text.Json;
 using static ECommons.GenericHelpers;
 using Artisan.Autocraft;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using Lumina.Excel.GeneratedSheets;
+using ECommons.Automation;
 
 namespace Artisan.UI
 {
@@ -130,8 +132,8 @@ namespace Artisan.UI
                 if (ImGui.CollapsingHeader("Crafting Stats"))
                 {
                     CurrentCraftMethods.BestSynthesis(out var act);
-                    ImGui.Text($"Control: {CharacterInfo.Control()}");
-                    ImGui.Text($"Craftsmanship: {CharacterInfo.Craftsmanship()}");
+                    ImGui.Text($"Control: {CharacterInfo.Control}");
+                    ImGui.Text($"Craftsmanship: {CharacterInfo.Craftsmanship}");
                     ImGui.Text($"Current Durability: {CurrentCraft.CurrentDurability}");
                     ImGui.Text($"Max Durability: {CurrentCraft.MaxDurability}");
                     ImGui.Text($"Current Progress: {CurrentCraft.CurrentProgress}");
@@ -226,6 +228,21 @@ namespace Artisan.UI
                     }
                     ImGui.Text($"ATools IPC: {RetainerInfo.ATools} {RetainerInfo.GetRetainerItemCount(5111, false)}");
                 }
+
+                if (ImGui.CollapsingHeader("Collectables"))
+                {
+                    foreach (var item in LuminaSheets.ItemSheet.Values.Where(x => x.IsCollectable).OrderBy(x => x.LevelItem.Row))
+                    {
+                        if (Svc.Data.GetExcelSheet<CollectablesShopItem>().TryGetFirst(x => x.Item.Row == item.RowId, out var collectibleSheetItem))
+                        {
+                            if (collectibleSheetItem != null)
+                            {
+                                ImGui.Text($"{item.Name} - {collectibleSheetItem.CollectablesShopRewardScrip.Value.LowReward}");
+                            }
+                        }
+                    }
+                }
+
                 ImGui.Separator();
 
                 if (ImGui.Button("Repair all"))
@@ -262,62 +279,6 @@ namespace Artisan.UI
                 {
                     Spiritbond.ExtractFirstMateria();
                 }
-
-                try
-                {
-                    var gcsupply = (AgentGrandCompanySupply*)AgentModule.Instance()->GetAgentByInternalId(AgentId.GrandCompanySupply);
-
-                    for (int i = 0; i < gcsupply->SupplyProvisioningData->SupplyDataSpan.Length; i++)
-                    {
-                        var item = gcsupply->SupplyProvisioningData->SupplyDataSpan[i];
-                        ImGui.Text($"{item.ItemName.ExtractText()}");
-                    }
-
-                    for (int i = 0; i < gcsupply->SupplyProvisioningData->ProvisioningDataSpan.Length; i++)
-                    {
-                        var item = gcsupply->SupplyProvisioningData->ProvisioningDataSpan[i];
-                        ImGui.Text($"{item.ItemName.ExtractText()}");
-                    }
-                }
-                catch
-                {
-
-                }
-
-                if (TryGetAddonByName<AddonGathering>("Gathering", out var addon))
-                {
-                    try
-                    {
-                        ImGui.Text($"{addon->InventoryQuantityTextNode->NodeText}");
-                        for (int i = 0; i <= 800; i += 8)
-                        {
-                            try
-                            {
-                                var ptr = nint.Add((nint)addon, i);
-                                var bytes = Dalamud.Memory.MemoryHelper.ReadRaw(ptr, 16);
-                                var node = ptr.As<AtkTextNode>();
-
-
-                                if (i == 616)
-                                {
-                                    ImGui.Text($"??? {*addon->InventoryQuantityTextNode} {ptr}");
-                                    ImGui.Text($"{node->NodeText}");
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                ImGui.Text($"{e.Message}");
-                            }
-                        }
-
-                    }
-                    catch
-                    {
-
-                    }
-                }
-
-
             }
             catch (Exception e)
             {

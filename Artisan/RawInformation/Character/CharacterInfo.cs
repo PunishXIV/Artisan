@@ -13,48 +13,48 @@ namespace Artisan.RawInformation.Character
 {
     public static class CharacterInfo
     {
-        public static byte? CharacterLevel()
-            => Service.ClientState.LocalPlayer?.Level;
+        public static byte? CharacterLevel => Service.ClientState.LocalPlayer?.Level;
 
-        public static uint? JobID()
-            => Service.ClientState.LocalPlayer?.ClassJob.Id;
+        public static uint? JobID => Service.ClientState.LocalPlayer?.ClassJob.Id;
 
         public static bool IsCrafting { get; set; }
 
-        public static uint CurrentCP =>
-            Service.ClientState.LocalPlayer.CurrentCp;
+        public static uint CurrentCP => Service.ClientState.LocalPlayer.CurrentCp;
 
-        public static uint MaxCP =>
-    Service.ClientState.LocalPlayer.MaxCp;
+        public static uint MaxCP => Service.ClientState.LocalPlayer.MaxCp;
 
-        public static ulong Craftsmanship()
+        public static ulong Craftsmanship
         {
-            CharacterStats.FetchStats();
-            return CharacterStats.Craftsmanship;
+            get
+            {
+                CharacterStats.FetchStats();
+                return CharacterStats.Craftsmanship;
+            }
         }
 
-        public static ulong Control()
+        public static ulong Control
         {
-            CharacterStats.FetchStats();
-            return CharacterStats.Control;
+            get
+            {
+                CharacterStats.FetchStats();
+                return CharacterStats.Control;
+            }
         }
 
         public static bool LevelChecked(this uint id)
         {
             if (LuminaSheets.ActionSheet.TryGetValue(id, out var act1))
             {
-                return CharacterLevel() >= act1.ClassJobLevel;
+                return CharacterLevel >= act1.ClassJobLevel;
             }
             if (LuminaSheets.CraftActions.TryGetValue(id, out var act2))
             {
-                return CharacterLevel() >= act2.ClassJobLevel;
+                return CharacterLevel >= act2.ClassJobLevel;
             }
 
             return false;
         }
-        public static bool CanUseTrainedEye
-            => Service.ClientState?.LocalPlayer?.Level >= CurrentRecipe?.RecipeLevelTable.Value?.ClassJobLevel + 10 && CurrentStep == 1 && Service.ClientState?.LocalPlayer?.Level >= 80;
-
+       
         public static uint HighestLevelTouch()
         {
             bool wasteNots = CurrentCraftMethods.GetStatus(Buffs.WasteNot) != null || CurrentCraftMethods.GetStatus(Buffs.WasteNot2) != null;
@@ -94,7 +94,7 @@ namespace Artisan.RawInformation.Character
 
         internal static bool IsManipulationUnlocked()
         {
-            return JobID() switch
+            return JobID switch
             {
                 8 => QuestUnlocked(67979),
                 9 => QuestUnlocked(68153),
@@ -113,9 +113,9 @@ namespace Artisan.RawInformation.Character
             return QuestManager.IsQuestComplete((uint)v);
         }
 
-        internal static uint CraftLevel() => CharacterLevel() switch
+        internal static uint CraftLevel() => CharacterLevel switch
         {
-            <= 50 => (uint)CharacterLevel(),
+            <= 50 => (uint)CharacterLevel,
             51 => 120,
             52 => 125,
             53 => 130,
