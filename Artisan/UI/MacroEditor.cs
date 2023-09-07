@@ -80,7 +80,7 @@ namespace Artisan.UI
 
                 if (!renameMode)
                 {
-                    ImGui.Text($"Selected Macro: {SelectedMacro.Name}");
+                    ImGui.Text($"Selected Macro: {SelectedMacro.Name.Replace($"%", "%%")}");
                     ImGui.SameLine();
                     if (ImGuiComponents.IconButton(FontAwesomeIcon.Pen))
                     {

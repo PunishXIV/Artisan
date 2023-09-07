@@ -25,6 +25,7 @@ using Artisan.Autocraft;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.GeneratedSheets;
 using ECommons.Automation;
+using FFXIVClientStructs.FFXIV.Client.UI.Info;
 
 namespace Artisan.UI
 {

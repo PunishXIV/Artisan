@@ -110,6 +110,8 @@ namespace Artisan.CraftingLists
 
         public static unsafe void OpenCraftingMenu()
         {
+            if (CurrentCraft.State == CraftingState.Crafting) return;
+
             if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
             {
                 if (Throttler.Throttle(1000))
@@ -134,6 +136,8 @@ namespace Artisan.CraftingLists
 
         public static unsafe void OpenRecipeByID(uint recipeID, bool skipThrottle = false)
         {
+            if (CurrentCraft.State == CraftingState.Crafting) return;
+
             if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
             {
                 if (Throttler.Throttle(500) || skipThrottle)

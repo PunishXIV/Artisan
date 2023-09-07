@@ -899,7 +899,7 @@ internal class ListEditor : Window, IDisposable
     {
         if (!RenameMode)
         {
-            if (IconButtons.IconTextButton(FontAwesomeIcon.Pen, $"{SelectedList.Name}"))
+            if (IconButtons.IconTextButton(FontAwesomeIcon.Pen, $"{SelectedList.Name.Replace($"%", "%%")}"))
             {
                 newName = SelectedList.Name;
                 RenameMode = true;
@@ -909,8 +909,11 @@ internal class ListEditor : Window, IDisposable
         {
             if (ImGui.InputText("###RenameMode", ref newName, 200, ImGuiInputTextFlags.EnterReturnsTrue))
             {
-                SelectedList.Name = newName;
-                P.config.Save();
+                if (newName.Length > 0)
+                {
+                    SelectedList.Name = newName;
+                    P.config.Save();
+                }
                 RenameMode = false;
             }
         }
