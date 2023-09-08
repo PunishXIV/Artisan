@@ -100,7 +100,7 @@ namespace Artisan.CraftingLogic
 
                     if (value == CraftingState.Crafting)
                     {
-                        if (CraftingWindow.MacroTime.Ticks <= 0 && P.config.IRM.ContainsKey((uint)Endurance.RecipeID) && P.config.UserMacros.TryGetFirst(x => x.ID == P.config.IRM[(uint)Endurance.RecipeID], out var macro))
+                        if (CraftingWindow.MacroTime.Ticks <= 0 && P.Config.IRM.ContainsKey((uint)Endurance.RecipeID) && P.Config.UserMacros.TryGetFirst(x => x.ID == P.Config.IRM[(uint)Endurance.RecipeID], out var macro))
                         {
                             Double timeInSeconds = MacroUI.GetMacroLength(macro) + 3; // Counting crafting duration + 2 seconds between crafts.
                             CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);

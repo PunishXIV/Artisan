@@ -24,7 +24,9 @@ using OtterGui.Table;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
+using static Artisan.UI.Tables.IngredientTable;
 
 namespace Artisan.UI.Tables
 {
@@ -42,6 +44,8 @@ namespace Artisan.UI.Tables
         private static float _itemCategoryColumnWidth = 0;
         private static float _gatherItemLocationColumWidth = 0;
         private static float _craftingJobsColumnWidth = 100;
+        private static float _cheapestColumnWidth = 100;
+        private static float _numberForSaleWidth = 100;
 
         public readonly IdColumn _idColumn = new() { Label = "ID" };
         public readonly NameColumn _nameColumn = new() { Label = "Item Name" };
@@ -54,18 +58,23 @@ namespace Artisan.UI.Tables
         public readonly CraftItemsColumn _craftItemsColumn = new() { Label = "Used to Craft" };
         public readonly ItemCategoryColumn _itemCategoryColumn = new() { Label = "Category" };
         public readonly GatherItemLocationColumn _gatherItemLocationColumn = new() { Label = "Gathered Zone" };
+        public readonly CheapestServerColumn _cheapestServerColumn = new() { Label = "Optimal World For Buying" };
+        public readonly NumberForSaleColumn _numberForSaleColumn = new() { Label = "Quantity For Sale (All Worlds)" };
 
         private static bool GatherBuddy =>
-            DalamudReflector.TryGetDalamudPlugin("GatherBuddy", out var gb, false, true);
+            DalamudReflector.TryGetDalamudPlugin("GatherBuddy", out var _, false, true);
 
         private static bool ItemVendor =>
-            DalamudReflector.TryGetDalamudPlugin("Item Vendor Location", out var ivl, false, true);
+            DalamudReflector.TryGetDalamudPlugin("Item Vendor Location", out var _, false, true);
 
         private static bool MonsterLookup =>
-            DalamudReflector.TryGetDalamudPlugin("Monster Loot Hunter", out var mlh, false, true);
+            DalamudReflector.TryGetDalamudPlugin("Monster Loot Hunter", out var _, false, true);
 
         private static bool Marketboard =>
-            DalamudReflector.TryGetDalamudPlugin("Market board", out var mb, false, true);
+            DalamudReflector.TryGetDalamudPlugin("Market board", out var _, false, true);
+
+        private static bool Lifestream =>
+    DalamudReflector.TryGetDalamudPlugin("Lifestream", out var _, false, true);
 
         private static unsafe void SearchItem(uint item) => ItemFinderModule.Instance()->SearchForItem(item);
 
@@ -77,15 +86,15 @@ namespace Artisan.UI.Tables
             : base("IngredientTable", ingredientList)
         {
 
-            if (P.config.DefaultHideInventoryColumn)        _inventoryColumn.Flags          |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.config.DefaultHideRetainerColumn)         _retainerColumn.Flags           |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.config.DefaultHideRemainingColumn)        _remainingColumn.Flags          |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.config.DefaultHideCraftableColumn)        _craftableColumn.Flags          |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.config.DefaultHideCraftableCountColumn)   _craftableCountColumn.Flags     |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.config.DefaultHideCraftItemsColumn)       _craftItemsColumn.Flags         |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.config.DefaultHideCategoryColumn)         _itemCategoryColumn.Flags       |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.config.DefaultHideGatherLocationColumn)   _gatherItemLocationColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.config.DefaultHideIdColumn)               _idColumn.Flags                 |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideInventoryColumn)        _inventoryColumn.Flags          |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideRetainerColumn)         _retainerColumn.Flags           |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideRemainingColumn)        _remainingColumn.Flags          |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideCraftableColumn)        _craftableColumn.Flags          |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideCraftableCountColumn)   _craftableCountColumn.Flags     |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideCraftItemsColumn)       _craftItemsColumn.Flags         |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideCategoryColumn)         _itemCategoryColumn.Flags       |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideGatherLocationColumn)   _gatherItemLocationColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideIdColumn)               _idColumn.Flags                 |= ImGuiTableColumnFlags.DefaultHide;
 
             Headers.Add(_nameColumn);
             Headers.Add(_requiredColumn);
@@ -97,6 +106,11 @@ namespace Artisan.UI.Tables
             Headers.Add(_craftItemsColumn);
             Headers.Add(_itemCategoryColumn);
             Headers.Add(_gatherItemLocationColumn);
+            if (P.Config.UseUniversalis)
+            {
+                Headers.Add(_cheapestServerColumn);
+                Headers.Add(_numberForSaleColumn);
+            }
             Headers.Add(_idColumn);
 
             Sortable = true;
@@ -319,6 +333,126 @@ namespace Artisan.UI.Tables
 
         }
 
+        public sealed class CheapestServerColumn : ColumnString<Ingredient>
+        {
+            public override float Width => _cheapestColumnWidth;
+            public Dictionary<uint, (string World, double Qty, double Cost)> CheapestListings = new();
+
+            public override int Compare(Ingredient lhs, Ingredient rhs)
+            {
+                var lh = lhs.MarketboardData?.LowestWorld;
+                var rh = rhs.MarketboardData?.LowestWorld;
+
+                if (lh == null || rh == null)
+                    return 0;
+
+                return lh.CompareTo(rh);
+            }
+
+            public override string ToName(Ingredient item)
+            {
+                if (item.MarketboardData != null && !CheapestListings.ContainsKey(item.Data.RowId))
+                {
+                    double totalCost = 0;
+                    double qty = 0;
+
+
+                    double currentWorldCost = 0;
+                    string currentWorld = "";
+                    double currentWorldQty = 0;
+
+                    foreach (var world in item.MarketboardData.AllListings.Select(x => x.World))
+                    {
+                        totalCost = 0;
+                        qty = 0;
+
+                        foreach (var listing in item.MarketboardData.AllListings.Where(x => x.World == world).OrderBy(x => x.TotalPrice))
+                        {
+                            if (qty >= item.Required) break;
+                            qty += listing.Quantity;
+                            totalCost += listing.TotalPrice;
+                        }
+
+                        if ((totalCost < currentWorldCost && qty >= item.Required) || currentWorldCost == 0 || (qty > currentWorldQty && qty < item.Required))
+                        {
+                            currentWorldCost = totalCost;
+                            currentWorld = world;
+                            currentWorldQty = qty;
+                        }
+                    }
+
+                    CheapestListings.TryAdd(item.Data.RowId, new(currentWorld, currentWorldQty, currentWorldCost));
+
+                    item.MarketboardData.LowestWorld = currentWorld;
+                }
+
+                if (CheapestListings.ContainsKey(item.Data.RowId))
+                {
+                    var listing = CheapestListings[item.Data.RowId];
+
+                    return $"{listing.World} - Cost {listing.Cost.ToString("N0")}, Qty {listing.Qty}";
+
+                }
+
+                return "ERROR - No Listings (Possible Universalis Connection Issue)";
+            }
+
+            public override void DrawColumn(Ingredient item, int _)
+            {
+                ImGui.Text($"{ToName(item)}");
+
+                if (Lifestream && CheapestListings.ContainsKey(item.Data.RowId))
+                {
+                    var server = CheapestListings[item.Data.RowId].World;
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.BeginTooltip();
+                        ImGui.Text($"Click to travel to {server}.");
+                        ImGui.EndTooltip();
+                    }
+
+                    if (ImGui.IsItemClicked())
+                    {
+                        Chat.Instance.SendMessage($"/li {server}");
+                    }
+                }
+            }
+        }
+
+        public sealed class NumberForSaleColumn : ColumnString<Ingredient>
+        {
+            public override float Width => _numberForSaleWidth;
+
+            public override int Compare(Ingredient lhs, Ingredient rhs)
+            {
+                var lh = lhs.MarketboardData?.TotalQuantityOfUnits;
+                var rh = rhs.MarketboardData?.TotalQuantityOfUnits;
+
+                if (lh == null || rh == null)
+                    return 0;
+
+                return lh.Value.CompareTo(rh.Value);
+            }
+
+            public override string ToName(Ingredient item)
+            {
+                if (item.MarketboardData != null)
+                {
+                    var qty = item.MarketboardData.TotalQuantityOfUnits;
+                    var listings = item.MarketboardData.TotalNumberOfListings;
+
+                    return $"{listings.Value.ToString("N0")} listings - {qty.Value.ToString("N0")} total items";
+                }
+                return "";
+            }
+
+            public override void DrawColumn(Ingredient item, int _)
+            {
+                ImGui.Text($"{ToName(item)}");
+            }
+        }
+
+
         public sealed class GatherItemLocationColumn : ItemFilterColumn
         {
             public GatherItemLocationColumn()
@@ -415,7 +549,7 @@ namespace Artisan.UI.Tables
                 => FlagNames;
 
             public sealed override ItemFilter FilterValue
-                => P.config.ShowItemsV1;
+                => P.Config.ShowItemsV1;
 
             protected sealed override void SetValue(ItemFilter f, bool v)
             {
@@ -423,8 +557,8 @@ namespace Artisan.UI.Tables
                 if (tmp == FilterValue)
                     return;
 
-                P.config.ShowItemsV1 = tmp;
-                P.config.Save();
+                P.Config.ShowItemsV1 = tmp;
+                P.Config.Save();
             }
         }
 

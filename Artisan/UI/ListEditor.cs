@@ -84,7 +84,7 @@ internal class ListEditor : Window, IDisposable
     public ListEditor(int listId)
         : base($"List Editor###{listId}")
     {
-        SelectedList = P.config.CraftingLists.First(x => x.ID == listId);
+        SelectedList = P.Config.CraftingLists.First(x => x.ID == listId);
         RecipeSelector = new RecipeSelector(SelectedList.ID);
         RecipeSelector.ItemAdded += RefreshTable;
         RecipeSelector.ItemDeleted += RefreshTable;
@@ -96,8 +96,8 @@ internal class ListEditor : Window, IDisposable
         RespectCloseHotkey = false;
         GenerateTableAsync();
 
-        if (P.config.DefaultHQCrafts) HQSubcraftsOnly = true;
-        if (P.config.DefaultColourValidation) ColourValidation = true;
+        if (P.Config.DefaultHQCrafts) HQSubcraftsOnly = true;
+        if (P.Config.DefaultColourValidation) ColourValidation = true;
     }
 
     private async Task GenerateTableAsync()
@@ -114,7 +114,7 @@ internal class ListEditor : Window, IDisposable
 
     public override void PreDraw()
     {
-        if (!P.config.DisableTheme)
+        if (!P.Config.DisableTheme)
         {
             P.Style.Push();
             ImGui.PushFont(P.CustomFont);
@@ -186,7 +186,7 @@ internal class ListEditor : Window, IDisposable
         ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - export.X - btn.X - 3f);
         if (ImGui.Button("Export List"))
         {
-            ImGui.SetClipboardText(JsonConvert.SerializeObject(P.config.CraftingLists.Where(x => x.ID == SelectedList.ID).First()).ToBase64());
+            ImGui.SetClipboardText(JsonConvert.SerializeObject(P.Config.CraftingLists.Where(x => x.ID == SelectedList.ID).First()).ToBase64());
             Notify.Success("List exported to clipboard.");
         }
     }
@@ -285,7 +285,7 @@ internal class ListEditor : Window, IDisposable
                         new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth });
 
                 RecipeSelector.Items = SelectedList.Items.Distinct().ToList();
-                Table = new(Ingredient.GenerateList(SelectedList).Result);
+                GenerateTableAsync();
                 Service.Configuration.Save();
                 if (Service.Configuration.ResetTimesToAdd)
                     timesToAdd = 1;
@@ -322,7 +322,7 @@ internal class ListEditor : Window, IDisposable
                         new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth });
 
                 RecipeSelector.Items = SelectedList.Items.Distinct().ToList();
-                Table = new(Ingredient.GenerateList(SelectedList).Result);
+                GenerateTableAsync();
                 Service.Configuration.Save();
                 if (Service.Configuration.ResetTimesToAdd)
                     timesToAdd = 1;
@@ -912,7 +912,7 @@ internal class ListEditor : Window, IDisposable
                 if (newName.Length > 0)
                 {
                     SelectedList.Name = newName;
-                    P.config.Save();
+                    P.Config.Save();
                 }
                 RenameMode = false;
             }
@@ -934,10 +934,10 @@ internal class RecipeSelector : ItemSelector<uint>
 
     public RecipeSelector(int list)
         : base(
-            P.config.CraftingLists.First(x => x.ID == list).Items.Distinct().ToList(),
+            P.Config.CraftingLists.First(x => x.ID == list).Items.Distinct().ToList(),
             Flags.Add | Flags.Delete | Flags.Move)
     {
-        List = P.config.CraftingLists.First(x => x.ID == list);
+        List = P.Config.CraftingLists.First(x => x.ID == list);
     }
 
     protected override bool Filtered(int idx)
@@ -968,7 +968,7 @@ internal class RecipeSelector : ItemSelector<uint>
             }
         }
 
-        P.config.Save();
+        P.Config.Save();
 
         return true;
     }
@@ -978,7 +978,7 @@ internal class RecipeSelector : ItemSelector<uint>
         var itemId = Items[idx];
         List.Items.RemoveAll(x => x == itemId);
         Items.RemoveAt(idx);
-        P.config.Save();
+        P.Config.Save();
         return true;
     }
 
@@ -1027,7 +1027,7 @@ internal class RecipeSelector : ItemSelector<uint>
         }
 
         Items.Move(idx1, idx2);
-        P.config.Save();
+        P.Config.Save();
         return true;
     }
 }
@@ -1035,7 +1035,7 @@ internal class RecipeSelector : ItemSelector<uint>
 internal class ListFolders : ItemSelector<CraftingList>
 {
     public ListFolders()
-        : base(P.config.CraftingLists, Flags.Add | Flags.Delete | Flags.Move | Flags.Filter | Flags.Duplicate)
+        : base(P.Config.CraftingLists, Flags.Add | Flags.Delete | Flags.Move | Flags.Filter | Flags.Duplicate)
     {
         CurrentIdx = -1;
     }
@@ -1070,8 +1070,8 @@ internal class ListFolders : ItemSelector<CraftingList>
             P.ws.RemoveWindow(window);
         }
 
-        P.config.CraftingLists.RemoveAt(idx);
-        P.config.Save();
+        P.Config.CraftingLists.RemoveAt(idx);
+        P.Config.Save();
         CraftingListUI.selectedList = new CraftingList();
         return true;
     }
@@ -1079,23 +1079,23 @@ internal class ListFolders : ItemSelector<CraftingList>
     protected override bool OnDraw(int idx)
     {
         using var id = ImRaii.PushId(idx);
-        var selected = ImGui.Selectable(P.config.CraftingLists[idx].Name, idx == CurrentIdx);
+        var selected = ImGui.Selectable(P.Config.CraftingLists[idx].Name, idx == CurrentIdx);
         if (selected)
         {
-            if (!P.ws.Windows.Any(x => x.WindowName.Contains(P.config.CraftingLists[idx].ID.ToString())))
+            if (!P.ws.Windows.Any(x => x.WindowName.Contains(P.Config.CraftingLists[idx].ID.ToString())))
             {
                 Tables.Interface.SetupValues();
-                ListEditor editor = new(P.config.CraftingLists[idx].ID);
+                ListEditor editor = new(P.Config.CraftingLists[idx].ID);
             }
             else
             {
                 P.ws.Windows.FindFirst(
-                    x => x.WindowName.Contains(P.config.CraftingLists[idx].ID.ToString()),
+                    x => x.WindowName.Contains(P.Config.CraftingLists[idx].ID.ToString()),
                     out var window);
                 window.BringToFront();
             }
 
-            CraftingListUI.selectedList = P.config.CraftingLists[idx];
+            CraftingListUI.selectedList = P.Config.CraftingLists[idx];
         }
 
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
@@ -1108,7 +1108,7 @@ internal class ListFolders : ItemSelector<CraftingList>
             else
             {
                 CurrentIdx = idx;
-                CraftingListUI.selectedList = P.config.CraftingLists[idx];
+                CraftingListUI.selectedList = P.Config.CraftingLists[idx];
             }
         }
 
@@ -1117,7 +1117,7 @@ internal class ListFolders : ItemSelector<CraftingList>
 
     protected override bool OnDuplicate(string name, int idx)
     {
-        var baseList = P.config.CraftingLists[idx];
+        var baseList = P.Config.CraftingLists[idx];
         CraftingList newList = new CraftingList();
         newList.Name = name;
         newList.SetID();
@@ -1128,7 +1128,7 @@ internal class ListFolders : ItemSelector<CraftingList>
 
     protected override bool OnMove(int idx1, int idx2)
     {
-        P.config.CraftingLists.Move(idx1, idx2);
+        P.Config.CraftingLists.Move(idx1, idx2);
         return true;
     }
 }

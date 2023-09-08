@@ -404,15 +404,15 @@ namespace Artisan.MacroSystem
             ImGui.SameLine();
             if (ImGui.Button($"Unassign Macro From All Recipes (Hold Ctrl)", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())) && ImGui.GetIO().KeyCtrl)
             {
-                var count = P.config.IRM.Where(x => x.Value == selectedAssignMacro.ID).Count();
-                foreach (var macro in P.config.IRM.ToList())
+                var count = P.Config.IRM.Where(x => x.Value == selectedAssignMacro.ID).Count();
+                foreach (var macro in P.Config.IRM.ToList())
                 {
                     if (macro.Value == selectedAssignMacro.ID)
                     {
-                        P.config.IRM.Remove(macro.Key);
+                        P.Config.IRM.Remove(macro.Key);
                     }
                 }
-                P.config.Save();
+                P.Config.Save();
                 if (count > 0)
                     Notify.Success($"Removed from {count} recipes.");
                 else

@@ -64,7 +64,7 @@ namespace Artisan.UI
 
         public override void PreDraw()
         {
-            if (!P.config.DisableTheme)
+            if (!P.Config.DisableTheme)
             {
                 P.Style.Push();
                 ImGui.PushFont(P.CustomFont);
@@ -707,15 +707,15 @@ namespace Artisan.UI
                 }
 
                 ImGui.PushItemWidth(400);
-                if (ImGui.SliderFloat("Delay Between Same Crafts", ref P.config.ListCraftThrottle, 0.2f, 2f, "%.1f"))
+                if (ImGui.SliderFloat("Delay Between Same Crafts", ref P.Config.ListCraftThrottle, 0.2f, 2f, "%.1f"))
                 {
-                    if (P.config.ListCraftThrottle < 0.2f)
-                        P.config.ListCraftThrottle = 0.2f;
+                    if (P.Config.ListCraftThrottle < 0.2f)
+                        P.Config.ListCraftThrottle = 0.2f;
 
-                    if (P.config.ListCraftThrottle > 2f)
-                        P.config.ListCraftThrottle = 2f;
+                    if (P.Config.ListCraftThrottle > 2f)
+                        P.Config.ListCraftThrottle = 2f;
 
-                    P.config.Save();
+                    P.Config.Save();
                 }
 
                 ImGui.Indent();
@@ -723,38 +723,41 @@ namespace Artisan.UI
                 {
                     ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, $"All Column Settings do not have an effect if you have already viewed the ingredients table for a list.");
 
-                    if (ImGui.Checkbox($@"Default Hide ""Inventory"" Column", ref P.config.DefaultHideInventoryColumn))
-                        P.config.Save();
+                    if (ImGui.Checkbox($@"Default Hide ""Inventory"" Column", ref P.Config.DefaultHideInventoryColumn))
+                        P.Config.Save();
 
-                    if (ImGui.Checkbox($"Default Hide \"Retainers\" Column", ref P.config.DefaultHideRetainerColumn))
-                        P.config.Save();
+                    if (ImGui.Checkbox($"Default Hide \"Retainers\" Column", ref P.Config.DefaultHideRetainerColumn))
+                        P.Config.Save();
 
-                    if (ImGui.Checkbox($"Default Hide \"Remaining Needed\" Column", ref P.config.DefaultHideRemainingColumn))
-                        P.config.Save();
+                    if (ImGui.Checkbox($"Default Hide \"Remaining Needed\" Column", ref P.Config.DefaultHideRemainingColumn))
+                        P.Config.Save();
 
-                    if (ImGui.Checkbox($"Default Hide \"Sources\" Column", ref P.config.DefaultHideCraftableColumn))
-                        P.config.Save();
+                    if (ImGui.Checkbox($"Default Hide \"Sources\" Column", ref P.Config.DefaultHideCraftableColumn))
+                        P.Config.Save();
 
-                    if (ImGui.Checkbox($"Default Hide \"Number Craftable\" Column", ref P.config.DefaultHideCraftableCountColumn))
-                        P.config.Save();
+                    if (ImGui.Checkbox($"Default Hide \"Number Craftable\" Column", ref P.Config.DefaultHideCraftableCountColumn))
+                        P.Config.Save();
 
-                    if (ImGui.Checkbox($"Default Hide \"Used to Craft\" Column", ref P.config.DefaultHideCraftItemsColumn))
-                        P.config.Save();
+                    if (ImGui.Checkbox($"Default Hide \"Used to Craft\" Column", ref P.Config.DefaultHideCraftItemsColumn))
+                        P.Config.Save();
 
-                    if (ImGui.Checkbox($"Default Hide \"Category\" Column", ref P.config.DefaultHideCategoryColumn))
-                        P.config.Save();
+                    if (ImGui.Checkbox($"Default Hide \"Category\" Column", ref P.Config.DefaultHideCategoryColumn))
+                        P.Config.Save();
 
-                    if (ImGui.Checkbox($"Default Hide \"Gathered Zone\" Column", ref P.config.DefaultHideGatherLocationColumn))
-                        P.config.Save();
+                    if (ImGui.Checkbox($"Default Hide \"Gathered Zone\" Column", ref P.Config.DefaultHideGatherLocationColumn))
+                        P.Config.Save();
 
-                    if (ImGui.Checkbox($"Default Hide \"ID\" Column", ref P.config.DefaultHideIdColumn))
-                        P.config.Save();
+                    if (ImGui.Checkbox($"Default Hide \"ID\" Column", ref P.Config.DefaultHideIdColumn))
+                        P.Config.Save();
 
-                    if (ImGui.Checkbox($"Default \"Only show HQ Crafts\" Enabled", ref P.config.DefaultHQCrafts))
-                        P.config.Save();
+                    if (ImGui.Checkbox($"Default \"Only show HQ Crafts\" Enabled", ref P.Config.DefaultHQCrafts))
+                        P.Config.Save();
 
-                    if (ImGui.Checkbox($"Default \"Colour Validation\" Enabled", ref P.config.DefaultColourValidation))
-                        P.config.Save();
+                    if (ImGui.Checkbox($"Default \"Colour Validation\" Enabled", ref P.Config.DefaultColourValidation))
+                        P.Config.Save();
+
+                    if (ImGui.Checkbox($"Fetch Prices from Universalis (Slower Load Time)", ref P.Config.UseUniversalis))
+                        P.Config.Save();
                 }
 
                 ImGui.Unindent();

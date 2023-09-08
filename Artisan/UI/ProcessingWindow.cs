@@ -31,7 +31,7 @@ namespace Artisan.UI
 
         public override void PreDraw()
         {
-            if (!P.config.DisableTheme)
+            if (!P.Config.DisableTheme)
             {
                 P.Style.Push();
                 ImGui.PushFont(P.CustomFont);

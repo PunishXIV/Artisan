@@ -471,20 +471,20 @@ namespace Artisan.CraftingLists
                     {
                         if (!CLTM.IsBusy)
                         {
-                            if (P.config.ListCraftThrottle < 0.2f)
+                            if (P.Config.ListCraftThrottle < 0.2f)
                             {
                                 CraftingListUI.Processing = false;
                                 return;
                             }
 
-                            if (P.config.ListCraftThrottle > 2)
+                            if (P.Config.ListCraftThrottle > 2)
                             {
-                                P.config.ListCraftThrottle = 2;
-                                P.config.Save();
+                                P.Config.ListCraftThrottle = 2;
+                                P.Config.Save();
                             }
 
                             CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
-                            CLTM.DelayNext("CraftListDelay", (int)(P.config.ListCraftThrottle * 1000));
+                            CLTM.DelayNext("CraftListDelay", (int)(P.Config.ListCraftThrottle * 1000));
                             CLTM.Enqueue(() => { CurrentCraftMethods.RepeatActualCraft(); }, "ListCraft");
 
                             return;

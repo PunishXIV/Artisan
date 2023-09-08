@@ -71,11 +71,11 @@ namespace Artisan.MacroSystem
         public static bool GetMacro(uint recipeID, out Macro macro)
         {
             macro = null;
-            if (P.config.IRM.ContainsKey(recipeID))
+            if (P.Config.IRM.ContainsKey(recipeID))
             {
-                if (P.config.UserMacros.Any(x => x.ID == P.config.IRM[recipeID]))
+                if (P.Config.UserMacros.Any(x => x.ID == P.Config.IRM[recipeID]))
                 {
-                    macro = P.config.UserMacros.First(x => x.ID == P.config.IRM[recipeID]);
+                    macro = P.Config.UserMacros.First(x => x.ID == P.Config.IRM[recipeID]);
                     return true;
                 }
             }

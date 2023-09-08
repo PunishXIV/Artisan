@@ -134,13 +134,13 @@ namespace Artisan.CraftingLists
                 ImGui.Text("Pre-craft Items");
                 ImGui.InputTextMultiline("###PrecraftItems", ref importListPreCraft, 5000000, new Vector2(ImGui.GetContentRegionAvail().X, 100));
 
-                if (!P.config.DefaultListQuickSynth)
+                if (!P.Config.DefaultListQuickSynth)
                     ImGui.Checkbox("Import as Quick Synth", ref precraftQS);
                 else
                     ImGui.TextWrapped($@"These items will try to be added as quick synth due to the default setting being enabled.");
                 ImGui.Text("Final Items");
                 ImGui.InputTextMultiline("###FinalItems", ref importListItems, 5000000, new Vector2(ImGui.GetContentRegionAvail().X, 100));
-                if (!P.config.DefaultListQuickSynth)
+                if (!P.Config.DefaultListQuickSynth)
                     ImGui.Checkbox("Import as Quick Synth", ref finalitemQS);
                 else
                     ImGui.TextWrapped($@"These items will try to be added as quick synth due to the default setting being enabled.");

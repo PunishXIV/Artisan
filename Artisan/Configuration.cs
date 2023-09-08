@@ -112,6 +112,8 @@ namespace Artisan
         public bool DefaultColourValidation = false;
         public bool DefaultHQCrafts = false;
 
+        public bool UseUniversalis = false;
+
         public int SolverCollectibleMode = 3;
         public ItemFilter ShowItemsV1 { get; set; } = ItemFilter.All;
 

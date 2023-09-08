@@ -204,9 +204,9 @@ namespace Artisan.RawInformation
                     var seqPath = $"TODO_";
                     var firstData = sheet?.Where(x => x.Id.Contains(seqPath)).ToList();
                     string output = "";
-                    foreach (var step in firstData.Where(x => x.Text.Payloads.Count > 0))
+                    foreach (var step in firstData?.Where(x => x.Text.Payloads.Count > 0))
                     {
-                        foreach (var payload in step.Text.ToDalamudString().Payloads.Where(x => x.Type == PayloadType.Unknown))
+                        foreach (var payload in step.Text?.ToDalamudString().Payloads.Where(x => x.Type == PayloadType.Unknown))
                         {
                             var line = step.Text.RawString[10..];
                             output += line;

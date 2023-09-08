@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.IPC;
+using Artisan.Universalis;
 using Dalamud.Logging;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -32,6 +33,7 @@ namespace Artisan.RawInformation
         private Dictionary<int, Recipe?> subRecipes = new();
         public Dictionary<uint, int> UsedInMaterialsList;
         public Dictionary<uint, int> UsedInMaterialsListCount = new();
+        public MarketboardData? MarketboardData;
 
         public Ingredient(uint itemId, int required, CraftingList originList, Dictionary<uint, int> materials)
         {
@@ -88,6 +90,9 @@ namespace Artisan.RawInformation
                     UsedInCrafts.Add(recipe);
             }
             UsedInMaterialsList = materials.Where(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == x.Key && y.UnkData5.Any(z => z.ItemIngredient == Data.RowId))).ToDictionary(x => x.Key, x => x.Value);
+
+            if (P.Config.UseUniversalis)
+            MarketboardData =  P.UniversalsisClient.GetRegionData(itemId);
         }
 
         public virtual event EventHandler<bool>? OnRemainingChange;

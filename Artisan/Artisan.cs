@@ -8,6 +8,7 @@ using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
+using Artisan.Universalis;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
@@ -45,12 +46,13 @@ public unsafe class Artisan : IDalamudPlugin
     internal DalamudPluginInterface pi;
     internal PluginUI PluginUi;
     internal WindowSystem ws;
-    internal Configuration config;
+    internal Configuration Config;
     internal CraftingWindow cw;
     internal RecipeInformation ri;
     internal TaskManager TM;
     internal TaskManager CTM;
     internal IconStorage Icons;
+    internal UniversalisClient UniversalsisClient;
 
     public static bool currentCraftFinished = false;
     public static readonly object _lockObj = new();
@@ -90,7 +92,7 @@ public unsafe class Artisan : IDalamudPlugin
         ri = new();
         Icons = new(pluginInterface, Svc.Data);
         PluginUi = new();
-        config = Service.Configuration;
+        Config = Service.Configuration;
         fm = new FontManager();
         Service.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
         {
@@ -117,6 +119,7 @@ public unsafe class Artisan : IDalamudPlugin
         IPC.IPC.Init();
         RetainerInfo.Init();
         CraftingListContextMenu.Init();
+        UniversalsisClient = new();
 
         ws.AddWindow(new RecipeWindowUI());
         ws.AddWindow(new ProcessingWindow());
@@ -580,6 +583,7 @@ public unsafe class Artisan : IDalamudPlugin
         CustomFont = null;
         LuminaSheets.Dispose();
         CraftingListContextMenu.Dispose();
+        UniversalsisClient.Dispose();
         P = null;
 
     }

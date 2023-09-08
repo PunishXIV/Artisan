@@ -37,7 +37,7 @@ namespace Artisan.UI
 
         public override void PreDraw()
         {
-            if (!P.config.DisableTheme)
+            if (!P.Config.DisableTheme)
             {
                 P.Style.Push();
                 ImGui.PushFont(P.CustomFont);
@@ -110,7 +110,7 @@ namespace Artisan.UI
 
                 if (MacroStep >= macro.MacroActions.Count())
                 {
-                    ImGui.TextWrapped($"Macro has completed. {(!P.config.DisableMacroArtisanRecommendation ? "Now continuing with solver." : "Please continue to manually craft.")}");
+                    ImGui.TextWrapped($"Macro has completed. {(!P.Config.DisableMacroArtisanRecommendation ? "Now continuing with solver." : "Please continue to manually craft.")}");
                 }
             }
             else

@@ -31,7 +31,7 @@ namespace Artisan.UI
 
         public MacroEditor(int macroId) : base($"Macro Editor###{macroId}", ImGuiWindowFlags.None)
         {
-            SelectedMacro = P.config.UserMacros.FirstOrDefault(x => x.ID == macroId);
+            SelectedMacro = P.Config.UserMacros.FirstOrDefault(x => x.ID == macroId);
             this.IsOpen = true;
             P.ws.AddWindow(this);
             this.Size = new Vector2(600, 600);
@@ -41,7 +41,7 @@ namespace Artisan.UI
 
         public override void PreDraw()
         {
-            if (!P.config.DisableTheme)
+            if (!P.Config.DisableTheme)
             {
                 P.Style.Push();
                 ImGui.PushFont(P.CustomFont);
