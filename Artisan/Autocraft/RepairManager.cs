@@ -56,7 +56,7 @@ namespace Artisan.Autocraft
 
         internal static bool ProcessRepair(bool use = true, CraftingList? CraftingList = null)
         {
-            int repairPercent = CraftingList != null ? CraftingList.RepairPercent : Service.Configuration.RepairPercent;
+            int repairPercent = CraftingList != null ? CraftingList.RepairPercent : P.Config.RepairPercent;
             if (GetMinEquippedPercent() >= repairPercent)
             {
                 if (DebugTab.Debug) PluginLog.Verbose("Condition good");
@@ -75,7 +75,7 @@ namespace Artisan.Autocraft
             }
             else
             {
-                if (DebugTab.Debug) PluginLog.Verbose($"Condition bad, condition is {GetMinEquippedPercent()}, config is {Service.Configuration.RepairPercent}");
+                if (DebugTab.Debug) PluginLog.Verbose($"Condition bad, condition is {GetMinEquippedPercent()}, config is {P.Config.RepairPercent}");
                 if (use)
                 {
                     if (DebugTab.Debug) PluginLog.Verbose($"Doing repair");

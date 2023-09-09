@@ -223,7 +223,7 @@ namespace Artisan.UI
                         Svc.PluginInterface.GetIpcSubscriber<bool, object>("Artisan.SetStopRequest").InvokeAction(false);
                     }
 
-                    foreach (var retainer in Service.Configuration.RetainerIDs.Where(x => x.Value == Svc.ClientState.LocalContentId))
+                    foreach (var retainer in P.Config.RetainerIDs.Where(x => x.Value == Svc.ClientState.LocalContentId))
                     {
                         ImGui.Text($"ATools IPC: {RetainerInfo.ATools} {RetainerInfo.GetRetainerInventoryItem(5111, retainer.Key)}");
                     }

@@ -66,7 +66,7 @@ namespace Artisan.RawInformation
 
             if (hotbar == 0)
             {
-                HotBarRef = (AtkUnitBase*)Service.GameGui.GetAddonByName($"_ActionBar", 1);
+                HotBarRef = (AtkUnitBase*)Svc.GameGui.GetAddonByName($"_ActionBar", 1);
                 if (HotBarRef != null)
                 {
                     HotBarSlotRef = HotBarRef->GetNodeById((uint)relativeLocation + 8);
@@ -75,7 +75,7 @@ namespace Artisan.RawInformation
             }
             else
             {
-                HotBarRef = (AtkUnitBase*)Service.GameGui.GetAddonByName($"_ActionBar0{hotbar}", 1);
+                HotBarRef = (AtkUnitBase*)Svc.GameGui.GetAddonByName($"_ActionBar0{hotbar}", 1);
                 if (HotBarRef != null)
                 {
                     HotBarSlotRef = HotBarRef->GetNodeById((uint)relativeLocation + 8);

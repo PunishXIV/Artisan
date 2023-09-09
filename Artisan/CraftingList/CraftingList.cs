@@ -65,7 +65,7 @@ namespace Artisan.CraftingLists
         {
             var rng = new Random();
             var proposedRNG = rng.Next(1, 50000);
-            while (Service.Configuration.UserMacros.Where(x => x.ID == proposedRNG).Any())
+            while (P.Config.UserMacros.Where(x => x.ID == proposedRNG).Any())
             {
                 proposedRNG = rng.Next(1, 50000);
             }
@@ -89,11 +89,11 @@ namespace Artisan.CraftingLists
         {
             if (list.Items.Count() == 0 && !isNew) return false;
 
-            list.SkipIfEnough = Service.Configuration.DefaultListSkip;
-            list.Materia = Service.Configuration.DefaultListMateria;
-            list.Repair = Service.Configuration.DefaultListRepair;
-            list.RepairPercent = Service.Configuration.DefaultListRepairPercent;
-            list.AddAsQuickSynth = Service.Configuration.DefaultListQuickSynth;
+            list.SkipIfEnough = P.Config.DefaultListSkip;
+            list.Materia = P.Config.DefaultListMateria;
+            list.Repair = P.Config.DefaultListRepair;
+            list.RepairPercent = P.Config.DefaultListRepairPercent;
+            list.AddAsQuickSynth = P.Config.DefaultListQuickSynth;
 
             if (list.AddAsQuickSynth)
             {
@@ -103,8 +103,8 @@ namespace Artisan.CraftingLists
                 }
             }
 
-            Service.Configuration.CraftingLists.Add(list);
-            Service.Configuration.Save();
+            P.Config.CraftingLists.Add(list);
+            P.Config.Save();
             return true;
         }
 
@@ -158,8 +158,8 @@ namespace Artisan.CraftingLists
 
         internal static unsafe void ProcessList(CraftingList selectedList)
         {
-            var isCrafting = Service.Condition[ConditionFlag.Crafting];
-            var preparing = Service.Condition[ConditionFlag.PreparingToCraft];
+            var isCrafting = Svc.Condition[ConditionFlag.Crafting];
+            var preparing = Svc.Condition[ConditionFlag.PreparingToCraft];
             Materials ??= selectedList.ListMaterials();
 
             if (Paused)
@@ -263,7 +263,7 @@ namespace Artisan.CraftingLists
             {
                 if (Throttler.Throttle(500))
                 {
-                    Service.ChatGui.PrintError($"Insufficient materials for {recipe.ItemResult.Value.Name.ExtractText()}. Moving on.");
+                    Svc.Chat.PrintError($"Insufficient materials for {recipe.ItemResult.Value.Name.ExtractText()}. Moving on.");
                     var currentRecipe = selectedList.Items[CurrentIndex];
 
                     while (currentRecipe == selectedList.Items[CurrentIndex])
@@ -279,7 +279,7 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if (Service.ClientState.LocalPlayer.ClassJob.Id != recipe.CraftType.Value.RowId + 8)
+            if (Svc.ClientState.LocalPlayer.ClassJob.Id != recipe.CraftType.Value.RowId + 8)
             {
                 if (isCrafting && !preparing)
                     return;
@@ -296,7 +296,7 @@ namespace Artisan.CraftingLists
                 {
                     if (!SwitchJobGearset(recipe.CraftType.Value.RowId + 8))
                     {
-                        Service.ChatGui.PrintError($"Gearset not found for {LuminaSheets.ClassJobSheet[recipe.CraftType.Value.RowId + 8].Name.RawString}. Moving on.");
+                        Svc.Chat.PrintError($"Gearset not found for {LuminaSheets.ClassJobSheet[recipe.CraftType.Value.RowId + 8].Name.RawString}. Moving on.");
                         var currentRecipe = selectedList.Items[CurrentIndex];
 
                         while (currentRecipe == selectedList.Items[CurrentIndex])
@@ -313,9 +313,9 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if (Service.ClientState.LocalPlayer.Level < recipe.RecipeLevelTable.Value.ClassJobLevel - 5 && Service.ClientState.LocalPlayer.ClassJob.Id == recipe.CraftType.Value.RowId + 8 && !isCrafting && !preparing)
+            if (Svc.ClientState.LocalPlayer.Level < recipe.RecipeLevelTable.Value.ClassJobLevel - 5 && Svc.ClientState.LocalPlayer.ClassJob.Id == recipe.CraftType.Value.RowId + 8 && !isCrafting && !preparing)
             {
-                Service.ChatGui.PrintError("Insufficient level to craft this item. Moving on.");
+                Svc.Chat.PrintError("Insufficient level to craft this item. Moving on.");
                 var currentRecipe = selectedList.Items[CurrentIndex];
 
                 while (currentRecipe == selectedList.Items[CurrentIndex])
@@ -336,7 +336,7 @@ namespace Artisan.CraftingLists
             if (!Spiritbond.ExtractMateriaTask(selectedList.Materia, isCrafting, preparing))
                 return;
 
-            if (selectedList.Repair && !RepairManager.ProcessRepair(false, selectedList) && ((Service.Configuration.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!Service.Configuration.Materia)))
+            if (selectedList.Repair && !RepairManager.ProcessRepair(false, selectedList) && ((P.Config.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!P.Config.Materia)))
             {
                 if (RecipeWindowOpen() && Svc.Condition[ConditionFlag.Crafting])
                 {

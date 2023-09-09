@@ -409,7 +409,7 @@ namespace Artisan.FCWorkshops
 
                 }
             }
-            Service.Configuration.Save();
+            P.Config.Save();
 
         }
     }

@@ -41,9 +41,9 @@ namespace Artisan
 
         public override void Draw()
         {
-            if (!Service.Configuration.DisableMiniMenu)
+            if (!P.Config.DisableMiniMenu)
             {
-                if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] || Service.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
+                if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] || Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
                     DrawOptions();
 
                 DrawEnduranceCounter();
@@ -72,7 +72,7 @@ namespace Artisan
                     if (addon->SupplyRadioButton->AtkComponentBase.UldManager.NodeList[1] != null && addon->SupplyRadioButton->AtkComponentBase.UldManager.NodeList[1]->IsVisible)
                         return;
 
-                    var timerWindow = Service.GameGui.GetAddonByName("GrandCompanySupplyList");
+                    var timerWindow = Svc.GameGui.GetAddonByName("GrandCompanySupplyList");
                     if (timerWindow == IntPtr.Zero)
                         return;
 
@@ -133,12 +133,12 @@ namespace Artisan
             {
                 try
                 {
-                    var subcontext = (AtkUnitBase*)Service.GameGui.GetAddonByName("AddonContextSub");
+                    var subcontext = (AtkUnitBase*)Svc.GameGui.GetAddonByName("AddonContextSub");
 
                     if (subcontext != null && subcontext->IsVisible)
                         return;
 
-                    var timerWindow = Service.GameGui.GetAddonByName("ContentsInfoDetail");
+                    var timerWindow = Svc.GameGui.GetAddonByName("ContentsInfoDetail");
                     if (timerWindow == IntPtr.Zero)
                         return;
 
@@ -281,7 +281,7 @@ namespace Artisan
         {
             try
             {
-                var subWindow = Service.GameGui.GetAddonByName("SubmarinePartsMenu", 1);
+                var subWindow = Svc.GameGui.GetAddonByName("SubmarinePartsMenu", 1);
                 if (subWindow == IntPtr.Zero)
                     return;
 
@@ -423,7 +423,7 @@ namespace Artisan
 
         public unsafe static void DrawOptions()
         {
-            var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+            var recipeWindow = Svc.GameGui.GetAddonByName("RecipeNote", 1);
             if (recipeWindow == IntPtr.Zero)
                 return;
 
@@ -443,7 +443,7 @@ namespace Artisan
                     if (!node->IsVisible)
                         return;
 
-                    if (Service.Configuration.LockMiniMenu)
+                    if (P.Config.LockMiniMenu)
                     {
                         var position = AtkResNodeFunctions.GetNodePosition(node);
                         var scale = AtkResNodeFunctions.GetNodeScale(node);
@@ -453,7 +453,7 @@ namespace Artisan
 
                         ImGuiHelpers.ForceNextWindowMainViewport();
 
-                        if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || Service.Configuration.LockMiniMenu)
+                        if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenu)
                         {
                             ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.Always);
                             AtkResNodeFunctions.ResetPosition = false;
@@ -485,12 +485,12 @@ namespace Artisan
                 P.PluginUi.IsOpen = true;
             }
 
-            bool autoMode = Service.Configuration.AutoMode;
+            bool autoMode = P.Config.AutoMode;
 
             if (ImGui.Checkbox("Automatic Action Execution Mode", ref autoMode))
             {
-                Service.Configuration.AutoMode = autoMode;
-                Service.Configuration.Save();
+                P.Config.AutoMode = autoMode;
+                P.Config.Save();
             }
 
             bool enable = Endurance.Enable;
@@ -503,7 +503,7 @@ namespace Artisan
 
         public unsafe static void DrawMacroOptions()
         {
-            var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+            var recipeWindow = Svc.GameGui.GetAddonByName("RecipeNote", 1);
             if (recipeWindow == IntPtr.Zero)
                 return;
 
@@ -518,7 +518,7 @@ namespace Artisan
             {
                 var node = addonPtr->UldManager.NodeList[1];
 
-                if (Service.Configuration.UserMacros.Count == 0)
+                if (P.Config.UserMacros.Count == 0)
                     return;
 
                 if (!node->IsVisible)
@@ -530,7 +530,7 @@ namespace Artisan
                 var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
 
                 ImGuiHelpers.ForceNextWindowMainViewport();
-                if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || Service.Configuration.LockMiniMenu)
+                if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenu)
                 {
                     ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.FirstUseEver);
                     AtkResNodeFunctions.ResetPosition = false;
@@ -555,21 +555,21 @@ namespace Artisan
                 if (Endurance.RecipeID != 0)
                 {
                     ImGui.Text($"Use a macro for this recipe ({Endurance.RecipeName})");
-                    string? preview = Service.Configuration.IRM.TryGetValue((uint)Endurance.RecipeID, out var prevMacro) ? Service.Configuration.UserMacros.First(x => x.ID == prevMacro).Name : "";
+                    string? preview = P.Config.IRM.TryGetValue((uint)Endurance.RecipeID, out var prevMacro) ? P.Config.UserMacros.First(x => x.ID == prevMacro).Name : "";
                     if (ImGui.BeginCombo("", preview))
                     {
                         if (ImGui.Selectable(""))
                         {
-                            Service.Configuration.IRM.Remove((uint)Endurance.RecipeID);
-                            Service.Configuration.Save();
+                            P.Config.IRM.Remove((uint)Endurance.RecipeID);
+                            P.Config.Save();
                         }
-                        foreach (var macro in Service.Configuration.UserMacros)
+                        foreach (var macro in P.Config.UserMacros)
                         {
-                            bool selected = Service.Configuration.IRM.TryGetValue((uint)Endurance.RecipeID, out var selectedMacro);
+                            bool selected = P.Config.IRM.TryGetValue((uint)Endurance.RecipeID, out var selectedMacro);
                             if (ImGui.Selectable(macro.Name, selected))
                             {
-                                Service.Configuration.IRM[(uint)Endurance.RecipeID] = macro.ID;
-                                Service.Configuration.Save();
+                                P.Config.IRM[(uint)Endurance.RecipeID] = macro.ID;
+                                P.Config.Save();
                             }
                         }
 
@@ -586,7 +586,7 @@ namespace Artisan
             if (Endurance.RecipeID == 0)
                 return;
 
-            var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+            var recipeWindow = Svc.GameGui.GetAddonByName("RecipeNote", 1);
             if (recipeWindow == IntPtr.Zero)
                 return;
 
@@ -636,21 +636,21 @@ namespace Artisan
                 ImGui.Text("Craft X Times:");
                 ImGui.SameLine();
                 ImGui.PushItemWidth(110f * scale.X);
-                if (ImGui.InputInt($"###TimesRepeat{node->NodeID}", ref Service.Configuration.CraftX))
+                if (ImGui.InputInt($"###TimesRepeat{node->NodeID}", ref P.Config.CraftX))
                 {
-                    if (Service.Configuration.CraftX < 0)
-                        Service.Configuration.CraftX = 0;
+                    if (P.Config.CraftX < 0)
+                        P.Config.CraftX = 0;
 
-                    if (Service.Configuration.CraftX > craftableCount)
-                        Service.Configuration.CraftX = craftableCount;
+                    if (P.Config.CraftX > craftableCount)
+                        P.Config.CraftX = craftableCount;
 
                 }
                 ImGui.SameLine();
-                if (Service.Configuration.CraftX > 0)
+                if (P.Config.CraftX > 0)
                 {
-                    if (ImGui.Button($"Craft {Service.Configuration.CraftX}"))
+                    if (ImGui.Button($"Craft {P.Config.CraftX}"))
                     {
-                        Service.Configuration.CraftingX = true;
+                        P.Config.CraftingX = true;
                         Endurance.Enable = true;
                     }
                 }
@@ -658,8 +658,8 @@ namespace Artisan
                 {
                     if (ImGui.Button($"Craft All ({craftableCount})"))
                     {
-                        Service.Configuration.CraftX = craftableCount;
-                        Service.Configuration.CraftingX = true;
+                        P.Config.CraftX = craftableCount;
+                        P.Config.CraftingX = true;
                         Endurance.Enable = true;
                     }
                 }

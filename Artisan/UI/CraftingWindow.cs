@@ -58,7 +58,7 @@ namespace Artisan.UI
         public static TimeSpan MacroTime = new();
         public override void Draw()
         {
-            if (!Service.Configuration.DisableHighlightedAction)
+            if (!P.Config.DisableHighlightedAction)
                 Hotbars.MakeButtonsGlow(CurrentRecommendation);
 
             if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
@@ -66,28 +66,28 @@ namespace Artisan.UI
                 P.PluginUi.IsOpen = true;
             }
 
-            bool autoMode = Service.Configuration.AutoMode;
+            bool autoMode = P.Config.AutoMode;
 
             if (ImGui.Checkbox("Auto Action Mode", ref autoMode))
             {
                 if (!autoMode)
                     ActionWatching.BlockAction = false;
 
-                Service.Configuration.AutoMode = autoMode;
-                Service.Configuration.Save();
+                P.Config.AutoMode = autoMode;
+                P.Config.Save();
             }
 
             if (autoMode)
             {
-                var delay = Service.Configuration.AutoDelay;
+                var delay = P.Config.AutoDelay;
                 ImGui.PushItemWidth(200);
                 if (ImGui.SliderInt("Set delay (ms)", ref delay, 0, 1000))
                 {
                     if (delay < 0) delay = 0;
                     if (delay > 1000) delay = 1000;
 
-                    Service.Configuration.AutoDelay = delay;
-                    Service.Configuration.Save();
+                    P.Config.AutoDelay = delay;
+                    P.Config.Save();
                 }
             }
 
@@ -103,9 +103,9 @@ namespace Artisan.UI
             if (!Endurance.Enable && DoingTrial)
                 ImGui.Checkbox("Trial Craft Repeat", ref repeatTrial);
 
-            if (Service.Configuration.IRM.ContainsKey((uint)Endurance.RecipeID))
+            if (P.Config.IRM.ContainsKey((uint)Endurance.RecipeID))
             {
-                var macro = Service.Configuration.UserMacros.FirstOrDefault(x => x.ID == Service.Configuration.IRM[(uint)Endurance.RecipeID]);
+                var macro = P.Config.UserMacros.FirstOrDefault(x => x.ID == P.Config.IRM[(uint)Endurance.RecipeID]);
                 ImGui.TextWrapped($"Using Macro: {macro.Name} ({(MacroStep >= macro.MacroActions.Count() ? macro.MacroActions.Count() : MacroStep + 1)}/{macro.MacroActions.Count()})");
 
                 if (MacroStep >= macro.MacroActions.Count())
@@ -118,14 +118,14 @@ namespace Artisan.UI
                 ImGui.TextColored(ImGuiColors.DalamudYellow, "No macro set");
             }
 
-            if (Service.Configuration.CraftingX && Endurance.Enable)
-                ImGui.Text($"Remaining Crafts: {Service.Configuration.CraftX}");
+            if (P.Config.CraftingX && Endurance.Enable)
+                ImGui.Text($"Remaining Crafts: {P.Config.CraftX}");
 
-            if (Service.Configuration.AutoMode)
+            if (P.Config.AutoMode)
             {
-                if (Service.Configuration.IRM.TryGetValue((uint)Endurance.RecipeID, out var prevMacro))
+                if (P.Config.IRM.TryGetValue((uint)Endurance.RecipeID, out var prevMacro))
                 {
-                    Macro? macro = Service.Configuration.UserMacros.First(x => x.ID == prevMacro);
+                    Macro? macro = P.Config.UserMacros.First(x => x.ID == prevMacro);
                     if (macro != null)
                     {
 
@@ -136,7 +136,7 @@ namespace Artisan.UI
                 }
             }
 
-            if (!Service.Configuration.AutoMode)
+            if (!P.Config.AutoMode)
             {
                 ImGui.Text("Semi-Manual Mode");
 

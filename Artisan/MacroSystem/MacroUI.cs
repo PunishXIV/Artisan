@@ -3,6 +3,7 @@ using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
 using ECommons;
+using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
 using ECommons.StringHelpers;
@@ -94,10 +95,10 @@ namespace Artisan.MacroSystem
             else
                 ImGuiEx.CenterColumnText("Macro Editor Select");
 
-            if (Service.Configuration.UserMacros.Count > 0)
+            if (P.Config.UserMacros.Count > 0)
             {
                 float longestName = 0;
-                foreach (var macro in Service.Configuration.UserMacros)
+                foreach (var macro in P.Config.UserMacros)
                 {
                     if (ImGui.CalcTextSize($"{macro.Name} (CP Cost: {GetCPCost(macro)})").Length() > longestName)
                         longestName = ImGui.CalcTextSize($"{macro.Name} (CP Cost: {GetCPCost(macro)})").Length();
@@ -113,9 +114,9 @@ namespace Artisan.MacroSystem
 
                 if (ImGui.BeginChild("##selector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y / 1.85f), true))
                 {
-                    for (int i = 0; i < Service.Configuration.UserMacros.Count; i++)
+                    for (int i = 0; i < P.Config.UserMacros.Count; i++)
                     {
-                        var m = Service.Configuration.UserMacros[i];
+                        var m = P.Config.UserMacros[i];
                         uint cpCost = GetCPCost(m);
                         var selected = ImGui.Selectable($"{m.Name} (CP Cost: {cpCost})###{m.ID}");
 
@@ -123,11 +124,11 @@ namespace Artisan.MacroSystem
                         {
 
                             int i_next = i + (ImGui.GetMouseDragDelta(0).Y < 0f ? -1 : 1);
-                            if (i_next >= 0 && i_next < Service.Configuration.UserMacros.Count)
+                            if (i_next >= 0 && i_next < P.Config.UserMacros.Count)
                             {
-                                Service.Configuration.UserMacros[i] = Service.Configuration.UserMacros[i_next];
-                                Service.Configuration.UserMacros[i_next] = m;
-                                Service.Configuration.Save();
+                                P.Config.UserMacros[i] = P.Config.UserMacros[i_next];
+                                P.Config.UserMacros[i_next] = m;
+                                P.Config.Save();
                                 ImGui.ResetMouseDragDelta();
                             }
                         }
@@ -148,7 +149,7 @@ namespace Artisan.MacroSystem
                         if (ImGui.Selectable(""))
                             selectedAssignMacro = new();
 
-                        foreach (var macro in Service.Configuration.UserMacros)
+                        foreach (var macro in P.Config.UserMacros)
                         {
                             if (ImGui.Selectable(macro.Name))
                             {
@@ -348,8 +349,8 @@ namespace Artisan.MacroSystem
                 ImGui.EndListBox();
             }
 
-            if (ImGui.Checkbox($"Show All Recipes Assigned To", ref Service.Configuration.ShowMacroAssignResults))
-                Service.Configuration.Save();
+            if (ImGui.Checkbox($"Show All Recipes Assigned To", ref P.Config.ShowMacroAssignResults))
+                P.Config.Save();
 
             if (ImGui.Button($"Assign Macro To Recipes", new Vector2(ImGui.GetContentRegionAvail().X / 2, 24f.Scale())))
             {
@@ -375,12 +376,12 @@ namespace Artisan.MacroSystem
                         {
                             if ((ushort)(recipe.RecipeLevelTable.Value.Durability * ((float)recipe.DurabilityFactor / 100)) != durability.Key) continue;
 
-                            if (Service.Configuration.IRM.ContainsKey(recipe.RowId))
-                                Service.Configuration.IRM[recipe.RowId] = selectedAssignMacro.ID;
+                            if (P.Config.IRM.ContainsKey(recipe.RowId))
+                                P.Config.IRM[recipe.RowId] = selectedAssignMacro.ID;
                             else
-                                Service.Configuration.IRM.TryAdd(recipe.RowId, selectedAssignMacro.ID);
+                                P.Config.IRM.TryAdd(recipe.RowId, selectedAssignMacro.ID);
 
-                            if (Service.Configuration.ShowMacroAssignResults)
+                            if (P.Config.ShowMacroAssignResults)
                             {
                                 P.TM.DelayNext(400);
                                 P.TM.Enqueue(() => Notify.Info($"Macro assigned to {recipe.ItemResult.Value.Name.RawString}."));
@@ -394,7 +395,7 @@ namespace Artisan.MacroSystem
                 if (numberFound > 0)
                 {
                     Notify.Success($"Macro assigned to {numberFound} recipes.");
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 }
                 else
                 {
@@ -451,7 +452,7 @@ namespace Artisan.MacroSystem
         public static double GetMacroLength(Macro m)
         {
             double output = 0;
-            var delay = (double)Service.Configuration.AutoDelay + (Service.Configuration.DelayRecommendation ? Service.Configuration.RecommendationDelay : 0);
+            var delay = (double)P.Config.AutoDelay + (P.Config.DelayRecommendation ? P.Config.RecommendationDelay : 0);
             var delaySeconds = delay / 1000;
 
             foreach (var act in m.MacroActions)
@@ -563,14 +564,14 @@ namespace Artisan.MacroSystem
                                 if (macro.ID != 0)
                                     if (macro.Save())
                                     {
-                                        Service.ChatGui.Print($"{macro.Name} has been saved.");
+                                        Svc.Chat.Print($"{macro.Name} has been saved.");
                                     }
                                     else
                                     {
-                                        Service.ChatGui.PrintError("Unable to save macro. Please check your clipboard contains a working macro with actions.");
+                                        Svc.Chat.PrintError("Unable to save macro. Please check your clipboard contains a working macro with actions.");
                                     }
                                 else
-                                    Service.ChatGui.PrintError("Unable to parse clipboard. Please check your clipboard contains a working macro with actions.");
+                                    Svc.Chat.PrintError("Unable to parse clipboard. Please check your clipboard contains a working macro with actions.");
                             }
                             catch (Exception e)
                             {
@@ -631,7 +632,7 @@ namespace Artisan.MacroSystem
                             var act = LuminaSheets.CraftActions.Values.FirstOrDefault(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0);
                             if (act == null)
                             {
-                                Service.ChatGui.PrintError($"Unable to parse action: {action}");
+                                Svc.Chat.PrintError($"Unable to parse action: {action}");
                                 continue;
                             }
                             macro.MacroActions.Add(act.RowId);
@@ -644,7 +645,7 @@ namespace Artisan.MacroSystem
                             var act = LuminaSheets.ActionSheet.Values.FirstOrDefault(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0);
                             if (act == null)
                             {
-                                Service.ChatGui.PrintError($"Unable to parse action: {action}");
+                                Svc.Chat.PrintError($"Unable to parse action: {action}");
                                 continue;
                             }
                             macro.MacroActions.Add(act.RowId);
@@ -681,7 +682,7 @@ namespace Artisan.MacroSystem
                             var act = LuminaSheets.CraftActions.Values.FirstOrDefault(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0);
                             if (act == null)
                             {
-                                Service.ChatGui.PrintError($"Unable to parse action: {action}");
+                                Svc.Chat.PrintError($"Unable to parse action: {action}");
                                 continue;
                             }
                             macro.MacroActions.Add(act.RowId);
@@ -694,7 +695,7 @@ namespace Artisan.MacroSystem
                             var act = LuminaSheets.ActionSheet.Values.FirstOrDefault(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0);
                             if (act == null)
                             {
-                                Service.ChatGui.PrintError($"Unable to parse action: {action}");
+                                Svc.Chat.PrintError($"Unable to parse action: {action}");
                                 continue;
                             }
                             macro.MacroActions.Add(act.RowId);

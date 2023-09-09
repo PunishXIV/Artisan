@@ -9,24 +9,24 @@ namespace Artisan.Cleanup
     {
         public static void CleanUpIndividualMacros()
         {
-            foreach (var value in Service.Configuration.IRM.ToList())
+            foreach (var value in P.Config.IRM.ToList())
             {
-                if (!Service.Configuration.UserMacros.Any(x => x.ID == value.Value))
-                    Service.Configuration.IRM.Remove(value.Key);
+                if (!P.Config.UserMacros.Any(x => x.ID == value.Value))
+                    P.Config.IRM.Remove(value.Key);
             }
-            Service.Configuration.Save();
+            P.Config.Save();
         }
 
         //TODO Remove after 2 months (Mid July?)
         public static void TransitionMacros()
         {
-            foreach (var macro in Service.Configuration.IndividualMacros)
+            foreach (var macro in P.Config.IndividualMacros)
             {
                 if (macro.Value is null) continue;
-                Service.Configuration.IRM.TryAdd(macro.Key, macro.Value.ID);
+                P.Config.IRM.TryAdd(macro.Key, macro.Value.ID);
             }
-            Service.Configuration.IndividualMacros.Clear();
-            Service.Configuration.Save();
+            P.Config.IndividualMacros.Clear();
+            P.Config.Save();
         }
     }
 }

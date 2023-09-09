@@ -84,6 +84,9 @@ namespace Artisan
         public bool RequestToResumeDuty { get; set; } = false;
         public int RequestToResumeDelay { get; set; } = 5;
 
+        public bool PlaySoundFinishEndurance = false;
+        public bool PlaySoundFinishList = false;
+
         public bool DefaultListMateria = false;   
         public bool DefaultListSkip = false;
         public bool DefaultListRepair = false;

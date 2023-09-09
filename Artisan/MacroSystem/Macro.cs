@@ -52,7 +52,7 @@ namespace Artisan.MacroSystem
         {
             var rng = new Random();
             var proposedRNG = rng.Next(1, 50000);
-            while (Service.Configuration.UserMacros.Where(x => x.ID == proposedRNG).Any())
+            while (P.Config.UserMacros.Where(x => x.ID == proposedRNG).Any())
             {
                 proposedRNG = rng.Next(1, 50000);
             }
@@ -63,8 +63,8 @@ namespace Artisan.MacroSystem
         {
             if (macro.MacroActions.Count() == 0 && !isNew) return false;
 
-            Service.Configuration.UserMacros.Add(macro);
-            Service.Configuration.Save();
+            P.Config.UserMacros.Add(macro);
+            P.Config.Save();
             return true;
         }
 

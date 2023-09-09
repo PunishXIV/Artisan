@@ -441,18 +441,18 @@ namespace Artisan.UI
         {
             ImGui.TextWrapped($"Here you can change some settings Artisan will use. Some of these can also be toggled during a craft.");
             ImGui.TextWrapped($"In order to use Artisan's manual highlight, please slot every crafting action you have unlocked to a visible hotbar.");
-            bool autoEnabled = Service.Configuration.AutoMode;
-            bool delayRec = Service.Configuration.DelayRecommendation;
-            bool failureCheck = Service.Configuration.DisableFailurePrediction;
-            int maxQuality = Service.Configuration.MaxPercentage;
-            bool useTricksGood = Service.Configuration.UseTricksGood;
-            bool useTricksExcellent = Service.Configuration.UseTricksExcellent;
-            bool useSpecialist = Service.Configuration.UseSpecialist;
-            //bool showEHQ = Service.Configuration.ShowEHQ;
-            //bool useSimulated = Service.Configuration.UseSimulatedStartingQuality;
-            bool disableGlow = Service.Configuration.DisableHighlightedAction;
-            bool disableToasts = Service.Configuration.DisableToasts;
-            bool disableMini = Service.Configuration.DisableMiniMenu;
+            bool autoEnabled = P.Config.AutoMode;
+            bool delayRec = P.Config.DelayRecommendation;
+            bool failureCheck = P.Config.DisableFailurePrediction;
+            int maxQuality = P.Config.MaxPercentage;
+            bool useTricksGood = P.Config.UseTricksGood;
+            bool useTricksExcellent = P.Config.UseTricksExcellent;
+            bool useSpecialist = P.Config.UseSpecialist;
+            //bool showEHQ = P.Config.ShowEHQ;
+            //bool useSimulated = P.Config.UseSimulatedStartingQuality;
+            bool disableGlow = P.Config.DisableHighlightedAction;
+            bool disableToasts = P.Config.DisableToasts;
+            bool disableMini = P.Config.DisableMiniMenu;
             
             ImGui.Separator();
 
@@ -463,186 +463,187 @@ namespace Artisan.UI
                     if (!autoEnabled)
                         ActionWatching.BlockAction = false;
 
-                    Service.Configuration.AutoMode = autoEnabled;
-                    Service.Configuration.Save();
+                    P.Config.AutoMode = autoEnabled;
+                    P.Config.Save();
                 }
                 ImGuiComponents.HelpMarker($"Automatically use each recommended action.");
                 if (autoEnabled)
                 {
-                    var delay = Service.Configuration.AutoDelay;
+                    var delay = P.Config.AutoDelay;
                     ImGui.PushItemWidth(200);
                     if (ImGui.SliderInt("Execution Delay (ms)###ActionDelay", ref delay, 0, 1000))
                     {
                         if (delay < 0) delay = 0;
                         if (delay > 1000) delay = 1000;
 
-                        Service.Configuration.AutoDelay = delay;
-                        Service.Configuration.Save();
+                        P.Config.AutoDelay = delay;
+                        P.Config.Save();
                     }
                 }
 
                 if (ImGui.Checkbox("Delay Getting Recommendations", ref delayRec))
                 {
-                    Service.Configuration.DelayRecommendation = delayRec;
-                    Service.Configuration.Save();
+                    P.Config.DelayRecommendation = delayRec;
+                    P.Config.Save();
                 }
                 ImGuiComponents.HelpMarker("Use this if you're having issues with Final Appraisal not triggering when it's supposed to.");
 
                 if (delayRec)
                 {
-                    var delay = Service.Configuration.RecommendationDelay;
+                    var delay = P.Config.RecommendationDelay;
                     ImGui.PushItemWidth(200);
                     if (ImGui.SliderInt("Set Delay (ms)###RecommendationDelay", ref delay, 0, 1000))
                     {
                         if (delay < 0) delay = 0;
                         if (delay > 1000) delay = 1000;
 
-                        Service.Configuration.RecommendationDelay = delay;
-                        Service.Configuration.Save();
+                        P.Config.RecommendationDelay = delay;
+                        P.Config.Save();
                     }
                 }
 
-                bool requestStop = Service.Configuration.RequestToStopDuty;
-                bool requestResume = Service.Configuration.RequestToResumeDuty;
-                int resumeDelay = Service.Configuration.RequestToResumeDelay;
+                bool requestStop = P.Config.RequestToStopDuty;
+                bool requestResume = P.Config.RequestToResumeDuty;
+                int resumeDelay = P.Config.RequestToResumeDelay;
 
                 if (ImGui.Checkbox("Have Artisan turn off Endurance / pause lists when Duty Finder is ready", ref requestStop))
                 {
-                    Service.Configuration.RequestToStopDuty = requestStop;
-                    Service.Configuration.Save();
+                    P.Config.RequestToStopDuty = requestStop;
+                    P.Config.Save();
                 }
 
                 if (requestStop)
                 {
                     if (ImGui.Checkbox("Have Artisan resume Endurance / unpause lists after leaving Duty", ref requestResume))
                     {
-                        Service.Configuration.RequestToResumeDuty = requestResume;
-                        Service.Configuration.Save();
+                        P.Config.RequestToResumeDuty = requestResume;
+                        P.Config.Save();
                     }
 
                     if (requestResume)
                     {
                         if (ImGui.SliderInt("Delay to resume (seconds)", ref resumeDelay, 5, 60))
                         {
-                            Service.Configuration.RequestToResumeDelay = resumeDelay;
+                            P.Config.RequestToResumeDelay = resumeDelay;
                         }
                     }
                 }
 
-                if (ImGui.Checkbox("Disable Automatically Equipping Required Items for Crafts", ref Service.Configuration.DontEquipItems))
-                    Service.Configuration.Save();
-            }
+                if (ImGui.Checkbox("Disable Automatically Equipping Required Items for Crafts", ref P.Config.DontEquipItems))
+                    P.Config.Save();
 
+                if (ImGui.Checkbox("Play Sound After Endurance Is Complete", ref P.Config.PlaySoundFinishEndurance))
+                    P.Config.Save();
+            }
             if (ImGui.CollapsingHeader("Macro Settings"))
             {
-                if (ImGui.Checkbox("Skip Macro Steps if Unable To Use Action", ref Service.Configuration.SkipMacroStepIfUnable))
-                    Service.Configuration.Save();
+                if (ImGui.Checkbox("Skip Macro Steps if Unable To Use Action", ref P.Config.SkipMacroStepIfUnable))
+                    P.Config.Save();
 
-                if (ImGui.Checkbox($"Prevent Artisan from Continuing After Macro Finishes", ref Service.Configuration.DisableMacroArtisanRecommendation))
-                    Service.Configuration.Save();
+                if (ImGui.Checkbox($"Prevent Artisan from Continuing After Macro Finishes", ref P.Config.DisableMacroArtisanRecommendation))
+                    P.Config.Save();
             }
             if (ImGui.CollapsingHeader("Solver Settings"))
             {
                 if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[227].Text.RawString}", ref useTricksGood))
                 {
-                    Service.Configuration.UseTricksGood = useTricksGood;
-                    Service.Configuration.Save();
+                    P.Config.UseTricksGood = useTricksGood;
+                    P.Config.Save();
                 }
                 ImGui.SameLine();
                 if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[228].Text.RawString}", ref useTricksExcellent))
                 {
-                    Service.Configuration.UseTricksExcellent = useTricksExcellent;
-                    Service.Configuration.Save();
+                    P.Config.UseTricksExcellent = useTricksExcellent;
+                    P.Config.Save();
                 }
                 ImGuiComponents.HelpMarker($"These 2 options allow you to make {Skills.Tricks.NameOfAction()} a priority when condition is {LuminaSheets.AddonSheet[227].Text.RawString} or {LuminaSheets.AddonSheet[228].Text.RawString}.\n\nThis will replace {Skills.PreciseTouch.NameOfAction()} & {Skills.IntensiveSynthesis.NameOfAction()} usage.\n\n{Skills.Tricks.NameOfAction()} will still be used before learning these or under certain circumstances regardless of settings.");
                 if (ImGui.Checkbox("Use Specialist Actions", ref useSpecialist))
                 {
-                    Service.Configuration.UseSpecialist = useSpecialist;
-                    Service.Configuration.Save();
+                    P.Config.UseSpecialist = useSpecialist;
+                    P.Config.Save();
                 }
                 ImGuiComponents.HelpMarker("If the current job is a specialist, spends any Crafter's Delineation you may have.\nCareful Observation replaces Observe.");
                 ImGui.TextWrapped("Max Quality%%");
                 ImGuiComponents.HelpMarker($"Once quality has reached the below percentage, Artisan will focus on progress only.");
                 if (ImGui.SliderInt("###SliderMaxQuality", ref maxQuality, 0, 100, $"%d%%"))
                 {
-                    Service.Configuration.MaxPercentage = maxQuality;
-                    Service.Configuration.Save();
+                    P.Config.MaxPercentage = maxQuality;
+                    P.Config.Save();
                 }
 
                 ImGui.Text($"Collectible Threshold Breakpoint");
                 ImGuiComponents.HelpMarker("The solver will stop going for quality once a collectible has hit a certain breakpoint.");
 
-                if (ImGui.RadioButton($"Minimum", Service.Configuration.SolverCollectibleMode == 1))
+                if (ImGui.RadioButton($"Minimum", P.Config.SolverCollectibleMode == 1))
                 {
-                    Service.Configuration.SolverCollectibleMode = 1;
-                    Service.Configuration.Save();
+                    P.Config.SolverCollectibleMode = 1;
+                    P.Config.Save();
                 }
                 ImGui.SameLine();
-                if (ImGui.RadioButton($"Middle", Service.Configuration.SolverCollectibleMode == 2))
+                if (ImGui.RadioButton($"Middle", P.Config.SolverCollectibleMode == 2))
                 {
-                    Service.Configuration.SolverCollectibleMode = 2;
-                    Service.Configuration.Save();
+                    P.Config.SolverCollectibleMode = 2;
+                    P.Config.Save();
                 }
                 ImGui.SameLine();
-                if (ImGui.RadioButton($"Maximum", Service.Configuration.SolverCollectibleMode == 3))
+                if (ImGui.RadioButton($"Maximum", P.Config.SolverCollectibleMode == 3))
                 {
-                    Service.Configuration.SolverCollectibleMode = 3;
-                    Service.Configuration.Save();
+                    P.Config.SolverCollectibleMode = 3;
+                    P.Config.Save();
                 }
 
-                if (ImGui.Checkbox($"Use Quality Starter ({Skills.Reflect.NameOfAction()})", ref Service.Configuration.UseQualityStarter))
-                    Service.Configuration.Save();
+                if (ImGui.Checkbox($"Use Quality Starter ({Skills.Reflect.NameOfAction()})", ref P.Config.UseQualityStarter))
+                    P.Config.Save();
 
 
             }
-
             if (ImGui.CollapsingHeader("UI Settings"))
             {
                 if (ImGui.Checkbox("Disable highlighting box", ref disableGlow))
                 {
-                    Service.Configuration.DisableHighlightedAction = disableGlow;
-                    Service.Configuration.Save();
+                    P.Config.DisableHighlightedAction = disableGlow;
+                    P.Config.Save();
                 }
                 ImGuiComponents.HelpMarker("This is the box that highlights the actions on your hotbars for manual play.");
 
                 if (ImGui.Checkbox($"Disable recommendation toasts", ref disableToasts))
                 {
-                    Service.Configuration.DisableToasts = disableToasts;
-                    Service.Configuration.Save();
+                    P.Config.DisableToasts = disableToasts;
+                    P.Config.Save();
                 }
 
                 ImGuiComponents.HelpMarker("These are the pop-ups whenever a new action is recommended.");
 
                 if (ImGui.Checkbox("Disable Recipe List mini-menu", ref disableMini))
                 {
-                    Service.Configuration.DisableMiniMenu = disableMini;
-                    Service.Configuration.Save();
+                    P.Config.DisableMiniMenu = disableMini;
+                    P.Config.Save();
                 }
                 ImGuiComponents.HelpMarker("Hides the mini-menu for config settings in the recipe list. Still shows individual macro menu.");
 
-                bool lockMini = Service.Configuration.LockMiniMenu;
+                bool lockMini = P.Config.LockMiniMenu;
                 if (ImGui.Checkbox("Keep Recipe List mini-menu position attached to Recipe List.", ref lockMini))
                 {
-                    Service.Configuration.LockMiniMenu = lockMini;
-                    Service.Configuration.Save();
+                    P.Config.LockMiniMenu = lockMini;
+                    P.Config.Save();
                 }
                 if (ImGui.Button("Reset Recipe List mini-menu position"))
                 {
                     AtkResNodeFunctions.ResetPosition = true;
                 }
 
-                bool hideQuestHelper = Service.Configuration.HideQuestHelper;
+                bool hideQuestHelper = P.Config.HideQuestHelper;
                 if (ImGui.Checkbox($"Hide Quest Helper", ref hideQuestHelper))
                 {
-                    Service.Configuration.HideQuestHelper = hideQuestHelper;
-                    Service.Configuration.Save();
+                    P.Config.HideQuestHelper = hideQuestHelper;
+                    P.Config.Save();
                 }
 
-                bool hideTheme = Service.Configuration.DisableTheme;
+                bool hideTheme = P.Config.DisableTheme;
                 if (ImGui.Checkbox("Disable Custom Theme", ref hideTheme))
                 {
-                    Service.Configuration.DisableTheme = hideTheme;
-                    Service.Configuration.Save();
+                    P.Config.DisableTheme = hideTheme;
+                    P.Config.Save();
                 }
                 ImGui.SameLine();
                 if (IconButtons.IconTextButton(FontAwesomeIcon.Clipboard, "Copy Theme"))
@@ -651,11 +652,11 @@ namespace Artisan.UI
                     Notify.Success("Theme copied to clipboard");
                 }
 
-                if (ImGui.Checkbox("Disable Allagan Tools Integration With Lists", ref Service.Configuration.DisableAllaganTools))
-                    Service.Configuration.Save();
+                if (ImGui.Checkbox("Disable Allagan Tools Integration With Lists", ref P.Config.DisableAllaganTools))
+                    P.Config.Save();
 
-                if (ImGui.Checkbox("Disable Artisan Context Menu Options", ref Service.Configuration.HideContextMenus))
-                    Service.Configuration.Save();
+                if (ImGui.Checkbox("Disable Artisan Context Menu Options", ref P.Config.HideContextMenus))
+                    P.Config.Save();
 
                 ImGuiComponents.HelpMarker("These are the new options when you right click or press square on a recipe in the recipe list.");
 
@@ -664,46 +665,46 @@ namespace Artisan.UI
             {
                 ImGui.TextWrapped($"These settings will automatically be applied when creating a crafting list.");
 
-                if (ImGui.Checkbox("Skip items you already have enough of", ref Service.Configuration.DefaultListSkip))
+                if (ImGui.Checkbox("Skip items you already have enough of", ref P.Config.DefaultListSkip))
                 {
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 }
 
-                if (ImGui.Checkbox("Automatically Extract Materia", ref Service.Configuration.DefaultListMateria))
+                if (ImGui.Checkbox("Automatically Extract Materia", ref P.Config.DefaultListMateria))
                 {
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 }
 
-                if (ImGui.Checkbox("Automatic Repairs", ref Service.Configuration.DefaultListRepair))
+                if (ImGui.Checkbox("Automatic Repairs", ref P.Config.DefaultListRepair))
                 {
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 }
 
-                if (Service.Configuration.DefaultListRepair)
+                if (P.Config.DefaultListRepair)
                 {
                     ImGui.TextWrapped($"Repair at");
                     ImGui.SameLine();
-                    if (ImGui.SliderInt("###SliderRepairDefault", ref Service.Configuration.DefaultListRepairPercent, 0, 100, $"%d%%"))
+                    if (ImGui.SliderInt("###SliderRepairDefault", ref P.Config.DefaultListRepairPercent, 0, 100, $"%d%%"))
                     {
-                        Service.Configuration.Save();
+                        P.Config.Save();
                     }
                 }
 
-                if (ImGui.Checkbox("Set new items added to list as quick synth", ref Service.Configuration.DefaultListQuickSynth))
+                if (ImGui.Checkbox("Set new items added to list as quick synth", ref P.Config.DefaultListQuickSynth))
                 {
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 }
 
-                if (ImGui.Checkbox($@"Reset ""Number of Times to Add"" after adding to list.", ref Service.Configuration.ResetTimesToAdd))
-                    Service.Configuration.Save();
+                if (ImGui.Checkbox($@"Reset ""Number of Times to Add"" after adding to list.", ref P.Config.ResetTimesToAdd))
+                    P.Config.Save();
 
                 ImGui.PushItemWidth(100);
-                if (ImGui.InputInt("Times to Add with Context Menu", ref Service.Configuration.ContextMenuLoops))
+                if (ImGui.InputInt("Times to Add with Context Menu", ref P.Config.ContextMenuLoops))
                 {
-                    if (Service.Configuration.ContextMenuLoops <= 0)
-                        Service.Configuration.ContextMenuLoops = 1;
+                    if (P.Config.ContextMenuLoops <= 0)
+                        P.Config.ContextMenuLoops = 1;
 
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 }
 
                 ImGui.PushItemWidth(400);

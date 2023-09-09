@@ -5,6 +5,7 @@ using Artisan.RawInformation;
 using Dalamud.Game.Gui;
 using Dalamud.Interface.Windowing;
 using ECommons;
+using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 using System;
@@ -21,7 +22,7 @@ namespace Artisan.UI
         }
         public override bool DrawConditions()
         {
-            if (Service.Configuration.HideQuestHelper || (!QuestList.HasIngredientsForAny() && !QuestList.IsOnSayQuest() && !QuestList.IsOnEmoteQuest()))
+            if (P.Config.HideQuestHelper || (!QuestList.HasIngredientsForAny() && !QuestList.IsOnSayQuest() && !QuestList.IsOnEmoteQuest()))
                 return false;
 
             return true;
@@ -65,7 +66,7 @@ namespace Artisan.UI
                                 if (CraftingListFunctions.RecipeWindowOpen())
                                 {
                                     CraftingListFunctions.CloseCraftingMenu();
-                                    Service.Framework.RunOnTick(() => CraftingListFunctions.OpenRecipeByID(QuestList.GetRecipeForQuest((ushort)quest.Key), true), TimeSpan.FromSeconds(0.5));
+                                    Svc.Framework.RunOnTick(() => CraftingListFunctions.OpenRecipeByID(QuestList.GetRecipeForQuest((ushort)quest.Key), true), TimeSpan.FromSeconds(0.5));
                                 }
                                 else
                                 {

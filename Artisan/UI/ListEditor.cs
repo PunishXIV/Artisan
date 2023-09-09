@@ -193,12 +193,12 @@ internal class ListEditor : Window, IDisposable
 
     public void DrawRecipeData()
     {
-        var showOnlyCraftable = Service.Configuration.ShowOnlyCraftable;
+        var showOnlyCraftable = P.Config.ShowOnlyCraftable;
 
         if (ImGui.Checkbox("###ShowCraftableCheckbox", ref showOnlyCraftable))
         {
-            Service.Configuration.ShowOnlyCraftable = showOnlyCraftable;
-            Service.Configuration.Save();
+            P.Config.ShowOnlyCraftable = showOnlyCraftable;
+            P.Config.Save();
 
             if (showOnlyCraftable)
             {
@@ -210,13 +210,13 @@ internal class ListEditor : Window, IDisposable
         ImGui.SameLine();
         ImGui.TextWrapped("Show only recipes you have materials for (toggle to refresh)");
 
-        if (Service.Configuration.ShowOnlyCraftable && RetainerInfo.ATools)
+        if (P.Config.ShowOnlyCraftable && RetainerInfo.ATools)
         {
-            var showOnlyCraftableRetainers = Service.Configuration.ShowOnlyCraftableRetainers;
+            var showOnlyCraftableRetainers = P.Config.ShowOnlyCraftableRetainers;
             if (ImGui.Checkbox("###ShowCraftableRetainersCheckbox", ref showOnlyCraftableRetainers))
             {
-                Service.Configuration.ShowOnlyCraftableRetainers = showOnlyCraftableRetainers;
-                Service.Configuration.Save();
+                P.Config.ShowOnlyCraftableRetainers = showOnlyCraftableRetainers;
+                P.Config.Save();
 
                 CraftingListUI.CraftableItems.Clear();
                 RetainerInfo.TM.Abort();
@@ -286,8 +286,8 @@ internal class ListEditor : Window, IDisposable
 
                 RecipeSelector.Items = SelectedList.Items.Distinct().ToList();
                 GenerateTableAsync();
-                Service.Configuration.Save();
-                if (Service.Configuration.ResetTimesToAdd)
+                P.Config.Save();
+                if (P.Config.ResetTimesToAdd)
                     timesToAdd = 1;
             }
 
@@ -323,8 +323,8 @@ internal class ListEditor : Window, IDisposable
 
                 RecipeSelector.Items = SelectedList.Items.Distinct().ToList();
                 GenerateTableAsync();
-                Service.Configuration.Save();
-                if (Service.Configuration.ResetTimesToAdd)
+                P.Config.Save();
+                if (P.Config.ResetTimesToAdd)
                     timesToAdd = 1;
             }
 
@@ -334,7 +334,7 @@ internal class ListEditor : Window, IDisposable
 
     private void DrawRecipeList()
     {
-        if (Service.Configuration.ShowOnlyCraftable && !RetainerInfo.CacheBuilt)
+        if (P.Config.ShowOnlyCraftable && !RetainerInfo.CacheBuilt)
         {
             if (RetainerInfo.ATools)
                 ImGui.TextWrapped($"Building Retainer Cache: {(RetainerInfo.RetainerData.Values.Any() ? RetainerInfo.RetainerData.FirstOrDefault().Value.Count : "0")}/{CraftingListHelpers.FilteredList.Select(x => x.Value).SelectMany(x => x.UnkData5).Where(x => x.ItemIngredient != 0 && x.AmountIngredient > 0).DistinctBy(x => x.ItemIngredient).Count()}");
@@ -350,7 +350,7 @@ internal class ListEditor : Window, IDisposable
             SelectedRecipe = null;
         }
 
-        if (Service.Configuration.ShowOnlyCraftable && RetainerInfo.CacheBuilt)
+        if (P.Config.ShowOnlyCraftable && RetainerInfo.CacheBuilt)
         {
             foreach (var recipe in CraftingListUI.CraftableItems.Where(x => x.Value).Select(x => x.Key).Where(x => x.ItemResult.Value.Name.RawString.Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
             {
@@ -367,7 +367,7 @@ internal class ListEditor : Window, IDisposable
                 ImGui.PopID();
             }
         }
-        else if (!Service.Configuration.ShowOnlyCraftable)
+        else if (!P.Config.ShowOnlyCraftable)
         {
             foreach (var recipe in CollectionsMarshal.AsSpan(CraftingListHelpers.FilteredList.Values.ToList()))
             {
@@ -645,14 +645,14 @@ internal class ListEditor : Window, IDisposable
         if (ImGui.Checkbox("Skip items you already have enough of", ref skipIfEnough))
         {
             SelectedList.SkipIfEnough = skipIfEnough;
-            Service.Configuration.Save();
+            P.Config.Save();
         }
 
         var materia = SelectedList.Materia;
         if (ImGui.Checkbox("Automatically Extract Materia", ref materia))
         {
             SelectedList.Materia = materia;
-            Service.Configuration.Save();
+            P.Config.Save();
         }
 
         ImGuiComponents.HelpMarker(
@@ -662,7 +662,7 @@ internal class ListEditor : Window, IDisposable
         if (ImGui.Checkbox("Automatic Repairs", ref repair))
         {
             SelectedList.Repair = repair;
-            Service.Configuration.Save();
+            P.Config.Save();
         }
 
         ImGuiComponents.HelpMarker(
@@ -672,11 +672,11 @@ internal class ListEditor : Window, IDisposable
         {
             ImGui.PushItemWidth(200);
             if (ImGui.SliderInt("##repairp", ref SelectedList.RepairPercent, 10, 100, "%d%%"))
-                Service.Configuration.Save();
+                P.Config.Save();
         }
 
         if (ImGui.Checkbox("Set new items added to list as quick synth", ref SelectedList.AddAsQuickSynth))
-            Service.Configuration.Save();
+            P.Config.Save();
 
         ImGui.EndChild();
     }
@@ -714,14 +714,14 @@ internal class ListEditor : Window, IDisposable
                         SelectedList.Items.Insert(
                             SelectedList.Items.IndexOf(selectedListItem),
                             selectedListItem);
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 }
 
                 if (count < oldCount)
                 {
                     var diff = oldCount - count;
                     for (var i = 1; i <= diff; i++) SelectedList.Items.Remove(selectedListItem);
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 }
             }
 
@@ -743,7 +743,7 @@ internal class ListEditor : Window, IDisposable
             if (ImGui.Checkbox("Quick Synthesis this item", ref NQOnly))
             {
                 options.NQOnly = NQOnly;
-                Service.Configuration.Save();
+                P.Config.Save();
             }
         }
         else
@@ -787,7 +787,7 @@ internal class ListEditor : Window, IDisposable
 
                         Table = new(Ingredient.GenerateList(SelectedList).Result);
 
-                        Service.Configuration.Save();
+                        P.Config.Save();
                     }
                 }
 
@@ -806,7 +806,7 @@ internal class ListEditor : Window, IDisposable
                 if (ImGui.Selectable("Disable"))
                 {
                     options.Food = 0;
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 }
 
                 foreach (var x in ConsumableChecker.GetFood(true))
@@ -814,7 +814,7 @@ internal class ListEditor : Window, IDisposable
                     {
                         options.Food = x.Id;
                         options.FoodHQ = false;
-                        Service.Configuration.Save();
+                        P.Config.Save();
                     }
 
                 foreach (var x in ConsumableChecker.GetFood(true, true))
@@ -822,7 +822,7 @@ internal class ListEditor : Window, IDisposable
                     {
                         options.Food = x.Id;
                         options.FoodHQ = true;
-                        Service.Configuration.Save();
+                        P.Config.Save();
                     }
 
                 ImGui.EndCombo();
@@ -840,7 +840,7 @@ internal class ListEditor : Window, IDisposable
                 if (ImGui.Selectable("Disabled"))
                 {
                     options.Potion = 0;
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 }
 
                 foreach (var x in ConsumableChecker.GetPots(true))
@@ -848,7 +848,7 @@ internal class ListEditor : Window, IDisposable
                     {
                         options.Potion = x.Id;
                         options.PotHQ = false;
-                        Service.Configuration.Save();
+                        P.Config.Save();
                     }
 
                 foreach (var x in ConsumableChecker.GetPots(true, true))
@@ -856,37 +856,37 @@ internal class ListEditor : Window, IDisposable
                     {
                         options.Potion = x.Id;
                         options.PotHQ = true;
-                        Service.Configuration.Save();
+                        P.Config.Save();
                     }
 
                 ImGui.EndCombo();
             }
         }
 
-        if (Service.Configuration.UserMacros.Count > 0)
+        if (P.Config.UserMacros.Count > 0)
         {
             ImGui.TextWrapped("Use a macro for this recipe");
 
-            var preview = Service.Configuration.IRM.TryGetValue(selectedListItem, out var prevMacro)
-                              ? Service.Configuration.UserMacros.First(x => x.ID == prevMacro).Name
+            var preview = P.Config.IRM.TryGetValue(selectedListItem, out var prevMacro)
+                              ? P.Config.UserMacros.First(x => x.ID == prevMacro).Name
                               : string.Empty;
             ImGuiEx.SetNextItemFullWidth(-30);
             if (ImGui.BeginCombo(string.Empty, preview))
             {
                 if (ImGui.Selectable(string.Empty))
                 {
-                    Service.Configuration.IRM.Remove(selectedListItem);
-                    Service.Configuration.Save();
+                    P.Config.IRM.Remove(selectedListItem);
+                    P.Config.Save();
                 }
 
-                foreach (var macro in Service.Configuration.UserMacros)
+                foreach (var macro in P.Config.UserMacros)
                 {
-                    var selected = Service.Configuration.IRM.TryGetValue(selectedListItem, out var selectedMacro)
+                    var selected = P.Config.IRM.TryGetValue(selectedListItem, out var selectedMacro)
                                    && macro.ID == selectedMacro;
                     if (ImGui.Selectable(macro.Name, selected))
                     {
-                        Service.Configuration.IRM[selectedListItem] = macro.ID;
-                        Service.Configuration.Save();
+                        P.Config.IRM[selectedListItem] = macro.ID;
+                        P.Config.Save();
                     }
                 }
 

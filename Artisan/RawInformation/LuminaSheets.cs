@@ -17,74 +17,74 @@ namespace Artisan.RawInformation
     public class LuminaSheets
     {
 
-        public static Dictionary<uint, Recipe>? RecipeSheet = Service.DataManager?.GetExcelSheet<Recipe>()?
+        public static Dictionary<uint, Recipe>? RecipeSheet = Svc.Data?.GetExcelSheet<Recipe>()?
             .Where(x => !string.IsNullOrEmpty(x.ItemResult.Value.Name.RawString))
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, GatheringItem>? GatheringItemSheet = Service.DataManager?.GetExcelSheet<GatheringItem>()?
+        public static Dictionary<uint, GatheringItem>? GatheringItemSheet = Svc.Data?.GetExcelSheet<GatheringItem>()?
             .Where(x => x.GatheringItemLevel.Value.GatheringItemLevel > 0)
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, SpearfishingItem>? SpearfishingItemSheet = Service.DataManager?.GetExcelSheet<SpearfishingItem>()?
+        public static Dictionary<uint, SpearfishingItem>? SpearfishingItemSheet = Svc.Data?.GetExcelSheet<SpearfishingItem>()?
             .Where(x => x.GatheringItemLevel.Value.GatheringItemLevel > 0)
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, GatheringPointBase>? GatheringPointBaseSheet = Service.DataManager?.GetExcelSheet<GatheringPointBase>()?
+        public static Dictionary<uint, GatheringPointBase>? GatheringPointBaseSheet = Svc.Data?.GetExcelSheet<GatheringPointBase>()?
             .Where(x => x.GatheringLevel > 0)
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, FishParameter>? FishParameterSheet = Service.DataManager?.GetExcelSheet<FishParameter>()?
+        public static Dictionary<uint, FishParameter>? FishParameterSheet = Svc.Data?.GetExcelSheet<FishParameter>()?
             .Where(x => x.GatheringItemLevel.Value.GatheringItemLevel > 0)
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, ClassJob>? ClassJobSheet = Service.DataManager?.GetExcelSheet<ClassJob>()?
+        public static Dictionary<uint, ClassJob>? ClassJobSheet = Svc.Data?.GetExcelSheet<ClassJob>()?
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, Item>? ItemSheet = Service.DataManager?.GetExcelSheet<Item>()?
+        public static Dictionary<uint, Item>? ItemSheet = Svc.Data?.GetExcelSheet<Item>()?
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, Action>? ActionSheet = Service.DataManager?.GetExcelSheet<Action>()?
+        public static Dictionary<uint, Action>? ActionSheet = Svc.Data?.GetExcelSheet<Action>()?
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, CraftAction>? CraftActions = Service.DataManager?.GetExcelSheet<CraftAction>()?
+        public static Dictionary<uint, CraftAction>? CraftActions = Svc.Data?.GetExcelSheet<CraftAction>()?
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, CraftLevelDifference>? CraftLevelDifference = Service.DataManager?.GetExcelSheet<CraftLevelDifference>()?
+        public static Dictionary<uint, CraftLevelDifference>? CraftLevelDifference = Svc.Data?.GetExcelSheet<CraftLevelDifference>()?
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, RecipeLevelTable>? RecipeLevelTableSheet = Service.DataManager?.GetExcelSheet<RecipeLevelTable>()?
+        public static Dictionary<uint, RecipeLevelTable>? RecipeLevelTableSheet = Svc.Data?.GetExcelSheet<RecipeLevelTable>()?
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, Addon>? AddonSheet = Service.DataManager?.GetExcelSheet<Addon>()?
+        public static Dictionary<uint, Addon>? AddonSheet = Svc.Data?.GetExcelSheet<Addon>()?
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, SpecialShop>? SpecialShopSheet = Service.DataManager?.GetExcelSheet<SpecialShop>()?
+        public static Dictionary<uint, SpecialShop>? SpecialShopSheet = Svc.Data?.GetExcelSheet<SpecialShop>()?
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, LogMessage>? LogMessageSheet = Service.DataManager?.GetExcelSheet<LogMessage>()?
+        public static Dictionary<uint, LogMessage>? LogMessageSheet = Svc.Data?.GetExcelSheet<LogMessage>()?
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, ItemFood>? ItemFoodSheet = Service.DataManager?.GetExcelSheet<ItemFood>()?
+        public static Dictionary<uint, ItemFood>? ItemFoodSheet = Svc.Data?.GetExcelSheet<ItemFood>()?
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, ENpcResident>? ENPCResidentSheet = Service.DataManager?.GetExcelSheet<ENpcResident>()?
+        public static Dictionary<uint, ENpcResident>? ENPCResidentSheet = Svc.Data?.GetExcelSheet<ENpcResident>()?
             .Where(x => x.Singular.ExtractText().Length > 0)
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, Quest>? QuestSheet = Service.DataManager?.GetExcelSheet<Quest>()?
+        public static Dictionary<uint, Quest>? QuestSheet = Svc.Data?.GetExcelSheet<Quest>()?
             .Where(x => x.Id.ExtractText().Length > 0)
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, CompanyCraftPart>? WorkshopPartSheet = Service.DataManager?.GetExcelSheet<CompanyCraftPart>()?
+        public static Dictionary<uint, CompanyCraftPart>? WorkshopPartSheet = Svc.Data?.GetExcelSheet<CompanyCraftPart>()?
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, CompanyCraftProcess>? WorkshopProcessSheet = Service.DataManager?.GetExcelSheet<CompanyCraftProcess>()?
+        public static Dictionary<uint, CompanyCraftProcess>? WorkshopProcessSheet = Svc.Data?.GetExcelSheet<CompanyCraftProcess>()?
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, CompanyCraftSequence>? WorkshopSequenceSheet = Service.DataManager?.GetExcelSheet<CompanyCraftSequence>()?
+        public static Dictionary<uint, CompanyCraftSequence>? WorkshopSequenceSheet = Svc.Data?.GetExcelSheet<CompanyCraftSequence>()?
             .ToDictionary(i => i.RowId, i => i);
 
-        public static Dictionary<uint, CompanyCraftSupplyItem>? WorkshopSupplyItemSheet = Service.DataManager?.GetExcelSheet<CompanyCraftSupplyItem>()?
+        public static Dictionary<uint, CompanyCraftSupplyItem>? WorkshopSupplyItemSheet = Svc.Data?.GetExcelSheet<CompanyCraftSupplyItem>()?
             .ToDictionary(i => i.RowId, i => i);
 
         public static void Dispose()

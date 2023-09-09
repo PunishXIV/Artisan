@@ -145,7 +145,7 @@ namespace Artisan.RawInformation
         {
             try
             {
-                if (Service.Configuration.DontEquipItems)
+                if (P.Config.DontEquipItems)
                     return clickSysnthesisButtonHook.Original(a1, a2);
 
                 uint requiredClass = 0;
@@ -298,7 +298,7 @@ namespace Artisan.RawInformation
         private static CraftReadyState GetCraftReadyState(ref uint requiredClass, out ushort selectedRecipeId)
         {
             selectedRecipeId = 0;
-            if (Service.ClientState.LocalPlayer == null) return CraftReadyState.NotReady;
+            if (Svc.ClientState.LocalPlayer == null) return CraftReadyState.NotReady;
             var uiRecipeNote = RecipeNote.Instance();
             if (uiRecipeNote == null || uiRecipeNote->RecipeList == null) return CraftReadyState.NotReady;
             var selectedRecipe = uiRecipeNote->RecipeList->SelectedRecipe;
@@ -307,8 +307,8 @@ namespace Artisan.RawInformation
             requiredClass = uiRecipeNote->Jobs[selectedRecipe->CraftType];
             var requiredJob = Svc.Data.Excel.GetSheet<ClassJob>()?.GetRow(requiredClass);
             if (requiredJob == null) return CraftReadyState.NotReady;
-            if (Service.ClientState.LocalPlayer.ClassJob.Id == requiredClass) return CraftReadyState.Ready;
-            var localPlayer = (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)Service.ClientState.LocalPlayer.Address;
+            if (Svc.ClientState.LocalPlayer.ClassJob.Id == requiredClass) return CraftReadyState.Ready;
+            var localPlayer = (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)Svc.ClientState.LocalPlayer.Address;
             return localPlayer->EventState == 5 ? CraftReadyState.AlreadyCrafting : CraftReadyState.WrongClass;
         }
 

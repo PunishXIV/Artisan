@@ -51,7 +51,7 @@ namespace Artisan.IPC
             {
                 try
                 {
-                    return !Service.Configuration.DisableAllaganTools && (DalamudReflector.TryGetDalamudPlugin("Allagan Tools", out var at, false, true) || DalamudReflector.TryGetDalamudPlugin("InventoryTools", out var it, false, true)) && _IsInitialized != null && _IsInitialized.InvokeFunc();
+                    return !P.Config.DisableAllaganTools && (DalamudReflector.TryGetDalamudPlugin("Allagan Tools", out var at, false, true) || DalamudReflector.TryGetDalamudPlugin("InventoryTools", out var it, false, true)) && _IsInitialized != null && _IsInitialized.InvokeFunc();
                 }
                 catch
                 {
@@ -99,11 +99,11 @@ namespace Artisan.IPC
             CacheBuilt = false;
             CraftingListUI.CraftableItems.Clear();
 
-            if (Service.Configuration.ShowOnlyCraftable || onLoad)
+            if (P.Config.ShowOnlyCraftable || onLoad)
             {
                 foreach (var recipe in CraftingListHelpers.FilteredList.Values)
                 {
-                    if (ATools && Service.Configuration.ShowOnlyCraftableRetainers || onLoad)
+                    if (ATools && P.Config.ShowOnlyCraftableRetainers || onLoad)
                         await Task.Run(() => Safe(() => CraftingListUI.CheckForIngredients(recipe, false, true)));
                     else
                         await Task.Run(() => Safe(() => CraftingListUI.CheckForIngredients(recipe, false, false)));
@@ -218,19 +218,19 @@ namespace Artisan.IPC
                     {
                         ulong retainerId = 0;
                         var retainer = RetainerManager.Instance()->GetRetainerBySortedIndex((uint)i);
-                        if (Service.Configuration.RetainerIDs.Count(x => x.Value == Svc.ClientState.LocalContentId) > i)
+                        if (P.Config.RetainerIDs.Count(x => x.Value == Svc.ClientState.LocalContentId) > i)
                         {
-                            retainerId = Service.Configuration.RetainerIDs.Where(x => x.Value == Svc.ClientState.LocalContentId).Select(x => x.Key).ToArray()[i];
+                            retainerId = P.Config.RetainerIDs.Where(x => x.Value == Svc.ClientState.LocalContentId).Select(x => x.Key).ToArray()[i];
                         }
                         else
                         {
                             retainerId = RetainerManager.Instance()->GetRetainerBySortedIndex((uint)i)->RetainerID;
                         }
 
-                        if (retainer->RetainerID > 0 && !Service.Configuration.RetainerIDs.Any(x => x.Key == retainer->RetainerID && x.Value == Svc.ClientState.LocalContentId))
+                        if (retainer->RetainerID > 0 && !P.Config.RetainerIDs.Any(x => x.Key == retainer->RetainerID && x.Value == Svc.ClientState.LocalContentId))
                         {
-                            Service.Configuration.RetainerIDs.Add(retainer->RetainerID, Svc.ClientState.LocalContentId);
-                            Service.Configuration.Save();
+                            P.Config.RetainerIDs.Add(retainer->RetainerID, Svc.ClientState.LocalContentId);
+                            P.Config.Save();
                         }
 
                         if (retainerId > 0)

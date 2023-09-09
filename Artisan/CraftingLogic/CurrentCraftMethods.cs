@@ -5,6 +5,7 @@ using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Statuses;
 using Dalamud.Logging;
 using ECommons;
+using ECommons.DalamudServices;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -21,7 +22,7 @@ namespace Artisan.CraftingLogic
 {
     public static class CurrentCraftMethods
     {
-        private static StatusList statusList => Service.ClientState.LocalPlayer!.StatusList;
+        private static StatusList statusList => Svc.ClientState.LocalPlayer!.StatusList;
         private static bool InTouchRotation => (PreviousActionSameAs(Skills.BasicTouch) && Skills.StandardTouch.LevelChecked()) || (PreviousActionSameAs(Skills.StandardTouch) && Skills.AdvancedTouch.LevelChecked());
 
         private static bool goingForQuality = true;
@@ -166,7 +167,7 @@ namespace Artisan.CraftingLogic
             int collectibilityCheck = 0;
             if (CurrentRecipe.ItemResult.Value.AlwaysCollectable)
             {
-                switch (Service.Configuration.SolverCollectibleMode)
+                switch (P.Config.SolverCollectibleMode)
                 {
                     case 1:
                         collectibilityCheck = Convert.ToInt32(CollectabilityLow);
@@ -203,18 +204,18 @@ namespace Artisan.CraftingLogic
                 }
             }
 
-            goingForQuality = (!CurrentRecipe.ItemResult.Value.AlwaysCollectable && HighQualityPercentage < Service.Configuration.MaxPercentage) ||
+            goingForQuality = (!CurrentRecipe.ItemResult.Value.AlwaysCollectable && HighQualityPercentage < P.Config.MaxPercentage) ||
                   (CurrentRecipe.ItemResult.Value.AlwaysCollectable && HighQualityPercentage < collectibilityCheck);
 
             if (CurrentStep == 1 && Calculations.CalculateNewProgress(Skills.DelicateSynthesis) >= MaxProgress && Calculations.CalculateNewQuality(Skills.DelicateSynthesis) >= MaxQuality && CanUse(Skills.DelicateSynthesis)) return Skills.DelicateSynthesis;
             if (CanFinishCraft(act)) return act;
 
-            if (Skills.TrainedEye.LevelChecked() && CanUse(Skills.TrainedEye) && (HighQualityPercentage < Service.Configuration.MaxPercentage || CurrentRecipe.ItemResult.Value.AlwaysCollectable) && CurrentRecipe.CanHq) return Skills.TrainedEye;
+            if (Skills.TrainedEye.LevelChecked() && CanUse(Skills.TrainedEye) && (HighQualityPercentage < P.Config.MaxPercentage || CurrentRecipe.ItemResult.Value.AlwaysCollectable) && CurrentRecipe.CanHq) return Skills.TrainedEye;
             if (ShouldMend(act) && CanUse(Skills.MastersMend)) return Skills.MastersMend;
 
             if (CanUse(Skills.Tricks))
             {
-                if (CurrentStep > 2 && ((CurrentCondition == Condition.Good && Service.Configuration.UseTricksGood) || (CurrentCondition == Condition.Excellent && Service.Configuration.UseTricksExcellent)))
+                if (CurrentStep > 2 && ((CurrentCondition == Condition.Good && P.Config.UseTricksGood) || (CurrentCondition == Condition.Excellent && P.Config.UseTricksExcellent)))
                     return Skills.Tricks;
 
                 if ((CharacterInfo.CurrentCP < 7 ||
@@ -223,7 +224,7 @@ namespace Artisan.CraftingLogic
                     return Skills.Tricks;
             }
 
-            if (MaxQuality == 0 || Service.Configuration.MaxPercentage == 0 || !CurrentRecipe.CanHq)
+            if (MaxQuality == 0 || P.Config.MaxPercentage == 0 || !CurrentRecipe.CanHq)
             {
                 if (CurrentStep == 1 && CanUse(Skills.MuscleMemory)) return Skills.MuscleMemory;
                 if (Calculations.CalculateNewProgress(act) >= MaxProgress) return act;
@@ -233,7 +234,7 @@ namespace Artisan.CraftingLogic
 
             if (goingForQuality)
             {
-                if (!Service.Configuration.UseQualityStarter && Skills.MuscleMemory.LevelChecked())
+                if (!P.Config.UseQualityStarter && Skills.MuscleMemory.LevelChecked())
                 {
                     if (CanUse(Skills.MuscleMemory) && Calculations.CalculateNewProgress(Skills.MuscleMemory) < MaxProgress) return Skills.MuscleMemory;
 
@@ -246,7 +247,7 @@ namespace Artisan.CraftingLogic
                     }
                 }
 
-                if (Service.Configuration.UseQualityStarter)
+                if (P.Config.UseQualityStarter)
                 {
                     if (CurrentStep == 1 && CanUse(Skills.Reflect)) return Skills.Reflect;
                 }
@@ -264,7 +265,7 @@ namespace Artisan.CraftingLogic
                 if (Calculations.CalculateNewQuality(Skills.ByregotsBlessing) >= MaxQuality && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
                 if (GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation) && !InTouchRotation && CharacterInfo.CurrentCP >= 36) return Skills.Innovation;
                 if (Calculations.GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides) && CurrentCondition != Condition.Excellent) return Skills.GreatStrides;
-                if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && Service.Configuration.UseSpecialist) return Skills.CarefulObservation;
+                if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && P.Config.UseSpecialist) return Skills.CarefulObservation;
                 if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe))
                 {
                     if (statusList.HasStatus(out int innovationstacks, CraftingPlayerStatuses.Innovation) && innovationstacks >= 2 && Skills.FocusedTouch.LevelChecked())
@@ -394,7 +395,7 @@ namespace Artisan.CraftingLogic
             {
                 if (Throttler.Throttle(500))
                 {
-                    var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+                    var recipeWindow = Svc.GameGui.GetAddonByName("RecipeNote", 1);
                     if (recipeWindow == IntPtr.Zero)
                         return;
 
@@ -417,7 +418,7 @@ namespace Artisan.CraftingLogic
         {
             try
             {
-                var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+                var recipeWindow = Svc.GameGui.GetAddonByName("RecipeNote", 1);
                 if (recipeWindow == IntPtr.Zero)
                     return;
 
@@ -439,7 +440,7 @@ namespace Artisan.CraftingLogic
                     {
                         ClickRecipeNote.Using(recipeWindow).QuickSynthesis();
 
-                        var quickSynthPTR = Service.GameGui.GetAddonByName("SynthesisSimpleDialog", 1);
+                        var quickSynthPTR = Svc.GameGui.GetAddonByName("SynthesisSimpleDialog", 1);
                         if (quickSynthPTR == IntPtr.Zero)
                             return;
 
@@ -481,7 +482,7 @@ namespace Artisan.CraftingLogic
         {
             try
             {
-                var quickSynthPTR = Service.GameGui.GetAddonByName("SynthesisSimple", 1);
+                var quickSynthPTR = Svc.GameGui.GetAddonByName("SynthesisSimple", 1);
                 if (quickSynthPTR == IntPtr.Zero)
                     return;
 
@@ -506,7 +507,7 @@ namespace Artisan.CraftingLogic
         {
             try
             {
-                var recipeWindow = Service.GameGui.GetAddonByName("RecipeNote", 1);
+                var recipeWindow = Svc.GameGui.GetAddonByName("RecipeNote", 1);
                 if (recipeWindow == IntPtr.Zero)
                     return;
 
@@ -593,9 +594,9 @@ namespace Artisan.CraftingLogic
 
         internal static Status? GetStatus(uint statusID)
         {
-            if (Service.ClientState.LocalPlayer is null) return null;
+            if (Svc.ClientState.LocalPlayer is null) return null;
 
-            foreach (var status in Service.ClientState.LocalPlayer?.StatusList)
+            foreach (var status in Svc.ClientState.LocalPlayer?.StatusList)
             {
                 if (status.StatusId == statusID)
                     return status;

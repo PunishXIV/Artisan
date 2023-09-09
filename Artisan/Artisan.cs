@@ -70,11 +70,8 @@ public unsafe class Artisan : IDalamudPlugin
     public Artisan(DalamudPluginInterface pluginInterface)
     {
         pi = pluginInterface;
-        pluginInterface.Create<Service>();
-        Service.Plugin = this;
-
-        Service.Configuration = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-        Service.Configuration.Initialize(Service.Interface);
+        P.Config = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        P.Config.Initialize(pluginInterface);
 
         ECommonsMain.Init(pluginInterface, this, Module.All);
         PunishLibMain.Init(pluginInterface, this, new AboutPlugin() { Sponsor = "https://ko-fi.com/taurenkey" });
@@ -92,9 +89,9 @@ public unsafe class Artisan : IDalamudPlugin
         ri = new();
         Icons = new(pluginInterface, Svc.Data);
         PluginUi = new();
-        Config = Service.Configuration;
+        Config = P.Config;
         fm = new FontManager();
-        Service.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
+        Svc.Commands.AddHandler(commandName, new CommandInfo(OnCommand)
         {
             HelpMessage = "Opens the Artisan menu.",
             ShowInHelp = true,
@@ -104,14 +101,14 @@ public unsafe class Artisan : IDalamudPlugin
         CleanUpIndividualMacros();
         Svc.PluginInterface.UiBuilder.BuildFonts += AddCustomFont;
         Svc.PluginInterface.UiBuilder.RebuildFonts();
-        Service.Interface.UiBuilder.Draw += ws.Draw;
-        Service.Interface.UiBuilder.OpenConfigUi += DrawConfigUI;
-        Service.Condition.ConditionChange += CheckForCraftedState;
-        Service.Framework.Update += FireBot;
-        Service.ClientState.Logout += DisableEndurance;
-        Service.ClientState.Login += DisableEndurance;
-        Service.Condition.ConditionChange += Condition_ConditionChange;
-        Service.ChatGui.ChatMessage += ScanForHQItems;
+        Svc.PluginInterface.UiBuilder.Draw += ws.Draw;
+        Svc.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
+        Svc.Condition.ConditionChange += CheckForCraftedState;
+        Svc.Framework.Update += FireBot;
+        Svc.ClientState.Logout += DisableEndurance;
+        Svc.ClientState.Login += DisableEndurance;
+        Svc.Condition.ConditionChange += Condition_ConditionChange;
+        Svc.Chat.ChatMessage += ScanForHQItems;
         ActionWatching.Enable();
         StepChanged += ResetRecommendation;
         ConsumableChecker.Init();
@@ -143,7 +140,7 @@ public unsafe class Artisan : IDalamudPlugin
     }
     private void ScanForHQItems(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
-        if (type == (XivChatType)2242 && Service.Condition[ConditionFlag.Crafting])
+        if (type == (XivChatType)2242 && Svc.Condition[ConditionFlag.Crafting])
         {
             if (message.Payloads.Any(x => x.Type == PayloadType.Item))
             {
@@ -160,7 +157,7 @@ public unsafe class Artisan : IDalamudPlugin
     {
         Endurance.Tasks.Clear();
 
-        if (Service.Configuration.RequestToStopDuty)
+        if (P.Config.RequestToStopDuty)
         {
             if (flag == ConditionFlag.WaitingForDutyFinder && value)
             {
@@ -172,15 +169,15 @@ public unsafe class Artisan : IDalamudPlugin
                 IPC.IPC.StopCraftingRequest = false;
             }
 
-            if (flag == ConditionFlag.BoundByDuty && !value && IPC.IPC.StopCraftingRequest && Service.Configuration.RequestToResumeDuty)
+            if (flag == ConditionFlag.BoundByDuty && !value && IPC.IPC.StopCraftingRequest && P.Config.RequestToResumeDuty)
             {
-                var resumeDelay = Service.Configuration.RequestToResumeDelay;
+                var resumeDelay = P.Config.RequestToResumeDelay;
                 Svc.Framework.RunOnTick(() => { IPC.IPC.StopCraftingRequest = false; }, TimeSpan.FromSeconds(resumeDelay));
             }
         }
 
 
-        if (Service.Condition[ConditionFlag.PreparingToCraft])
+        if (Svc.Condition[ConditionFlag.PreparingToCraft])
         {
             State = CraftingState.PreparingToCraft;
             if (IPC.IPC.StopCraftingRequest)
@@ -189,12 +186,12 @@ public unsafe class Artisan : IDalamudPlugin
             }
             return;
         }
-        if (Service.Condition[ConditionFlag.Crafting] && !Service.Condition[ConditionFlag.PreparingToCraft])
+        if (Svc.Condition[ConditionFlag.Crafting] && !Svc.Condition[ConditionFlag.PreparingToCraft])
         {
             State = CraftingState.Crafting;
             return;
         }
-        if (!Service.Condition[ConditionFlag.Crafting] && !Service.Condition[ConditionFlag.PreparingToCraft])
+        if (!Svc.Condition[ConditionFlag.Crafting] && !Svc.Condition[ConditionFlag.PreparingToCraft])
         {
             State = CraftingState.NotCrafting;
             return;
@@ -246,12 +243,12 @@ public unsafe class Artisan : IDalamudPlugin
         if (CraftingWindow.MacroTime.Ticks > 0)
             CraftingWindow.MacroTime -= framework.UpdateDelta;
 
-        if (!Service.ClientState.IsLoggedIn)
+        if (!Svc.ClientState.IsLoggedIn)
         {
             Endurance.Enable = false;
             CraftingListUI.Processing = false;
         }
-        PluginUi.CraftingVisible = Service.Condition[ConditionFlag.Crafting] && !Service.Condition[ConditionFlag.PreparingToCraft];
+        PluginUi.CraftingVisible = Svc.Condition[ConditionFlag.Crafting] && !Svc.Condition[ConditionFlag.PreparingToCraft];
         if (!PluginUi.CraftingVisible)
             ActionWatching.TryDisable();
         else
@@ -276,8 +273,8 @@ public unsafe class Artisan : IDalamudPlugin
             if (warningMessage)
                 return;
 
-            var delay = Service.Configuration.DelayRecommendation ? Service.Configuration.RecommendationDelay : 0;
-            Tasks.Add(Service.Framework.RunOnTick(() => FetchRecommendation(CurrentStep), TimeSpan.FromMilliseconds(delay)));
+            var delay = P.Config.DelayRecommendation ? P.Config.RecommendationDelay : 0;
+            Tasks.Add(Svc.Framework.RunOnTick(() => FetchRecommendation(CurrentStep), TimeSpan.FromMilliseconds(delay)));
         }
 
         if (CheckIfCraftFinished() && !currentCraftFinished)
@@ -292,12 +289,12 @@ public unsafe class Artisan : IDalamudPlugin
             }
 
 
-            if (Endurance.Enable && Service.Configuration.CraftingX && Service.Configuration.CraftX > 0)
+            if (Endurance.Enable && P.Config.CraftingX && P.Config.CraftX > 0)
             {
-                Service.Configuration.CraftX -= 1;
-                if (Service.Configuration.CraftX == 0)
+                P.Config.CraftX -= 1;
+                if (P.Config.CraftX == 0)
                 {
-                    Service.Configuration.CraftingX = false;
+                    P.Config.CraftingX = false;
                     Endurance.Enable = false;
                     DuoLog.Information("Craft X has completed.");
 
@@ -328,7 +325,7 @@ public unsafe class Artisan : IDalamudPlugin
                 return;
             }
 
-            if (Service.Configuration.UserMacros.Count > 0)
+            if (P.Config.UserMacros.Count > 0)
             {
                 if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId, out var macro))
                 {
@@ -350,7 +347,7 @@ public unsafe class Artisan : IDalamudPlugin
                         {
                             if (CurrentQuality >= MaxQuality)
                             {
-                                if (ActionIsQuality(macro) && (!Service.Configuration.SkipMacroStepIfUnable || (Service.Configuration.SkipMacroStepIfUnable && CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))))
+                                if (ActionIsQuality(macro) && (!P.Config.SkipMacroStepIfUnable || (P.Config.SkipMacroStepIfUnable && CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))))
                                 {
                                     MacroStep++;
                                     goto RestartRecommendation;
@@ -367,7 +364,7 @@ public unsafe class Artisan : IDalamudPlugin
                             }
                         }
 
-                        if (Service.Configuration.SkipMacroStepIfUnable)
+                        if (P.Config.SkipMacroStepIfUnable)
                         {
                             if (!CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))
                             {
@@ -414,7 +411,7 @@ public unsafe class Artisan : IDalamudPlugin
                     }
                     else
                     {
-                        if (!Service.Configuration.DisableMacroArtisanRecommendation || CraftingListUI.Processing)
+                        if (!P.Config.DisableMacroArtisanRecommendation || CraftingListUI.Processing)
                             CurrentRecommendation = CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation();
                     }
                 }
@@ -438,19 +435,19 @@ public unsafe class Artisan : IDalamudPlugin
                     {
                         var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == normalAct.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID).FirstOrDefault();
                         CurrentRecommendation = newAct.RowId;
-                        if (!Service.Configuration.DisableToasts)
+                        if (!P.Config.DisableToasts)
                         {
                             QuestToastOptions options = new() { IconId = newAct.Icon };
-                            Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+                            Svc.Toasts.ShowQuest($"Use {newAct.Name}", options);
                         }
 
                     }
                     else
                     {
-                        if (!Service.Configuration.DisableToasts)
+                        if (!P.Config.DisableToasts)
                         {
                             QuestToastOptions options = new() { IconId = normalAct.Icon };
-                            Service.ToastGui.ShowQuest($"Use {normalAct.Name}", options);
+                            Svc.Toasts.ShowQuest($"Use {normalAct.Name}", options);
                         }
                     }
                 }
@@ -461,32 +458,32 @@ public unsafe class Artisan : IDalamudPlugin
                     {
                         var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == craftAction.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID).FirstOrDefault();
                         CurrentRecommendation = newAct.RowId;
-                        if (!Service.Configuration.DisableToasts)
+                        if (!P.Config.DisableToasts)
                         {
                             QuestToastOptions options = new() { IconId = newAct.Icon };
-                            Service.ToastGui.ShowQuest($"Use {newAct.Name}", options);
+                            Svc.Toasts.ShowQuest($"Use {newAct.Name}", options);
                         }
                     }
                     else
                     {
-                        if (!Service.Configuration.DisableToasts)
+                        if (!P.Config.DisableToasts)
                         {
                             QuestToastOptions options = new() { IconId = craftAction.Icon };
-                            Service.ToastGui.ShowQuest($"Use {craftAction.Name}", options);
+                            Svc.Toasts.ShowQuest($"Use {craftAction.Name}", options);
                         }
                     }
                 }
 
-                if (Service.Configuration.AutoMode)
+                if (P.Config.AutoMode)
                 {
                     if (CurrentCraftMethods.CanUse(CurrentRecommendation))
                     ActionWatching.BlockAction = true;
 
-                    P.CTM.DelayNext(Service.Configuration.AutoDelay);
+                    P.CTM.DelayNext(P.Config.AutoDelay);
                     P.CTM.Enqueue(() => Hotbars.ExecuteRecommended(CurrentRecommendation));
-                    //Service.Framework.RunOnTick(() => , TimeSpan.FromMilliseconds(Service.Configuration.AutoDelay));
+                    //Svc.Framework.RunOnTick(() => , TimeSpan.FromMilliseconds(P.Config.AutoDelay));
 
-                    //Service.Plugin.BotTask.Schedule(() => Hotbars.ExecuteRecommended(CurrentRecommendation), Service.Configuration.AutoDelay);
+                    //Svc.Plugin.BotTask.Schedule(() => Hotbars.ExecuteRecommended(CurrentRecommendation), P.Config.AutoDelay);
                 }
 
                 return;
@@ -565,18 +562,17 @@ public unsafe class Artisan : IDalamudPlugin
         RetainerInfo.Dispose();
         IPC.IPC.Dispose();
 
-        Service.CommandManager.RemoveHandler(commandName);
-        Service.Condition.ConditionChange -= Condition_ConditionChange;
-        Service.ChatGui.ChatMessage -= ScanForHQItems;
-        Service.Interface.UiBuilder.OpenConfigUi -= DrawConfigUI;
-        Service.Interface.UiBuilder.Draw -= ws.Draw;
-        Service.Framework.Update -= FireBot;
+        Svc.Commands.RemoveHandler(commandName);
+        Svc.Condition.ConditionChange -= Condition_ConditionChange;
+        Svc.Chat.ChatMessage -= ScanForHQItems;
+        Svc.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
+        Svc.PluginInterface.UiBuilder.Draw -= ws.Draw;
+        Svc.Framework.Update -= FireBot;
         StepChanged -= ResetRecommendation;
 
         Svc.PluginInterface.UiBuilder.BuildFonts -= AddCustomFont;
         ActionWatching.Dispose();
         SatisfactionManagerHelper.Dispose();
-        Service.Plugin = null!;
         ws.RemoveAllWindows();
         ws = null!;
         ECommonsMain.Dispose();

@@ -7,6 +7,7 @@ using Artisan.RawInformation.Character;
 using Artisan.UI;
 using ClickLib.Clicks;
 using ECommons;
+using ECommons.DalamudServices;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -79,13 +80,13 @@ namespace Artisan.CraftingLogic
                     if (state == CraftingState.Crafting)
                     {
                         bool wasSuccess = CurrentCraftMethods.CheckForSuccess();
-                        if (!wasSuccess && Service.Configuration.EnduranceStopFail && Endurance.Enable)
+                        if (!wasSuccess && P.Config.EnduranceStopFail && Endurance.Enable)
                         {
                             Endurance.Enable = false;
                             DuoLog.Error("You failed a craft. Disabling Endurance.");
                         }
 
-                        if (Service.Configuration.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && LastCraftedItem.CanBeHq && Endurance.Enable)
+                        if (P.Config.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && LastCraftedItem.CanBeHq && Endurance.Enable)
                         {
                             Endurance.Enable = false;
                             DuoLog.Error("You crafted a non-HQ item. Disabling Endurance.");
@@ -130,7 +131,7 @@ namespace Artisan.CraftingLogic
         {
             try
             {
-                var quickSynthPTR = Service.GameGui.GetAddonByName("SynthesisSimple", 1);
+                var quickSynthPTR = Svc.GameGui.GetAddonByName("SynthesisSimple", 1);
                 if (quickSynthPTR != IntPtr.Zero)
                 {
                     var quickSynthWindow = (AtkUnitBase*)quickSynthPTR;
@@ -157,7 +158,7 @@ namespace Artisan.CraftingLogic
                     QuickSynthMax = 0;
                 }
 
-                IntPtr synthWindow = Service.GameGui.GetAddonByName("Synthesis", 1);
+                IntPtr synthWindow = Svc.GameGui.GetAddonByName("Synthesis", 1);
                 if (synthWindow == IntPtr.Zero)
                 {
                     CurrentStep = 0;

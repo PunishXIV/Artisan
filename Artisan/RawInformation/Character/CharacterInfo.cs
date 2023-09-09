@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLogic;
 using Dalamud.Utility.Signatures;
+using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using System;
@@ -13,15 +14,15 @@ namespace Artisan.RawInformation.Character
 {
     public static class CharacterInfo
     {
-        public static byte? CharacterLevel => Service.ClientState.LocalPlayer?.Level;
+        public static byte? CharacterLevel => Svc.ClientState.LocalPlayer?.Level;
 
-        public static uint? JobID => Service.ClientState.LocalPlayer?.ClassJob.Id;
+        public static uint? JobID => Svc.ClientState.LocalPlayer?.ClassJob.Id;
 
         public static bool IsCrafting { get; set; }
 
-        public static uint CurrentCP => Service.ClientState.LocalPlayer.CurrentCp;
+        public static uint CurrentCP => Svc.ClientState.LocalPlayer.CurrentCp;
 
-        public static uint MaxCP => Service.ClientState.LocalPlayer.MaxCp;
+        public static uint MaxCP => Svc.ClientState.LocalPlayer.MaxCp;
 
         public static ulong Craftsmanship
         {
@@ -175,7 +176,7 @@ namespace Artisan.RawInformation.Character
             {
                 if (getBaseParamAddress == nint.Zero)
                 {
-                    getBaseParamAddress = Service.SigScanner.ScanText("E8 ?? ?? ?? ?? 44 8B C0 33 D2 48 8B CB E8 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8D 0D");
+                    getBaseParamAddress = Svc.SigScanner.ScanText("E8 ?? ?? ?? ?? 44 8B C0 33 D2 48 8B CB E8 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8D 0D");
                     getBaseParam = Marshal.GetDelegateForFunctionPointer<GetBaseParam>(getBaseParamAddress);
                 }
 

@@ -79,17 +79,17 @@ namespace Artisan.Autocraft
         {
             if (Enable && !P.TM.IsBusy && CurrentCraft.State != CraftingState.Crafting)
             {
-                var isCrafting = Service.Condition[ConditionFlag.Crafting];
-                var preparing = Service.Condition[ConditionFlag.PreparingToCraft];
+                var isCrafting = Svc.Condition[ConditionFlag.Crafting];
+                var preparing = Svc.Condition[ConditionFlag.PreparingToCraft];
 
                 if (!Throttler.Throttle(0))
                 {
                     return;
                 }
-                if (Service.Configuration.CraftingX && Service.Configuration.CraftX == 0)
+                if (P.Config.CraftingX && P.Config.CraftX == 0)
                 {
                     Enable = false;
-                    Service.Configuration.CraftingX = false;
+                    P.Config.CraftingX = false;
                     DuoLog.Information("Craft X has completed.");
                     return;
                 }
@@ -106,10 +106,10 @@ namespace Artisan.Autocraft
                 }
                 if (DebugTab.Debug) PluginLog.Verbose("HQ not null");
 
-                if (!Spiritbond.ExtractMateriaTask(Service.Configuration.Materia, isCrafting, preparing))
+                if (!Spiritbond.ExtractMateriaTask(P.Config.Materia, isCrafting, preparing))
                     return;
 
-                if (Service.Configuration.Repair && !RepairManager.ProcessRepair(false) && ((Service.Configuration.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!Service.Configuration.Materia)))
+                if (P.Config.Repair && !RepairManager.ProcessRepair(false) && ((P.Config.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!P.Config.Materia)))
                 {
                     if (DebugTab.Debug) PluginLog.Verbose("Entered repair check");
                     if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
@@ -129,7 +129,7 @@ namespace Artisan.Autocraft
                     return;
                 }
                 if (DebugTab.Debug) PluginLog.Verbose("Repair ok");
-                if (Service.Configuration.AbortIfNoFoodPot && !ConsumableChecker.CheckConsumables(false))
+                if (P.Config.AbortIfNoFoodPot && !ConsumableChecker.CheckConsumables(false))
                 {
                     if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                     {
@@ -212,11 +212,11 @@ namespace Artisan.Autocraft
 
                 ImGuiEx.Text($"Recipe: {RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.ClassJobSheet[LuminaSheets.RecipeSheet[(uint)RecipeID].CraftType.Row + 8].Abbreviation})" : "")}");
             }
-            bool requireFoodPot = Service.Configuration.AbortIfNoFoodPot;
+            bool requireFoodPot = P.Config.AbortIfNoFoodPot;
             if (ImGui.Checkbox("Use Food, Manuals and/or Medicine", ref requireFoodPot))
             {
-                Service.Configuration.AbortIfNoFoodPot = requireFoodPot;
-                Service.Configuration.Save();
+                P.Config.AbortIfNoFoodPot = requireFoodPot;
+                P.Config.Save();
             }
             ImGuiComponents.HelpMarker("Artisan will require the configured food, manuals or medicine and refuse to craft if it cannot be found.");
             if (requireFoodPot)
@@ -226,29 +226,29 @@ namespace Artisan.Autocraft
                     ImGuiEx.TextV("Food Usage:");
                     ImGui.SameLine(200f.Scale());
                     ImGuiEx.SetNextItemFullWidth();
-                    if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == Service.Configuration.Food, out var item) ? $"{(Service.Configuration.FoodHQ ? " " : "")}{item.Name}" : $"{(Service.Configuration.Food == 0 ? "Disabled" : $"{(Service.Configuration.FoodHQ ? " " : "")}{Service.Configuration.Food}")}"))
+                    if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == P.Config.Food, out var item) ? $"{(P.Config.FoodHQ ? " " : "")}{item.Name}" : $"{(P.Config.Food == 0 ? "Disabled" : $"{(P.Config.FoodHQ ? " " : "")}{P.Config.Food}")}"))
                     {
                         if (ImGui.Selectable("Disable"))
                         {
-                            Service.Configuration.Food = 0;
-                            Service.Configuration.Save();
+                            P.Config.Food = 0;
+                            P.Config.Save();
                         }
                         foreach (var x in ConsumableChecker.GetFood(true))
                         {
                             if (ImGui.Selectable($"{x.Name}"))
                             {
-                                Service.Configuration.Food = x.Id;
-                                Service.Configuration.FoodHQ = false;
-                                Service.Configuration.Save();
+                                P.Config.Food = x.Id;
+                                P.Config.FoodHQ = false;
+                                P.Config.Save();
                             }
                         }
                         foreach (var x in ConsumableChecker.GetFood(true, true))
                         {
                             if (ImGui.Selectable($" {x.Name}"))
                             {
-                                Service.Configuration.Food = x.Id;
-                                Service.Configuration.FoodHQ = true;
-                                Service.Configuration.Save();
+                                P.Config.Food = x.Id;
+                                P.Config.FoodHQ = true;
+                                P.Config.Save();
                             }
                         }
                         ImGui.EndCombo();
@@ -259,29 +259,29 @@ namespace Artisan.Autocraft
                     ImGuiEx.TextV("Medicine Usage:");
                     ImGui.SameLine(200f.Scale());
                     ImGuiEx.SetNextItemFullWidth();
-                    if (ImGui.BeginCombo("##potBuff", ConsumableChecker.Pots.TryGetFirst(x => x.Id == Service.Configuration.Potion, out var item) ? $"{(Service.Configuration.PotHQ ? " " : "")}{item.Name}" : $"{(Service.Configuration.Potion == 0 ? "Disabled" : $"{(Service.Configuration.PotHQ ? " " : "")}{Service.Configuration.Potion}")}"))
+                    if (ImGui.BeginCombo("##potBuff", ConsumableChecker.Pots.TryGetFirst(x => x.Id == P.Config.Potion, out var item) ? $"{(P.Config.PotHQ ? " " : "")}{item.Name}" : $"{(P.Config.Potion == 0 ? "Disabled" : $"{(P.Config.PotHQ ? " " : "")}{P.Config.Potion}")}"))
                     {
                         if (ImGui.Selectable("Disable"))
                         {
-                            Service.Configuration.Potion = 0;
-                            Service.Configuration.Save();
+                            P.Config.Potion = 0;
+                            P.Config.Save();
                         }
                         foreach (var x in ConsumableChecker.GetPots(true))
                         {
                             if (ImGui.Selectable($"{x.Name}"))
                             {
-                                Service.Configuration.Potion = x.Id;
-                                Service.Configuration.PotHQ = false;
-                                Service.Configuration.Save();
+                                P.Config.Potion = x.Id;
+                                P.Config.PotHQ = false;
+                                P.Config.Save();
                             }
                         }
                         foreach (var x in ConsumableChecker.GetPots(true, true))
                         {
                             if (ImGui.Selectable($" {x.Name}"))
                             {
-                                Service.Configuration.Potion = x.Id;
-                                Service.Configuration.PotHQ = true;
-                                Service.Configuration.Save();
+                                P.Config.Potion = x.Id;
+                                P.Config.PotHQ = true;
+                                P.Config.Save();
                             }
                         }
                         ImGui.EndCombo();
@@ -292,19 +292,19 @@ namespace Artisan.Autocraft
                     ImGuiEx.TextV("Manual Usage:");
                     ImGui.SameLine(200f.Scale());
                     ImGuiEx.SetNextItemFullWidth();
-                    if (ImGui.BeginCombo("##manualBuff", ConsumableChecker.Manuals.TryGetFirst(x => x.Id == Service.Configuration.Manual, out var item) ? $"{item.Name}" : $"{(Service.Configuration.Manual == 0 ? "Disabled" : $"{Service.Configuration.Manual}")}"))
+                    if (ImGui.BeginCombo("##manualBuff", ConsumableChecker.Manuals.TryGetFirst(x => x.Id == P.Config.Manual, out var item) ? $"{item.Name}" : $"{(P.Config.Manual == 0 ? "Disabled" : $"{P.Config.Manual}")}"))
                     {
                         if (ImGui.Selectable("Disable"))
                         {
-                            Service.Configuration.Manual = 0;
-                            Service.Configuration.Save();
+                            P.Config.Manual = 0;
+                            P.Config.Save();
                         }
                         foreach (var x in ConsumableChecker.GetManuals(true))
                         {
                             if (ImGui.Selectable($"{x.Name}"))
                             {
-                                Service.Configuration.Manual = x.Id;
-                                Service.Configuration.Save();
+                                P.Config.Manual = x.Id;
+                                P.Config.Save();
                             }
                         }
                         ImGui.EndCombo();
@@ -315,19 +315,19 @@ namespace Artisan.Autocraft
                     ImGuiEx.TextV("Squadron Manual Usage:");
                     ImGui.SameLine(200f.Scale());
                     ImGuiEx.SetNextItemFullWidth();
-                    if (ImGui.BeginCombo("##squadronManualBuff", ConsumableChecker.SquadronManuals.TryGetFirst(x => x.Id == Service.Configuration.SquadronManual, out var item) ? $"{item.Name}" : $"{(Service.Configuration.SquadronManual == 0 ? "Disabled" : $"{Service.Configuration.SquadronManual}")}"))
+                    if (ImGui.BeginCombo("##squadronManualBuff", ConsumableChecker.SquadronManuals.TryGetFirst(x => x.Id == P.Config.SquadronManual, out var item) ? $"{item.Name}" : $"{(P.Config.SquadronManual == 0 ? "Disabled" : $"{P.Config.SquadronManual}")}"))
                     {
                         if (ImGui.Selectable("Disable"))
                         {
-                            Service.Configuration.SquadronManual = 0;
-                            Service.Configuration.Save();
+                            P.Config.SquadronManual = 0;
+                            P.Config.Save();
                         }
                         foreach (var x in ConsumableChecker.GetSquadronManuals(true))
                         {
                             if (ImGui.Selectable($"{x.Name}"))
                             {
-                                Service.Configuration.SquadronManual = x.Id;
-                                Service.Configuration.Save();
+                                P.Config.SquadronManual = x.Id;
+                                P.Config.Save();
                             }
                         }
                         ImGui.EndCombo();
@@ -336,59 +336,59 @@ namespace Artisan.Autocraft
 
             }
 
-            bool repairs = Service.Configuration.Repair;
+            bool repairs = P.Config.Repair;
             if (ImGui.Checkbox("Automatic Repairs", ref repairs))
             {
-                Service.Configuration.Repair = repairs;
-                Service.Configuration.Save();
+                P.Config.Repair = repairs;
+                P.Config.Save();
             }
             ImGuiComponents.HelpMarker("If enabled, Artisan will automatically repair your gear using Dark Matter when any piece reaches the configured repair threshold.");
-            if (Service.Configuration.Repair)
+            if (P.Config.Repair)
             {
                 //ImGui.SameLine();
                 ImGui.PushItemWidth(200);
-                int percent = Service.Configuration.RepairPercent;
+                int percent = P.Config.RepairPercent;
                 if (ImGui.SliderInt("##repairp", ref percent, 10, 100, $"%d%%"))
                 {
-                    Service.Configuration.RepairPercent = percent;
-                    Service.Configuration.Save();
+                    P.Config.RepairPercent = percent;
+                    P.Config.Save();
                 }
             }
 
-            bool materia = Service.Configuration.Materia;
+            bool materia = P.Config.Materia;
             if (ImGui.Checkbox("Automatically Extract Materia", ref materia))
             {
-                Service.Configuration.Materia = materia;
-                Service.Configuration.Save();
+                P.Config.Materia = materia;
+                P.Config.Save();
             }
             ImGuiComponents.HelpMarker("Will automatically extract materia from any equipped gear once it's spiritbond is 100%");
 
-            ImGui.Checkbox("Craft only X times", ref Service.Configuration.CraftingX);
-            if (Service.Configuration.CraftingX)
+            ImGui.Checkbox("Craft only X times", ref P.Config.CraftingX);
+            if (P.Config.CraftingX)
             {
                 ImGui.Text("Number of Times:");
                 ImGui.SameLine();
                 ImGui.PushItemWidth(200);
-                if (ImGui.InputInt("###TimesRepeat", ref Service.Configuration.CraftX))
+                if (ImGui.InputInt("###TimesRepeat", ref P.Config.CraftX))
                 {
-                    if (Service.Configuration.CraftX < 0)
-                        Service.Configuration.CraftX = 0;
+                    if (P.Config.CraftX < 0)
+                        P.Config.CraftX = 0;
 
                 }
             }
 
-            bool stopIfFail = Service.Configuration.EnduranceStopFail;
+            bool stopIfFail = P.Config.EnduranceStopFail;
             if (ImGui.Checkbox("Disable Endurance Mode Upon Failed Craft", ref stopIfFail))
             {
-                Service.Configuration.EnduranceStopFail = stopIfFail;
-                Service.Configuration.Save();
+                P.Config.EnduranceStopFail = stopIfFail;
+                P.Config.Save();
             }
 
-            bool stopIfNQ = Service.Configuration.EnduranceStopNQ;
+            bool stopIfNQ = P.Config.EnduranceStopNQ;
             if (ImGui.Checkbox("Disable Endurance Mode Upon Crafting an NQ item", ref stopIfNQ))
             {
-                Service.Configuration.EnduranceStopNQ = stopIfNQ;
-                Service.Configuration.Save();
+                P.Config.EnduranceStopNQ = stopIfNQ;
+                P.Config.Save();
             }
         }
 
@@ -398,7 +398,7 @@ namespace Artisan.Autocraft
             {
                 HQData = d;
             }
-            var addonPtr = Service.GameGui.GetAddonByName("RecipeNote", 1);
+            var addonPtr = Svc.GameGui.GetAddonByName("RecipeNote", 1);
             if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon))
             {
                 if (addonPtr == IntPtr.Zero)
@@ -578,10 +578,10 @@ namespace Artisan.Autocraft
 
         private static void UpdateMacroTimer()
         {
-            if (Service.Configuration.CraftingX && Service.Configuration.CraftX > 0 && Service.Configuration.IRM.ContainsKey((uint)RecipeID))
+            if (P.Config.CraftingX && P.Config.CraftX > 0 && P.Config.IRM.ContainsKey((uint)RecipeID))
             {
-                var macro = Service.Configuration.UserMacros.FirstOrDefault(x => x.ID == Service.Configuration.IRM[(uint)RecipeID]);
-                Double timeInSeconds = ((MacroUI.GetMacroLength(macro) * Service.Configuration.CraftX) + (Service.Configuration.CraftX * 2.5)); // Counting crafting duration + 2 seconds between crafts.
+                var macro = P.Config.UserMacros.FirstOrDefault(x => x.ID == P.Config.IRM[(uint)RecipeID]);
+                Double timeInSeconds = ((MacroUI.GetMacroLength(macro) * P.Config.CraftX) + (P.Config.CraftX * 2.5)); // Counting crafting duration + 2 seconds between crafts.
                 CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
             }
         }

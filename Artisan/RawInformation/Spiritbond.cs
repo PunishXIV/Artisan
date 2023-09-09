@@ -60,12 +60,12 @@ namespace Artisan.RawInformation
             return false;
         }
 
-        public static bool IsMateriaMenuOpen() => Service.GameGui.GetAddonByName("Materialize", 1) != IntPtr.Zero;
+        public static bool IsMateriaMenuOpen() => Svc.GameGui.GetAddonByName("Materialize", 1) != IntPtr.Zero;
 
-        public static bool IsMateriaMenuDialogOpen() => Service.GameGui.GetAddonByName("MaterializeDialog", 1) != IntPtr.Zero;
+        public static bool IsMateriaMenuDialogOpen() => Svc.GameGui.GetAddonByName("MaterializeDialog", 1) != IntPtr.Zero;
         public unsafe static void OpenMateriaMenu()
         {
-            if (Service.GameGui.GetAddonByName("Materialize", 1) == IntPtr.Zero)
+            if (Svc.GameGui.GetAddonByName("Materialize", 1) == IntPtr.Zero)
             {
                 if (Throttler.Throttle(1000))
                 {
@@ -76,7 +76,7 @@ namespace Artisan.RawInformation
 
         public unsafe static void CloseMateriaMenu()
         {
-            if (Service.GameGui.GetAddonByName("Materialize", 1) != IntPtr.Zero)
+            if (Svc.GameGui.GetAddonByName("Materialize", 1) != IntPtr.Zero)
             {
                 if (Throttler.Throttle(1000))
                 {
@@ -91,7 +91,7 @@ namespace Artisan.RawInformation
             {
                 if (Throttler.Throttle(500))
                 {
-                    var materializePTR = Service.GameGui.GetAddonByName("MaterializeDialog", 1);
+                    var materializePTR = Svc.GameGui.GetAddonByName("MaterializeDialog", 1);
                     if (materializePTR == IntPtr.Zero)
                         return;
 
@@ -161,7 +161,7 @@ namespace Artisan.RawInformation
                     {
                         if (Throttler.Throttle(500))
                         {
-                            var materializePTR = Service.GameGui.GetAddonByName("Materialize", 1);
+                            var materializePTR = Svc.GameGui.GetAddonByName("Materialize", 1);
                             if (materializePTR == IntPtr.Zero)
                                 return;
 

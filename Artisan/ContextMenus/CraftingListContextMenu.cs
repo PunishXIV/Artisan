@@ -26,7 +26,7 @@ internal static class CraftingListContextMenu
 
     private static void AddInventoryMenu(InventoryContextMenuOpenArgs args)
     {
-        if (Service.Configuration.HideContextMenus) return;
+        if (P.Config.HideContextMenus) return;
 
         if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == args.ItemId)) return;
 
@@ -37,7 +37,7 @@ internal static class CraftingListContextMenu
 
     private unsafe static void AddMenu(GameObjectContextMenuOpenArgs args)
     {
-        if (Service.Configuration.HideContextMenus) return;
+        if (P.Config.HideContextMenus) return;
 
         if (args.ParentAddonName == "RecipeNote")
         {
@@ -96,9 +96,9 @@ internal static class CraftingListContextMenu
         }
 
         if (withPrecraft)
-            CraftingListUI.AddAllSubcrafts(recipe, CraftingListUI.selectedList, 1, Service.Configuration.ContextMenuLoops);
+            CraftingListUI.AddAllSubcrafts(recipe, CraftingListUI.selectedList, 1, P.Config.ContextMenuLoops);
 
-        for (int i = 1; i <= Service.Configuration.ContextMenuLoops; i++)
+        for (int i = 1; i <= P.Config.ContextMenuLoops; i++)
         {
             if (CraftingListUI.selectedList.Items.IndexOf(recipe.RowId) == -1)
             {
@@ -122,7 +122,7 @@ internal static class CraftingListContextMenu
 
         CraftingListHelpers.TidyUpList(CraftingListUI.selectedList);
 
-        Service.Configuration.Save();
+        P.Config.Save();
     }
 
     public static void Dispose()

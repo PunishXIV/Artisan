@@ -93,7 +93,7 @@ namespace Artisan.UI
                     if (ImGui.InputText("", ref renameMacro, 64, ImGuiInputTextFlags.EnterReturnsTrue))
                     {
                         SelectedMacro.Name = renameMacro;
-                        Service.Configuration.Save();
+                        P.Config.Save();
 
                         renameMode = false;
                         renameMacro = String.Empty;
@@ -101,8 +101,8 @@ namespace Artisan.UI
                 }
                 if (ImGui.Button("Delete Macro (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                 {
-                    Service.Configuration.UserMacros.Remove(SelectedMacro);
-                    Service.Configuration.Save();
+                    P.Config.UserMacros.Remove(SelectedMacro);
+                    P.Config.Save();
                     SelectedMacro = new();
                     selectedActionIndex = -1;
 
@@ -131,7 +131,7 @@ namespace Artisan.UI
                 if (ImGui.Checkbox("Skip quality actions if at 100%", ref skipQuality))
                 {
                     SelectedMacro.MacroOptions.SkipQualityIfMet = skipQuality;
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 }
                 ImGuiComponents.HelpMarker("Once you're at 100% quality, the macro will skip over all actions relating to quality, including buffs.");
                 ImGui.SameLine();
@@ -139,7 +139,7 @@ namespace Artisan.UI
                 if (ImGui.Checkbox("Skip Observes If Not Poor", ref skipObserves))
                 {
                     SelectedMacro.MacroOptions.SkipObservesIfNotPoor = skipObserves;
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 }
 
 
@@ -147,7 +147,7 @@ namespace Artisan.UI
                 if (ImGui.Checkbox("Upgrade Quality Actions", ref upgradeQualityActions))
                 {
                     SelectedMacro.MacroOptions.UpgradeQualityActions = upgradeQualityActions;
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 }
                 ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases quality (not including Byregot's Blessing) then it will upgrade the action to Precise Touch.");
                 ImGui.SameLine();
@@ -156,23 +156,23 @@ namespace Artisan.UI
                 if (ImGui.Checkbox("Upgrade Progress Actions", ref upgradeProgressActions))
                 {
                     SelectedMacro.MacroOptions.UpgradeProgressActions = upgradeProgressActions;
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 }
                 ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases progress then it will upgrade the action to Intensive Synthesis.");
 
                 ImGui.PushItemWidth(150f);
                 if (ImGui.InputInt("Minimum Craftsmanship", ref SelectedMacro.MacroOptions.MinCraftsmanship))
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 ImGuiComponents.HelpMarker("Artisan will not start crafting if you do not meet this minimum craftsmanship with this macro selected.");
 
                 ImGui.PushItemWidth(150f);
                 if (ImGui.InputInt("Minimum Control", ref SelectedMacro.MacroOptions.MinControl))
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 ImGuiComponents.HelpMarker("Artisan will not start crafting if you do not meet this minimum control with this macro selected.");
 
                 ImGui.PushItemWidth(150f);
                 if (ImGui.InputInt("Minimum CP", ref SelectedMacro.MacroOptions.MinCP))
-                    Service.Configuration.Save();
+                    P.Config.Save();
                 ImGuiComponents.HelpMarker("Artisan will not start crafting if you do not meet this minimum CP with this macro selected.");
 
                 if (!Raweditor)
@@ -190,7 +190,7 @@ namespace Artisan.UI
                             SelectedMacro.MacroStepOptions.Insert(selectedActionIndex + 1, new());
                         }
 
-                        Service.Configuration.Save();
+                        P.Config.Save();
                     }
 
                     if (SelectedMacro.MacroActions.Count > 0 && selectedActionIndex != -1)
@@ -248,7 +248,7 @@ namespace Artisan.UI
                         if (ImGui.Checkbox($"Skip Upgrades For This Action", ref skip))
                         {
                             SelectedMacro.MacroStepOptions[selectedActionIndex].ExcludeFromUpgrade = skip;
-                            Service.Configuration.Save();
+                            P.Config.Save();
                         }
 
                         ImGui.Spacing();
@@ -258,31 +258,31 @@ namespace Artisan.UI
                         ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0, 0));
                         ImGui.Columns(3, null, false);
                         if (ImGui.Checkbox($"Normal", ref macroStepOpts.ExcludeNormal))
-                            Service.Configuration.Save();
+                            P.Config.Save();
                         if (ImGui.Checkbox($"Poor", ref macroStepOpts.ExcludePoor))
-                            Service.Configuration.Save();
+                            P.Config.Save();
                         if (ImGui.Checkbox($"Good", ref macroStepOpts.ExcludeGood))
-                            Service.Configuration.Save();
+                            P.Config.Save();
                         if (ImGui.Checkbox($"Excellent", ref macroStepOpts.ExcludeExcellent))
-                            Service.Configuration.Save();
+                            P.Config.Save();
 
                         ImGui.NextColumn();
 
                         if (ImGui.Checkbox($"Centered", ref macroStepOpts.ExcludeCentered))
-                            Service.Configuration.Save();
+                            P.Config.Save();
                         if (ImGui.Checkbox($"Sturdy", ref macroStepOpts.ExcludeSturdy))
-                            Service.Configuration.Save();
+                            P.Config.Save();
                         if (ImGui.Checkbox($"Pliant", ref macroStepOpts.ExcludePliant))
-                            Service.Configuration.Save();
+                            P.Config.Save();
                         if (ImGui.Checkbox($"Malleable", ref macroStepOpts.ExcludeMalleable))
-                            Service.Configuration.Save();
+                            P.Config.Save();
 
                         ImGui.NextColumn();
 
                         if (ImGui.Checkbox($"Primed", ref macroStepOpts.ExcludePrimed))
-                            Service.Configuration.Save();
+                            P.Config.Save();
                         if (ImGui.Checkbox($"Good Omen", ref macroStepOpts.ExcludeGoodOmen))
-                            Service.Configuration.Save();
+                            P.Config.Save();
 
                         ImGui.Columns(1);
                         ImGui.PopStyleVar();
@@ -292,7 +292,7 @@ namespace Artisan.UI
                             SelectedMacro.MacroActions.RemoveAt(selectedActionIndex);
                             SelectedMacro.MacroStepOptions.RemoveAt(selectedActionIndex);
 
-                            Service.Configuration.Save();
+                            P.Config.Save();
 
                             if (selectedActionIndex == SelectedMacro.MacroActions.Count)
                                 selectedActionIndex--;
@@ -304,7 +304,7 @@ namespace Artisan.UI
                             {
                                 SelectedMacro.MacroActions[selectedActionIndex] = 0;
 
-                                Service.Configuration.Save();
+                                P.Config.Save();
                             }
 
                             foreach (var constant in typeof(Skills).GetFields().OrderBy(x => ((uint)x.GetValue(null)!).NameOfAction()))
@@ -313,7 +313,7 @@ namespace Artisan.UI
                                 {
                                     SelectedMacro.MacroActions[selectedActionIndex] = (uint)constant.GetValue(null)!;
 
-                                    Service.Configuration.Save();
+                                    P.Config.Save();
                                 }
                             }
 
@@ -330,7 +330,7 @@ namespace Artisan.UI
                                 SelectedMacro.MacroStepOptions.Reverse(selectedActionIndex - 1, 2);
                                 selectedActionIndex--;
 
-                                Service.Configuration.Save();
+                                P.Config.Save();
                             }
                         }
 
@@ -349,7 +349,7 @@ namespace Artisan.UI
                                 SelectedMacro.MacroStepOptions.Reverse(selectedActionIndex, 2);
                                 selectedActionIndex++;
 
-                                Service.Configuration.Save();
+                                P.Config.Save();
                             }
                         }
 
@@ -368,7 +368,7 @@ namespace Artisan.UI
                         {
                             SelectedMacro.MacroActions = updated.MacroActions;
                             SelectedMacro.MacroStepOptions = updated.MacroStepOptions;
-                            Service.Configuration.Save();
+                            P.Config.Save();
 
                             DuoLog.Information($"Macro Updated");
                         }
@@ -381,7 +381,7 @@ namespace Artisan.UI
                         {
                             SelectedMacro.MacroActions = updated.MacroActions;
                             SelectedMacro.MacroStepOptions = updated.MacroStepOptions;
-                            Service.Configuration.Save();
+                            P.Config.Save();
 
                             DuoLog.Information($"Macro Updated");
                         }
