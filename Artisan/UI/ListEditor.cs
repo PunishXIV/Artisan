@@ -648,6 +648,9 @@ internal class ListEditor : Window, IDisposable
             P.Config.Save();
         }
 
+        if (!RawInformation.Character.CharacterInfo.MateriaExtractionUnlocked())
+            ImGui.BeginDisabled();
+
         var materia = SelectedList.Materia;
         if (ImGui.Checkbox("Automatically Extract Materia", ref materia))
         {
@@ -655,8 +658,14 @@ internal class ListEditor : Window, IDisposable
             P.Config.Save();
         }
 
-        ImGuiComponents.HelpMarker(
-            "Will automatically extract materia from any equipped gear once it's spiritbond is 100%");
+        if (!RawInformation.Character.CharacterInfo.MateriaExtractionUnlocked())
+        {
+            ImGui.EndDisabled();
+
+            ImGuiComponents.HelpMarker("This character has not unlocked materia extraction. This setting will be ignored.");
+        }
+        else
+            ImGuiComponents.HelpMarker("Will automatically extract materia from any equipped gear once it's spiritbond is 100%");
 
         var repair = SelectedList.Repair;
         if (ImGui.Checkbox("Automatic Repairs", ref repair))

@@ -288,7 +288,6 @@ namespace Artisan.UI
             ImGuiEx.TextWrapped($"If you do not have the automatic mode enabled, you will have access to 2 more modes. \"Semi-Manual Mode\" and \"Full Manual\"." +
                                 $" \"Semi-Manual Mode\" will appear in a small pop-up window when you start crafting.");
 
-            //TODO Update to remove debug trial craft repeat from screenshot
             var craftWindowExample = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/ThemeCraftingWindowExample.png");
 
             if (ThreadLoadImageHandler.TryGetTextureWrap(craftWindowExample, out example))
@@ -534,6 +533,15 @@ namespace Artisan.UI
 
                 if (ImGui.Checkbox("Play Sound After Endurance Is Complete", ref P.Config.PlaySoundFinishEndurance))
                     P.Config.Save();
+
+                if (ImGui.Checkbox($"Play Sound After List Is Complete", ref P.Config.PlaySoundFinishList))
+                    P.Config.Save();
+
+                if (P.Config.PlaySoundFinishEndurance || P.Config.PlaySoundFinishList)
+                {
+                    if (ImGui.SliderFloat("Sound Volume", ref P.Config.SoundVolume, 0f, 1f, "%.2f"))
+                        P.Config.Save();
+                }
             }
             if (ImGui.CollapsingHeader("Macro Settings"))
             {

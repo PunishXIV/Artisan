@@ -9,6 +9,7 @@ using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
 using Artisan.Universalis;
+using Dalamud.Configuration;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
@@ -18,6 +19,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Style;
 using Dalamud.Interface.Windowing;
+using Dalamud.IoC;
 using Dalamud.Plugin;
 using ECommons;
 using ECommons.Automation;
@@ -31,6 +33,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
 using Macro = Artisan.MacroSystem.Macro;
@@ -67,14 +70,13 @@ public unsafe class Artisan : IDalamudPlugin
     internal ImFontPtr ScaledFont;
     internal bool StylePushed = false;
 
-    public Artisan(DalamudPluginInterface pluginInterface)
+    public Artisan([RequiredVersion("1.0")] DalamudPluginInterface pluginInterface)
     {
-        pi = pluginInterface;
-        P.Config = pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-        P.Config.Initialize(pluginInterface);
-
-        ECommonsMain.Init(pluginInterface, this, Module.All);
+        ECommonsMain.Init(pluginInterface, this, ECommons.Module.All);
         PunishLibMain.Init(pluginInterface, this, new AboutPlugin() { Sponsor = "https://ko-fi.com/taurenkey" });
+        P = this;
+
+        P.Config = Svc.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         TM = new();
         TM.TimeLimitMS = 1000;
@@ -83,7 +85,6 @@ public unsafe class Artisan : IDalamudPlugin
         TM.ShowDebug = false;
         CTM.ShowDebug = false;
 #endif
-        P = this;
         ws = new();
         cw = new();
         ri = new();

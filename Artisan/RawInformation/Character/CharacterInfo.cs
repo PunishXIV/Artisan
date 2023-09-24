@@ -114,6 +114,8 @@ namespace Artisan.RawInformation.Character
             return QuestManager.IsQuestComplete((uint)v);
         }
 
+        public static bool MateriaExtractionUnlocked() => QuestUnlocked(66174);
+
         internal static uint CraftLevel() => CharacterLevel switch
         {
             <= 50 => (uint)CharacterLevel,

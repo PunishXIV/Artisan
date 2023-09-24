@@ -171,6 +171,7 @@ namespace Artisan.CraftingLogic
                 {
                     case 1:
                         collectibilityCheck = Convert.ToInt32(CollectabilityLow);
+                        MaxQuality = collectibilityCheck * 10;
                         break;
                     case 2:
                         if (CollectabilityMid == "0")
@@ -181,6 +182,7 @@ namespace Artisan.CraftingLogic
                         {
                             collectibilityCheck = Convert.ToInt32(CollectabilityMid);
                         }
+                        MaxQuality = collectibilityCheck * 10;
                         break;
                     case 3:
                         if (CollectabilityHigh == "0")
@@ -198,6 +200,7 @@ namespace Artisan.CraftingLogic
                         {
                             collectibilityCheck = Convert.ToInt32(CollectabilityHigh);
                         }
+                        MaxQuality = collectibilityCheck * 10;
                         break;
                     default:
                         break;

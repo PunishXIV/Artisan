@@ -91,6 +91,8 @@ namespace Artisan.Autocraft
                     Enable = false;
                     P.Config.CraftingX = false;
                     DuoLog.Information("Craft X has completed.");
+                    if (P.Config.PlaySoundFinishEndurance)
+                        Sounds.SoundPlayer.PlaySound();
                     return;
                 }
                 if (Svc.Condition[ConditionFlag.Occupied39])
@@ -157,7 +159,7 @@ namespace Artisan.Autocraft
                         P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredients");
                         P.TM.Enqueue(() => UpdateMacroTimer(), "UpdateEnduranceMacroTimer");
                         P.TM.DelayNext("EnduranceThrottle", 100);
-                        P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraftMethods.RepeatActualCraft(); else Enable = false; }, "EnduranceStartCraft");
+                        P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraftMethods.RepeatActualCraft(); else { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
 
 
                     }
@@ -204,10 +206,26 @@ namespace Artisan.Autocraft
             }
             else
             {
+                if (!CraftingListFunctions.HasItemsForRecipe((uint)RecipeID))
+                    ImGui.BeginDisabled();
+
                 if (ImGui.Checkbox("Enable Endurance Mode", ref enable))
                 {
                     Endurance.ToggleEndurance(enable);
                 }
+
+                if (!CraftingListFunctions.HasItemsForRecipe((uint)RecipeID))
+                {
+                    ImGui.EndDisabled();
+
+                    if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                    {
+                        ImGui.BeginTooltip();
+                        ImGui.Text($"You cannot start Endurance as you do not possess ingredients to craft this recipe.");
+                        ImGui.EndTooltip();
+                    }
+                }
+
                 ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
 
                 ImGuiEx.Text($"Recipe: {RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.ClassJobSheet[LuminaSheets.RecipeSheet[(uint)RecipeID].CraftType.Row + 8].Abbreviation})" : "")}");
@@ -355,13 +373,24 @@ namespace Artisan.Autocraft
                 }
             }
 
+            if (!RawInformation.Character.CharacterInfo.MateriaExtractionUnlocked())
+                ImGui.BeginDisabled();
+
             bool materia = P.Config.Materia;
             if (ImGui.Checkbox("Automatically Extract Materia", ref materia))
             {
                 P.Config.Materia = materia;
                 P.Config.Save();
             }
-            ImGuiComponents.HelpMarker("Will automatically extract materia from any equipped gear once it's spiritbond is 100%");
+
+            if (!RawInformation.Character.CharacterInfo.MateriaExtractionUnlocked())
+            {
+                ImGui.EndDisabled();
+
+                ImGuiComponents.HelpMarker("This character has not unlocked materia extraction. This setting will be ignored.");
+            }
+            else
+                ImGuiComponents.HelpMarker("Will automatically extract materia from any equipped gear once it's spiritbond is 100%");
 
             ImGui.Checkbox("Craft only X times", ref P.Config.CraftingX);
             if (P.Config.CraftingX)

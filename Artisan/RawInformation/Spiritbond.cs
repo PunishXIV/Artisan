@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using Artisan.RawInformation.Character;
 using Artisan.UI;
 using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Conditions;
@@ -110,6 +111,8 @@ namespace Artisan.RawInformation
 
         public unsafe static bool ExtractMateriaTask(bool option, bool isCrafting, bool preparing)
         {
+            if (!CharacterInfo.MateriaExtractionUnlocked()) return true;
+
             if (option && IsSpiritbondReadyAny())
             {
                 if (DebugTab.Debug) PluginLog.Verbose("Entered materia extraction");

@@ -198,15 +198,6 @@ namespace Artisan.Autocraft
             return false;
         }
 
-        //internal static bool UseItemInternal(uint id, bool hq = false)
-        //{
-        //    if (id == 0) return false;
-        //    if (hq) id += 1_000_000;
-        //    if (!Usables.ContainsKey(id is >= 1_000_000 and < 2_000_000 ? id - 1_000_000 : id)) return false;
-        //    useItem(itemContextMenuAgent, id, 9999, 0, 0);
-        //    return true;
-        //}
-
         internal static unsafe bool UseItem2(uint itemID) =>
             ActionManager.Instance() is not null && ActionManager.Instance()->UseAction(ActionType.Item, itemID, a4: 65535);
 

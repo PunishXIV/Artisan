@@ -17,6 +17,7 @@ using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Media;
 using static ECommons.GenericHelpers;
 using PluginLog = Dalamud.Logging.PluginLog;
 
@@ -178,6 +179,9 @@ namespace Artisan.CraftingLists
                 CraftingListUI.Processing = false;
                 CurrentCraftMethods.CloseQuickSynthWindow();
                 CLTM.Enqueue(() => CloseCraftingMenu(), "EndOfListCloseMenu");
+
+                if (P.Config.PlaySoundFinishList)
+                Sounds.SoundPlayer.PlaySound();
                 return;
             }
 

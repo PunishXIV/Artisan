@@ -6,6 +6,7 @@ using Artisan.UI.Tables;
 using Dalamud.Configuration;
 using Dalamud.Game.Gui.FlyText;
 using Dalamud.Plugin;
+using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using System;
 using System.Collections.Generic;
@@ -87,6 +88,8 @@ namespace Artisan
         public bool PlaySoundFinishEndurance = false;
         public bool PlaySoundFinishList = false;
 
+        public float SoundVolume = 0.25f;
+
         public bool DefaultListMateria = false;   
         public bool DefaultListSkip = false;
         public bool DefaultListRepair = false;
@@ -126,17 +129,11 @@ namespace Artisan
         public int CraftX = 0;
 
         [NonSerialized]
-        private DalamudPluginInterface? pluginInterface;
         private bool autoMode = false;
-
-        public void Initialize(DalamudPluginInterface pluginInterface)
-        {
-            this.pluginInterface = pluginInterface;
-        }
 
         public void Save()
         {
-            this.pluginInterface!.SavePluginConfig(this);
+            Svc.PluginInterface.SavePluginConfig(this);
         }
     }
 }

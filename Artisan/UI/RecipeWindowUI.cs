@@ -5,21 +5,17 @@ using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using OtterGui;
 using System;
 using System.Linq;
 using System.Numerics;
-using System.Security.Cryptography.Pkcs;
 using static ECommons.GenericHelpers;
 
 namespace Artisan
@@ -35,7 +31,7 @@ namespace Artisan
             RespectCloseHotkey = false;
             this.SizeConstraints = new WindowSizeConstraints()
             {
-                MaximumSize = new Vector2(0,0),
+                MaximumSize = new Vector2(0, 0),
             };
         }
 
@@ -58,7 +54,7 @@ namespace Artisan
 
         private unsafe void DrawSupplyMissionOverlay()
         {
-            if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon)) 
+            if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon))
             {
                 try
                 {
@@ -208,8 +204,12 @@ namespace Artisan
 
             for (int i = 425; i <= 432; i++)
             {
+                if (atkUnitBase->AtkValues[i].Type == 0)
+                    continue;
+
                 var itemId = atkUnitBase->AtkValues[i].Int;
                 var requested = atkUnitBase->AtkValues[i - 40].Int;
+
                 if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row == i - 425, out var recipe))
                 {
                     var timesToAdd = requested / recipe.AmountResult;
@@ -246,6 +246,9 @@ namespace Artisan
 
             for (int i = 233; i <= 240; i++)
             {
+                if (atkUnitBase->AtkValues[i].Type == 0)
+                    continue;
+
                 var itemId = atkUnitBase->AtkValues[i].Int;
                 var requested = atkUnitBase->AtkValues[i + 16].Int;
                 if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row == i - 233, out var recipe))
@@ -253,7 +256,7 @@ namespace Artisan
                     var timesToAdd = requested / recipe.AmountResult;
 
                     if (withSubcrafts)
-                    CraftingListUI.AddAllSubcrafts(recipe, craftingList, timesToAdd);
+                        CraftingListUI.AddAllSubcrafts(recipe, craftingList, timesToAdd);
 
                     for (int p = 1; p <= timesToAdd; p++)
                     {
@@ -492,13 +495,27 @@ namespace Artisan
                 P.Config.AutoMode = autoMode;
                 P.Config.Save();
             }
-
             bool enable = Endurance.Enable;
+
+            if (!CraftingListFunctions.HasItemsForRecipe((uint)Endurance.RecipeID))
+                ImGui.BeginDisabled();
+
             if (ImGui.Checkbox("Endurance Mode Toggle", ref enable))
             {
                 Endurance.ToggleEndurance(enable);
             }
 
+            if (!CraftingListFunctions.HasItemsForRecipe((uint)Endurance.RecipeID))
+            {
+                ImGui.EndDisabled();
+
+                if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                {
+                    ImGui.BeginTooltip();
+                    ImGui.Text($"You cannot start Endurance as you do not possess ingredients to craft this recipe.");
+                    ImGui.EndTooltip();
+                }
+            }
         }
 
         public unsafe static void DrawMacroOptions()
