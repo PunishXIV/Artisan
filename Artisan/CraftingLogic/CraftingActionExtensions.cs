@@ -3,7 +3,6 @@ using Dalamud.Game.ClientState.Statuses;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using System;
 using System.Linq;
-using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan.CraftingLogic
 {

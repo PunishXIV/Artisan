@@ -3,15 +3,9 @@ using Artisan.RawInformation;
 using Artisan.UI;
 using ClickLib.Clicks;
 using Dalamud.Logging;
-using ECommons;
-using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static ECommons.GenericHelpers;
 
 namespace Artisan.Autocraft

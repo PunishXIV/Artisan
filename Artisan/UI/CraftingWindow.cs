@@ -1,6 +1,5 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
-using Artisan.CraftingLogic;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Dalamud.Interface;
@@ -8,13 +7,8 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Timers;
 using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan.UI

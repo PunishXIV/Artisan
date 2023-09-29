@@ -1,11 +1,9 @@
 ﻿using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Hooking;
-using Dalamud.Utility.Signatures;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using FFXIVClientStructs.Interop.Attributes;
 using System;
 using System.Linq;
 
@@ -49,9 +47,9 @@ namespace Artisan.CustomDeliveries
 
         static SatisfactionManagerHelper()
         {
-            AgentUpdateHook ??= Hook<AgentUpdateDelegate>.FromAddress(Svc.SigScanner.ScanText("40 53 48 83 EC ?? 80 79 ?? ?? 48 8B D9 0F 84 ?? ?? ?? ?? 80 79 ?? ?? 75"), AgentUpdateDetour);
-            AgentValuesUpdatedHook ??= Hook<AgentValuesUpdated>.FromAddress(Svc.SigScanner.ScanText("48 89 5C 24 ?? 48 89 74 24 ?? 57 41 56 41 57 48 83 EC ?? 8B 51"), AgentValuesUpdatedDetour);
-            LoadNPCHook ??= Hook<LoadNPCDelegate>.FromAddress(Svc.SigScanner.ScanText("40 53 55 41 55 41 56 48 83 EC"), LoadNPCDetour);
+            AgentUpdateHook ??= Svc.GameInteropProvider.HookFromSignature<AgentUpdateDelegate>("40 53 48 83 EC ?? 80 79 ?? ?? 48 8B D9 0F 84 ?? ?? ?? ?? 80 79 ?? ?? 75", AgentUpdateDetour);
+            AgentValuesUpdatedHook ??= Svc.GameInteropProvider.HookFromSignature<AgentValuesUpdated>("48 89 5C 24 ?? 48 89 74 24 ?? 57 41 56 41 57 48 83 EC ?? 8B 51", AgentValuesUpdatedDetour);
+            LoadNPCHook ??= Svc.GameInteropProvider.HookFromSignature<LoadNPCDelegate>("40 53 55 41 55 41 56 48 83 EC", LoadNPCDetour);
         }
 
         public static void UpdateByNPCId(uint NPCId, uint SatisfactionID)

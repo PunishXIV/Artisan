@@ -4,7 +4,6 @@ using Dalamud.ContextMenu;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using ECommons.DalamudServices;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using System;
 using System.Linq;
 using OtterGui;
@@ -16,7 +15,7 @@ namespace Artisan.ContextMenus;
 
 internal static class CraftingListContextMenu
 {
-    private static readonly DalamudContextMenu contextMenu = new();
+    private static readonly DalamudContextMenu contextMenu = new(Svc.PluginInterface);
 
     public static void Init()
     {

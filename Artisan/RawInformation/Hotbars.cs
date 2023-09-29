@@ -1,15 +1,10 @@
-﻿using Dalamud.Interface;
-using Dalamud.Interface.Colors;
-using ECommons.DalamudServices;
+﻿using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
 
 namespace Artisan.RawInformation
 {

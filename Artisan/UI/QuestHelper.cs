@@ -2,7 +2,6 @@
 using Artisan.CraftingLists;
 using Artisan.QuestSync;
 using Artisan.RawInformation;
-using Dalamud.Game.Gui;
 using Dalamud.Interface.Windowing;
 using ECommons;
 using ECommons.DalamudServices;

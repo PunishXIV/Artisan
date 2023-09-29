@@ -3,19 +3,14 @@ using Artisan.RawInformation.Character;
 using Dalamud.Interface.Components;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
-using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
 using ImGuiNET;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Numerics;
 using Artisan.RawInformation;
 using Newtonsoft.Json;
-using ECommons.StringHelpers;
 
 namespace Artisan.UI
 {
@@ -122,7 +117,7 @@ namespace Artisan.UI
 
                 if (ImGui.Button("Export Macro###ExportButton"))
                 {
-                    ImGui.SetClipboardText(JsonConvert.SerializeObject(SelectedMacro).ToBase64());
+                    ImGui.SetClipboardText(JsonConvert.SerializeObject(SelectedMacro));
                     Notify.Success("Macro Copied to Clipboard.");
                 }
 

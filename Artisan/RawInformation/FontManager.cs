@@ -13,7 +13,6 @@ using Dalamud.Logging;
 using SharpDX;
 using SharpDX.DirectWrite;
 using System.IO;
-using Microsoft.VisualBasic;
 
 #pragma warning disable CS8632
 namespace Artisan.RawInformation;

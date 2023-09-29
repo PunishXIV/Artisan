@@ -2,24 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.InteropServices;
 
 using Artisan.Autocraft;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.UI;
-
-using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Components;
 using Dalamud.Logging;
 using ECommons;
-using ECommons.Automation;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
-using ECommons.StringHelpers;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 
 using ImGuiNET;
 
@@ -124,7 +117,7 @@ namespace Artisan.CraftingLists
                     var clipboard = ImGui.GetClipboardText();
                     if (clipboard != null)
                     {
-                        var import = JsonConvert.DeserializeObject<CraftingList>(clipboard.FromBase64());
+                        var import = JsonConvert.DeserializeObject<CraftingList>(clipboard);
                         if (import != null)
                         {
                             import.SetID();

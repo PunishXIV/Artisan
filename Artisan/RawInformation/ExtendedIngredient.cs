@@ -1,10 +1,9 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.IPC;
 using Artisan.Universalis;
-using Dalamud.Logging;
+using Dalamud.Interface.Internal;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using ImGuiScene;
 using Lumina.Excel.GeneratedSheets;
 using OtterGui;
 using System;
@@ -22,7 +21,7 @@ namespace Artisan.RawInformation
         public Recipe? CraftedRecipe;
         public Item Data;
         public TerritoryType GatherZone;
-        public TextureWrap Icon;
+        public IDalamudTextureWrap Icon;
         public int MaterialIndex;
         public CraftingList OriginList;
         public int Required;

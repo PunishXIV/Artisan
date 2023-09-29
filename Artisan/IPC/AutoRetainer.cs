@@ -1,5 +1,4 @@
-﻿using Dalamud.Logging;
-using ECommons.DalamudServices;
+﻿using ECommons.DalamudServices;
 using ECommons.Reflection;
 
 namespace Artisan.IPC;

@@ -242,7 +242,7 @@ namespace Artisan.RawInformation.Character
 
         internal RecipeInformation()
         {
-            SignatureHelper.Initialise(this, true);
+            Svc.GameInteropProvider.InitializeFromAttributes(this);
 
         }
     }

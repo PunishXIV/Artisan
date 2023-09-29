@@ -1,6 +1,5 @@
 ﻿using FFXIVClientStructs.Attributes;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using System.Drawing;
 using System.Runtime.InteropServices;
 
 namespace Artisan.RawInformation;

@@ -1,9 +1,6 @@
 ﻿using Artisan.RawInformation;
-using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Utility.Signatures;
 using ECommons;
 using ECommons.DalamudServices;
-using ECommons.Schedulers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -12,11 +9,8 @@ using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Artisan.CraftingLists;
 using ECommons.Logging;
-using System.Windows.Forms;
 
 namespace Artisan.Autocraft
 {
@@ -29,12 +23,9 @@ namespace Artisan.Autocraft
         internal static (uint Id, string Name)[] SquadronManuals;
         static Dictionary<uint, string> Usables;
         static AgentInterface* itemContextMenuAgent;
-        //[Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 41 B0 01 BA 13 00 00 00", Fallibility = Fallibility.Infallible)]
-        //static delegate* unmanaged<AgentInterface*, uint, uint, uint, short, void> useItem;
 
         internal static void Init()
         {
-            SignatureHelper.Initialise(new ConsumableChecker());
             itemContextMenuAgent = Framework.Instance()->UIModule->GetAgentModule()->GetAgentByInternalId(AgentId.InventoryContext);
             Usables = Svc.Data.GetExcelSheet<Item>().Where(i => i.ItemAction.Row > 0).ToDictionary(i => i.RowId, i => i.Name.ToString().ToLower())
             .Concat(Svc.Data.GetExcelSheet<EventItem>().Where(i => i.Action.Row > 0).ToDictionary(i => i.RowId, i => i.Name.ToString().ToLower()))

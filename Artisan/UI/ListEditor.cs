@@ -10,7 +10,6 @@ using Dalamud.Logging;
 using ECommons;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
-using ECommons.StringHelpers;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using global::Artisan.UI.Tables;
 using ImGuiNET;
@@ -25,7 +24,6 @@ using RawInformation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -186,7 +184,7 @@ internal class ListEditor : Window, IDisposable
         ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - export.X - btn.X - 3f);
         if (ImGui.Button("Export List"))
         {
-            ImGui.SetClipboardText(JsonConvert.SerializeObject(P.Config.CraftingLists.Where(x => x.ID == SelectedList.ID).First()).ToBase64());
+            ImGui.SetClipboardText(JsonConvert.SerializeObject(P.Config.CraftingLists.Where(x => x.ID == SelectedList.ID).First()));
             Notify.Success("List exported to clipboard.");
         }
     }

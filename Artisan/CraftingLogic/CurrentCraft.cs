@@ -1,15 +1,12 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
-using Artisan.CraftingLogic.CraftData;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
-using ClickLib.Clicks;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.Logging;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;

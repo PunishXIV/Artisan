@@ -1,7 +1,6 @@
 ﻿using Artisan.RawInformation;
 using Artisan.UI;
 using ClickLib.Clicks;
-using Dalamud.Logging;
 using ECommons;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;

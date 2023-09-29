@@ -12,12 +12,10 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Media;
 using static ECommons.GenericHelpers;
 using PluginLog = Dalamud.Logging.PluginLog;
 
@@ -600,7 +598,7 @@ namespace Artisan.CraftingLists
             var gearsetModule = RaptureGearsetModule.Instance();
             for (var i = 0; i < 100; i++)
             {
-                var gearset = gearsetModule->Gearset[i];
+                var gearset = gearsetModule->GetGearset(i);
                 if (gearset == null) continue;
                 if (!gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists)) continue;
                 if (gearset->ID != i) continue;

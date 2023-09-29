@@ -4,10 +4,7 @@ using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Artisan.UI.Tables;
 using Dalamud.Configuration;
-using Dalamud.Game.Gui.FlyText;
-using Dalamud.Plugin;
 using ECommons.DalamudServices;
-using ECommons.ImGuiMethods;
 using System;
 using System.Collections.Generic;
 

@@ -136,8 +136,8 @@ namespace Artisan.RawInformation
 
         static ActionWatching()
         {
-            UseActionHook ??= Hook<UseActionDelegate>.FromAddress((nint)ActionManager.Addresses.UseAction.Value, UseActionDetour);
-            clickSysnthesisButtonHook ??= Hook<ClickSynthesisButton>.FromAddress(Svc.SigScanner.ScanText("E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 33 D2"), ClickSynthesisButtonDetour);
+            UseActionHook ??= Svc.GameInteropProvider.HookFromSignature<UseActionDelegate>(ActionManager.Addresses.UseAction.String, UseActionDetour);
+            clickSysnthesisButtonHook ??= Svc.GameInteropProvider.HookFromSignature<ClickSynthesisButton>("E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 33 D2", ClickSynthesisButtonDetour);
             clickSysnthesisButtonHook?.Enable();
         }
 

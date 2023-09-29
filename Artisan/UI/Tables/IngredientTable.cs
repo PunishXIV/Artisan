@@ -3,11 +3,9 @@ using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.IPC;
 using Artisan.RawInformation;
-using Artisan.Tasks;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
-using Dalamud.Logging;
 using Dalamud.Utility;
 using ECommons;
 using ECommons.Automation;
@@ -24,9 +22,7 @@ using OtterGui.Table;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Emit;
 using System.Text;
-using static Artisan.UI.Tables.IngredientTable;
 
 namespace Artisan.UI.Tables
 {

@@ -1,13 +1,8 @@
 ﻿using Artisan.CraftingLists;
-using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
-using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
-using System;
-using System.CodeDom;
-using System.Linq;
 
 namespace Artisan.UI
 {

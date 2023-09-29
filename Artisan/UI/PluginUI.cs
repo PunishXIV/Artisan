@@ -201,7 +201,7 @@ namespace Artisan.UI
 
                         if (OpenWindow == OpenWindow.About)
                         {
-                            AboutTab.Draw(P);
+                            AboutTab.Draw("Artisan");
                         }
 
                         if (OpenWindow == OpenWindow.Debug)

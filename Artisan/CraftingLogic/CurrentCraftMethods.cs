@@ -3,10 +3,9 @@ using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Statuses;
-using Dalamud.Logging;
 using ECommons;
+using ECommons.Automation;
 using ECommons.DalamudServices;
-using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -398,17 +397,11 @@ namespace Artisan.CraftingLogic
             {
                 if (Throttler.Throttle(500))
                 {
-                    var recipeWindow = Svc.GameGui.GetAddonByName("RecipeNote", 1);
-                    if (recipeWindow == IntPtr.Zero)
-                        return;
-
-                    var addonPtr = (AddonRecipeNote*)recipeWindow;
-                    if (addonPtr == null)
-                        return;
-
-                    var synthButton = addonPtr->TrialSynthesisButton;
-                    ClickRecipeNote.Using(recipeWindow).TrialSynthesis();
-                    Endurance.Tasks.Clear();
+                    if (GenericHelpers.TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var recipenote))
+                    {
+                        Callback.Fire(&recipenote->AtkUnitBase, true, 10);
+                        Endurance.Tasks.Clear();
+                    }
                 }
             }
             catch (Exception ex)
@@ -494,10 +487,6 @@ namespace Artisan.CraftingLogic
                     return;
 
                 var qsynthButton = (AtkComponentButton*)quickSynthWindow->UldManager.NodeList[2];
-                if (qsynthButton != null && !qsynthButton->IsEnabled)
-                {
-                    qsynthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
-                }
                 AtkResNodeFunctions.ClickButton(quickSynthWindow, qsynthButton, 0);
             }
             catch (Exception e)
@@ -510,35 +499,12 @@ namespace Artisan.CraftingLogic
         {
             try
             {
-                var recipeWindow = Svc.GameGui.GetAddonByName("RecipeNote", 1);
-                if (recipeWindow == IntPtr.Zero)
-                    return;
-
-                var addonPtr = (AddonRecipeNote*)recipeWindow;
-                if (addonPtr == null)
-                    return;
-                var synthButton = addonPtr->SynthesizeButton;
-                if (synthButton == null)
-                    return;
-
-                if (synthButton != null && !synthButton->IsEnabled)
-                {
-                    Dalamud.Logging.PluginLog.Verbose("AddonRecipeNote: Enabling synth button");
-                    synthButton->AtkComponentBase.OwnerNode->AtkResNode.Flags ^= 1 << 5;
-                }
-
                 if (Throttler.Throttle(500))
                 {
-                    try
+                    if (GenericHelpers.TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var recipenote))
                     {
-                        Dalamud.Logging.PluginLog.Verbose("AddonRecipeNote: Selecting synth");
-                        ClickRecipeNote.Using(recipeWindow).Synthesize();
-
+                        Callback.Fire(&recipenote->AtkUnitBase, true, 8);
                         Endurance.Tasks.Clear();
-                    }
-                    catch (Exception e)
-                    {
-                        e.Log();
                     }
                 }
             }

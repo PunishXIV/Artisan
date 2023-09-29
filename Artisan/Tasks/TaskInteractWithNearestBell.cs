@@ -73,7 +73,7 @@ internal unsafe static class PlayerWorldHandlers
             {
                 if (RetainerInfo.GenericThrottle)
                 {
-                    Svc.Targets.SetTarget(x);
+                    Svc.Targets.Target = x;
                     PluginLog.Debug($"Set target to {x}");
                     return true;
                 }

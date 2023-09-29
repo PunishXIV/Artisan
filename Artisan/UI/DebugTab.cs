@@ -6,26 +6,13 @@ using Artisan.RawInformation.Character;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
-using FFXIVClientStructs.Attributes;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
-using Newtonsoft.Json;
 using System;
-using System.Collections;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text.Json.Serialization;
-using System.Text.Json;
 using static ECommons.GenericHelpers;
 using Artisan.Autocraft;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.GeneratedSheets;
-using ECommons.Automation;
-using FFXIVClientStructs.FFXIV.Client.UI.Info;
 
 namespace Artisan.UI
 {

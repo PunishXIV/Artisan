@@ -136,7 +136,7 @@ public unsafe class RetainerManager
     private static StaticRetainerContainer _address;
     private static RetainerContainer* _container;
 
-    public RetainerManager(SigScanner sigScanner)
+    public RetainerManager(ISigScanner sigScanner)
     {
         if (_address != null)
             return;
@@ -163,7 +163,7 @@ public unsafe class RetainerManager
 
 public sealed class StaticRetainerContainer : SeAddressBase
 {
-    public StaticRetainerContainer(SigScanner sigScanner)
+    public StaticRetainerContainer(ISigScanner sigScanner)
         : base(sigScanner, "48 8B E9 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 74 4E")
     { }
 }
@@ -172,7 +172,7 @@ public class SeAddressBase
 {
     public readonly IntPtr Address;
 
-    public SeAddressBase(SigScanner sigScanner, string signature, int offset = 0)
+    public SeAddressBase(ISigScanner sigScanner, string signature, int offset = 0)
     {
         Address = sigScanner.GetStaticAddressFromSig(signature);
         if (Address != IntPtr.Zero)

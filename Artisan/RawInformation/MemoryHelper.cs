@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Memory.Exceptions;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 

@@ -1,9 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.RawInformation.Character;
-using Dalamud.Game.ClientState.Objects;
-using Dalamud.Game.ClientState.Objects.Types;
 using ECommons.DalamudServices;
-using ECommons.GameFunctions;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using System.Collections.Generic;
 using System.Linq;

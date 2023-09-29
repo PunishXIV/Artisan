@@ -5,8 +5,6 @@ using Artisan.UI;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
-using ECommons.Logging;
-using ECommons.StringHelpers;
 using ImGuiNET;
 using Newtonsoft.Json;
 using System;
@@ -67,7 +65,7 @@ namespace Artisan.MacroSystem
                     var clipboard = ImGui.GetClipboardText();
                     if (clipboard != null)
                     {
-                        var import = JsonConvert.DeserializeObject<Macro>(clipboard.FromBase64());
+                        var import = JsonConvert.DeserializeObject<Macro>(clipboard);
                         if (import != null)
                         {
                             import.SetID();

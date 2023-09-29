@@ -6,7 +6,6 @@ using Artisan.UI;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
-using Dalamud.Utility.Signatures;
 using ECommons;
 using ECommons.CircularBuffers;
 using ECommons.DalamudServices;
@@ -51,7 +50,6 @@ namespace Artisan.Autocraft
         public static bool SkipBuffs = false;
         internal static void Init()
         {
-            SignatureHelper.Initialise(new Endurance());
             Svc.Framework.Update += Framework_Update;
             Svc.Toasts.ErrorToast += Toasts_ErrorToast;
         }
@@ -75,7 +73,7 @@ namespace Artisan.Autocraft
             Svc.Toasts.ErrorToast -= Toasts_ErrorToast;
         }
 
-        private static void Framework_Update(Dalamud.Game.Framework framework)
+        private static void Framework_Update(IFramework framework)
         {
             if (Enable && !P.TM.IsBusy && CurrentCraft.State != CraftingState.Crafting)
             {

@@ -2,7 +2,6 @@
 using Artisan.RawInformation;
 using Artisan.Tasks;
 using ClickLib.Clicks;
-using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
@@ -21,7 +20,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 using System.Threading.Tasks;
 using static ECommons.GenericHelpers;
@@ -446,7 +444,7 @@ namespace Artisan.IPC
             }
         }
 
-        private static unsafe void Tick(Framework framework)
+        private static unsafe void Tick(IFramework framework)
         {
             if (Svc.Condition[ConditionFlag.OccupiedSummoningBell])
             {
