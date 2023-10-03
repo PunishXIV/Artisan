@@ -65,7 +65,7 @@ namespace Artisan.RawInformation
             {
                 if (Throttler.Throttle(1000))
                 {
-                    ActionManager.Instance()->UseAction(ActionType.General, 14);
+                    ActionManager.Instance()->UseAction(ActionType.GeneralAction, 14);
                 }
             }
         }
@@ -76,7 +76,7 @@ namespace Artisan.RawInformation
             {
                 if (Throttler.Throttle(1000))
                 {
-                    ActionManager.Instance()->UseAction(ActionType.General, 14);
+                    ActionManager.Instance()->UseAction(ActionType.GeneralAction, 14);
                 }
             }
         }

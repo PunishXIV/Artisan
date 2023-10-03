@@ -60,7 +60,7 @@ namespace Artisan.Autocraft
                     if (Throttler.Throttle(500))
                     {
                         if (DebugTab.Debug) PluginLog.Verbose("Closing repair window");
-                        Hotbars.actionManager->UseAction(ActionType.General, 6);
+                        Hotbars.actionManager->UseAction(ActionType.GeneralAction, 6);
                     }
                     return false;
                 }
@@ -85,7 +85,7 @@ namespace Artisan.Autocraft
                         if (Throttler.Throttle(500))
                         {
                             if (DebugTab.Debug) PluginLog.Verbose($"Opening repair");
-                            Hotbars.actionManager->UseAction(ActionType.General, 6);
+                            Hotbars.actionManager->UseAction(ActionType.GeneralAction, 6);
                         }
                     }
                 }

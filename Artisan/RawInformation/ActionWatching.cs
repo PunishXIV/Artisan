@@ -31,7 +31,7 @@ namespace Artisan.RawInformation
             try
             {
                 if (BlockAction)
-                    return UseActionHook!.Original(actionManager, (uint)ActionType.Spell, 7, targetObjectID, param, useType, pvp, isGroundTarget);
+                    return UseActionHook!.Original(actionManager, (uint)ActionType.Action, 7, targetObjectID, param, useType, pvp, isGroundTarget);
 
                 if (CurrentCraftMethods.CanUse(actionID))
                 {

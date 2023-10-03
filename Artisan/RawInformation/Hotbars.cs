@@ -1,4 +1,5 @@
-﻿using ECommons.DalamudServices;
+﻿using Dalamud.Logging;
+using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -31,22 +32,22 @@ namespace Artisan.RawInformation
             var raptureHotbarModule = Framework.Instance()->GetUiModule()->GetRaptureHotbarModule();
             HotbarDict.Clear();
             int count = 0;
-            for (int i = 0; i <= 9; i++)
+            for (int j = 0; j < 10; j++)
             {
-                var hotbar = raptureHotbarModule->HotBar[i];
-                if ((IntPtr)hotbar == IntPtr.Zero)
-                    continue;
-
-                for (int j = 0; j <= 11; j++)
+                var hotbar = raptureHotbarModule->HotBarsSpan[j];
+                
+                for (uint i = 0; i <= 11; i++)
                 {
-                    var slot = hotbar->Slot[j];
-                    if ((IntPtr)slot == IntPtr.Zero)
-                        continue;
+                    var slot = *hotbar.GetHotbarSlot(i);
 
-                    var slotOb = *(HotBarSlot*)slot;
-
-                    if (slotOb.CommandType == HotbarSlotType.Action || slotOb.CommandType == HotbarSlotType.CraftAction)
-                    HotbarDict.TryAdd(count, slotOb);
+                    //PluginLog.Debug($"{slot.CommandId.NameOfAction()}");
+                    if (&slot != null)
+                    {
+                        if (slot.CommandType == HotbarSlotType.Action || slot.CommandType == HotbarSlotType.CraftAction)
+                        {
+                            HotbarDict.TryAdd(count, slot);
+                        }
+                    }
 
                     count++;
 
@@ -74,7 +75,6 @@ namespace Artisan.RawInformation
                 if (HotBarRef != null)
                 {
                     HotBarSlotRef = HotBarRef->GetNodeById((uint)relativeLocation + 8);
-                    
                 }
             }
 
@@ -129,7 +129,7 @@ namespace Artisan.RawInformation
             if (actionManager == null)
                 return false;
 
-            ActionType actionType = currentRecommendation >= 100000 ? ActionType.CraftAction : ActionType.Spell;
+            ActionType actionType = currentRecommendation >= 100000 ? ActionType.CraftAction : ActionType.Action;
             if (actionManager->GetActionStatus(actionType, currentRecommendation, Svc.ClientState.LocalPlayer.ObjectId) != 0) return false;
             ActionWatching.BlockAction = false;
             actionManager->UseAction(actionType, currentRecommendation);

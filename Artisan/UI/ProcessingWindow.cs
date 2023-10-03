@@ -50,10 +50,10 @@ namespace Artisan.UI
             {
                 CraftingListFunctions.ProcessList(CraftingListUI.selectedList);
 
-                if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
-                {
-                    P.PluginUi.IsOpen = true;
-                }
+                //if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
+                //{
+                //    P.PluginUi.IsOpen = true;
+                //}
 
                 ImGui.Text($"Now Processing: {CraftingListUI.selectedList.Name}");
                 ImGui.Separator();

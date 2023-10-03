@@ -522,7 +522,7 @@ namespace Artisan.CraftingLogic
 
             if (LuminaSheets.ActionSheet.TryGetValue(id, out var act1))
             {
-                var canUse = actionManager->GetActionStatus(ActionType.Spell, id);
+                var canUse = actionManager->GetActionStatus(ActionType.Action, id);
                 return canUse;
             }
             if (LuminaSheets.CraftActions.TryGetValue(id, out var act2))
