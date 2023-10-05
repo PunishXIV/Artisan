@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.RawInformation;
+using Artisan.TemporaryFixes;
 using Artisan.UI;
 using ClickLib.Clicks;
 using Dalamud.Logging;
@@ -14,15 +15,15 @@ namespace Artisan.Autocraft
     {
         internal static void Repair()
         {
-            if (TryGetAddonByName<AddonRepair>("Repair", out var addon) && addon->AtkUnitBase.IsVisible && addon->RepairAllButton->IsEnabled && Throttler.Throttle(500))
+            if (TryGetAddonByName<AddonRepairFixed>("Repair", out var addon) && addon->AtkUnitBase.IsVisible && addon->RepairAllButton->IsEnabled && Throttler.Throttle(500))
             {
-                new ClickRepair((IntPtr)addon).RepairAll();
+                new ClickRepairFixed((IntPtr)addon).RepairAll();
             }
         }
 
         internal static void ConfirmYesNo()
         {
-            if(TryGetAddonByName<AddonRepair>("Repair", out var r) && 
+            if(TryGetAddonByName<AddonRepairFixed>("Repair", out var r) && 
                 r->AtkUnitBase.IsVisible && TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) && 
                 addon->AtkUnitBase.IsVisible && 
                 addon->YesButton->IsEnabled && 
@@ -54,7 +55,7 @@ namespace Artisan.Autocraft
             if (GetMinEquippedPercent() >= repairPercent)
             {
                 if (DebugTab.Debug) PluginLog.Verbose("Condition good");
-                if (TryGetAddonByName<AddonRepair>("Repair", out var r) && r->AtkUnitBase.IsVisible)
+                if (TryGetAddonByName<AddonRepairFixed>("Repair", out var r) && r->AtkUnitBase.IsVisible)
                 {
                     if (DebugTab.Debug) PluginLog.Verbose("Repair visible");
                     if (Throttler.Throttle(500))
@@ -73,7 +74,7 @@ namespace Artisan.Autocraft
                 if (use)
                 {
                     if (DebugTab.Debug) PluginLog.Verbose($"Doing repair");
-                    if (TryGetAddonByName<AddonRepair>("Repair", out var r) && r->AtkUnitBase.IsVisible)
+                    if (TryGetAddonByName<AddonRepairFixed>("Repair", out var r) && r->AtkUnitBase.IsVisible)
                     {
                         //PluginLog.Verbose($"Repair visible");
                         ConfirmYesNo();

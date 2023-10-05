@@ -2,7 +2,6 @@
 using Artisan.ContextMenus;
 using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
-using Artisan.CustomDeliveries;
 using Artisan.IPC;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
@@ -85,7 +84,7 @@ public unsafe class Artisan : IDalamudPlugin
         ws = new();
         cw = new();
         ri = new();
-        Icons = new(pluginInterface, Svc.Data, Svc.TextureProvider);
+        Icons = new(pluginInterface, Svc.Data, Svc.Texture);
         PluginUi = new();
         Config = P.Config;
         fm = new FontManager();
@@ -571,9 +570,9 @@ public unsafe class Artisan : IDalamudPlugin
 
         Svc.PluginInterface.UiBuilder.BuildFonts -= AddCustomFont;
         ActionWatching.Dispose();
-        SatisfactionManagerHelper.Dispose();
         ws.RemoveAllWindows();
         ws = null!;
+        
         ECommonsMain.Dispose();
         CustomFont = null;
         LuminaSheets.Dispose();

@@ -237,12 +237,12 @@ namespace Artisan.RawInformation.Character
 
         public void Dispose()
         {
-
+            
         }
 
         internal RecipeInformation()
         {
-            Svc.GameInteropProvider.InitializeFromAttributes(this);
+            Svc.Hook.InitializeFromAttributes(this);
 
         }
     }
