@@ -588,18 +588,21 @@ namespace Artisan.Autocraft
 
         public static void ToggleEndurance(bool enable)
         {
-            Enable = enable;
+            if (RecipeID > 0)
+            {
+                Enable = enable;
 
-            try
-            {
-                if (enable)
+                try
                 {
-                    UpdateMacroTimer();
+                    if (enable)
+                    {
+                        UpdateMacroTimer();
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                ex.Log();
+                catch (Exception ex)
+                {
+                    ex.Log();
+                }
             }
         }
 

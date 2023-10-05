@@ -503,7 +503,7 @@ namespace Artisan.CraftingLogic
                 {
                     if (GenericHelpers.TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var recipenote))
                     {
-                        Callback.Fire(&recipenote->AtkUnitBase, true, 8);
+                        ClickRecipeNote.Using(new IntPtr(&recipenote->AtkUnitBase)).Synthesize();
                         Endurance.Tasks.Clear();
                     }
                 }

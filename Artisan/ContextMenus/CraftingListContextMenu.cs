@@ -15,10 +15,11 @@ namespace Artisan.ContextMenus;
 
 internal static class CraftingListContextMenu
 {
-    private static readonly DalamudContextMenu contextMenu = new(Svc.PluginInterface);
+    private static DalamudContextMenu contextMenu;
 
     public static void Init()
     {
+        contextMenu = new(Svc.PluginInterface);
         contextMenu.OnOpenGameObjectContextMenu += AddMenu;
         contextMenu.OnOpenInventoryContextMenu += AddInventoryMenu;
     }
@@ -128,6 +129,7 @@ internal static class CraftingListContextMenu
     {
         contextMenu.OnOpenGameObjectContextMenu -= AddMenu;
         contextMenu.OnOpenInventoryContextMenu -= AddInventoryMenu;
+        contextMenu?.Dispose();
     }
 }
 
