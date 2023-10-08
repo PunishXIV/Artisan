@@ -214,6 +214,7 @@ namespace Artisan.Autocraft
                 {
                     if (Endurance.Enable)
                     {
+                        Svc.Toasts.ShowError("Food not found. Disabling Endurance.");
                         DuoLog.Error("Food not found. Disabling Endurance.");
                         Endurance.Enable = false;
                     }
@@ -232,6 +233,7 @@ namespace Artisan.Autocraft
                 {
                     if (Endurance.Enable)
                     {
+                        Svc.Toasts.ShowError("Potion not found. Disabling Endurance.");
                         DuoLog.Error("Potion not found. Disabling Endurance.");
                         Endurance.Enable = false;
                     }
@@ -252,6 +254,7 @@ namespace Artisan.Autocraft
                     {
                         if (Endurance.Enable)
                         {
+                            Svc.Toasts.ShowError("Manual not found. Disabling Endurance.");
                             DuoLog.Error("Manual not found. Disabling Endurance.");
                             Endurance.Enable = false;
                         }
@@ -270,6 +273,7 @@ namespace Artisan.Autocraft
                     {
                         if (Endurance.Enable)
                         {
+                            Svc.Toasts.ShowError("Squadron Manual not found. Disabling Endurance.");
                             DuoLog.Error("Squadron Manual not found. Disabling Endurance.");
                             Endurance.Enable = false;
                         }

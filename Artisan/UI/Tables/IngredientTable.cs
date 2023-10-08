@@ -775,7 +775,7 @@ namespace Artisan.UI.Tables
             if (item.Data.RowId == 0)
                 return;
 
-            if (FilteredItems.Count() == Items.Count() || Headers.Any(x => x.FilterFunc(item)))
+            if (FilteredItems.Count == Items.Count || Headers.Any(x => x.FilterFunc(item)))
             {
                 if (item.Sources.Contains(1) && item.OriginList.Items.Any(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == item.Data.RowId && y.RowId == x)))
                 {
@@ -840,14 +840,14 @@ namespace Artisan.UI.Tables
 
             if (ItemVendor)
             {
-                if (IPC.ItemVendorLocation.ItemHasVendor(item.Data.RowId))
+                if (ItemVendorLocation.ItemHasVendor(item.Data.RowId))
                 {
                     if (!ImGui.Selectable("Item Vendor Lookup"))
                         return;
 
                     try
                     {
-                        IPC.ItemVendorLocation.OpenContextMenu(item.Data.RowId);
+                        ItemVendorLocation.OpenContextMenu(item.Data.RowId);
                     }
                     catch (Exception e)
                     {

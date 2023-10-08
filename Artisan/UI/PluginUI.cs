@@ -21,13 +21,11 @@ using ThreadLoadImageHandler = ECommons.ImGuiMethods.ThreadLoadImageHandler;
 
 namespace Artisan.UI
 {
-    // It is good to have this be disposable in general, in case you ever need it
-    // to do any cleanup
     unsafe internal class PluginUI : Window
     {
         public event EventHandler<bool>? CraftingWindowStateChanged;
 
-        // this extra bool exists for ImGui, since you can't ref a property
+       
         private bool visible = false;
         public OpenWindow OpenWindow { get; private set; } = OpenWindow.Overview;
 

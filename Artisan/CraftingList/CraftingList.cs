@@ -86,7 +86,7 @@ namespace Artisan.CraftingLists
 
         public static bool Save(this CraftingList list, bool isNew = false)
         {
-            if (list.Items.Count() == 0 && !isNew) return false;
+            if (list.Items.Count == 0 && !isNew) return false;
 
             list.SkipIfEnough = P.Config.DefaultListSkip;
             list.Materia = P.Config.DefaultListMateria;

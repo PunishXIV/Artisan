@@ -100,9 +100,9 @@ namespace Artisan.UI
             if (P.Config.IRM.ContainsKey((uint)Endurance.RecipeID))
             {
                 var macro = P.Config.UserMacros.FirstOrDefault(x => x.ID == P.Config.IRM[(uint)Endurance.RecipeID]);
-                ImGui.TextWrapped($"Using Macro: {macro.Name} ({(MacroStep >= macro.MacroActions.Count() ? macro.MacroActions.Count() : MacroStep + 1)}/{macro.MacroActions.Count()})");
+                ImGui.TextWrapped($"Using Macro: {macro.Name} ({(MacroStep >= macro.MacroActions.Count ? macro.MacroActions.Count : MacroStep + 1)}/{macro.MacroActions.Count})");
 
-                if (MacroStep >= macro.MacroActions.Count())
+                if (MacroStep >= macro.MacroActions.Count)
                 {
                     ImGui.TextWrapped($"Macro has completed. {(!P.Config.DisableMacroArtisanRecommendation ? "Now continuing with solver." : "Please continue to manually craft.")}");
                 }

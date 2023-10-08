@@ -2,6 +2,7 @@
 using Artisan.UI;
 using ClickLib.Clicks;
 using ECommons;
+using ECommons.DalamudServices;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
@@ -77,6 +78,7 @@ namespace Artisan.Autocraft
                         Endurance.Enable = false;
                         InsufficientMaterials = true;
                         dataFinalized = true;
+                        Svc.Toasts.ShowError("Insufficient materials set to craft. Disabling endurance mode.");
                         DuoLog.Error("Insufficient materials set to craft. Disabling endurance mode.");
                         return false;
                     }

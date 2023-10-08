@@ -202,7 +202,7 @@ namespace Artisan.UI
                     ImGui.SetColumnWidth(0, 220f.Scale());
                     ImGuiEx.ImGuiLineCentered("###MacroActions", () => ImGuiEx.TextUnderlined("Macro Actions"));
                     ImGui.Indent();
-                    for (int i = 0; i < SelectedMacro.MacroActions.Count(); i++)
+                    for (int i = 0; i < SelectedMacro.MacroActions.Count; i++)
                     {
                         var selectedAction = ImGui.Selectable($"{i + 1}. {(SelectedMacro.MacroActions[i] == 0 ? $"Artisan Recommendation###selectedAction{i}" : $"{SelectedMacro.MacroActions[i].NameOfAction()}###selectedAction{i}")}", i == selectedActionIndex);
 

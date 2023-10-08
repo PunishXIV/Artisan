@@ -406,7 +406,7 @@ namespace Artisan.CraftingLogic
             }
             catch (Exception ex)
             {
-                Dalamud.Logging.PluginLog.Error(ex, "RepeatTrialCraft");
+                PluginLog.Error(ex, "RepeatTrialCraft");
             }
         }
 
@@ -510,7 +510,7 @@ namespace Artisan.CraftingLogic
             }
             catch (Exception ex)
             {
-                Dalamud.Logging.PluginLog.Error(ex, "RepeatActualCraft");
+                PluginLog.Error(ex, "RepeatActualCraft");
             }
         }
 

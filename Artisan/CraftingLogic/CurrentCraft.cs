@@ -80,12 +80,14 @@ namespace Artisan.CraftingLogic
                         if (!wasSuccess && P.Config.EnduranceStopFail && Endurance.Enable)
                         {
                             Endurance.Enable = false;
+                            Svc.Toasts.ShowError("You failed a craft. Disabling Endurance.");
                             DuoLog.Error("You failed a craft. Disabling Endurance.");
                         }
 
                         if (P.Config.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && LastCraftedItem.CanBeHq && Endurance.Enable)
                         {
                             Endurance.Enable = false;
+                            Svc.Toasts.ShowError("You crafted a non-HQ item. Disabling Endurance.");
                             DuoLog.Error("You crafted a non-HQ item. Disabling Endurance.");
                         }
                     }

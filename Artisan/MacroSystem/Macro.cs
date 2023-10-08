@@ -61,7 +61,7 @@ namespace Artisan.MacroSystem
 
         public static bool Save(this Macro macro, bool isNew = false)
         {
-            if (macro.MacroActions.Count() == 0 && !isNew) return false;
+            if (macro.MacroActions.Count == 0 && !isNew) return false;
 
             P.Config.UserMacros.Add(macro);
             P.Config.Save();

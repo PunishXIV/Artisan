@@ -50,15 +50,15 @@ namespace Artisan.CraftingLists
             string exportItems = "";
 
             var sublist = CraftingListUI.selectedList.Items.Distinct().Reverse().ToList();
-            for (int i = 0; i < sublist.Count(); i++)
+            for (int i = 0; i < sublist.Count; i++)
             {
-                if (i >= sublist.Count()) break;
+                if (i >= sublist.Count) break;
 
                 int number = CraftingListUI.selectedList.Items.Count(x => x == sublist[i]);
                 var recipe = CraftingListHelpers.FilteredList[sublist[i]];
                 var itemID = recipe.ItemResult.Value.RowId;
 
-                Dalamud.Logging.PluginLog.Debug($"{recipe.ItemResult.Value.Name.RawString} {sublist.Count()}");
+                Dalamud.Logging.PluginLog.Debug($"{recipe.ItemResult.Value.Name.RawString} {sublist.Count}");
                 ExtractRecipes(sublist, recipe);
             }
 

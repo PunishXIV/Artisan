@@ -668,7 +668,7 @@ namespace Artisan
                     if (ImGui.Button($"Craft {P.Config.CraftX}"))
                     {
                         P.Config.CraftingX = true;
-                        Endurance.Enable = true;
+                        Endurance.ToggleEndurance(true);
                     }
                 }
                 else
@@ -677,7 +677,7 @@ namespace Artisan
                     {
                         P.Config.CraftX = craftableCount;
                         P.Config.CraftingX = true;
-                        Endurance.Enable = true;
+                        Endurance.ToggleEndurance(true);
                     }
                 }
 

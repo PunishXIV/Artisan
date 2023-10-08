@@ -118,7 +118,7 @@ namespace Artisan.RawInformation
 
                     if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId, out var macro))
                     {
-                        if (MacroStep < macro.MacroActions.Count())
+                        if (MacroStep < macro.MacroActions.Count)
                         {
                             ATM.DelayNext("MacroStepIncrease", 800);
                             ATM.Enqueue(() => MacroStep++);

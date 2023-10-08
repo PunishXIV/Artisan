@@ -61,6 +61,7 @@ namespace Artisan.Autocraft
                 Errors.PushBack(Environment.TickCount64);
                 if (Errors.Count() >= 5 && Errors.All(x => x > Environment.TickCount64 - 30 * 1000))
                 {
+                    Svc.Toasts.ShowError("Endurance has been disabled due to too many errors in succession.");
                     DuoLog.Error("Endurance has been disabled due to too many errors in succession.");
                     Enable = false;
                 }
@@ -100,6 +101,7 @@ namespace Artisan.Autocraft
                 if (DebugTab.Debug) PluginLog.Verbose("Throttle success");
                 if (RecipeID == 0)
                 {
+                    Svc.Toasts.ShowError("No recipe has been set for Endurance mode. Disabling Endurance mode.");
                     DuoLog.Error("No recipe has been set for Endurance mode. Disabling Endurance mode.");
                     Enable = false;
                     return;
@@ -209,7 +211,7 @@ namespace Artisan.Autocraft
 
                 if (ImGui.Checkbox("Enable Endurance Mode", ref enable))
                 {
-                    Endurance.ToggleEndurance(enable);
+                    ToggleEndurance(enable);
                 }
 
                 if (!CraftingListFunctions.HasItemsForRecipe((uint)RecipeID))

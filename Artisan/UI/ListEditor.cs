@@ -1091,7 +1091,7 @@ internal class ListFolders : ItemSelector<CraftingList>
         {
             if (!P.ws.Windows.Any(x => x.WindowName.Contains(P.Config.CraftingLists[idx].ID.ToString())))
             {
-                Tables.Interface.SetupValues();
+                Interface.SetupValues();
                 ListEditor editor = new(P.Config.CraftingLists[idx].ID);
             }
             else

@@ -6,6 +6,7 @@ using Artisan.IPC;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Artisan.Sounds;
 using Artisan.UI;
 using Artisan.Universalis;
 using Dalamud.Game.ClientState.Conditions;
@@ -30,10 +31,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Media;
 using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
 using Macro = Artisan.MacroSystem.Macro;
 using PluginLog = Dalamud.Logging.PluginLog;
+using SoundPlayer = Artisan.Sounds.SoundPlayer;
 
 namespace Artisan;
 
@@ -68,7 +71,7 @@ public unsafe class Artisan : IDalamudPlugin
 
     public Artisan([RequiredVersion("1.0")] DalamudPluginInterface pluginInterface)
     {
-        ECommonsMain.Init(pluginInterface, this, ECommons.Module.All);
+        ECommonsMain.Init(pluginInterface, this, Module.All);
         PunishLibMain.Init(pluginInterface, "Artisan", new AboutPlugin() { Sponsor = "https://ko-fi.com/taurenkey" });
         P = this;
 
@@ -260,6 +263,7 @@ public unsafe class Artisan : IDalamudPlugin
         {
             if (CurrentRecipe is null && !warningMessage)
             {
+                Svc.Toasts.ShowError("Warning: Your recipe cannot be parsed in Artisan. Please report this to the Discord with the recipe name and client language.");
                 DuoLog.Error("Warning: Your recipe cannot be parsed in Artisan. Please report this to the Discord with the recipe name and client language.");
                 warningMessage = true;
             }
@@ -282,7 +286,7 @@ public unsafe class Artisan : IDalamudPlugin
 
             if (CraftingListUI.Processing && !CraftingListFunctions.Paused)
             {
-                Dalamud.Logging.PluginLog.Verbose("Advancing Crafting List");
+                PluginLog.Verbose("Advancing Crafting List");
                 CraftingListFunctions.CurrentIndex++;
             }
 
@@ -294,6 +298,8 @@ public unsafe class Artisan : IDalamudPlugin
                 {
                     P.Config.CraftingX = false;
                     Endurance.Enable = false;
+                    if (P.Config.PlaySoundFinishEndurance)
+                        SoundPlayer.PlaySound();
                     DuoLog.Information("Craft X has completed.");
 
                 }
@@ -386,11 +392,11 @@ public unsafe class Artisan : IDalamudPlugin
                             goto RestartRecommendation;
                         }
 
-                        CurrentRecommendation = MacroStep >= macro.MacroActions.Count() || macro.MacroActions[MacroStep] == 0 ? (CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation()) : macro.MacroActions[MacroStep];
+                        CurrentRecommendation = MacroStep >= macro.MacroActions.Count || macro.MacroActions[MacroStep] == 0 ? (CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation()) : macro.MacroActions[MacroStep];
 
                         try
                         {
-                            if (MacroStep < macro.MacroStepOptions.Count())
+                            if (MacroStep < macro.MacroStepOptions.Count)
                             {
                                 if (macro.MacroStepOptions.Count == 0 || !macro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
                                 {
@@ -489,7 +495,7 @@ public unsafe class Artisan : IDalamudPlugin
         }
         catch (Exception ex)
         {
-            Dalamud.Logging.PluginLog.Error(ex, "Crafting Step Change");
+            PluginLog.Error(ex, "Crafting Step Change");
         }
     }
 
@@ -528,15 +534,17 @@ public unsafe class Artisan : IDalamudPlugin
         var currentAction = macro.MacroActions[MacroStep];
         switch (currentAction)
         {
+            case Skills.BasicTouch:
             case Skills.HastyTouch:
+            case Skills.StandardTouch:
+            case Skills.ByregotsBlessing:
+            case Skills.PreciseTouch:
+            case Skills.PrudentTouch:
             case Skills.FocusedTouch:
             case Skills.PreparatoryTouch:
             case Skills.AdvancedTouch:
-            case Skills.StandardTouch:
-            case Skills.BasicTouch:
             case Skills.GreatStrides:
             case Skills.Innovation:
-            case Skills.ByregotsBlessing:
             case Skills.TrainedFinesse:
                 return true;
 
