@@ -58,6 +58,7 @@ namespace Artisan
         public bool FoodHQ = true;
         public bool PotHQ = true;
         public bool Repair { get; set; } = false;
+        public bool QuickSynthMode = false;
         public bool DisableToasts { get; set; } = false;
         public bool ShowOnlyCraftable { get; set; } = false;
         public bool ShowOnlyCraftableRetainers { get;set; } = false;
@@ -76,6 +77,8 @@ namespace Artisan
 
         [NonSerialized]
         public bool CraftingX = false;
+
+        public bool MaxQuantityMode = false;
         public bool HideQuestHelper { get; set; } = false;
         public bool DisableTheme { get; set; } = true;
         public bool RequestToStopDuty { get; set; } = false;

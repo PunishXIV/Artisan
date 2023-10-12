@@ -76,6 +76,11 @@ namespace Artisan.Autocraft
 
         private static void Framework_Update(IFramework framework)
         {
+            if ((Enable && P.Config.QuickSynthMode && CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0) || IPC.IPC.StopCraftingRequest)
+            {
+                CurrentCraftMethods.CloseQuickSynthWindow();
+            }
+
             if (Enable && !P.TM.IsBusy && CurrentCraft.State != CraftingState.Crafting)
             {
                 var isCrafting = Svc.Condition[ConditionFlag.Crafting];
@@ -155,11 +160,28 @@ namespace Artisan.Autocraft
 
                         if (DebugTab.Debug) PluginLog.Verbose("Error text not visible");
 
-                        P.TM.Enqueue(() => CraftingListFunctions.RecipeWindowOpen(), "EnduranceCheckRecipeWindow");
-                        P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredients");
-                        P.TM.Enqueue(() => UpdateMacroTimer(), "UpdateEnduranceMacroTimer");
-                        P.TM.DelayNext("EnduranceThrottle", 100);
-                        P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraftMethods.RepeatActualCraft(); else { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
+                        if (P.Config.QuickSynthMode && LuminaSheets.RecipeSheet[RecipeID].CanQuickSynth)
+                        {
+                            P.TM.Enqueue(() => CraftingListFunctions.RecipeWindowOpen(), "EnduranceCheckRecipeWindow");
+                            P.TM.DelayNext("EnduranceThrottle", 100);
+
+                            P.TM.Enqueue(() => { if (!CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
+                            if (P.Config.CraftingX)
+                                P.TM.Enqueue(() => CurrentCraftMethods.QuickSynthItem(P.Config.CraftX));
+                            else
+                                P.TM.Enqueue(() => CurrentCraftMethods.QuickSynthItem(99));
+                        }
+                        else
+                        {
+                            P.TM.Enqueue(() => CraftingListFunctions.RecipeWindowOpen(), "EnduranceCheckRecipeWindow");
+                            if (P.Config.MaxQuantityMode)
+                                P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredients");
+                            else
+                                P.TM.Enqueue(() => { if (!CheckIngredientsSet()) { } });
+                            P.TM.Enqueue(() => UpdateMacroTimer(), "UpdateEnduranceMacroTimer");
+                            P.TM.DelayNext("EnduranceThrottle", 100);
+                            P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraftMethods.RepeatActualCraft(); else { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
+                        }
 
 
                     }
@@ -186,6 +208,11 @@ namespace Artisan.Autocraft
 
                 }
             }
+        }
+
+        private static bool CheckIngredientsSet()
+        {
+            throw new NotImplementedException();
         }
 
         internal static void Draw()
@@ -360,7 +387,7 @@ namespace Artisan.Autocraft
                 P.Config.Repair = repairs;
                 P.Config.Save();
             }
-            ImGuiComponents.HelpMarker("If enabled, Artisan will automatically repair your gear using Dark Matter when any piece reaches the configured repair threshold.");
+            ImGuiComponents.HelpMarker($"If enabled, Artisan will automatically repair your gear using Dark Matter when any piece reaches the configured repair threshold.\n\nCurrent min gear condition is {RepairManager.GetMinEquippedPercent()}%");
             if (P.Config.Repair)
             {
                 //ImGui.SameLine();
@@ -406,6 +433,11 @@ namespace Artisan.Autocraft
                 }
             }
 
+            if (ImGui.Checkbox("Use Quick Synthesis where possible", ref P.Config.QuickSynthMode))
+            {
+                P.Config.Save();
+            }
+
             bool stopIfFail = P.Config.EnduranceStopFail;
             if (ImGui.Checkbox("Disable Endurance Mode Upon Failed Craft", ref stopIfFail))
             {
@@ -419,6 +451,13 @@ namespace Artisan.Autocraft
                 P.Config.EnduranceStopNQ = stopIfNQ;
                 P.Config.Save();
             }
+
+            if (ImGui.Checkbox("Max Quantity Mode", ref P.Config.MaxQuantityMode))
+            {
+                P.Config.Save();
+            }
+
+            ImGuiComponents.HelpMarker("Will set ingredients for you, to maximise the amount of crafts possible.");
         }
 
         internal static void DrawRecipeData()
@@ -450,7 +489,7 @@ namespace Artisan.Autocraft
 
                         if (addon->AtkUnitBase.UldManager.NodeList[49]->IsVisible)
                         {
-                            var text = addon->SelectedRecipeName->NodeText.ExtractText().Replace('', ' ').Trim();
+                            var text = addon->SelectedRecipeName->NodeText.ExtractText().Replace('', ' ').Trim().Replace($"-{(char)13}", "");
                             var firstCrystal = GetCrystal(addon, 1);
                             var secondCrystal = GetCrystal(addon, 2);
 
@@ -495,6 +534,8 @@ namespace Artisan.Autocraft
 
                             if (firstCrystal > 0 && secondCrystal > 0)
                             {
+                                //Svc.Log.Debug($"{LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == 31955).ItemResult.Value.Name}");
+                                
                                 if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.RawString == text && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
                                 {
                                     RecipeID = id.RowId;
@@ -613,7 +654,7 @@ namespace Artisan.Autocraft
             if (P.Config.CraftingX && P.Config.CraftX > 0 && P.Config.IRM.ContainsKey((uint)RecipeID))
             {
                 var macro = P.Config.UserMacros.FirstOrDefault(x => x.ID == P.Config.IRM[(uint)RecipeID]);
-                Double timeInSeconds = ((MacroUI.GetMacroLength(macro) * P.Config.CraftX) + (P.Config.CraftX * 2.5)); // Counting crafting duration + 2 seconds between crafts.
+                Double timeInSeconds = ((MacroUI.GetMacroLength(macro) * P.Config.CraftX)); // Counting crafting duration + 2 seconds between crafts.
                 CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
             }
         }

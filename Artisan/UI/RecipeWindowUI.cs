@@ -209,8 +209,9 @@ namespace Artisan
 
                 var itemId = atkUnitBase->AtkValues[i].Int;
                 var requested = atkUnitBase->AtkValues[i - 40].Int;
+                uint job = TextureIdToJob(atkUnitBase->AtkValues[i - 360].Int);
 
-                if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row == i - 425, out var recipe))
+                if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row + 8 == job, out var recipe))
                 {
                     var timesToAdd = requested / recipe.AmountResult;
 
@@ -239,6 +240,22 @@ namespace Artisan
             Notify.Success("Crafting List Created");
         }
 
+        private static uint TextureIdToJob(int textureId)
+        {
+            return textureId switch
+            {
+                62008 => 8,
+                62009 => 9,
+                62010 => 10,
+                62011 => 11,
+                62012 => 12,
+                62013 => 13,
+                62014 => 14,
+                62015 => 15,
+                _ => 0
+            };
+        }
+
         private static unsafe void CreateGCList(AtkUnitBase* atkUnitBase, bool withSubcrafts)
         {
             CraftingList craftingList = new CraftingList();
@@ -251,7 +268,9 @@ namespace Artisan
 
                 var itemId = atkUnitBase->AtkValues[i].Int;
                 var requested = atkUnitBase->AtkValues[i + 16].Int;
-                if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row == i - 233, out var recipe))
+                uint job = TextureIdToJob(atkUnitBase->AtkValues[i + 8].Int);
+
+                if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row + 8 == job, out var recipe))
                 {
                     var timesToAdd = requested / recipe.AmountResult;
 

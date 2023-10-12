@@ -122,7 +122,6 @@ namespace Artisan.UI
                     Macro? macro = P.Config.UserMacros.First(x => x.ID == prevMacro);
                     if (macro != null)
                     {
-
                         string duration = string.Format("{0:D2}h {1:D2}m {2:D2}s", MacroTime.Hours, MacroTime.Minutes, MacroTime.Seconds);
 
                         ImGui.Text($"Approximate Remaining Duration: {duration}");

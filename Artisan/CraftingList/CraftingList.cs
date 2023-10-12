@@ -1,6 +1,7 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLogic;
 using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text.SeStringHandling;
@@ -16,6 +17,7 @@ using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Forms;
 using static ECommons.GenericHelpers;
 using PluginLog = Dalamud.Logging.PluginLog;
 
@@ -338,7 +340,7 @@ namespace Artisan.CraftingLists
             if (!Spiritbond.ExtractMateriaTask(selectedList.Materia, isCrafting, preparing))
                 return;
 
-            if (selectedList.Repair && !RepairManager.ProcessRepair(false, selectedList) && ((P.Config.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!P.Config.Materia)))
+            if (selectedList.Repair && !RepairManager.ProcessRepair(false, selectedList) && ((selectedList.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!selectedList.Materia) || (!CharacterInfo.MateriaExtractionUnlocked())))
             {
                 if (RecipeWindowOpen() && Svc.Condition[ConditionFlag.Crafting])
                 {

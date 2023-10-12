@@ -4,6 +4,7 @@ using Artisan.TemporaryFixes;
 using Artisan.UI;
 using ClickLib.Clicks;
 using Dalamud.Logging;
+using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using System;

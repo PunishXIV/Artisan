@@ -428,8 +428,7 @@ namespace Artisan.CraftingLogic
                 var addonPtr = (AddonRecipeNote*)recipeWindow;
                 if (addonPtr == null)
                     return;
-                var synthButton = addonPtr->SynthesizeButton;
-
+                
                 try
                 {
                     if (Throttler.Throttle(500))

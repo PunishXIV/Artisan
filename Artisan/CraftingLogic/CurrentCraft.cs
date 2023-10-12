@@ -63,7 +63,20 @@ namespace Artisan.CraftingLogic
         public static bool StandardTouchUsed { get; set; } = false;
         public static bool AdvancedTouchUsed { get; set; } = false;
         public static bool ExpertCraftOpenerFinish { get; set; } = false;
-        public static int QuickSynthCurrent { get => quickSynthCurrent; set { if (value != 0 && quickSynthCurrent != value) { CraftingListFunctions.CurrentIndex++; } quickSynthCurrent = value; } }
+        public static int QuickSynthCurrent
+        {
+            get => quickSynthCurrent;
+            set
+            {
+                if (value != 0 && quickSynthCurrent != value)
+                {
+                    CraftingListFunctions.CurrentIndex++;
+                    if (P.Config.QuickSynthMode && Endurance.Enable && P.Config.CraftX > 0)
+                        P.Config.CraftX--;
+                }
+                quickSynthCurrent = value;
+            }
+        }
         public static int QuickSynthMax { get; set; } = 0;
         public static int MacroStep { get; set; } = 0;
         public static bool DoingTrial { get; set; } = false;
@@ -77,14 +90,14 @@ namespace Artisan.CraftingLogic
                     if (state == CraftingState.Crafting)
                     {
                         bool wasSuccess = CurrentCraftMethods.CheckForSuccess();
-                        if (!wasSuccess && P.Config.EnduranceStopFail && Endurance.Enable)
+                        if (!P.Config.QuickSynthMode && !wasSuccess && P.Config.EnduranceStopFail && Endurance.Enable)
                         {
                             Endurance.Enable = false;
                             Svc.Toasts.ShowError("You failed a craft. Disabling Endurance.");
                             DuoLog.Error("You failed a craft. Disabling Endurance.");
                         }
 
-                        if (P.Config.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && LastCraftedItem.CanBeHq && Endurance.Enable)
+                        if (!P.Config.QuickSynthMode && P.Config.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && LastCraftedItem.CanBeHq && Endurance.Enable)
                         {
                             Endurance.Enable = false;
                             Svc.Toasts.ShowError("You crafted a non-HQ item. Disabling Endurance.");
@@ -102,7 +115,7 @@ namespace Artisan.CraftingLogic
                     {
                         if (CraftingWindow.MacroTime.Ticks <= 0 && P.Config.IRM.ContainsKey((uint)Endurance.RecipeID) && P.Config.UserMacros.TryGetFirst(x => x.ID == P.Config.IRM[(uint)Endurance.RecipeID], out var macro))
                         {
-                            Double timeInSeconds = MacroUI.GetMacroLength(macro) + 3; // Counting crafting duration + 2 seconds between crafts.
+                            Double timeInSeconds = MacroUI.GetMacroLength(macro); // Counting crafting duration + 2 seconds between crafts.
                             CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
                         }
 

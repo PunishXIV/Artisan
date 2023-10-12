@@ -79,6 +79,8 @@ internal class ListEditor : Window, IDisposable
     private bool ColourValidation = false;
 
     private bool HQSubcraftsOnly = false;
+
+    private bool NeedsToRefreshTable = false;
     public ListEditor(int listId)
         : base($"List Editor###{listId}")
     {
@@ -143,7 +145,7 @@ internal class ListEditor : Window, IDisposable
     private static unsafe void SearchItem(uint item) => ItemFinderModule.Instance()->SearchForItem(item);
 
 
-    public override void Draw()
+    public async override void Draw()
     {
         var topRowY = ImGui.GetCursorPosY();
         if (ImGui.BeginTabBar("CraftingListEditor", ImGuiTabBarFlags.None))
@@ -156,6 +158,12 @@ internal class ListEditor : Window, IDisposable
 
             if (ImGui.BeginTabItem("Ingredients"))
             {
+                if (NeedsToRefreshTable)
+                {
+                    GenerateTableAsync();
+                    NeedsToRefreshTable = false;
+                }
+
                 DrawIngredients();
                 ImGui.EndTabItem();
             }
@@ -283,7 +291,9 @@ internal class ListEditor : Window, IDisposable
                         new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth });
 
                 RecipeSelector.Items = SelectedList.Items.Distinct().ToList();
-                GenerateTableAsync();
+
+                NeedsToRefreshTable = true;
+
                 P.Config.Save();
                 if (P.Config.ResetTimesToAdd)
                     timesToAdd = 1;
@@ -672,8 +682,7 @@ internal class ListEditor : Window, IDisposable
             P.Config.Save();
         }
 
-        ImGuiComponents.HelpMarker(
-            "If enabled, Artisan will automatically repair your gear using Dark Matter when any piece reaches the configured repair threshold.");
+        ImGuiComponents.HelpMarker($"If enabled, Artisan will automatically repair your gear using Dark Matter when any piece reaches the configured repair threshold.\n\nCurrent min gear condition is {RepairManager.GetMinEquippedPercent()}%");
 
         if (SelectedList.Repair)
         {
@@ -732,7 +741,7 @@ internal class ListEditor : Window, IDisposable
                 }
             }
 
-            Table = new(Ingredient.GenerateList(SelectedList).Result);
+            NeedsToRefreshTable = true;
         }
 
         if (!SelectedList.ListItemOptions.ContainsKey(selectedListItem))
@@ -792,7 +801,7 @@ internal class ListEditor : Window, IDisposable
                             RecipeSelector.CurrentIdx = first;
                         }
 
-                        Table = new(Ingredient.GenerateList(SelectedList).Result);
+                        NeedsToRefreshTable = true;
 
                         P.Config.Save();
                     }
