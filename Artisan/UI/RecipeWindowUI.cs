@@ -29,6 +29,7 @@ namespace Artisan
             IsOpen = true;
             ShowCloseButton = false;
             RespectCloseHotkey = false;
+            DisableWindowSounds = true;
             this.SizeConstraints = new WindowSizeConstraints()
             {
                 MaximumSize = new Vector2(0, 0),
