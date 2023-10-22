@@ -267,6 +267,20 @@ namespace Artisan.UI
                 {
                     Spiritbond.ExtractFirstMateria();
                 }
+
+                if (ImGui.Button($"Pandora IPC"))
+                {
+                    var state = Svc.PluginInterface.GetIpcSubscriber<string, bool?>($"PandorasBox.GetFeatureEnabled").InvokeFunc("Auto-Fill Numeric Dialogs");
+                    Svc.Log.Debug($"State of Auto-Fill Numeric Dialogs: {state}");
+                    Svc.PluginInterface.GetIpcSubscriber<string, bool, object>($"PandorasBox.SetFeatureEnabled").InvokeAction("Auto-Fill Numeric Dialogs", !state.Value);
+                    state = Svc.PluginInterface.GetIpcSubscriber<string, bool?>($"PandorasBox.GetFeatureEnabled").InvokeFunc("Auto-Fill Numeric Dialogs");
+                    Svc.Log.Debug($"State of Auto-Fill Numeric Dialogs after setting: {state}");
+                }
+
+                if (ImGui.Button("Set Ingredients"))
+                {
+                    CraftingListFunctions.SetIngredients();
+                }
             }
             catch (Exception e)
             {

@@ -6,7 +6,6 @@ using Artisan.IPC;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
-using Artisan.Sounds;
 using Artisan.UI;
 using Artisan.Universalis;
 using Dalamud.Game.ClientState.Conditions;
@@ -16,6 +15,7 @@ using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Style;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -31,7 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Media;
+using System.Numerics;
 using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
 using Macro = Artisan.MacroSystem.Macro;
@@ -62,6 +62,7 @@ public unsafe class Artisan : IDalamudPlugin
     public static bool warningMessage = false;
     public static bool macroWarning = false;
     public static bool brokenWarning = false;
+    private static bool showEndurancePopup = true;
 
     internal FontManager fm;
     internal StyleModel Style;
@@ -481,7 +482,7 @@ public unsafe class Artisan : IDalamudPlugin
                 if (P.Config.AutoMode)
                 {
                     if (CurrentCraftMethods.CanUse(CurrentRecommendation))
-                    ActionWatching.BlockAction = true;
+                        ActionWatching.BlockAction = true;
 
                     P.CTM.DelayNext(P.Config.AutoDelay);
                     P.CTM.Enqueue(() => Hotbars.ExecuteRecommended(CurrentRecommendation));
@@ -580,7 +581,7 @@ public unsafe class Artisan : IDalamudPlugin
         ActionWatching.Dispose();
         ws.RemoveAllWindows();
         ws = null!;
-        
+
         ECommonsMain.Dispose();
         CustomFont = null;
         LuminaSheets.Dispose();

@@ -13,6 +13,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
@@ -527,51 +528,125 @@ namespace Artisan.CraftingLists
             return count;
         }
 
-        public static unsafe bool SetIngredients()
+        public static unsafe bool SetIngredients(EnduranceIngredients[] setIngredients = null)
         {
             try
             {
                 if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon) && addon->AtkUnitBase.IsVisible)
                 {
-                    for (var i = 0; i <= 5; i++)
+                    if (setIngredients == null)
                     {
-                        try
+                        for (var i = 0; i <= 5; i++)
                         {
-                            var node = addon->AtkUnitBase.UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
-                            if (node->Component->UldManager.NodeListCount < 16)
+                            try
+                            {
+                                var node = addon->AtkUnitBase.UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
+                                if (node->Component->UldManager.NodeListCount < 16)
+                                    return false;
+
+                                if (node is null || !node->AtkResNode.IsVisible)
+                                {
+                                    return true;
+                                }
+
+                                if (node->Component->UldManager.NodeList[11]->IsVisible)
+                                {
+                                    var ingredient = LuminaSheets.RecipeSheet.Values.Where(x => x.RowId == Endurance.RecipeID).FirstOrDefault().UnkData5[i].ItemIngredient;
+                                    Svc.Log.Debug($"{ingredient}");
+
+                                    var btn = node->Component->UldManager.NodeList[14]->GetAsAtkComponentButton();
+                                    try
+                                    {
+                                        btn->ClickAddonButton((AtkComponentBase*)addon, 4);
+                                    }
+                                    catch(Exception ex)
+                                    {
+                                        ex.Log();
+                                    }
+                                    var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextIconMenu");
+                                    if (contextMenu != null)
+                                    {
+                                        Callback.Fire(contextMenu, true, 0, 0, 0, ingredient, 0);
+                                    }
+                                }
+                                else
+                                {
+                                    var nqNodeText = node->Component->UldManager.NodeList[8]->GetAsAtkTextNode();
+                                    var hqNodeText = node->Component->UldManager.NodeList[5]->GetAsAtkTextNode();
+                                    var required = node->Component->UldManager.NodeList[15]->GetAsAtkTextNode();
+
+                                    int nqMaterials = Convert.ToInt32(nqNodeText->NodeText.ToString().GetNumbers());
+                                    int hqMaterials = Convert.ToInt32(hqNodeText->NodeText.ToString().GetNumbers());
+                                    int requiredMaterials = Convert.ToInt32(required->NodeText.ToString().GetNumbers());
+
+                                    // if ((setHQint + setNQint) == requiredMaterials) continue;
+                                    for (int m = 0; m <= requiredMaterials && m <= nqMaterials; m++)
+                                    {
+                                        ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
+                                    }
+
+                                    for (int m = 0; m <= requiredMaterials && m <= hqMaterials; m++)
+                                    {
+                                        ClickRecipeNote.Using((IntPtr)addon).Material(i, true);
+                                    }
+                                }
+
+                            }
+                            catch
+                            {
                                 return false;
-
-                            if (node is null || !node->AtkResNode.IsVisible)
-                            {
-                                return true;
-                            }
-
-                            var nqNodeText = node->Component->UldManager.NodeList[8]->GetAsAtkTextNode();
-                            var hqNodeText = node->Component->UldManager.NodeList[5]->GetAsAtkTextNode();
-                            var required = node->Component->UldManager.NodeList[15]->GetAsAtkTextNode();
-
-                            int nqMaterials = Convert.ToInt32(nqNodeText->NodeText.ToString().GetNumbers());
-                            int hqMaterials = Convert.ToInt32(hqNodeText->NodeText.ToString().GetNumbers());
-                            int requiredMaterials = Convert.ToInt32(required->NodeText.ToString().GetNumbers());
-
-                            // if ((setHQint + setNQint) == requiredMaterials) continue;
-                            for (int m = 0; m <= requiredMaterials && m <= nqMaterials; m++)
-                            {
-                                ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
-                            }
-
-                            for (int m = 0; m <= requiredMaterials && m <= hqMaterials; m++)
-                            {
-                                ClickRecipeNote.Using((IntPtr)addon).Material(i, true);
                             }
                         }
-                        catch
-                        {
-                            return false;
-                        }
+
+                        return true;
                     }
+                    else
+                    {
+                        for (var i = 0; i <= 5; i++)
+                        {
+                            try
+                            {
+                                var node = addon->AtkUnitBase.UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
+                                if (node->Component->UldManager.NodeListCount < 16)
+                                    return false;
 
-                    return true;
+                                if (node is null || !node->AtkResNode.IsVisible)
+                                {
+                                    return true;
+                                }
+
+                                var hqSetButton = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode();
+                                var nqSetButton = node->Component->UldManager.NodeList[6]->GetAsAtkComponentNode();
+
+                                var hqSetText = hqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
+                                var nqSetText = nqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
+
+                                int hqSet = Convert.ToInt32(hqSetText.ToString().GetNumbers());
+                                int nqSet = Convert.ToInt32(nqSetText.ToString().GetNumbers());
+
+                                Svc.Log.Debug($"{nqSet} {hqSet}");
+
+                                if (setIngredients.Any(y => y.IngredientSlot == i - 1))
+                                {
+                                    for (int h = hqSet; h < setIngredients.First(x => x.IngredientSlot == i - 1).HQSet; h++)
+                                    {
+                                        ClickRecipeNote.Using((IntPtr)addon).Material(i, true);
+                                    }
+
+                                    for (int h = nqSet; h < setIngredients.First(x => x.IngredientSlot == i - 1).NQSet; h++)
+                                    {
+                                        ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    }
                 }
 
                 return false;

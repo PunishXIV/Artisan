@@ -405,7 +405,6 @@ namespace Artisan.IPC
 
             if (RetainerData.SelectMany(x => x.Value).Any(x => requiredItems.Any(y => y.Key == x.Value.ItemID)))
             {
-                PluginLog.Debug($"Here");
                 TM.Enqueue(() => Svc.Framework.Update += Tick);
                 TM.Enqueue(() => AutoRetainer.Suppress());
                 TM.EnqueueBell();

@@ -131,6 +131,8 @@ namespace Artisan
         [NonSerialized]
         private bool autoMode = false;
 
+        public bool ViewedEnduranceMessage = false;
+
         public void Save()
         {
             Svc.PluginInterface.SavePluginConfig(this);

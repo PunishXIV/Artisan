@@ -7,6 +7,7 @@ using Artisan.RawInformation.Character;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
 using ECommons;
@@ -25,7 +26,7 @@ namespace Artisan.UI
     {
         public event EventHandler<bool>? CraftingWindowStateChanged;
 
-       
+
         private bool visible = false;
         public OpenWindow OpenWindow { get; private set; } = OpenWindow.Overview;
 
@@ -96,6 +97,8 @@ namespace Artisan.UI
             ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(5f.Scale(), 0));
             try
             {
+                ShowEnduranceMessage();
+
                 if (ImGui.BeginTable($"ArtisanTableContainer", 2, ImGuiTableFlags.Resizable))
                 {
                     ImGui.TableSetupColumn("##LeftColumn", ImGuiTableColumnFlags.WidthFixed, ImGui.GetWindowWidth() / 2);
@@ -232,7 +235,7 @@ namespace Artisan.UI
                     ImGui.EndTable();
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ex.Log();
             }
@@ -450,7 +453,7 @@ namespace Artisan.UI
             bool disableGlow = P.Config.DisableHighlightedAction;
             bool disableToasts = P.Config.DisableToasts;
             bool disableMini = P.Config.DisableMiniMenu;
-            
+
             ImGui.Separator();
 
             if (ImGui.CollapsingHeader("General Settings"))
@@ -768,6 +771,50 @@ namespace Artisan.UI
                 }
 
                 ImGui.Unindent();
+            }
+        }
+
+        private void ShowEnduranceMessage()
+        {
+            if (!P.Config.ViewedEnduranceMessage)
+            {
+                P.Config.ViewedEnduranceMessage = true;
+                P.Config.Save();
+
+                ImGui.OpenPopup("EndurancePopup");
+
+                var windowSize = new Vector2(512 * ImGuiHelpers.GlobalScale,
+                    ImGui.GetTextLineHeightWithSpacing() * 13 + 2 * ImGui.GetFrameHeightWithSpacing() * 2f);
+                ImGui.SetNextWindowSize(windowSize);
+                ImGui.SetNextWindowPos((ImGui.GetIO().DisplaySize - windowSize) / 2);
+
+                using var popup = ImRaii.Popup("EndurancePopup",
+                    ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.Modal);
+                if (!popup)
+                    return;
+
+                ImGui.TextWrapped($@"I have been receiving quite a number of messages regarding ""buggy"" Endurance mode not setting ingredients anymore. As of the previous update, the old functionality of Endurance has been moved to a new setting.");
+                ImGui.Dummy(new Vector2(0));
+
+                var imagePath = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/EnduranceNewSetting.png");
+
+                if (ThreadLoadImageHandler.TryGetTextureWrap(imagePath, out var img))
+                {
+                    ImGuiEx.ImGuiLineCentered("###EnduranceNewSetting", () =>
+                    {
+                        ImGui.Image(img.ImGuiHandle, new Vector2(img.Width,img.Height));
+                    });
+                }
+
+                ImGui.Spacing();
+
+                ImGui.TextWrapped($"This change was made to bring back the very original behaviour of Endurance mode. If you do not care about your ingredient ratio, please make sure to enable Max Quantity Mode.");
+
+                ImGui.SetCursorPosY(windowSize.Y - ImGui.GetFrameHeight() - ImGui.GetStyle().WindowPadding.Y);
+                if (ImGui.Button("Close", -Vector2.UnitX))
+                {
+                    ImGui.CloseCurrentPopup();
+                }
             }
         }
     }

@@ -2,8 +2,10 @@
 using Artisan.CraftingLogic;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
+using Artisan.Sounds;
 using Artisan.UI;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using ECommons;
@@ -14,6 +16,7 @@ using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,6 +47,8 @@ namespace Artisan.Autocraft
             }
         }
 
+        internal static EnduranceIngredients[] SetIngredients = new EnduranceIngredients[6];
+
         internal static CircularBuffer<long> Errors = new(5);
         public static List<Task> Tasks = new();
 
@@ -52,6 +57,22 @@ namespace Artisan.Autocraft
         {
             Svc.Framework.Update += Framework_Update;
             Svc.Toasts.ErrorToast += Toasts_ErrorToast;
+            Svc.Toasts.ErrorToast += CheckNonMaxQuantityModeFinished;
+        }
+
+        private static void CheckNonMaxQuantityModeFinished(ref SeString message, ref bool isHandled)
+        {
+            if (!P.Config.MaxQuantityMode && Enable &&
+                (message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1147).Text.ExtractText() ||
+                 message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1146).Text.ExtractText() ||
+                 message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1145).Text.ExtractText() ||
+                 message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1144).Text.ExtractText()))
+            {
+                if (P.Config.PlaySoundFinishEndurance)
+                    SoundPlayer.PlaySound();
+
+                ToggleEndurance(false);
+            }
         }
 
         private static void Toasts_ErrorToast(ref Dalamud.Game.Text.SeStringHandling.SeString message, ref bool isHandled)
@@ -72,6 +93,7 @@ namespace Artisan.Autocraft
         {
             Svc.Framework.Update -= Framework_Update;
             Svc.Toasts.ErrorToast -= Toasts_ErrorToast;
+            Svc.Toasts.ErrorToast -= CheckNonMaxQuantityModeFinished;
         }
 
         private static void Framework_Update(IFramework framework)
@@ -177,7 +199,8 @@ namespace Artisan.Autocraft
                             if (P.Config.MaxQuantityMode)
                                 P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredients");
                             else
-                                P.TM.Enqueue(() => { if (!CheckIngredientsSet()) { } });
+                                P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(SetIngredients), "EnduranceSetIngredients");
+
                             P.TM.Enqueue(() => UpdateMacroTimer(), "UpdateEnduranceMacroTimer");
                             P.TM.DelayNext("EnduranceThrottle", 100);
                             P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraftMethods.RepeatActualCraft(); else { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
@@ -208,11 +231,6 @@ namespace Artisan.Autocraft
 
                 }
             }
-        }
-
-        private static bool CheckIngredientsSet()
-        {
-            throw new NotImplementedException();
         }
 
         internal static void Draw()
@@ -462,10 +480,6 @@ namespace Artisan.Autocraft
 
         internal static void DrawRecipeData()
         {
-            if (HQManager.TryGetCurrent(out var d))
-            {
-                HQData = d;
-            }
             var addonPtr = Svc.GameGui.GetAddonByName("RecipeNote", 1);
             if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon))
             {
@@ -489,7 +503,7 @@ namespace Artisan.Autocraft
 
                         if (addon->AtkUnitBase.UldManager.NodeList[49]->IsVisible)
                         {
-                            var text = addon->SelectedRecipeName->NodeText.ExtractText().Replace('', ' ').Trim().Replace($"-{(char)13}", "");
+                            var text = addon->SelectedRecipeName->NodeText.ExtractText().Replace('', ' ').TrimEnd().Replace($"-{(char)13}", "");
                             var firstCrystal = GetCrystal(addon, 1);
                             var secondCrystal = GetCrystal(addon, 2);
 
@@ -515,27 +529,8 @@ namespace Artisan.Autocraft
                              * 
                              * */
 
-                            //if (str.Length == 0) return;
-
-                            //str = str
-                            //    .Replace($"{(char)13}", "")
-                            //    .Replace("-", "");
-
-                            //if (str[^1] == '')
-                            //{
-                            //    rName += str.Remove(str.Length - 1, 1).Trim();
-                            //}
-                            //else
-                            //{
-                            //    rName += str;
-                            //}
-
-                            //if (rName.Length == 0) return;
-
                             if (firstCrystal > 0 && secondCrystal > 0)
                             {
-                                //Svc.Log.Debug($"{LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == 31955).ItemResult.Value.Name}");
-                                
                                 if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.RawString == text && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
                                 {
                                     RecipeID = id.RowId;
@@ -547,6 +542,44 @@ namespace Artisan.Autocraft
                                 {
                                     RecipeID = id.RowId;
                                 }
+                            }
+                        }
+                        Array.Clear(SetIngredients);
+
+                        for (int i = 0; i <= 5; i++)
+                        {
+                            try
+                            {
+                                var node = addon->AtkUnitBase.UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
+                                if (node->Component->UldManager.NodeListCount < 16)
+                                    return;
+
+                                if (node is null || !node->AtkResNode.IsVisible)
+                                {
+                                    break;
+                                }
+
+                                var hqSetButton = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode();
+                                var nqSetButton = node->Component->UldManager.NodeList[6]->GetAsAtkComponentNode();
+
+                                var hqSetText = hqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
+                                var nqSetText = nqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
+
+                                int hqSet = Convert.ToInt32(hqSetText.ToString().GetNumbers());
+                                int nqSet = Convert.ToInt32(nqSetText.ToString().GetNumbers());
+
+                                EnduranceIngredients ingredients = new EnduranceIngredients()
+                                {
+                                    IngredientSlot = i + 1,
+                                    HQSet = hqSet,
+                                    NQSet = nqSet,
+                                };
+
+                                SetIngredients[i] = ingredients;
+                            }
+                            catch (Exception ex)
+                            {
+
                             }
                         }
                     }
@@ -658,5 +691,12 @@ namespace Artisan.Autocraft
                 CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
             }
         }
+    }
+
+    public class EnduranceIngredients
+    {
+        public int IngredientSlot { get; set; }
+        public int NQSet { get; set; }
+        public int HQSet { get; set; }
     }
 }

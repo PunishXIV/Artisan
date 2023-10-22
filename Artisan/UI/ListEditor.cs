@@ -8,6 +8,7 @@ using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using ECommons;
+using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -195,6 +196,18 @@ internal class ListEditor : Window, IDisposable
             ImGui.SetClipboardText(JsonConvert.SerializeObject(P.Config.CraftingLists.Where(x => x.ID == SelectedList.ID).First()));
             Notify.Success("List exported to clipboard.");
         }
+
+        if (RetainerInfo.ATools)
+        {
+            ImGui.SameLine();
+            var restock = ImGuiHelpers.GetButtonSize("Restock From Retainers");
+            ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - restock.X - export.X - btn.X - 6f);
+            if (ImGui.Button($"Restock From Retainers"))
+            {
+                RetainerInfo.RestockFromRetainers(SelectedList);
+            }
+        }
+
     }
 
     public void DrawRecipeData()
@@ -810,9 +823,10 @@ internal class ListEditor : Window, IDisposable
                 ImGui.EndCombo();
             }
         }
+        var buttonWidth = ImGui.CalcTextSize($"Apply to all");
         {
             ImGui.TextWrapped("Use a food item for this recipe");
-            ImGuiEx.SetNextItemFullWidth(-30);
+            ImGuiEx.SetNextItemFullWidth(-30 - (int)buttonWidth.X);
             if (ImGui.BeginCombo(
                     "##foodBuff",
                     ConsumableChecker.Food.TryGetFirst(x => x.Id == options.Food, out var item)
@@ -843,10 +857,33 @@ internal class ListEditor : Window, IDisposable
 
                 ImGui.EndCombo();
             }
+
+            ImGui.SameLine();
+
+            if (ImGui.Button($"Apply to all###FoodApplyAll"))
+            {
+                foreach (var r in SelectedList.Items.Distinct())
+                {
+                    if (!SelectedList.ListItemOptions.ContainsKey(r))
+                    {
+                        SelectedList.ListItemOptions.TryAdd(r, new ListItemOptions());
+                        var re = CraftingListHelpers.FilteredList[r];
+                        if (SelectedList.AddAsQuickSynth && re.CanQuickSynth)
+                            SelectedList.ListItemOptions[r].NQOnly = true;
+                    }
+
+                    SelectedList.ListItemOptions.TryGetValue(r, out var o);
+
+                    o.Food = options.Food;
+                    o.FoodHQ = options.FoodHQ;
+                }
+
+                P.Config.Save();
+            }
         }
         {
             ImGui.TextWrapped("Use a potion item for this recipe");
-            ImGuiEx.SetNextItemFullWidth(-30);
+            ImGuiEx.SetNextItemFullWidth(-30 - (int)buttonWidth.X);
             if (ImGui.BeginCombo(
                     "##potBuff",
                     ConsumableChecker.Pots.TryGetFirst(x => x.Id == options.Potion, out var item)
@@ -876,6 +913,29 @@ internal class ListEditor : Window, IDisposable
                     }
 
                 ImGui.EndCombo();
+            }
+
+            ImGui.SameLine();
+
+            if (ImGui.Button($"Apply to all###PotionApplyAll"))
+            {
+                foreach (var r in SelectedList.Items.Distinct())
+                {
+                    if (!SelectedList.ListItemOptions.ContainsKey(r))
+                    {
+                        SelectedList.ListItemOptions.TryAdd(r, new ListItemOptions());
+                        var re = CraftingListHelpers.FilteredList[r];
+                        if (SelectedList.AddAsQuickSynth && re.CanQuickSynth)
+                            SelectedList.ListItemOptions[r].NQOnly = true;
+                    }
+
+                    SelectedList.ListItemOptions.TryGetValue(r, out var o);
+
+                    o.Potion = options.Potion;
+                    o.PotHQ = options.PotHQ;
+                }
+
+                P.Config.Save();
             }
         }
 
