@@ -64,7 +64,7 @@ namespace Artisan.CraftingLogic
 
         public static double ByregotMultiplier()
         {
-            int IQStacks = Convert.ToInt32(CurrentCraftMethods.GetStatus(Buffs.InnerQuiet)?.StackCount);
+            int IQStacks = Convert.ToInt32(SolverLogic.GetStatus(Buffs.InnerQuiet)?.StackCount);
             return 1 + (IQStacks * 0.2);
         }
 
@@ -205,14 +205,14 @@ namespace Artisan.CraftingLogic
 
         public static uint GreatStridesByregotCombo()
         {
-            if (CurrentCraftMethods.GetStatus(Buffs.InnerQuiet) is null) return 0;
+            if (SolverLogic.GetStatus(Buffs.InnerQuiet) is null) return 0;
 
             if (!Skills.ByregotsBlessing.LevelChecked()) return 0;
             if (CharacterInfo.CurrentCP < 56) return 0;
 
             double efficiency = GetMultiplier(Skills.ByregotsBlessing);
-            double IQStacks = 1 + (CurrentCraftMethods.GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
-            double innovation = (CurrentCraftMethods.GetStatus(Buffs.Innovation)?.StackCount >= 2 && CurrentCondition != Condition.Excellent) || (CurrentCraftMethods.GetStatus(Buffs.Innovation)?.StackCount >= 3 && CurrentCondition == Condition.Excellent) || (JustUsedGreatStrides && CurrentCraftMethods.GetStatus(Buffs.Innovation)?.StackCount >= 1) ? 0.5 : 0;
+            double IQStacks = 1 + (SolverLogic.GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
+            double innovation = (SolverLogic.GetStatus(Buffs.Innovation)?.StackCount >= 2 && CurrentCondition != Condition.Excellent) || (SolverLogic.GetStatus(Buffs.Innovation)?.StackCount >= 3 && CurrentCondition == Condition.Excellent) || (JustUsedGreatStrides && SolverLogic.GetStatus(Buffs.Innovation)?.StackCount >= 1) ? 0.5 : 0;
             double greatStrides = 1;
 
             return (uint)Math.Floor(CurrentQuality + (BaseQuality() * efficiency * IQStacks * (innovation + greatStrides + 1)));

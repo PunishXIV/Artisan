@@ -260,7 +260,7 @@ public unsafe class Artisan : IDalamudPlugin
             Endurance.DrawRecipeData();
 
         GetCraft();
-        if (CurrentCraftMethods.CanUse(Skills.BasicSynth) && CurrentRecommendation == 0 && Tasks.Count == 0 && CurrentStep >= 1)
+        if (SolverLogic.CanUse(Skills.BasicSynth) && CurrentRecommendation == 0 && Tasks.Count == 0 && CurrentStep >= 1)
         {
             if (CurrentRecipe is null && !warningMessage)
             {
@@ -309,7 +309,7 @@ public unsafe class Artisan : IDalamudPlugin
 
         if (cw.repeatTrial && !Endurance.Enable)
         {
-            CurrentCraftMethods.RepeatTrialCraft();
+            SolverLogic.RepeatTrialCraft();
         }
 
     }
@@ -352,7 +352,7 @@ public unsafe class Artisan : IDalamudPlugin
                         {
                             if (CurrentQuality >= MaxQuality)
                             {
-                                if (ActionIsQuality(macro) && (!P.Config.SkipMacroStepIfUnable || (P.Config.SkipMacroStepIfUnable && CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))))
+                                if (ActionIsQuality(macro) && (!P.Config.SkipMacroStepIfUnable || (P.Config.SkipMacroStepIfUnable && SolverLogic.CanUse(macro.MacroActions[MacroStep]))))
                                 {
                                     MacroStep++;
                                     goto RestartRecommendation;
@@ -371,7 +371,7 @@ public unsafe class Artisan : IDalamudPlugin
 
                         if (P.Config.SkipMacroStepIfUnable)
                         {
-                            if (!CurrentCraftMethods.CanUse(macro.MacroActions[MacroStep]))
+                            if (!SolverLogic.CanUse(macro.MacroActions[MacroStep]))
                             {
                                 MacroStep++;
                                 goto RestartRecommendation;
@@ -393,7 +393,7 @@ public unsafe class Artisan : IDalamudPlugin
                             goto RestartRecommendation;
                         }
 
-                        CurrentRecommendation = MacroStep >= macro.MacroActions.Count || macro.MacroActions[MacroStep] == 0 ? (CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation()) : macro.MacroActions[MacroStep];
+                        CurrentRecommendation = MacroStep >= macro.MacroActions.Count || macro.MacroActions[MacroStep] == 0 ? (CurrentRecipe.IsExpert ? SolverLogic.GetExpertRecommendation() : SolverLogic.GetRecommendation()) : macro.MacroActions[MacroStep];
 
                         try
                         {
@@ -417,17 +417,17 @@ public unsafe class Artisan : IDalamudPlugin
                     else
                     {
                         if (!P.Config.DisableMacroArtisanRecommendation || CraftingListUI.Processing)
-                            CurrentRecommendation = CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation();
+                            CurrentRecommendation = CurrentRecipe.IsExpert ? SolverLogic.GetExpertRecommendation() : SolverLogic.GetRecommendation();
                     }
                 }
                 else
                 {
-                    CurrentRecommendation = CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation();
+                    CurrentRecommendation = CurrentRecipe.IsExpert ? SolverLogic.GetExpertRecommendation() : SolverLogic.GetRecommendation();
                 }
             }
             else
             {
-                CurrentRecommendation = CurrentRecipe.IsExpert ? CurrentCraftMethods.GetExpertRecommendation() : CurrentCraftMethods.GetRecommendation();
+                CurrentRecommendation = CurrentRecipe.IsExpert ? SolverLogic.GetExpertRecommendation() : SolverLogic.GetRecommendation();
             }
 
             if (CurrentRecommendation != 0)
@@ -481,7 +481,7 @@ public unsafe class Artisan : IDalamudPlugin
 
                 if (P.Config.AutoMode)
                 {
-                    if (CurrentCraftMethods.CanUse(CurrentRecommendation))
+                    if (SolverLogic.CanUse(CurrentRecommendation))
                         ActionWatching.BlockAction = true;
 
                     P.CTM.DelayNext(P.Config.AutoDelay);
@@ -524,7 +524,7 @@ public unsafe class Artisan : IDalamudPlugin
                     break;
             }
 
-            return CurrentCraftMethods.CanUse(newAction);
+            return SolverLogic.CanUse(newAction);
         }
 
         return false;

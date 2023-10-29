@@ -19,7 +19,7 @@ using Status = Dalamud.Game.ClientState.Statuses.Status;
 
 namespace Artisan.CraftingLogic
 {
-    public static class CurrentCraftMethods
+    public static class SolverLogic
     {
         private static StatusList statusList => Svc.ClientState.LocalPlayer!.StatusList;
         private static bool InTouchRotation => (PreviousActionSameAs(Skills.BasicTouch) && Skills.StandardTouch.LevelChecked()) || (PreviousActionSameAs(Skills.StandardTouch) && Skills.AdvancedTouch.LevelChecked());
@@ -254,7 +254,7 @@ namespace Artisan.CraftingLogic
                     if (CurrentStep == 1 && CanUse(Skills.Reflect)) return Skills.Reflect;
                 }
 
-                if (CanUse(Skills.PreciseTouch) && !statusList.HasStatus(out _, CraftingPlayerStatuses.GreatStrides) && CurrentCondition is Condition.Good or Condition.Excellent) return Skills.PreciseTouch;
+                if (WasteNotUsed && CanUse(Skills.PreciseTouch) && !statusList.HasStatus(out _, CraftingPlayerStatuses.GreatStrides) && CurrentCondition is Condition.Good or Condition.Excellent) return Skills.PreciseTouch;
                 if (!Skills.PreciseTouch.LevelChecked() && !statusList.HasStatus(out _, CraftingPlayerStatuses.GreatStrides) && CurrentCondition is Condition.Excellent)
                 {
                     if (BasicTouchUsed && CanUse(Skills.StandardTouch)) return Skills.StandardTouch;
@@ -298,6 +298,9 @@ namespace Artisan.CraftingLogic
 
         private static bool ShouldMend(uint synthOption)
         {
+            if (!ManipulationUsed && CanUse(Skills.Manipulation)) return false;
+            if (!WasteNotUsed && CanUse(Skills.WasteNot)) return false;
+
             bool wasteNots = GetStatus(Buffs.WasteNot) != null || GetStatus(Buffs.WasteNot2) != null;
             var nextReduction = wasteNots ? 5 : 10;
 
@@ -428,7 +431,7 @@ namespace Artisan.CraftingLogic
                 var addonPtr = (AddonRecipeNote*)recipeWindow;
                 if (addonPtr == null)
                     return;
-                
+
                 try
                 {
                     if (Throttler.Throttle(500))
@@ -447,7 +450,7 @@ namespace Artisan.CraftingLogic
                         values[0] = new()
                         {
                             Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int,
-                            Int = Math.Min(trueNumberCraftable, crafts),
+                            Int = Math.Min(trueNumberCraftable, Math.Min(crafts, 99)),
                         };
                         values[1] = new()
                         {

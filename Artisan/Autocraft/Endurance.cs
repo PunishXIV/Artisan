@@ -80,11 +80,12 @@ namespace Artisan.Autocraft
             if (Enable)
             {
                 Errors.PushBack(Environment.TickCount64);
-                if (Errors.Count() >= 5 && Errors.All(x => x > Environment.TickCount64 - 30 * 1000))
+                if (Errors.Count() >= 5 && Errors.All(x => x > Environment.TickCount64 - 10 * 1000))
                 {
                     Svc.Toasts.ShowError("Endurance has been disabled due to too many errors in succession.");
                     DuoLog.Error("Endurance has been disabled due to too many errors in succession.");
                     Enable = false;
+                    Errors.Clear();
                 }
             }
         }
@@ -100,7 +101,7 @@ namespace Artisan.Autocraft
         {
             if ((Enable && P.Config.QuickSynthMode && CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0) || IPC.IPC.StopCraftingRequest)
             {
-                CurrentCraftMethods.CloseQuickSynthWindow();
+                SolverLogic.CloseQuickSynthWindow();
             }
 
             if (Enable && !P.TM.IsBusy && CurrentCraft.State != CraftingState.Crafting)
@@ -189,9 +190,9 @@ namespace Artisan.Autocraft
 
                             P.TM.Enqueue(() => { if (!CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
                             if (P.Config.CraftingX)
-                                P.TM.Enqueue(() => CurrentCraftMethods.QuickSynthItem(P.Config.CraftX));
+                                P.TM.Enqueue(() => SolverLogic.QuickSynthItem(P.Config.CraftX));
                             else
-                                P.TM.Enqueue(() => CurrentCraftMethods.QuickSynthItem(99));
+                                P.TM.Enqueue(() => SolverLogic.QuickSynthItem(99));
                         }
                         else
                         {
@@ -203,7 +204,7 @@ namespace Artisan.Autocraft
 
                             P.TM.Enqueue(() => UpdateMacroTimer(), "UpdateEnduranceMacroTimer");
                             P.TM.DelayNext("EnduranceThrottle", 100);
-                            P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CurrentCraftMethods.RepeatActualCraft(); else { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
+                            P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) SolverLogic.RepeatActualCraft(); else { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
                         }
 
 
@@ -559,8 +560,8 @@ namespace Artisan.Autocraft
                                     break;
                                 }
 
-                                var hqSetButton = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode();
-                                var nqSetButton = node->Component->UldManager.NodeList[6]->GetAsAtkComponentNode();
+                                var hqSetButton = node->Component->UldManager.NodeList[6]->GetAsAtkComponentNode();
+                                var nqSetButton = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode();
 
                                 var hqSetText = hqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
                                 var nqSetText = nqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
@@ -570,7 +571,7 @@ namespace Artisan.Autocraft
 
                                 EnduranceIngredients ingredients = new EnduranceIngredients()
                                 {
-                                    IngredientSlot = i + 1,
+                                    IngredientSlot = i,
                                     HQSet = hqSet,
                                     NQSet = nqSet,
                                 };

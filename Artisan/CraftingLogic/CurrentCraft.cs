@@ -89,7 +89,7 @@ namespace Artisan.CraftingLogic
                 {
                     if (state == CraftingState.Crafting)
                     {
-                        bool wasSuccess = CurrentCraftMethods.CheckForSuccess();
+                        bool wasSuccess = SolverLogic.CheckForSuccess();
                         if (!P.Config.QuickSynthMode && !wasSuccess && P.Config.EnduranceStopFail && Endurance.Enable)
                         {
                             Endurance.Enable = false;

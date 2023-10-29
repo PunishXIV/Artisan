@@ -119,7 +119,7 @@ namespace Artisan.UI
 
                 if (ImGui.CollapsingHeader("Crafting Stats"))
                 {
-                    CurrentCraftMethods.BestSynthesis(out var act);
+                    SolverLogic.BestSynthesis(out var act);
                     ImGui.Text($"Control: {CharacterInfo.Control}");
                     ImGui.Text($"Craftsmanship: {CharacterInfo.Craftsmanship}");
                     ImGui.Text($"Current Durability: {CurrentCraft.CurrentDurability}");
@@ -142,7 +142,7 @@ namespace Artisan.UI
                     ImGui.Text($"Collectibility Mid: {CurrentCraft.CollectabilityMid}");
                     ImGui.Text($"Collectibility High: {CurrentCraft.CollectabilityHigh}");
                     ImGui.Text($"Crafting State: {CurrentCraft.State}");
-                    ImGui.Text($"Can Finish: {CurrentCraftMethods.CanFinishCraft(act)}");
+                    ImGui.Text($"Can Finish: {SolverLogic.CanFinishCraft(act)}");
                     ImGui.Text($"Current Rec: {CurrentCraft.RecommendationName}");
                     ImGui.Text($"Previous Action: {CurrentCraft.PreviousAction.NameOfAction()}");
                     ImGui.Text($"Tasks?: {Artisan.Tasks.Count}");
@@ -253,11 +253,11 @@ namespace Artisan.UI
 
                 if (ImGui.Button($"Open And Quick Synth"))
                 {
-                    CurrentCraftMethods.QuickSynthItem(DebugValue);
+                    SolverLogic.QuickSynthItem(DebugValue);
                 }
                 if (ImGui.Button($"Close Quick Synth Window"))
                 {
-                    CurrentCraftMethods.CloseQuickSynthWindow();
+                    SolverLogic.CloseQuickSynthWindow();
                 }
                 if (ImGui.Button($"Open Materia Window"))
                 {

@@ -58,24 +58,24 @@ namespace Artisan.RawInformation.Character
        
         public static uint HighestLevelTouch()
         {
-            bool wasteNots = CurrentCraftMethods.GetStatus(Buffs.WasteNot) != null || CurrentCraftMethods.GetStatus(Buffs.WasteNot2) != null;
+            bool wasteNots = SolverLogic.GetStatus(Buffs.WasteNot) != null || SolverLogic.GetStatus(Buffs.WasteNot2) != null;
 
             if (CurrentRecipe.IsExpert)
             {
-                if (CurrentCraftMethods.CanUse(Skills.HastyTouch) && CurrentCondition is Condition.Centered) return Skills.HastyTouch;
-                if (CurrentCraftMethods.CanUse(Skills.PreciseTouch) && CurrentCondition is Condition.Good) return Skills.PreciseTouch;
-                if (AdvancedTouchUsed && CurrentCraftMethods.CanUse(Skills.PrudentTouch)) return Skills.PrudentTouch;
-                if (CurrentCraftMethods.CanUse(Skills.AdvancedTouch) && StandardTouchUsed) return Skills.AdvancedTouch;
-                if (CurrentCraftMethods.CanUse(Skills.StandardTouch) && BasicTouchUsed) return Skills.StandardTouch;
-                if (CurrentCraftMethods.CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
+                if (SolverLogic.CanUse(Skills.HastyTouch) && CurrentCondition is Condition.Centered) return Skills.HastyTouch;
+                if (SolverLogic.CanUse(Skills.PreciseTouch) && CurrentCondition is Condition.Good) return Skills.PreciseTouch;
+                if (AdvancedTouchUsed && SolverLogic.CanUse(Skills.PrudentTouch)) return Skills.PrudentTouch;
+                if (SolverLogic.CanUse(Skills.AdvancedTouch) && StandardTouchUsed) return Skills.AdvancedTouch;
+                if (SolverLogic.CanUse(Skills.StandardTouch) && BasicTouchUsed) return Skills.StandardTouch;
+                if (SolverLogic.CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
             }
             else
             {
-                if (CurrentCraftMethods.CanUse(Skills.FocusedTouch) && JustUsedObserve) return Skills.FocusedTouch;
-                if (CurrentCraftMethods.CanUse(Skills.PreciseTouch) && CurrentCondition is Condition.Good or Condition.Excellent) return Skills.PreciseTouch;
-                if (CurrentCraftMethods.CanUse(Skills.PreparatoryTouch) && CurrentDurability > (wasteNots ? 10 : 20) && (CurrentCraftMethods.GetStatus(Buffs.InnerQuiet)?.StackCount < 10 || CurrentCraftMethods.GetStatus(Buffs.InnerQuiet) is null)) return Skills.PreparatoryTouch;
-                if (CurrentCraftMethods.CanUse(Skills.PrudentTouch) && !wasteNots) return Skills.PrudentTouch;
-                if (CurrentCraftMethods.CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
+                if (SolverLogic.CanUse(Skills.FocusedTouch) && JustUsedObserve) return Skills.FocusedTouch;
+                if (SolverLogic.CanUse(Skills.PreciseTouch) && CurrentCondition is Condition.Good or Condition.Excellent) return Skills.PreciseTouch;
+                if (SolverLogic.CanUse(Skills.PreparatoryTouch) && CurrentDurability > (wasteNots ? 10 : 20) && (SolverLogic.GetStatus(Buffs.InnerQuiet)?.StackCount < 10 || SolverLogic.GetStatus(Buffs.InnerQuiet) is null)) return Skills.PreparatoryTouch;
+                if (SolverLogic.CanUse(Skills.PrudentTouch) && !wasteNots) return Skills.PrudentTouch;
+                if (SolverLogic.CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
             }
 
             return 0;
@@ -83,12 +83,12 @@ namespace Artisan.RawInformation.Character
 
         public static uint HighestLevelSynth()
         {
-            if (CurrentCraftMethods.CanUse(Skills.IntensiveSynthesis)) return Skills.IntensiveSynthesis;
-            if (CurrentCraftMethods.CanUse(Skills.FocusedSynthesis) && JustUsedObserve) return Skills.FocusedSynthesis;
-            if (CurrentCraftMethods.CanUse(Skills.Groundwork) && CurrentDurability > 20) return Skills.Groundwork;
-            if (CurrentCraftMethods.CanUse(Skills.PrudentSynthesis)) return Skills.PrudentSynthesis;
-            if (CurrentCraftMethods.CanUse(Skills.CarefulSynthesis)) return Skills.CarefulSynthesis;
-            if (CurrentCraftMethods.CanUse(Skills.BasicSynth)) return Skills.BasicSynth;
+            if (SolverLogic.CanUse(Skills.IntensiveSynthesis)) return Skills.IntensiveSynthesis;
+            if (SolverLogic.CanUse(Skills.FocusedSynthesis) && JustUsedObserve) return Skills.FocusedSynthesis;
+            if (SolverLogic.CanUse(Skills.Groundwork) && CurrentDurability > 20) return Skills.Groundwork;
+            if (SolverLogic.CanUse(Skills.PrudentSynthesis)) return Skills.PrudentSynthesis;
+            if (SolverLogic.CanUse(Skills.CarefulSynthesis)) return Skills.CarefulSynthesis;
+            if (SolverLogic.CanUse(Skills.BasicSynth)) return Skills.BasicSynth;
 
             return 0;
         }

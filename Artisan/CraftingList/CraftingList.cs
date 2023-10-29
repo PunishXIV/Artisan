@@ -178,7 +178,7 @@ namespace Artisan.CraftingLists
                 PluginLog.Verbose("End of Index");
                 CurrentIndex = 0;
                 CraftingListUI.Processing = false;
-                CurrentCraftMethods.CloseQuickSynthWindow();
+                SolverLogic.CloseQuickSynthWindow();
                 CLTM.Enqueue(() => CloseCraftingMenu(), "EndOfListCloseMenu");
 
                 if (P.Config.PlaySoundFinishList)
@@ -188,7 +188,7 @@ namespace Artisan.CraftingLists
 
             if (CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0)
             {
-                CurrentCraftMethods.CloseQuickSynthWindow();
+                SolverLogic.CloseQuickSynthWindow();
             }
 
             var recipe = CraftingListHelpers.FilteredList[CraftingListUI.CurrentProcessedItem];
@@ -410,12 +410,12 @@ namespace Artisan.CraftingLists
 
                         if (count >= 99)
                         {
-                            CurrentCraftMethods.QuickSynthItem(99);
+                            SolverLogic.QuickSynthItem(99);
                             return;
                         }
                         else
                         {
-                            CurrentCraftMethods.QuickSynthItem(count);
+                            SolverLogic.QuickSynthItem(count);
                             return;
                         }
 
@@ -425,7 +425,7 @@ namespace Artisan.CraftingLists
                         if (!CLTM.IsBusy)
                         {
                             CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
-                            CLTM.Enqueue(() => CurrentCraftMethods.RepeatActualCraft(), "ListCraft");
+                            CLTM.Enqueue(() => SolverLogic.RepeatActualCraft(), "ListCraft");
                             return;
                         }
                     }
@@ -463,12 +463,12 @@ namespace Artisan.CraftingLists
 
                         if (count >= 99)
                         {
-                            CurrentCraftMethods.QuickSynthItem(99);
+                            SolverLogic.QuickSynthItem(99);
                             return;
                         }
                         else
                         {
-                            CurrentCraftMethods.QuickSynthItem(count);
+                            SolverLogic.QuickSynthItem(count);
                             return;
                         }
                     }
@@ -490,7 +490,7 @@ namespace Artisan.CraftingLists
 
                             CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
                             CLTM.DelayNext("CraftListDelay", (int)(P.Config.ListCraftThrottle * 1000));
-                            CLTM.Enqueue(() => { CurrentCraftMethods.RepeatActualCraft(); }, "ListCraft");
+                            CLTM.Enqueue(() => { SolverLogic.RepeatActualCraft(); }, "ListCraft");
 
                             return;
                         }
@@ -615,8 +615,8 @@ namespace Artisan.CraftingLists
                                     return true;
                                 }
 
-                                var hqSetButton = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode();
-                                var nqSetButton = node->Component->UldManager.NodeList[6]->GetAsAtkComponentNode();
+                                var hqSetButton = node->Component->UldManager.NodeList[6]->GetAsAtkComponentNode();
+                                var nqSetButton = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode();
 
                                 var hqSetText = hqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
                                 var nqSetText = nqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
@@ -624,16 +624,14 @@ namespace Artisan.CraftingLists
                                 int hqSet = Convert.ToInt32(hqSetText.ToString().GetNumbers());
                                 int nqSet = Convert.ToInt32(nqSetText.ToString().GetNumbers());
 
-                                Svc.Log.Debug($"{nqSet} {hqSet}");
-
-                                if (setIngredients.Any(y => y.IngredientSlot == i - 1))
+                                if (setIngredients.Any(y => y.IngredientSlot == i))
                                 {
-                                    for (int h = hqSet; h < setIngredients.First(x => x.IngredientSlot == i - 1).HQSet; h++)
+                                    for (int h = hqSet; h < setIngredients.First(x => x.IngredientSlot == i).HQSet; h++)
                                     {
                                         ClickRecipeNote.Using((IntPtr)addon).Material(i, true);
                                     }
 
-                                    for (int h = nqSet; h < setIngredients.First(x => x.IngredientSlot == i - 1).NQSet; h++)
+                                    for (int h = nqSet; h < setIngredients.First(x => x.IngredientSlot == i).NQSet; h++)
                                     {
                                         ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
                                     }

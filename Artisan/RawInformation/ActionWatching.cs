@@ -33,7 +33,7 @@ namespace Artisan.RawInformation
                 if (BlockAction)
                     return UseActionHook!.Original(actionManager, (uint)ActionType.Action, 7, targetObjectID, param, useType, pvp, isGroundTarget);
 
-                if (CurrentCraftMethods.CanUse(actionID))
+                if (SolverLogic.CanUse(actionID))
                 {
                     PreviousAction = actionID;
 
