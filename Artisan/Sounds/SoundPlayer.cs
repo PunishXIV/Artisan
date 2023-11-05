@@ -1,5 +1,7 @@
-﻿using ECommons.DalamudServices;
+﻿using ECommons;
+using ECommons.DalamudServices;
 using NAudio.Wave;
+using System;
 using System.IO;
 
 namespace Artisan.Sounds
@@ -14,16 +16,23 @@ namespace Artisan.Sounds
         {
             lock (_lockObj)
             {
-                string sound = "Time Up";
-                string path = Path.Combine(Svc.PluginInterface.AssemblyLocation.Directory.FullName, "Sounds", $"{sound}.mp3");
-                if (!File.Exists(path)) return;
-                var reader = new Mp3FileReader(path);
+                try
+                {
+                    string sound = "Time Up";
+                    string path = Path.Combine(Svc.PluginInterface.AssemblyLocation.Directory.FullName, "Sounds", $"{sound}.mp3");
+                    if (!File.Exists(path)) return;
+                    var reader = new Mp3FileReader(path);
 
-                waveOut.Init(reader);
-                var previousVol = waveOut.Volume;
-                waveOut.Volume = P.Config.SoundVolume;
-                waveOut.Play();
-                waveOut.PlaybackStopped += (sender, args) => waveOut.Volume = previousVol;
+                    waveOut.Init(reader);
+                    var previousVol = waveOut.Volume;
+                    waveOut.Volume = P.Config.SoundVolume;
+                    waveOut.Play();
+                    waveOut.PlaybackStopped += (sender, args) => waveOut.Volume = previousVol;
+                }
+                catch(Exception ex)
+                {
+                    ex.Log();
+                }
             }
         }
     }

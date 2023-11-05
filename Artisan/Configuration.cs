@@ -133,6 +133,8 @@ namespace Artisan
 
         public bool ViewedEnduranceMessage = false;
 
+        public bool DisableSTMessage = false;   
+
         public void Save()
         {
             Svc.PluginInterface.SavePluginConfig(this);
