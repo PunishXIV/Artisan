@@ -48,14 +48,14 @@ namespace Artisan
             {
                 if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] || Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
                     DrawOptions();
-
-                DrawEnduranceCounter();
-
-                DrawWorkshopOverlay();
-
-                DrawSupplyMissionOverlay();
-
             }
+
+            DrawEnduranceCounter();
+
+            DrawWorkshopOverlay();
+
+            DrawSupplyMissionOverlay();
+
             DrawMacroOptions();
 
             if (SimpleTweaks.IsEnabled() && !SimpleTweaks.IsImprovedLogEnabled())
@@ -188,6 +188,10 @@ namespace Artisan
                 {
                     var subcontext = (AtkUnitBase*)Svc.GameGui.GetAddonByName("AddonContextSub");
 
+                    if (subcontext != null && subcontext->IsVisible)
+                        return;
+
+                    subcontext = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu");
                     if (subcontext != null && subcontext->IsVisible)
                         return;
 

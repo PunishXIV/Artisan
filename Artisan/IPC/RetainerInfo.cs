@@ -318,7 +318,7 @@ namespace Artisan.IPC
                         {
                             TM.DelayNextImmediate("CloseRetainerList", 200);
                             TM.EnqueueImmediate(() => RetainerListHandlers.CloseRetainerList());
-                            TM.EnqueueImmediate(() => YesAlready.EnableIfNeeded());
+                            TM.EnqueueImmediate(() => YesAlready.Unlock());
                             TM.EnqueueImmediate(() => AutoRetainer.Unsuppress());
                             TM.EnqueueImmediate(() => Svc.Framework.Update -= Tick);
                             TM.EnqueueImmediate(() => TM.Abort());
@@ -328,7 +328,7 @@ namespace Artisan.IPC
 
                 TM.DelayNext("CloseRetainerList", 200);
                 TM.Enqueue(() => RetainerListHandlers.CloseRetainerList());
-                TM.Enqueue(() => YesAlready.EnableIfNeeded());
+                TM.Enqueue(() => YesAlready.Unlock());
                 TM.Enqueue(() => AutoRetainer.Unsuppress());
                 TM.Enqueue(() => Svc.Framework.Update -= Tick);
             }
@@ -437,7 +437,7 @@ namespace Artisan.IPC
                 }
                 TM.DelayNext("CloseRetainerList", 200);
                 TM.Enqueue(() => RetainerListHandlers.CloseRetainerList());
-                TM.Enqueue(() => YesAlready.EnableIfNeeded());
+                TM.Enqueue(() => YesAlready.Unlock());
                 TM.Enqueue(() => AutoRetainer.Unsuppress());
                 TM.Enqueue(() => Svc.Framework.Update -= Tick);
             }

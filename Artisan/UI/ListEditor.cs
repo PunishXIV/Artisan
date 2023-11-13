@@ -181,6 +181,10 @@ internal class ListEditor : Window, IDisposable
         var btn = ImGuiHelpers.GetButtonSize("Begin Crafting List");
         ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - btn.X);
         ImGui.SetCursorPosY(topRowY - 5f);
+
+        if (Endurance.Enable || CraftingListUI.Processing)
+            ImGui.BeginDisabled();
+
         if (ImGui.Button("Begin Crafting List"))
         {
             CraftingListUI.selectedList = this.SelectedList;
@@ -188,9 +192,13 @@ internal class ListEditor : Window, IDisposable
             this.IsOpen = false;
         }
 
+        if (Endurance.Enable || CraftingListUI.Processing)
+            ImGui.EndDisabled();
+
         ImGui.SameLine();
         var export = ImGuiHelpers.GetButtonSize("Export List");
         ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - export.X - btn.X - 3f);
+
         if (ImGui.Button("Export List"))
         {
             ImGui.SetClipboardText(JsonConvert.SerializeObject(P.Config.CraftingLists.Where(x => x.ID == SelectedList.ID).First()));
@@ -202,11 +210,19 @@ internal class ListEditor : Window, IDisposable
             ImGui.SameLine();
             var restock = ImGuiHelpers.GetButtonSize("Restock From Retainers");
             ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - restock.X - export.X - btn.X - 6f);
+
+            if (Endurance.Enable || CraftingListUI.Processing)
+                ImGui.BeginDisabled();
+
             if (ImGui.Button($"Restock From Retainers"))
             {
                 RetainerInfo.RestockFromRetainers(SelectedList);
             }
+
+            if (Endurance.Enable || CraftingListUI.Processing)
+                ImGui.EndDisabled();
         }
+
 
     }
 
@@ -1148,12 +1164,17 @@ internal class ListFolders : ItemSelector<CraftingList>
 
         P.Config.CraftingLists.RemoveAt(idx);
         P.Config.Save();
+
+        if (!CraftingListUI.Processing)
         CraftingListUI.selectedList = new CraftingList();
         return true;
     }
 
     protected override bool OnDraw(int idx)
     {
+        if (CraftingListUI.Processing && CraftingListUI.selectedList.ID == P.Config.CraftingLists[idx].ID)
+            ImGui.BeginDisabled();
+
         using var id = ImRaii.PushId(idx);
         var selected = ImGui.Selectable(P.Config.CraftingLists[idx].Name, idx == CurrentIdx);
         if (selected)
@@ -1171,22 +1192,29 @@ internal class ListFolders : ItemSelector<CraftingList>
                 window.BringToFront();
             }
 
+            if (!CraftingListUI.Processing)
             CraftingListUI.selectedList = P.Config.CraftingLists[idx];
         }
 
-        if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+        if (!CraftingListUI.Processing)
         {
-            if (CurrentIdx == idx)
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
             {
-                CurrentIdx = -1;
-                CraftingListUI.selectedList = new CraftingList();
-            }
-            else
-            {
-                CurrentIdx = idx;
-                CraftingListUI.selectedList = P.Config.CraftingLists[idx];
+                if (CurrentIdx == idx)
+                {
+                    CurrentIdx = -1;
+                    CraftingListUI.selectedList = new CraftingList();
+                }
+                else
+                {
+                    CurrentIdx = idx;
+                    CraftingListUI.selectedList = P.Config.CraftingLists[idx];
+                }
             }
         }
+
+        if (CraftingListUI.Processing && CraftingListUI.selectedList.ID == P.Config.CraftingLists[idx].ID)
+            ImGui.EndDisabled();
 
         return selected;
     }
@@ -1197,7 +1225,7 @@ internal class ListFolders : ItemSelector<CraftingList>
         CraftingList newList = new CraftingList();
         newList.Name = name;
         newList.SetID();
-        newList.Items = baseList.Items;
+        newList.Items = baseList.Items.ToList();
         newList.Save();
         return true;
     }

@@ -109,7 +109,6 @@ namespace Artisan.CraftingLogic
             while (copyOfDura > 0)
             {
                 newProgress = (int)Math.Floor(newProgress + (Calculations.BaseProgression() * multiplier * (venestacks > 0 ? 1.5 : 1)));
-                PluginLog.Debug($"{newProgress}");
                 if (newProgress >= MaxProgress) return true;
 
                 copyOfDura -= wasteStacks > 0 ? 5 : 10;
@@ -130,6 +129,8 @@ namespace Artisan.CraftingLogic
 
         public static uint GetExpertRecommendation()
         {
+            GoingForQuality();
+
             if (CurrentDurability <= 10 && CanUse(Skills.MastersMend)) return Skills.MastersMend;
             if (CurrentProgress < MaxProgress && !ExpertCraftOpenerFinish)
             {
@@ -144,7 +145,7 @@ namespace Artisan.CraftingLogic
                 if (CurrentCondition is Condition.Malleable && (Calculations.CalculateNewProgress(Skills.Groundwork) < MaxProgress) || GetStatus(Buffs.FinalAppraisal) is not null && CanUse(Skills.Groundwork)) return Skills.Groundwork;
                 if (CurrentCondition is Condition.Pliant && GetStatus(Buffs.Manipulation) is null && GetStatus(Buffs.MuscleMemory) is null && CanUse(Skills.Manipulation)) return Skills.Manipulation;
             }
-            if (CurrentQuality < MaxQuality)
+            if (goingForQuality)
             {
                 if (Calculations.GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides)) return Skills.GreatStrides;
                 if (GetStatus(Buffs.GreatStrides) is not null && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
@@ -162,52 +163,7 @@ namespace Artisan.CraftingLogic
         public static uint GetRecommendation()
         {
             BestSynthesis(out var act);
-
-            int collectibilityCheck = 0;
-            if (CurrentRecipe.ItemResult.Value.AlwaysCollectable)
-            {
-                switch (P.Config.SolverCollectibleMode)
-                {
-                    case 1:
-                        collectibilityCheck = Convert.ToInt32(CollectabilityLow);
-                        MaxQuality = collectibilityCheck * 10;
-                        break;
-                    case 2:
-                        if (CollectabilityMid == "0")
-                        {
-                            collectibilityCheck = Convert.ToInt32(CollectabilityLow);
-                        }
-                        else
-                        {
-                            collectibilityCheck = Convert.ToInt32(CollectabilityMid);
-                        }
-                        MaxQuality = collectibilityCheck * 10;
-                        break;
-                    case 3:
-                        if (CollectabilityHigh == "0")
-                        {
-                            if (CollectabilityMid == "0")
-                            {
-                                collectibilityCheck = Convert.ToInt32(CollectabilityLow);
-                            }
-                            else
-                            {
-                                collectibilityCheck = Convert.ToInt32(CollectabilityMid);
-                            }
-                        }
-                        else
-                        {
-                            collectibilityCheck = Convert.ToInt32(CollectabilityHigh);
-                        }
-                        MaxQuality = collectibilityCheck * 10;
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            goingForQuality = (!CurrentRecipe.ItemResult.Value.AlwaysCollectable && HighQualityPercentage < P.Config.MaxPercentage) ||
-                  (CurrentRecipe.ItemResult.Value.AlwaysCollectable && HighQualityPercentage < collectibilityCheck);
+            GoingForQuality();
 
             if (CurrentStep == 1 && Calculations.CalculateNewProgress(Skills.DelicateSynthesis) >= MaxProgress && Calculations.CalculateNewQuality(Skills.DelicateSynthesis) >= MaxQuality && CanUse(Skills.DelicateSynthesis)) return Skills.DelicateSynthesis;
             if (CanFinishCraft(act)) return act;
@@ -294,6 +250,55 @@ namespace Artisan.CraftingLogic
 
             if (CanUse(Skills.Veneration) && GetStatus(Buffs.Veneration) == null && CurrentCondition != Condition.Excellent) return Skills.Veneration;
             return act;
+        }
+
+        private static void GoingForQuality()
+        {
+            int collectibilityCheck = 0;
+            if (CurrentRecipe.ItemResult.Value.AlwaysCollectable)
+            {
+                switch (P.Config.SolverCollectibleMode)
+                {
+                    case 1:
+                        collectibilityCheck = Convert.ToInt32(CollectabilityLow);
+                        MaxQuality = collectibilityCheck * 10;
+                        break;
+                    case 2:
+                        if (CollectabilityMid == "0")
+                        {
+                            collectibilityCheck = Convert.ToInt32(CollectabilityLow);
+                        }
+                        else
+                        {
+                            collectibilityCheck = Convert.ToInt32(CollectabilityMid);
+                        }
+                        MaxQuality = collectibilityCheck * 10;
+                        break;
+                    case 3:
+                        if (CollectabilityHigh == "0")
+                        {
+                            if (CollectabilityMid == "0")
+                            {
+                                collectibilityCheck = Convert.ToInt32(CollectabilityLow);
+                            }
+                            else
+                            {
+                                collectibilityCheck = Convert.ToInt32(CollectabilityMid);
+                            }
+                        }
+                        else
+                        {
+                            collectibilityCheck = Convert.ToInt32(CollectabilityHigh);
+                        }
+                        MaxQuality = collectibilityCheck * 10;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            goingForQuality = (!CurrentRecipe.ItemResult.Value.AlwaysCollectable && HighQualityPercentage < P.Config.MaxPercentage) ||
+                  (CurrentRecipe.ItemResult.Value.AlwaysCollectable && HighQualityPercentage < collectibilityCheck);
         }
 
         private static bool ShouldMend(uint synthOption)

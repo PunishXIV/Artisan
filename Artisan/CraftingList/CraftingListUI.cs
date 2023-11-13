@@ -66,19 +66,6 @@ namespace Artisan.CraftingLists
 
         private static void DrawListOptions()
         {
-            if (Endurance.Enable)
-            {
-                Processing = false;
-                ImGui.Text("Endurance mode enabled...");
-                return;
-            }
-
-            if (Processing)
-            {
-                ImGui.Text("Currently processing list...");
-                return;
-            }
-
             ImGui.BeginChild("ListsSelector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 200f));
             ListsUI.Draw(ImGui.GetContentRegionAvail().X);
             ImGui.EndChild();
@@ -86,6 +73,9 @@ namespace Artisan.CraftingLists
             ImGui.BeginChild("ListButtons", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 95f));
             if (selectedList.ID != 0)
             {
+                if (Endurance.Enable || Processing)
+                    ImGui.BeginDisabled();
+
                 if (ImGui.Button("Start Crafting List", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
                 {
                     StartList();
@@ -108,6 +98,9 @@ namespace Artisan.CraftingLists
                         }
                     }
                 }
+
+                if (Endurance.Enable || Processing)
+                    ImGui.EndDisabled();
             }
 
             if (ImGui.Button("Import List From Clipboard (Artisan Export)", new Vector2(ImGui.GetContentRegionAvail().X, 30)))

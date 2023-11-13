@@ -3,7 +3,6 @@ using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.IPC;
 using Artisan.RawInformation;
-using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Utility;
@@ -77,20 +76,21 @@ namespace Artisan.UI.Tables
         public List<Ingredient> ListItems;
 
         private bool CraftFiltered = false;
+        private bool? isOnList = null;
 
         public IngredientTable(List<Ingredient> ingredientList)
             : base("IngredientTable", ingredientList)
         {
 
-            if (P.Config.DefaultHideInventoryColumn)        _inventoryColumn.Flags          |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.Config.DefaultHideRetainerColumn)         _retainerColumn.Flags           |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.Config.DefaultHideRemainingColumn)        _remainingColumn.Flags          |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.Config.DefaultHideCraftableColumn)        _craftableColumn.Flags          |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.Config.DefaultHideCraftableCountColumn)   _craftableCountColumn.Flags     |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.Config.DefaultHideCraftItemsColumn)       _craftItemsColumn.Flags         |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.Config.DefaultHideCategoryColumn)         _itemCategoryColumn.Flags       |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.Config.DefaultHideGatherLocationColumn)   _gatherItemLocationColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
-            if (P.Config.DefaultHideIdColumn)               _idColumn.Flags                 |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideInventoryColumn) _inventoryColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideRetainerColumn) _retainerColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideRemainingColumn) _remainingColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideCraftableColumn) _craftableColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideCraftableCountColumn) _craftableCountColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideCraftItemsColumn) _craftItemsColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideCategoryColumn) _itemCategoryColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideGatherLocationColumn) _gatherItemLocationColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
+            if (P.Config.DefaultHideIdColumn) _idColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
 
             Headers.Add(_nameColumn);
             Headers.Add(_requiredColumn);
@@ -261,7 +261,7 @@ namespace Artisan.UI.Tables
             public unsafe override string ToName(Ingredient item)
             {
                 if (!HQOnlyCrafts || !item.CanBeCrafted)
-                return item.Inventory.ToString();
+                    return item.Inventory.ToString();
 
                 int HQ = InventoryManager.Instance()->GetInventoryItemCount(item.Data.RowId, true, false, false);
                 return HQ.ToString();
@@ -324,7 +324,7 @@ namespace Artisan.UI.Tables
 
             public override void DrawColumn(Ingredient item, int _)
             {
-                ImGui.Text(ToName(item));   
+                ImGui.Text(ToName(item));
             }
 
         }
@@ -656,9 +656,9 @@ namespace Artisan.UI.Tables
         private void OpenContextMenu(object? sender, Ingredient item)
         {
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
-                ImGui.OpenPopup(item.Data.Name.RawString);
+                ImGui.OpenPopup(item.Data.RowId.ToString());
 
-            using var popup = ImRaii.Popup(item.Data.Name.RawString);
+            using var popup = ImRaii.Popup(item.Data.RowId.ToString());
             if (!popup)
                 return;
 
@@ -777,7 +777,12 @@ namespace Artisan.UI.Tables
 
             if (FilteredItems.Count == Items.Count || Headers.Any(x => x.FilterFunc(item)))
             {
-                if (item.Sources.Contains(1) && item.OriginList.Items.Any(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == item.Data.RowId && y.RowId == x)))
+                if (isOnList == null)
+                {
+                    isOnList = item.OriginList.Items.Any(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == item.Data.RowId && y.RowId == x));
+                }
+
+                if (item.Sources.Contains(1) && isOnList.Value)
                 {
                     if (ImGui.Selectable($"Show ingredients used for this"))
                     {
