@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using static ECommons.GenericHelpers;
@@ -69,7 +70,13 @@ namespace Artisan.IPC
             _Initialized = Svc.PluginInterface.GetIpcSubscriber<bool, bool>("AllaganTools.Initialized");
             _IsInitialized = Svc.PluginInterface.GetIpcSubscriber<bool>("AllaganTools.IsInitialized");
             _Initialized.Subscribe(SetupIPC);
+            Svc.ClientState.Logout += LogoutCacheClear;
             SetupIPC(true);
+        }
+
+        private static void LogoutCacheClear()
+        {
+            RetainerData.Clear();
         }
 
         private static void SetupIPC(bool obj)
@@ -134,6 +141,7 @@ namespace Artisan.IPC
             _Initialized?.Unsubscribe(SetupIPC);
             _OnItemAdded?.Unsubscribe(OnItemAdded);
             _OnItemRemoved?.Unsubscribe(OnItemRemoved);
+            Svc.ClientState.Logout -= LogoutCacheClear;
             _Initialized = null;
             _IsInitialized = null;
             _OnRetainerChanged = null;
@@ -216,22 +224,37 @@ namespace Artisan.IPC
                     {
                         ulong retainerId = 0;
                         var retainer = RetainerManager.Instance()->GetRetainerBySortedIndex((uint)i);
+
                         if (P.Config.RetainerIDs.Count(x => x.Value == Svc.ClientState.LocalContentId) > i)
                         {
                             retainerId = P.Config.RetainerIDs.Where(x => x.Value == Svc.ClientState.LocalContentId).Select(x => x.Key).ToArray()[i];
                         }
                         else
                         {
-                            retainerId = RetainerManager.Instance()->GetRetainerBySortedIndex((uint)i)->RetainerID;
+                            if (retainer->Available)
+                                retainerId = retainer->RetainerID;
                         }
 
                         if (retainer->RetainerID > 0 && !P.Config.RetainerIDs.Any(x => x.Key == retainer->RetainerID && x.Value == Svc.ClientState.LocalContentId))
                         {
-                            P.Config.RetainerIDs.Add(retainer->RetainerID, Svc.ClientState.LocalContentId);
+                            if (retainer->Available)
+                            {
+                                P.Config.RetainerIDs.Add(retainer->RetainerID, Svc.ClientState.LocalContentId);
+                                P.Config.Save();
+                            }
+                        }
+
+                        if (!retainer->Available)
+                        {
+                            if (retainer->RetainerID > 0)
+                                P.Config.UnavailableRetainerIDs.Add(retainer->RetainerID);
+                            else
+                                P.Config.UnavailableRetainerIDs.RemoveWhere(x => x == retainer->RetainerID);
+
                             P.Config.Save();
                         }
 
-                        if (retainerId > 0)
+                        if (retainerId > 0 && !P.Config.UnavailableRetainerIDs.Any(x => x == retainerId))
                         {
                             if (RetainerData.ContainsKey(retainerId))
                             {
@@ -312,8 +335,8 @@ namespace Artisan.IPC
                     TM.Enqueue(() => RetainerHandlers.CloseAgentRetainer());
                     TM.DelayNext("ClickQuit", 200);
                     TM.Enqueue(() => RetainerHandlers.SelectQuit());
-                    TM.Enqueue(() => 
-                    { 
+                    TM.Enqueue(() =>
+                    {
                         if (CraftingListUI.NumberOfIngredient(itemId) >= howManyToGet)
                         {
                             TM.DelayNextImmediate("CloseRetainerList", 200);

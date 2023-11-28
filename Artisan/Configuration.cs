@@ -43,9 +43,6 @@ namespace Artisan
 
         public List<Macro> UserMacros { get; set; } = new();
         public List<CraftingList> CraftingLists { get; set; } = new();
-        //public bool UseMacroMode { get; set; }
-        public Dictionary<uint, Macro?> IndividualMacros { get; set; } = new();
-
         public Dictionary<uint, int> IRM { get; set; } = new();
 
         public int AutoDelay { get; set; } = 0;
@@ -74,6 +71,7 @@ namespace Artisan
         public int RepairPercent = 50;
 
         public Dictionary<ulong, ulong> RetainerIDs = new Dictionary<ulong, ulong>();
+        public HashSet<ulong> UnavailableRetainerIDs = new HashSet<ulong>();
 
         [NonSerialized]
         public bool CraftingX = false;

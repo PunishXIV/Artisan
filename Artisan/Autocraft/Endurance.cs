@@ -2,6 +2,7 @@
 using Artisan.CraftingLogic;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using Artisan.Sounds;
 using Artisan.UI;
 using Dalamud.Game.ClientState.Conditions;
@@ -99,7 +100,8 @@ namespace Artisan.Autocraft
 
         private static void Framework_Update(IFramework framework)
         {
-            if ((Enable && P.Config.QuickSynthMode && CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0) || IPC.IPC.StopCraftingRequest)
+            if ((Enable && P.Config.QuickSynthMode && CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0) || IPC.IPC.StopCraftingRequest || 
+                (Enable && P.Config.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
             {
                 SolverLogic.CloseQuickSynthWindow();
             }

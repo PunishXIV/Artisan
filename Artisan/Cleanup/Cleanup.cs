@@ -13,17 +13,5 @@ namespace Artisan.Cleanup
             }
             P.Config.Save();
         }
-
-        //TODO Remove after 2 months (Mid July?)
-        public static void TransitionMacros()
-        {
-            foreach (var macro in P.Config.IndividualMacros)
-            {
-                if (macro.Value is null) continue;
-                P.Config.IRM.TryAdd(macro.Key, macro.Value.ID);
-            }
-            P.Config.IndividualMacros.Clear();
-            P.Config.Save();
-        }
     }
 }

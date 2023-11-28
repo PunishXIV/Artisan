@@ -219,7 +219,7 @@ internal class FontManager
 {
     internal GameFontHandle? SourceAxisFont { get; set; }
 
-    internal ImFontPtr? CustomFont { get; set; }
+    internal ImFontPtr CustomFont { get; set; }
 
     ImFontConfigPtr FontConfig;
     (GCHandle, int, float) customFontHandle;

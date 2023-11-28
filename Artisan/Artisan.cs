@@ -98,7 +98,6 @@ public unsafe class Artisan : IDalamudPlugin
             ShowInHelp = true,
         });
 
-        TransitionMacros();
         CleanUpIndividualMacros();
         Svc.PluginInterface.UiBuilder.BuildFonts += AddCustomFont;
         Svc.PluginInterface.UiBuilder.Draw += ws.Draw;
@@ -136,7 +135,7 @@ public unsafe class Artisan : IDalamudPlugin
         string path = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Fonts", "CaviarDreams_Bold.ttf");
         if (File.Exists(path))
         {
-            CustomFont = fm.CustomFont.Value;
+            CustomFont = fm.CustomFont;
         }
 
     }
@@ -324,7 +323,10 @@ public unsafe class Artisan : IDalamudPlugin
             if (RepairManager.GetMinEquippedPercent() == 0)
             {
                 if (!brokenWarning)
+                {
+                    Svc.Toasts.ShowError("You have broken gear. Artisan will not continue.");
                     Svc.Chat.PrintError("You have broken gear. Artisan will not continue.");
+                }
 
                 brokenWarning = true;
                 return;
@@ -339,7 +341,10 @@ public unsafe class Artisan : IDalamudPlugin
                         macro.MacroOptions.MinCP > (int)CharacterInfo.MaxCP)
                     {
                         if (!macroWarning)
+                        {
+                            Svc.Toasts.ShowError("You do not meet the minimum stats for this macro. Artisan will not continue.");
                             Svc.Chat.PrintError("You do not meet the minimum stats for this macro. Artisan will not continue.");
+                        }
 
                         macroWarning = true;
                         return;

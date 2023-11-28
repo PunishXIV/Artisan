@@ -2,8 +2,10 @@
 using Artisan.CraftingLists;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Style;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
@@ -22,6 +24,11 @@ namespace Artisan.UI
             IsOpen = true;
             ShowCloseButton = false;
             RespectCloseHotkey = false;
+            this.SizeConstraints = new()
+            {
+                MinimumSize = new System.Numerics.Vector2(150f, 0f),
+                MaximumSize = new System.Numerics.Vector2(310f, 500f)
+            };
         }
 
         public override bool DrawConditions()
@@ -58,6 +65,21 @@ namespace Artisan.UI
             if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
             {
                 P.PluginUi.IsOpen = true;
+            }
+
+            if (CurrentRecipe is not null && CurrentRecipe.IsExpert && !P.Config.IRM.ContainsKey(CurrentRecipe.RowId))
+            {
+                ImGui.Dummy(new System.Numerics.Vector2(12f));
+                ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, "This is an expert recipe. It is strongly recommended to use an Artisan macro or manually solve this.", this.SizeConstraints.Value.MaximumSize.X);
+            }
+
+            if (CurrentRecipe is not null && CurrentRecipe.SecretRecipeBook.Row > 0 && CurrentRecipe.RecipeLevelTable.Value.ClassJobLevel == CharacterInfo.CharacterLevel && !P.Config.IRM.ContainsKey(CurrentRecipe.RowId))
+            {
+                if (!CurrentRecipe.IsExpert)
+                {
+                    ImGui.Dummy(new System.Numerics.Vector2(12f));
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.", this.SizeConstraints.Value.MaximumSize.X);
+                }
             }
 
             bool autoMode = P.Config.AutoMode;

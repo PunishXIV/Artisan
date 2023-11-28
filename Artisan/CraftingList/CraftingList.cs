@@ -186,7 +186,8 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if (CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0)
+            if ((CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0) || 
+                (selectedList.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
             {
                 SolverLogic.CloseQuickSynthWindow();
             }
@@ -532,7 +533,10 @@ namespace Artisan.CraftingLists
         {
             try
             {
-                if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon) && addon->AtkUnitBase.IsVisible)
+                if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon) && 
+                    addon->AtkUnitBase.IsVisible && 
+                    AgentRecipeNote.Instance() != null && 
+                    RaptureAtkModule.Instance()->AtkModule.IsAddonReady(AgentRecipeNote.Instance()->AgentInterface.AddonId))
                 {
                     if (setIngredients == null)
                     {

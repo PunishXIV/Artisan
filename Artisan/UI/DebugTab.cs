@@ -128,6 +128,7 @@ namespace Artisan.UI
                     ImGui.Text($"Max Progress: {CurrentCraft.MaxProgress}");
                     ImGui.Text($"Current Quality: {CurrentCraft.CurrentQuality}");
                     ImGui.Text($"Max Quality: {CurrentCraft.MaxQuality}");
+                    ImGui.Text($"Quality Percent: {Calculations.GetHQChance()}");
                     ImGui.Text($"Item name: {CurrentCraft.ItemName}");
                     ImGui.Text($"Current Condition: {CurrentCraft.CurrentCondition}");
                     ImGui.Text($"Current Step: {CurrentCraft.CurrentStep}");

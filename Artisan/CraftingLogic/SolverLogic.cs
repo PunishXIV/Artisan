@@ -12,6 +12,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 using System.Linq;
+using System.Threading;
 using static Artisan.CraftingLogic.CurrentCraft;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 using PluginLog = Dalamud.Logging.PluginLog;
@@ -169,18 +170,19 @@ namespace Artisan.CraftingLogic
             if (CanFinishCraft(act)) return act;
 
             if (Skills.TrainedEye.LevelChecked() && CanUse(Skills.TrainedEye) && (HighQualityPercentage < P.Config.MaxPercentage || CurrentRecipe.ItemResult.Value.AlwaysCollectable) && CurrentRecipe.CanHq) return Skills.TrainedEye;
-            if (ShouldMend(act) && CanUse(Skills.MastersMend)) return Skills.MastersMend;
-
             if (CanUse(Skills.Tricks))
             {
                 if (CurrentStep > 2 && ((CurrentCondition == Condition.Good && P.Config.UseTricksGood) || (CurrentCondition == Condition.Excellent && P.Config.UseTricksExcellent)))
                     return Skills.Tricks;
 
-                if ((CharacterInfo.CurrentCP < 7 ||
-                    (!Skills.PreciseTouch.LevelChecked() && CurrentCondition == Condition.Good && GetStatus(Buffs.Innovation) is null) && !statusList.HasStatus(out _, CraftingPlayerStatuses.WasteNot2, CraftingPlayerStatuses.WasteNot)) &&
-                    !InTouchRotation)
+                if ((CharacterInfo.CurrentCP < 7) ||
+                    (!Skills.PreciseTouch.LevelChecked() && CurrentCondition == Condition.Good && GetStatus(Buffs.Innovation) is null && !statusList.HasStatus(out _, CraftingPlayerStatuses.WasteNot2, CraftingPlayerStatuses.WasteNot) &&
+                    !InTouchRotation))
                     return Skills.Tricks;
             }
+
+            if (ShouldMend(act) && CanUse(Skills.MastersMend)) return Skills.MastersMend;
+
 
             if (MaxQuality == 0 || P.Config.MaxPercentage == 0 || !CurrentRecipe.CanHq)
             {
@@ -203,11 +205,29 @@ namespace Artisan.CraftingLogic
                         if (CanUse(Skills.FinalAppraisal) && GetStatus(Buffs.FinalAppraisal) == null && Calculations.CalculateNewProgress(act) >= MaxProgress) return Skills.FinalAppraisal;
                         return act;
                     }
+
+                    if (Calculations.CalculateNewProgress(act) < MaxProgress && statusList.HasStatus(out _, CraftingPlayerStatuses.Veneration) && CurrentDurability > 10)
+                        return act;
                 }
 
                 if (P.Config.UseQualityStarter)
                 {
                     if (CurrentStep == 1 && CanUse(Skills.Reflect)) return Skills.Reflect;
+                }
+ 
+                if (CanUse(Skills.ByregotsBlessing) && ((CurrentDurability > 10 && !statusList.HasStatus(out _, CraftingPlayerStatuses.WasteNot2, CraftingPlayerStatuses.WasteNot)) || (CurrentDurability > 5 && statusList.HasStatus(out _, CraftingPlayerStatuses.WasteNot2, CraftingPlayerStatuses.WasteNot))))
+                {
+                    var newQualityPercent = Math.Floor(((double)Calculations.CalculateNewQuality(Skills.ByregotsBlessing) / (double)MaxQuality) * 100);
+                    var newHQPercent = Calculations.GetHQChance(newQualityPercent);
+
+                    if (HighQualityPercentage > 0)
+                    {
+                        if (newHQPercent >= P.Config.MaxPercentage) return Skills.ByregotsBlessing;
+                    }
+                    else
+                    {
+                        if (Calculations.CalculateNewQuality(Skills.ByregotsBlessing) >= MaxQuality) return Skills.ByregotsBlessing;
+                    }
                 }
 
                 if (WasteNotUsed && CanUse(Skills.PreciseTouch) && !statusList.HasStatus(out _, CraftingPlayerStatuses.GreatStrides) && CurrentCondition is Condition.Good or Condition.Excellent) return Skills.PreciseTouch;
@@ -216,13 +236,26 @@ namespace Artisan.CraftingLogic
                     if (BasicTouchUsed && CanUse(Skills.StandardTouch)) return Skills.StandardTouch;
                     if (CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
                 }
-
                 if (!ManipulationUsed && GetStatus(Buffs.Manipulation) is null && CanUse(Skills.Manipulation) && CurrentDurability < MaxDurability && !InTouchRotation) return Skills.Manipulation;
                 if (!WasteNotUsed && GetStatus(Buffs.WasteNot2) is null && CanUse(Skills.WasteNot2)) return Skills.WasteNot2;
                 if (!WasteNotUsed && GetStatus(Buffs.WasteNot) is null && CanUse(Skills.WasteNot) && !Skills.WasteNot2.LevelChecked()) return Skills.WasteNot;
-                if (Calculations.CalculateNewQuality(Skills.ByregotsBlessing) >= MaxQuality && CanUse(Skills.ByregotsBlessing)) return Skills.ByregotsBlessing;
+                if (CanUse(Skills.PrudentTouch) && CurrentDurability == 10) return Skills.PrudentTouch;
                 if (GetStatus(Buffs.Innovation) is null && CanUse(Skills.Innovation) && !InTouchRotation && CharacterInfo.CurrentCP >= 36) return Skills.Innovation;
-                if (Calculations.GreatStridesByregotCombo() >= MaxQuality && GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides) && CurrentCondition != Condition.Excellent) return Skills.GreatStrides;
+                if (GetStatus(Buffs.GreatStrides) is null && CanUse(Skills.GreatStrides) && CurrentCondition != Condition.Excellent)
+                {
+                    var newQualityPercent = Math.Floor(((double)Calculations.GreatStridesByregotCombo() / (double)MaxQuality) * 100);
+                    var newHQPercent = Calculations.GetHQChance(newQualityPercent);
+
+                    if (HighQualityPercentage > 0)
+                    {
+                        if (newHQPercent >= P.Config.MaxPercentage) return Skills.GreatStrides;
+                    }
+                    else
+                    {
+                        if (Calculations.GreatStridesByregotCombo() >= MaxQuality) return Skills.GreatStrides;
+                    }
+                }
+
                 if (CurrentCondition == Condition.Poor && CanUse(Skills.CarefulObservation) && P.Config.UseSpecialist) return Skills.CarefulObservation;
                 if (CurrentCondition == Condition.Poor && CanUse(Skills.Observe))
                 {
@@ -306,13 +339,15 @@ namespace Artisan.CraftingLogic
             if (!ManipulationUsed && CanUse(Skills.Manipulation)) return false;
             if (!WasteNotUsed && CanUse(Skills.WasteNot)) return false;
 
-            bool wasteNots = GetStatus(Buffs.WasteNot) != null || GetStatus(Buffs.WasteNot2) != null;
+            bool wasteNots = statusList.HasStatus(out var wasteStacks, CraftingPlayerStatuses.WasteNot, CraftingPlayerStatuses.WasteNot2);
             var nextReduction = wasteNots ? 5 : 10;
 
+            int advancedDegrade = 30 - (5 * wasteStacks);
             if (goingForQuality)
             {
+                if (CanUse(Skills.PrudentTouch) && CurrentDurability == 10) return false;
                 if (!Skills.AdvancedTouch.LevelChecked() && Skills.StandardTouch.LevelChecked() && CurrentDurability <= 20 && MaxDurability >= 50 && CurrentCondition != Condition.Excellent) return true;
-                if (Skills.AdvancedTouch.LevelChecked() && CurrentDurability <= 30 && !InTouchRotation && MaxDurability >= 50 && CurrentCondition != Condition.Excellent) return true;
+                if (Skills.AdvancedTouch.LevelChecked() && CurrentDurability <= advancedDegrade && !InTouchRotation && MaxDurability >= 50 && CurrentCondition != Condition.Excellent) return true;
             }
             else
             {
