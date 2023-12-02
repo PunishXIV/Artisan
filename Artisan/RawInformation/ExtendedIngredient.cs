@@ -91,7 +91,11 @@ namespace Artisan.RawInformation
             UsedInMaterialsList = materials.Where(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == x.Key && y.UnkData5.Any(z => z.ItemIngredient == Data.RowId))).ToDictionary(x => x.Key, x => x.Value);
 
             if (P.Config.UseUniversalis)
-            MarketboardData =  P.UniversalsisClient.GetRegionData(itemId);
+            {
+                MarketboardData = (P.Config.UniversalisDataCenter)
+                    ? P.UniversalsisClient.GetDataCenterData(itemId)
+                    : P.UniversalsisClient.GetRegionData(itemId);
+            }
         }
 
         public virtual event EventHandler<bool>? OnRemainingChange;

@@ -775,6 +775,9 @@ namespace Artisan.UI
 
                     if (ImGui.Checkbox($"Fetch Prices from Universalis (Slower Load Time)", ref P.Config.UseUniversalis))
                         P.Config.Save();
+
+                    if (ImGui.Checkbox($"Fetch Prices for current Data Center only", ref P.Config.UniversalisDataCenter))
+                        P.Config.Save();
                 }
 
                 ImGui.Unindent();
