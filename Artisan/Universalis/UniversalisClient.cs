@@ -29,7 +29,7 @@ namespace Artisan.Universalis
             return marketBoardFromAPI;
         }
 
-        public MarketboardData GetRegionData(ulong itemId)
+        public MarketboardData? GetRegionData(ulong itemId)
         {
             var world = Svc.ClientState.LocalPlayer?.CurrentWorld.Id;
             if (world == null)
