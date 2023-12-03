@@ -47,24 +47,16 @@ namespace Artisan.Universalis
 
         public static uint[]? GetDataCenterByWorld(uint world)
         {
-            foreach (var worlds in AllDataCenters.Values)
-            {
-                if (worlds.Contains(world))
-                    return worlds;
-            }
-
-            return null;
+            return Array.Find(AllDataCenters.Values.ToArray(), (worlds) => worlds.Contains(world));
         }
 
         public static string? GetDataCenterNameByWorld(uint world)
         {
-            foreach (var worlds in AllDataCenters.Values)
-            {
-                if (worlds.Contains(world))
-                    return AllDataCenters.FindKeysByValue(worlds).First();
-            }
+            var worlds = GetDataCenterByWorld(world);
+            if (worlds == null)
+                return null;
 
-            return null;
+            return AllDataCenters.FindKeysByValue(worlds).First();
         }
 
         public static string? GetWorldName(uint world)
