@@ -1,5 +1,4 @@
-﻿using Dalamud.Logging;
-using ECommons.DalamudServices;
+﻿using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -40,7 +39,7 @@ namespace Artisan.RawInformation
                 {
                     var slot = *hotbar.GetHotbarSlot(i);
 
-                    //PluginLog.Debug($"{slot.CommandId.NameOfAction()}");
+                    //Svc.Log.Debug($"{slot.CommandId.NameOfAction()}");
                     if (&slot != null)
                     {
                         if (slot.CommandType == HotbarSlotType.Action || slot.CommandType == HotbarSlotType.CraftAction)

@@ -6,7 +6,6 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
@@ -45,8 +44,6 @@ internal class ListEditor : Window, IDisposable
 
     internal List<int> rawIngredientsList = new();
 
-    internal uint selectedListItem;
-
     internal Recipe? SelectedRecipe;
 
     internal Dictionary<uint, int> SelectedRecipeRawIngredients = new();
@@ -54,10 +51,6 @@ internal class ListEditor : Window, IDisposable
     internal Dictionary<int, int> subtableList = new();
 
     private ListFolders ListsUI = new();
-
-    private string? renameList;
-
-    private bool renameMode;
 
     private bool TidyAfter;
 
@@ -75,7 +68,7 @@ internal class ListEditor : Window, IDisposable
 
     public Dictionary<uint, int> SelectedListMateralsNew = new();
 
-    public IngredientTable Table;
+    public IngredientTable? Table;
 
     private bool ColourValidation = false;
 
@@ -336,7 +329,7 @@ internal class ListEditor : Window, IDisposable
 
                 CraftingListUI.AddAllSubcrafts(SelectedRecipe, SelectedList, 1, timesToAdd);
 
-                PluginLog.Debug($"Adding: {SelectedRecipe.ItemResult.Value.Name.RawString} {timesToAdd} times");
+                Svc.Log.Debug($"Adding: {SelectedRecipe.ItemResult.Value.Name.RawString} {timesToAdd} times");
                 for (var i = 1; i <= timesToAdd; i++)
                     if (SelectedList.Items.IndexOf(SelectedRecipe.RowId) == -1)
                     {
@@ -425,7 +418,7 @@ internal class ListEditor : Window, IDisposable
                 }
                 catch (Exception ex)
                 {
-                    PluginLog.Error(ex, "DrawRecipeList");
+                    Svc.Log.Error(ex, "DrawRecipeList");
                 }
             }
         }
@@ -517,7 +510,7 @@ internal class ListEditor : Window, IDisposable
                         }
                         catch (Exception ex)
                         {
-                            PluginLog.Error(ex, "JobStrings");
+                            Svc.Log.Error(ex, "JobStrings");
                         }
 
                     }
@@ -554,14 +547,14 @@ internal class ListEditor : Window, IDisposable
                         }
                         catch (Exception ex)
                         {
-                            PluginLog.Error(ex, "JobStrings");
+                            Svc.Log.Error(ex, "JobStrings");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "RecipeIngreds");
+                Svc.Log.Error(ex, "RecipeIngreds");
             }
 
             ImGui.EndTable();

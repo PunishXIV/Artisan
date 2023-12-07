@@ -273,7 +273,7 @@ namespace Artisan.UI
                 {
                     var state = Svc.PluginInterface.GetIpcSubscriber<string, bool?>($"PandorasBox.GetFeatureEnabled").InvokeFunc("Auto-Fill Numeric Dialogs");
                     Svc.Log.Debug($"State of Auto-Fill Numeric Dialogs: {state}");
-                    Svc.PluginInterface.GetIpcSubscriber<string, bool, object>($"PandorasBox.SetFeatureEnabled").InvokeAction("Auto-Fill Numeric Dialogs", !state.Value);
+                    Svc.PluginInterface.GetIpcSubscriber<string, bool, object>($"PandorasBox.SetFeatureEnabled").InvokeAction("Auto-Fill Numeric Dialogs", !(state ?? false));
                     state = Svc.PluginInterface.GetIpcSubscriber<string, bool?>($"PandorasBox.GetFeatureEnabled").InvokeFunc("Auto-Fill Numeric Dialogs");
                     Svc.Log.Debug($"State of Auto-Fill Numeric Dialogs after setting: {state}");
                 }
@@ -294,7 +294,7 @@ namespace Artisan.UI
         public class Item
         {
             public uint Key { get; set; }
-            public string Name { get; set; }
+            public string Name { get; set; } = "";
             public ushort CraftingTime { get; set; }
             public uint UIIndex { get; set; }
         }

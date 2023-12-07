@@ -185,7 +185,7 @@ namespace Artisan.RawInformation.Character
             }
             catch (Exception ex)
             {
-                Dalamud.Logging.PluginLog.Error(ex.Message);
+                Svc.Log.Error(ex.Message);
             }
         }
 
@@ -206,7 +206,7 @@ namespace Artisan.RawInformation.Character
     {
         delegate byte HasItemBeenCraftedDelegate(uint recipe);
         [Signature("40 53 48 83 EC 20 8B D9 81 F9")]
-        HasItemBeenCraftedDelegate GetIsGatheringItemGathered;
+        HasItemBeenCraftedDelegate GetIsGatheringItemGathered = null!;
 
         private List<uint> Uncompletables = new List<uint>()
         {

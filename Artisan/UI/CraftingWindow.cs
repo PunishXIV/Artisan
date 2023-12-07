@@ -72,9 +72,9 @@ namespace Artisan.UI
             {
                 ImGui.Dummy(new System.Numerics.Vector2(12f));
                 if (!P.Config.ExpertSolverConfig.Enabled)
-                ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, "This is an expert recipe. It is strongly recommended to use an Artisan macro or manually solve this.", this.SizeConstraints.Value.MaximumSize.X);
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, "This is an expert recipe. It is strongly recommended to use an Artisan macro or manually solve this.", this.SizeConstraints?.MaximumSize.X ?? 0);
                 else
-                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is an expert recipe. You are using the experimental solver currently. Your success rate may vary.", this.SizeConstraints.Value.MaximumSize.X);
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is an expert recipe. You are using the experimental solver currently. Your success rate may vary.", this.SizeConstraints?.MaximumSize.X ?? 0);
             }
 
             if (CurrentRecipe is not null && CurrentRecipe.SecretRecipeBook.Row > 0 && CurrentRecipe.RecipeLevelTable.Value.ClassJobLevel == CharacterInfo.CharacterLevel && !P.Config.IRM.ContainsKey(CurrentRecipe.RowId))
@@ -82,7 +82,7 @@ namespace Artisan.UI
                 if (!CurrentRecipe.IsExpert)
                 {
                     ImGui.Dummy(new System.Numerics.Vector2(12f));
-                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.", this.SizeConstraints.Value.MaximumSize.X);
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.", this.SizeConstraints?.MaximumSize.X ?? 0);
                 }
             }
 

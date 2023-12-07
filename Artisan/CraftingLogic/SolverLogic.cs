@@ -13,10 +13,8 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using static Artisan.CraftingLogic.CurrentCraft;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
-using PluginLog = Dalamud.Logging.PluginLog;
 using Status = Dalamud.Game.ClientState.Statuses.Status;
 
 namespace Artisan.CraftingLogic
@@ -516,7 +514,7 @@ namespace Artisan.CraftingLogic
             }
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "RepeatTrialCraft");
+                Svc.Log.Error(ex, "RepeatTrialCraft");
             }
         }
 
@@ -619,7 +617,7 @@ namespace Artisan.CraftingLogic
             }
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "RepeatActualCraft");
+                Svc.Log.Error(ex, "RepeatActualCraft");
             }
         }
 

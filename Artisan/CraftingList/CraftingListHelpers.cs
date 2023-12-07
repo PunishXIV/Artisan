@@ -1,11 +1,11 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.RawInformation;
+using ECommons.DalamudServices;
 using Lumina.Excel.GeneratedSheets;
 using OtterGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PluginLog = Dalamud.Logging.PluginLog;
 
 internal static class CraftingListHelpers
 {
@@ -18,7 +18,7 @@ internal static class CraftingListHelpers
     
     internal static Dictionary<uint, bool> SelectedRecipesCraftable = new();
 
-    public static void AddRecipeIngredientsToList(Recipe? recipe, ref Dictionary<uint, int> ingredientList, bool addSublist = true, CraftingList selectedList = null)
+    public static void AddRecipeIngredientsToList(Recipe? recipe, ref Dictionary<uint, int> ingredientList, bool addSublist = true, CraftingList? selectedList = null)
     {
         try
         {
@@ -72,7 +72,7 @@ internal static class CraftingListHelpers
         }
         catch (Exception ex)
         {
-            PluginLog.Error(ex, "ERROR");
+            Svc.Log.Error(ex, "ERROR");
         }
     }
 

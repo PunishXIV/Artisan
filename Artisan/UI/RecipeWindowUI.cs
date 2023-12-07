@@ -634,7 +634,7 @@ namespace Artisan
                     ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.FirstUseEver);
                 }
 
-                //Dalamud.Logging.PluginLog.Debug($"{position.X + node->Width + 7}");
+                //Svc.Log.Debug($"{position.X + node->Width + 7}");
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(7f, 7f));
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
                 ImGui.Begin($"###Options{node->NodeID}", ImGuiWindowFlags.NoScrollbar
@@ -713,7 +713,7 @@ namespace Artisan
                 ImGuiHelpers.ForceNextWindowMainViewport();
                 ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + (4f * scale.X) - 40f, position.Y - 16f - (17f * scale.Y)));
 
-                //Dalamud.Logging.PluginLog.Debug($"Length: {size.Length()}, Width: {node->Width}, Scale: {scale.Y}");
+                //Svc.Log.Debug($"Length: {size.Length()}, Width: {node->Width}, Scale: {scale.Y}");
 
                 ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
                 ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);

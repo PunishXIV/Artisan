@@ -33,7 +33,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
 using Macro = Artisan.MacroSystem.Macro;
-using PluginLog = Dalamud.Logging.PluginLog;
 using SoundPlayer = Artisan.Sounds.SoundPlayer;
 
 namespace Artisan;
@@ -42,8 +41,7 @@ public unsafe class Artisan : IDalamudPlugin
 {
     public string Name => "Artisan";
     private const string commandName = "/artisan";
-    internal static Artisan P;
-    internal DalamudPluginInterface pi;
+    internal static Artisan P = null!;
     internal PluginUI PluginUi;
     internal WindowSystem ws;
     internal Configuration Config;
@@ -60,12 +58,10 @@ public unsafe class Artisan : IDalamudPlugin
     public static bool warningMessage = false;
     public static bool macroWarning = false;
     public static bool brokenWarning = false;
-    private static bool showEndurancePopup = true;
 
     internal FontManager fm;
     internal StyleModel Style;
     internal ImFontPtr CustomFont;
-    internal ImFontPtr ScaledFont;
     internal bool StylePushed = false;
 
     public Artisan([RequiredVersion("1.0")] DalamudPluginInterface pluginInterface)
@@ -135,7 +131,7 @@ public unsafe class Artisan : IDalamudPlugin
 
     private void AddCustomFont()
     {
-        PluginLog.Debug("Adding custom font");
+        Svc.Log.Debug("Adding custom font");
         if (Svc.ClientState.ClientLanguage == Dalamud.ClientLanguage.Japanese) return;
 
         string path = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Fonts", "CaviarDreams_Bold.ttf");
@@ -302,7 +298,7 @@ public unsafe class Artisan : IDalamudPlugin
 
             if (CraftingListUI.Processing && !CraftingListFunctions.Paused)
             {
-                PluginLog.Verbose("Advancing Crafting List");
+                Svc.Log.Verbose("Advancing Crafting List");
                 CraftingListFunctions.CurrentIndex++;
             }
 
@@ -343,7 +339,7 @@ public unsafe class Artisan : IDalamudPlugin
 
             if (P.Config.UserMacros.Count > 0)
             {
-                if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId, out var macro))
+                if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId) is var macro && macro != null)
                 {
                     if (macro.MacroOptions.MinCraftsmanship > (int)CharacterInfo.Craftsmanship ||
                         macro.MacroOptions.MinControl > (int)CharacterInfo.Control ||
@@ -510,7 +506,7 @@ public unsafe class Artisan : IDalamudPlugin
         }
         catch (Exception ex)
         {
-            PluginLog.Error(ex, "Crafting Step Change");
+            Svc.Log.Error(ex, "Crafting Step Change");
         }
     }
 
@@ -601,7 +597,7 @@ public unsafe class Artisan : IDalamudPlugin
         LuminaSheets.Dispose();
         CraftingListContextMenu.Dispose();
         UniversalsisClient.Dispose();
-        P = null;
+        P = null!;
 
     }
 
@@ -750,6 +746,7 @@ public unsafe class Artisan : IDalamudPlugin
             "macros" => OpenWindow.Macro,
             "builder" => OpenWindow.SpecialList,
             "workshop" => OpenWindow.FCWorkshop,
+            _ => OpenWindow.None
         };
     }
 

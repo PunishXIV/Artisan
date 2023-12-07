@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using static ECommons.GenericHelpers;
-using PluginLog = Dalamud.Logging.PluginLog;
 
 namespace Artisan.CraftingLists
 {
@@ -175,7 +174,7 @@ namespace Artisan.CraftingLists
             }
             else
             {
-                PluginLog.Verbose("End of Index");
+                Svc.Log.Verbose("End of Index");
                 CurrentIndex = 0;
                 CraftingListUI.Processing = false;
                 SolverLogic.CloseQuickSynthWindow();
@@ -228,7 +227,7 @@ namespace Artisan.CraftingLists
                 (preparing || !isCrafting))
             {
                 // Probably a final craft, treat like before
-                if (Materials.Count(x => x.Key == recipe.ItemResult.Row) == 0)
+                if (Materials!.Count(x => x.Key == recipe.ItemResult.Row) == 0)
                 {
                     if (CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult)
                     {
@@ -249,7 +248,7 @@ namespace Artisan.CraftingLists
                 }
                 else
                 {
-                    PluginLog.Debug($"{recipe.RowId.NameOfRecipe()} {CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId)} {Materials.First(x => x.Key == recipe.ItemResult.Row).Value}");
+                    Svc.Log.Debug($"{recipe.RowId.NameOfRecipe()} {CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId)} {Materials.First(x => x.Key == recipe.ItemResult.Row).Value}");
                     if (Throttler.Throttle(500))
                     {
                         var currentRecipe = selectedList.Items[CurrentIndex];
@@ -508,7 +507,7 @@ namespace Artisan.CraftingLists
                 var expectedNumber = 0;
                 var stillToCraft = 0;
                 var totalToCraft = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult;
-                if (Materials.Count(x => x.Key == recipe.ItemResult.Row) == 0)
+                if (Materials!.Count(x => x.Key == recipe.ItemResult.Row) == 0)
                 {
                     // var previousCrafted = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString && selectedList.Items.IndexOf(x) < CurrentIndex) * recipe.AmountResult;
                     stillToCraft = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString && selectedList.Items.IndexOf(x) >= CurrentIndex) * recipe.AmountResult - inventoryitems;
@@ -517,7 +516,7 @@ namespace Artisan.CraftingLists
                 }
                 else
                 {
-                    expectedNumber = Materials.First(x => x.Key == recipe.ItemResult.Row).Value;
+                    expectedNumber = Materials!.First(x => x.Key == recipe.ItemResult.Row).Value;
                 }
 
                 var difference = Math.Min(totalToCraft - inventoryitems, expectedNumber);
@@ -529,7 +528,7 @@ namespace Artisan.CraftingLists
             return count;
         }
 
-        public static unsafe bool SetIngredients(EnduranceIngredients[] setIngredients = null)
+        public static unsafe bool SetIngredients(EnduranceIngredients[]? setIngredients = null)
         {
             try
             {

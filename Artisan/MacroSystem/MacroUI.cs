@@ -22,9 +22,6 @@ namespace Artisan.MacroSystem
         private static bool _keyboardFocus;
         private const string MacroNamePopupLabel = "Macro Name";
         private static Macro selectedMacro = new();
-        private static int selectedActionIndex = -1;
-        private static bool renameMode = false;
-        private static bool Raweditor = false;
         private static string _rawMacro = string.Empty;
         private static bool reorderMode = false;
         private static Macro selectedAssignMacro = new();
@@ -167,7 +164,6 @@ namespace Artisan.MacroSystem
             {
                 selectedMacro = new();
                 selectedAssignMacro = new();
-                selectedActionIndex = -1;
             }
         }
 
@@ -572,7 +568,7 @@ namespace Artisan.MacroSystem
                             }
                             catch (Exception e)
                             {
-                                Dalamud.Logging.PluginLog.Information($"Could not save new Macro from Clipboard:\n{e}");
+                                Svc.Log.Information($"Could not save new Macro from Clipboard:\n{e}");
                             }
 
                             break;

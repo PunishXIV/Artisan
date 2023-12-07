@@ -38,7 +38,6 @@ namespace Artisan.UI.Tables
         private static float _craftItemsColumnWidth = 0;
         private static float _itemCategoryColumnWidth = 0;
         private static float _gatherItemLocationColumWidth = 0;
-        private static float _craftingJobsColumnWidth = 100;
         private static float _cheapestColumnWidth = 100;
         private static float _numberForSaleWidth = 100;
 
@@ -437,7 +436,7 @@ namespace Artisan.UI.Tables
                     var qty = item.MarketboardData.TotalQuantityOfUnits;
                     var listings = item.MarketboardData.TotalNumberOfListings;
 
-                    return $"{listings.Value.ToString("N0")} listings - {qty.Value.ToString("N0")} total items";
+                    return $"{listings:N0} listings - {qty:N0} total items";
                 }
                 return "";
             }

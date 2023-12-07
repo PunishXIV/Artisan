@@ -9,13 +9,12 @@ using System.Linq;
 using OtterGui;
 using Artisan.IPC;
 using Artisan.Autocraft;
-using Dalamud.Logging;
 
 namespace Artisan.ContextMenus;
 
 internal static class CraftingListContextMenu
 {
-    private static DalamudContextMenu contextMenu;
+    private static DalamudContextMenu? contextMenu;
 
     public static void Init()
     {
@@ -46,7 +45,7 @@ internal static class CraftingListContextMenu
             var craftTypeIndex = *(uint*)(recipeNoteAgent + 944);
 
 
-            PluginLog.Debug($"{RetainerInfo.GetRetainerItemCount(itemId)} {RetainerInfo.GetReachableRetainerBell()}");
+            Svc.Log.Debug($"{RetainerInfo.GetRetainerItemCount(itemId)} {RetainerInfo.GetReachableRetainerBell()}");
             if (RetainerInfo.GetRetainerItemCount(itemId) > 0 && RetainerInfo.GetReachableRetainerBell() != null)
             {
                 int amountToGet = 1;

@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using static ECommons.GenericHelpers;
-using PluginLog = Dalamud.Logging.PluginLog;
 
 namespace Artisan.Autocraft
 {
@@ -390,14 +389,14 @@ namespace Artisan.Autocraft
 
                                 SetIngredients[i] = ingredients;
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             {
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        PluginLog.Error(ex, "Setting Recipe ID");
+                        Svc.Log.Error(ex, "Setting Recipe ID");
                         RecipeID = 0;
                     }
                 }
@@ -457,7 +456,7 @@ namespace Artisan.Autocraft
                 {
                     Throttler.Rethrottle(1000);
                 }
-                if (DebugTab.Debug) PluginLog.Verbose("Throttle success");
+                if (DebugTab.Debug) Svc.Log.Verbose("Throttle success");
                 if (RecipeID == 0)
                 {
                     Svc.Toasts.ShowError("No recipe has been set for Endurance mode. Disabling Endurance mode.");
@@ -465,38 +464,38 @@ namespace Artisan.Autocraft
                     Enable = false;
                     return;
                 }
-                if (DebugTab.Debug) PluginLog.Verbose("HQ not null");
+                if (DebugTab.Debug) Svc.Log.Verbose("HQ not null");
 
                 if (!Spiritbond.ExtractMateriaTask(P.Config.Materia, isCrafting, preparing))
                     return;
 
                 if (P.Config.Repair && !RepairManager.ProcessRepair(false) && ((P.Config.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!P.Config.Materia)))
                 {
-                    if (DebugTab.Debug) PluginLog.Verbose("Entered repair check");
+                    if (DebugTab.Debug) Svc.Log.Verbose("Entered repair check");
                     if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                     {
-                        if (DebugTab.Debug) PluginLog.Verbose("Crafting");
+                        if (DebugTab.Debug) Svc.Log.Verbose("Crafting");
                         if (Throttler.Throttle(1000))
                         {
-                            if (DebugTab.Debug) PluginLog.Verbose("Closing crafting log");
+                            if (DebugTab.Debug) Svc.Log.Verbose("Closing crafting log");
                             CommandProcessor.ExecuteThrottled("/clog");
                         }
                     }
                     else
                     {
-                        if (DebugTab.Debug) PluginLog.Verbose("Not crafting");
+                        if (DebugTab.Debug) Svc.Log.Verbose("Not crafting");
                         if (!Svc.Condition[ConditionFlag.Crafting]) RepairManager.ProcessRepair(true);
                     }
                     return;
                 }
-                if (DebugTab.Debug) PluginLog.Verbose("Repair ok");
+                if (DebugTab.Debug) Svc.Log.Verbose("Repair ok");
                 if (P.Config.AbortIfNoFoodPot && !ConsumableChecker.CheckConsumables(false))
                 {
                     if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                     {
                         if (Throttler.Throttle(1000))
                         {
-                            if (DebugTab.Debug) PluginLog.Verbose("Closing crafting log");
+                            if (DebugTab.Debug) Svc.Log.Verbose("Closing crafting log");
                             CommandProcessor.ExecuteThrottled("/clog");
                         }
                     }
@@ -506,13 +505,13 @@ namespace Artisan.Autocraft
                     }
                     return;
                 }
-                if (DebugTab.Debug) PluginLog.Verbose("Consumables success");
+                if (DebugTab.Debug) Svc.Log.Verbose("Consumables success");
                 {
                     if (CraftingListFunctions.RecipeWindowOpen())
                     {
-                        if (DebugTab.Debug) PluginLog.Verbose("Addon visible");
+                        if (DebugTab.Debug) Svc.Log.Verbose("Addon visible");
 
-                        if (DebugTab.Debug) PluginLog.Verbose("Error text not visible");
+                        if (DebugTab.Debug) Svc.Log.Verbose("Error text not visible");
 
                         if (P.Config.QuickSynthMode && LuminaSheets.RecipeSheet[RecipeID].CanQuickSynth)
                         {
@@ -542,17 +541,17 @@ namespace Artisan.Autocraft
                     {
                         if (!Svc.Condition[ConditionFlag.Crafting])
                         {
-                            if (DebugTab.Debug) PluginLog.Verbose("Addon invisible");
+                            if (DebugTab.Debug) Svc.Log.Verbose("Addon invisible");
                             if (Tasks.Count == 0 && !Svc.Condition[ConditionFlag.Crafting40])
                             {
-                                if (DebugTab.Debug) PluginLog.Verbose($"Opening crafting log {RecipeID}");
+                                if (DebugTab.Debug) Svc.Log.Verbose($"Opening crafting log {RecipeID}");
                                 if (RecipeID == 0)
                                 {
                                     CommandProcessor.ExecuteThrottled("/clog");
                                 }
                                 else
                                 {
-                                    if (DebugTab.Debug) PluginLog.Debug($"Opening recipe {RecipeID}");
+                                    if (DebugTab.Debug) Svc.Log.Debug($"Opening recipe {RecipeID}");
                                     AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal((uint)RecipeID);
                                 }
                             }
@@ -579,10 +578,10 @@ namespace Artisan.Autocraft
 
         private static void UpdateMacroTimer()
         {
-            if (P.Config.CraftingX && P.Config.CraftX > 0 && P.Config.IRM.ContainsKey((uint)RecipeID))
+            if (P.Config.CraftingX && P.Config.CraftX > 0 && P.Config.IRM.ContainsKey(RecipeID))
             {
-                var macro = P.Config.UserMacros.FirstOrDefault(x => x.ID == P.Config.IRM[(uint)RecipeID]);
-                Double timeInSeconds = ((MacroUI.GetMacroLength(macro) * P.Config.CraftX)); // Counting crafting duration + 2 seconds between crafts.
+                var macro = P.Config.UserMacros.FirstOrDefault(x => x.ID == P.Config.IRM[RecipeID]);
+                double timeInSeconds = macro != null ? MacroUI.GetMacroLength(macro) * P.Config.CraftX : 0; // Counting crafting duration + 2 seconds between crafts.
                 CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
             }
         }

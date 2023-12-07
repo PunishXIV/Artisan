@@ -269,12 +269,12 @@ namespace Artisan.CraftingLists
                 foreach (var stat in Stats)
                 {
                     var val = stat.Value;
-                    if (ImGui.Checkbox($"###{Svc.Data.GetExcelSheet<BaseParam>().First(x => x.RowId == stat.Key).Name.ExtractText()}", ref val))
+                    if (ImGui.Checkbox($"###{Svc.Data.GetExcelSheet<BaseParam>()?.First(x => x.RowId == stat.Key).Name.ExtractText()}", ref val))
                     {
                         Stats[stat.Key] = val;
                     }
                     ImGui.SameLine();
-                    ImGui.TextWrapped($"{Svc.Data.GetExcelSheet<BaseParam>().First(x => x.RowId == stat.Key).Name.ExtractText()}");
+                    ImGui.TextWrapped($"{Svc.Data.GetExcelSheet<BaseParam>()?.First(x => x.RowId == stat.Key).Name.ExtractText()}");
                     ImGui.NextColumn();
                 }
 

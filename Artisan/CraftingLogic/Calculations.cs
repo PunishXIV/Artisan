@@ -1,5 +1,6 @@
 ﻿using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.GeneratedSheets;
 using System;
@@ -50,7 +51,7 @@ namespace Artisan.CraftingLogic
             }
             catch (Exception ex)
             {
-                Dalamud.Logging.PluginLog.Error(ex, "BaseProgression");
+                Svc.Log.Error(ex, "BaseProgression");
                 return 0;
             }
         }
@@ -77,7 +78,7 @@ namespace Artisan.CraftingLogic
             }
             catch (Exception ex)
             {
-                Dalamud.Logging.PluginLog.Error(ex, "BaseQuality");
+                Svc.Log.Error(ex, "BaseQuality");
                 return 0;
             }
         }

@@ -68,19 +68,17 @@ namespace Artisan.MacroSystem
             return true;
         }
 
-        public static bool GetMacro(uint recipeID, out Macro macro)
+        public static Macro? GetMacro(uint recipeID)
         {
-            macro = null;
             if (P.Config.IRM.ContainsKey(recipeID))
             {
                 if (P.Config.UserMacros.Any(x => x.ID == P.Config.IRM[recipeID]))
                 {
-                    macro = P.Config.UserMacros.First(x => x.ID == P.Config.IRM[recipeID]);
-                    return true;
+                    return P.Config.UserMacros.First(x => x.ID == P.Config.IRM[recipeID]);
                 }
             }
 
-            return false;
+            return null;
         }
     }
 }

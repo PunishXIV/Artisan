@@ -5,7 +5,6 @@ using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Logging;
 using Dalamud.Plugin.Ipc;
 using ECommons;
 using ECommons.Automation;
@@ -302,7 +301,7 @@ namespace Artisan.IPC
                 }
                 catch (Exception ex)
                 {
-                    PluginLog.Error(ex, "RetainerInfoItemCount");
+                    Svc.Log.Error(ex, "RetainerInfoItemCount");
                     return 0;
                 }
             }
@@ -361,7 +360,7 @@ namespace Artisan.IPC
 
         public static bool ExtractSingular(uint itemId, int howManyToGet, ulong retainerKey)
         {
-            PluginLog.Debug($"{howManyToGet}");
+            Svc.Log.Debug($"{howManyToGet}");
             if (howManyToGet != 0)
             {
                 bool lookingForHQ = RetainerData[retainerKey].Values.Any(x => x.ItemID == itemId && x.HQQuantity > 0);
@@ -372,7 +371,7 @@ namespace Artisan.IPC
                 {
                     var value = Math.Min(howManyToGet, (int)firstFoundQuantity);
                     if (value == 0) return true;
-                    PluginLog.Debug($"Min withdrawing: {value}, found {firstFoundQuantity}");
+                    Svc.Log.Debug($"Min withdrawing: {value}, found {firstFoundQuantity}");
                     if (firstFoundQuantity == 1)
                     {
                         howManyToGet -= (int)firstFoundQuantity;
@@ -491,12 +490,12 @@ namespace Artisan.IPC
                 {
                     var value = Math.Min(requiredItems[item.Key], (int)firstFoundQuantity);
                     if (value == 0) return true;
-                    PluginLog.Debug($"Min withdrawing: {value}, found {firstFoundQuantity}");
+                    Svc.Log.Debug($"Min withdrawing: {value}, found {firstFoundQuantity}");
                     if (firstFoundQuantity == 1) { requiredItems[item.Key] -= (int)firstFoundQuantity; return true; }
                     if (RetainerHandlers.InputNumericValue(value))
                     {
                         requiredItems[item.Key] -= value;
-                        PluginLog.Debug($"{requiredItems[item.Key]}");
+                        Svc.Log.Debug($"{requiredItems[item.Key]}");
 
                         TM.EnqueueImmediate(() =>
                         {
@@ -514,7 +513,7 @@ namespace Artisan.IPC
             return true;
         }
 
-        internal static GameObject GetReachableRetainerBell()
+        internal static GameObject? GetReachableRetainerBell()
         {
             foreach (var x in Svc.Objects)
             {

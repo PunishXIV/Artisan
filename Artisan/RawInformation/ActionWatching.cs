@@ -2,7 +2,6 @@
 using Artisan.MacroSystem;
 using Artisan.RawInformation.Character;
 using Dalamud.Hooking;
-using Dalamud.Logging;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -25,7 +24,7 @@ namespace Artisan.RawInformation
         public static bool BlockAction = false;
 
         private delegate void* ClickSynthesisButton(void* a1, void* a2);
-        private static Hook<ClickSynthesisButton> clickSysnthesisButtonHook;
+        private static Hook<ClickSynthesisButton> clickSynthesisButtonHook;
         private static byte UseActionDetour(ActionManager* actionManager, uint actionType, uint actionID, long targetObjectID, uint param, uint useType, int pvp, bool* isGroundTarget)
         {
             try
@@ -41,7 +40,7 @@ namespace Artisan.RawInformation
                         LuminaSheets.CraftActions!.Where(x => x.Value.Name == actionID.NameOfAction())
                                                  .Select(x => x.Key);
 
-                    if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId, out var macro))
+                    if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId) is var macro && macro != null)
                     {
                         if (MacroStep < macro.MacroActions.Count)
                         {
@@ -128,16 +127,16 @@ namespace Artisan.RawInformation
             }
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "UseActionDetour");
+                Svc.Log.Error(ex, "UseActionDetour");
                 return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
             }
         }
 
         static ActionWatching()
         {
-            UseActionHook ??= Svc.Hook.HookFromSignature<UseActionDelegate>(ActionManager.Addresses.UseAction.String, UseActionDetour);
-            clickSysnthesisButtonHook ??= Svc.Hook.HookFromSignature<ClickSynthesisButton>("E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 33 D2", ClickSynthesisButtonDetour);
-            clickSysnthesisButtonHook?.Enable();
+            UseActionHook = Svc.Hook.HookFromSignature<UseActionDelegate>(ActionManager.Addresses.UseAction.String, UseActionDetour);
+            clickSynthesisButtonHook = Svc.Hook.HookFromSignature<ClickSynthesisButton>("E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 33 D2", ClickSynthesisButtonDetour);
+            clickSynthesisButtonHook.Enable();
         }
 
         private static void* ClickSynthesisButtonDetour(void* a1, void* a2)
@@ -145,7 +144,7 @@ namespace Artisan.RawInformation
             try
             {
                 if (P.Config.DontEquipItems)
-                    return clickSysnthesisButtonHook.Original(a1, a2);
+                    return clickSynthesisButtonHook.Original(a1, a2);
 
                 uint requiredClass = 0;
                 var readyState = GetCraftReadyState(ref requiredClass, out var selectedRecipeId);
@@ -250,36 +249,36 @@ namespace Artisan.RawInformation
             {
 
             }
-            return clickSysnthesisButtonHook.Original(a1, a2);
+            return clickSynthesisButtonHook.Original(a1, a2);
         }
 
         public static void TryEnable()
         {
             if (!UseActionHook.IsEnabled)
-                UseActionHook?.Enable();
+                UseActionHook.Enable();
         }
 
         public static void TryDisable()
         {
             if (UseActionHook.IsEnabled)
-                UseActionHook?.Disable();
+                UseActionHook.Disable();
         }
         public static void Enable()
         {
-            UseActionHook?.Enable();
+            UseActionHook.Enable();
         }
 
         public static void Disable()
         {
-            UseActionHook?.Disable();
+            UseActionHook.Disable();
         }
 
         public static void Dispose()
         {
             TryDisable();
 
-            UseActionHook?.Dispose();
-            clickSysnthesisButtonHook?.Dispose();
+            UseActionHook.Dispose();
+            clickSynthesisButtonHook.Dispose();
         }
 
         public enum CraftReadyState

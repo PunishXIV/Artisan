@@ -261,7 +261,7 @@ namespace Artisan.CraftingLogic
             }
             catch (Exception ex)
             {
-                Dalamud.Logging.PluginLog.Error(ex, ex.StackTrace!);
+                Svc.Log.Error(ex, ex.StackTrace!);
                 return false;
             }
         }
