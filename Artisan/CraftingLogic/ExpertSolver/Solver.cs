@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation.Character;
+using ECommons.DalamudServices;
 
 namespace Artisan.CraftingLogic.ExpertSolver;
 

@@ -1,5 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.CraftingLogic.ExpertSolver;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
@@ -70,7 +71,10 @@ namespace Artisan.UI
             if (CurrentRecipe is not null && CurrentRecipe.IsExpert && !P.Config.IRM.ContainsKey(CurrentRecipe.RowId))
             {
                 ImGui.Dummy(new System.Numerics.Vector2(12f));
+                if (!P.Config.ExpertSolverConfig.Enabled)
                 ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, "This is an expert recipe. It is strongly recommended to use an Artisan macro or manually solve this.", this.SizeConstraints.Value.MaximumSize.X);
+                else
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is an expert recipe. You are using the experimental solver currently. Your success rate may vary.", this.SizeConstraints.Value.MaximumSize.X);
             }
 
             if (CurrentRecipe is not null && CurrentRecipe.SecretRecipeBook.Row > 0 && CurrentRecipe.RecipeLevelTable.Value.ClassJobLevel == CharacterInfo.CharacterLevel && !P.Config.IRM.ContainsKey(CurrentRecipe.RowId))

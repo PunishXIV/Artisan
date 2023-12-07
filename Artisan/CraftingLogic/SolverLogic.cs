@@ -152,10 +152,11 @@ namespace Artisan.CraftingLogic
                     CraftQualityDivider = lt?.QualityDivider ?? 180,
                     CraftQualityModifier = lt?.QualityModifier ?? 180,
                     CraftQualityMax = MaxQuality,
-                    CraftQualityMin1 = Convert.ToInt32(CollectabilityLow),
-                    CraftQualityMin2 = Convert.ToInt32(CollectabilityMid),
-                    CraftQualityMin3 = Convert.ToInt32(CollectabilityHigh),
+                    CraftQualityMin1 = Convert.ToInt32(CollectabilityLow) *10,
+                    CraftQualityMin2 = Convert.ToInt32(CollectabilityMid) * 10,
+                    CraftQualityMin3 = Convert.ToInt32(CollectabilityHigh) * 10,
                 };
+
                 if (craft.CraftQualityMin2 < craft.CraftQualityMin1)
                     craft.CraftQualityMin2 = craft.CraftQualityMin1;
                 if (craft.CraftQualityMin3 < craft.CraftQualityMin2)
@@ -190,7 +191,9 @@ namespace Artisan.CraftingLogic
                         break;
                     }
                 }
-                return ExpertSolver.Solver.SolveNextStep(P.Config.ExpertSolverConfig, craft, step).Item1;
+                var result = ExpertSolver.Solver.SolveNextStep(P.Config.ExpertSolverConfig, craft, step);
+                Svc.Log.Verbose($"{result.Item2}");
+                return result.Item1;
             }
 
             GoingForQuality();
