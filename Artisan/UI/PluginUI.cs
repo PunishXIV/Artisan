@@ -607,6 +607,11 @@ namespace Artisan.UI
 
 
             }
+            if (ImGui.CollapsingHeader("Expert Solver Settings"))
+            {
+                if (P.Config.ExpertSolverConfig.Draw())
+                    P.Config.Save();
+            }
             if (ImGui.CollapsingHeader("UI Settings"))
             {
                 if (ImGui.Checkbox("Disable highlighting box", ref disableGlow))

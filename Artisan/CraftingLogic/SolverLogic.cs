@@ -11,6 +11,7 @@ using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using static Artisan.CraftingLogic.CurrentCraft;
@@ -128,8 +129,70 @@ namespace Artisan.CraftingLogic
 
         }
 
-        public static uint GetExpertRecommendation()
+        public unsafe static uint GetExpertRecommendation()
         {
+            if (P.Config.ExpertSolverConfig.Enabled)
+            {
+                var weapon = LuminaSheets.ItemSheet?.GetValueOrDefault(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemID);
+                var lt = CurrentRecipe?.RecipeLevelTable.Value;
+                var craft = new ExpertSolver.CraftState()
+                {
+                    StatCraftsmanship = (int)CharacterInfo.Craftsmanship,
+                    StatControl = (int)CharacterInfo.Control,
+                    StatCP = (int)CharacterInfo.MaxCP,
+                    StatLevel = CharacterInfo.CharacterLevel ?? 0,
+                    Specialist = InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 13)->ItemID != 0, // specialist == job crystal equipped
+                    Splendorous = weapon?.Description.ToString().Contains("are 1.75 times higher") ?? false, // TODO this is cursed
+                    CraftExpert = CurrentRecipe?.IsExpert ?? false,
+                    CraftLevel = lt?.ClassJobLevel ?? 0,
+                    CraftDurability = MaxDurability,
+                    CraftProgress = MaxProgress,
+                    CraftProgressDivider = lt?.ProgressDivider ?? 180,
+                    CraftProgressModifier = lt?.ProgressModifier ?? 100,
+                    CraftQualityDivider = lt?.QualityDivider ?? 180,
+                    CraftQualityModifier = lt?.QualityModifier ?? 180,
+                    CraftQualityMax = MaxQuality,
+                    CraftQualityMin1 = Convert.ToInt32(CollectabilityLow),
+                    CraftQualityMin2 = Convert.ToInt32(CollectabilityMid),
+                    CraftQualityMin3 = Convert.ToInt32(CollectabilityHigh),
+                };
+                if (craft.CraftQualityMin2 < craft.CraftQualityMin1)
+                    craft.CraftQualityMin2 = craft.CraftQualityMin1;
+                if (craft.CraftQualityMin3 < craft.CraftQualityMin2)
+                    craft.CraftQualityMin3 = craft.CraftQualityMin2;
+                var step = new ExpertSolver.StepState()
+                {
+                    Index = CurrentStep,
+                    Progress = CurrentProgress,
+                    Quality = CurrentQuality,
+                    Durability = CurrentDurability,
+                    RemainingCP = (int)CharacterInfo.CurrentCP,
+                    Condition = CurrentCondition,
+                    IQStacks = GetStatus(Buffs.InnerQuiet)?.Param ?? 0,
+                    WasteNotLeft = GetStatus(Buffs.WasteNot2)?.Param ?? GetStatus(Buffs.WasteNot)?.Param ?? 0,
+                    ManipulationLeft = GetStatus(Buffs.Manipulation)?.Param ?? 0,
+                    GreatStridesLeft = GetStatus(Buffs.GreatStrides)?.Param ?? 0,
+                    InnovationLeft = GetStatus(Buffs.Innovation)?.Param ?? 0,
+                    VenerationLeft = GetStatus(Buffs.Veneration)?.Param ?? 0,
+                    MuscleMemoryLeft = GetStatus(Buffs.MuscleMemory)?.Param ?? 0,
+                    FinalAppraisalLeft = GetStatus(Buffs.FinalAppraisal)?.Param ?? 0,
+                    CarefulObservationLeft = CanUse(Skills.CarefulObservation) ? 1 : 0,
+                    HeartAndSoulActive = GetStatus(Buffs.HeartAndSoul) != null,
+                    HeartAndSoulAvailable = CanUse(Skills.HeartAndSoul),
+                    //PrevComboAction = PreviousAction,
+                };
+                foreach (var m in typeof(Skills).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public))
+                {
+                    uint v = (uint?)m.GetRawConstantValue() ?? 0;
+                    if (PreviousActionSameAs(v))
+                    {
+                        step.PrevComboAction = v;
+                        break;
+                    }
+                }
+                return ExpertSolver.Solver.SolveNextStep(P.Config.ExpertSolverConfig, craft, step).Item1;
+            }
+
             GoingForQuality();
 
             if (CurrentDurability <= 10 && CanUse(Skills.MastersMend)) return Skills.MastersMend;

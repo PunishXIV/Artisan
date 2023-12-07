@@ -41,6 +41,8 @@ namespace Artisan
         public bool UseSimulatedStartingQuality { get; set; } = false;
         public bool DisableHighlightedAction { get; set; } = false;
 
+        public CraftingLogic.ExpertSolver.Settings ExpertSolverConfig = new();
+
         public List<Macro> UserMacros { get; set; } = new();
         public List<CraftingList> CraftingLists { get; set; } = new();
         public Dictionary<uint, int> IRM { get; set; } = new();
