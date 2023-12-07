@@ -28,7 +28,7 @@ using PluginLog = Dalamud.Logging.PluginLog;
 
 namespace Artisan.Autocraft
 {
-    internal class EnduranceIngredients
+    public class EnduranceIngredients
     {
         public int HQSet { get; set; }
         public int IngredientSlot { get; set; }

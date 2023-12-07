@@ -105,7 +105,6 @@ public unsafe class Artisan : IDalamudPlugin
             ShowInHelp = true,
         });
 
-        CleanUpIndividualMacros();
         Svc.PluginInterface.UiBuilder.BuildFonts += AddCustomFont;
         Svc.PluginInterface.UiBuilder.Draw += ws.Draw;
         Svc.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;

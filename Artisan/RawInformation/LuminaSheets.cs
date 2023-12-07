@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Action = Lumina.Excel.GeneratedSheets.Action;
+using Status = Lumina.Excel.GeneratedSheets.Status;
 
 namespace Artisan.RawInformation
 {
@@ -44,6 +45,9 @@ namespace Artisan.RawInformation
             .ToDictionary(i => i.RowId, i => i);
 
         public static Dictionary<uint, Action>? ActionSheet = Svc.Data?.GetExcelSheet<Action>()?
+            .ToDictionary(i => i.RowId, i => i);
+
+        public static Dictionary<uint, Status>? StatusSheet = Svc.Data?.GetExcelSheet<Status>()?
             .ToDictionary(i => i.RowId, i => i);
 
         public static Dictionary<uint, CraftAction>? CraftActions = Svc.Data?.GetExcelSheet<CraftAction>()?
@@ -111,6 +115,13 @@ namespace Artisan.RawInformation
             {
                 return LuminaSheets.CraftActions[id].Name.RawString;
             }
+        }
+
+        public static string NameOfBuff(this ushort id)
+        {
+            if (id == 0) return "";
+
+            return LuminaSheets.StatusSheet[id].Name.RawString;
         }
 
         public static string NameOfItem(this uint id)

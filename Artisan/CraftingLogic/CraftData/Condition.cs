@@ -1,4 +1,6 @@
-﻿namespace Artisan.CraftingLogic.CraftData
+﻿using Artisan.RawInformation;
+
+namespace Artisan.CraftingLogic.CraftData
 {
     public enum Condition
     {
@@ -14,5 +16,4 @@
         GoodOmen,
         Unknown
     }
-
 }

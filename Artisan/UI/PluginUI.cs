@@ -614,7 +614,7 @@ namespace Artisan.UI
 
 
             }
-            if (ImGui.CollapsingHeader("Expert Solver Settings"))
+            if (ImGui.CollapsingHeader("Expert Solver Settings - EXPERIMENTAL"))
             {
                 if (P.Config.ExpertSolverConfig.Draw())
                     P.Config.Save();

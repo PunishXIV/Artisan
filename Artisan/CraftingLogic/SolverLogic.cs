@@ -142,7 +142,7 @@ namespace Artisan.CraftingLogic
                     StatCP = (int)CharacterInfo.MaxCP,
                     StatLevel = CharacterInfo.CharacterLevel ?? 0,
                     Specialist = InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 13)->ItemID != 0, // specialist == job crystal equipped
-                    Splendorous = weapon?.Description.ToString().Contains("are 1.75 times higher") ?? false, // TODO this is cursed
+                    Splendorous = weapon?.LevelEquip == 90 && weapon?.Rarity >= 4,
                     CraftExpert = CurrentRecipe?.IsExpert ?? false,
                     CraftLevel = lt?.ClassJobLevel ?? 0,
                     CraftDurability = MaxDurability,
