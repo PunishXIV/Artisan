@@ -11,6 +11,7 @@
             WasteNot = 252,
             WasteNot2 = 257,
             FinalAppraisal = 2190,
-            MuscleMemory = 2191;
+            MuscleMemory = 2191,
+            HeartAndSoul = 2665;
     }
 }
