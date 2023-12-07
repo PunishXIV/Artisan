@@ -18,6 +18,7 @@ using ImGuiNET;
 
 using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json;
+using OtterGui;
 
 namespace Artisan.CraftingLists
 {
@@ -139,6 +140,9 @@ namespace Artisan.CraftingLists
             CraftingListFunctions.CurrentIndex = 0;
             if (CraftingListFunctions.RecipeWindowOpen() && selectedList.Items[0] != Endurance.RecipeID)
                 CraftingListFunctions.CloseCraftingMenu();
+
+            if (P.ws.Windows.FindFirst(x => x.WindowName.Contains(selectedList.ID.ToString(), StringComparison.CurrentCultureIgnoreCase), out var window))
+                window.IsOpen = false;
 
             Processing = true;
             Endurance.Enable = false;

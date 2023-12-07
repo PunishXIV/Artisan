@@ -205,6 +205,8 @@ namespace Artisan.IPC
 
             if (ATools)
             {
+                if (!Svc.ClientState.IsLoggedIn || Svc.Condition[ConditionFlag.OnFreeTrial]) return 0;
+
                 try
                 {
                     if (tryCache)

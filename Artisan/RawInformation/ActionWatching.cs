@@ -41,6 +41,14 @@ namespace Artisan.RawInformation
                         LuminaSheets.CraftActions!.Where(x => x.Value.Name == actionID.NameOfAction())
                                                  .Select(x => x.Key);
 
+                    if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId, out var macro))
+                    {
+                        if (MacroStep < macro.MacroActions.Count)
+                        {
+                            MacroStep++;
+                        }
+                    }
+
                     if (LuminaSheets.ActionSheet.TryGetValue(actionID, out var act1))
                     {
                         string skillName = act1.Name;
@@ -113,15 +121,6 @@ namespace Artisan.RawInformation
                         {
                             CurrentRecommendation = 0;
                             Artisan.Tasks.Clear();
-                        }
-                    }
-
-                    if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId, out var macro))
-                    {
-                        if (MacroStep < macro.MacroActions.Count)
-                        {
-                            ATM.DelayNext("MacroStepIncrease", 800);
-                            ATM.Enqueue(() => MacroStep++);
                         }
                     }
                 }

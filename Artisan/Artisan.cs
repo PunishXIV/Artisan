@@ -15,7 +15,6 @@ using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Style;
-using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -31,7 +30,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
 using Macro = Artisan.MacroSystem.Macro;
@@ -81,10 +79,8 @@ public unsafe class Artisan : IDalamudPlugin
         TM = new();
         TM.TimeLimitMS = 1000;
         CTM = new();
-#if !DEBUG
         TM.ShowDebug = false;
         CTM.ShowDebug = false;
-#endif
         ws = new();
         cw = new();
         ri = new();
@@ -94,7 +90,18 @@ public unsafe class Artisan : IDalamudPlugin
         fm = new FontManager();
         Svc.Commands.AddHandler(commandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "Opens the Artisan menu.",
+            HelpMessage = "Opens the Artisan menu.\n" +
+            "/artisan lists → Open Lists.\n" +
+            "/artisan lists <ID> → Opens specific list by ID.\n" +
+            "/artisan lists <ID> start → Starts specific list by ID.\n" +
+            "/artisan macros → Open Macros.\n" +
+            "/artisan macros <ID> → Opens specific macro by ID.\n" +
+            "/artisan endurance → Open Endurance.\n" +
+            "/artisan endurance start|stop → Starts or stops endurance mode.\n" +
+            "/artisan settings → Open Settings.\n" +
+            "/artisan workshops → Open FC Workshops.\n" +
+            "/artisan builder → Open List Builder.\n" +
+            "/artisan automode → Toggles Automatic Action Execution Mode on/off.",
             ShowInHelp = true,
         });
 
@@ -103,7 +110,7 @@ public unsafe class Artisan : IDalamudPlugin
         Svc.PluginInterface.UiBuilder.Draw += ws.Draw;
         Svc.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
         Svc.Condition.ConditionChange += CheckForCraftedState;
-        Svc.Framework.Update += FireBot;
+        Svc.Framework.Update += OnFrameworkUpdate;
         Svc.ClientState.Logout += DisableEndurance;
         Svc.ClientState.Login += DisableEndurance;
         Svc.Condition.ConditionChange += Condition_ConditionChange;
@@ -239,17 +246,25 @@ public unsafe class Artisan : IDalamudPlugin
         return false;
     }
 
-    private void FireBot(IFramework framework)
+    private void OnFrameworkUpdate(IFramework framework)
     {
-        if (CraftingWindow.MacroTime.Ticks > 0)
-            CraftingWindow.MacroTime -= framework.UpdateDelta;
-
         if (!Svc.ClientState.IsLoggedIn)
         {
             Endurance.Enable = false;
             CraftingListUI.Processing = false;
+            return;
         }
+
+        if (CraftingWindow.MacroTime.Ticks > 0)
+            CraftingWindow.MacroTime -= framework.UpdateDelta;
+
+        if (cw.repeatTrial && !Endurance.Enable)
+        {
+            SolverLogic.RepeatTrialCraft();
+        }
+
         PluginUi.CraftingVisible = Svc.Condition[ConditionFlag.Crafting] && !Svc.Condition[ConditionFlag.PreparingToCraft];
+
         if (!PluginUi.CraftingVisible)
             ActionWatching.TryDisable();
         else
@@ -257,6 +272,8 @@ public unsafe class Artisan : IDalamudPlugin
 
         if (!Endurance.Enable)
             Endurance.DrawRecipeData();
+
+        if (!PluginUi.CraftingVisible) return;
 
         GetCraft();
         if (SolverLogic.CanUse(Skills.BasicSynth) && CurrentRecommendation == 0 && Tasks.Count == 0 && CurrentStep >= 1)
@@ -281,15 +298,14 @@ public unsafe class Artisan : IDalamudPlugin
 
         if (CheckIfCraftFinished() && !currentCraftFinished)
         {
+            Svc.Log.Debug($"Craft Finished");
             currentCraftFinished = true;
-
 
             if (CraftingListUI.Processing && !CraftingListFunctions.Paused)
             {
                 PluginLog.Verbose("Advancing Crafting List");
                 CraftingListFunctions.CurrentIndex++;
             }
-
 
             if (Endurance.Enable && P.Config.CraftingX && P.Config.CraftX > 0)
             {
@@ -305,12 +321,6 @@ public unsafe class Artisan : IDalamudPlugin
                 }
             }
         }
-
-        if (cw.repeatTrial && !Endurance.Enable)
-        {
-            SolverLogic.RepeatTrialCraft();
-        }
-
     }
 
     public static void FetchRecommendation(int e)
@@ -579,7 +589,7 @@ public unsafe class Artisan : IDalamudPlugin
         Svc.Chat.ChatMessage -= ScanForHQItems;
         Svc.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
         Svc.PluginInterface.UiBuilder.Draw -= ws.Draw;
-        Svc.Framework.Update -= FireBot;
+        Svc.Framework.Update -= OnFrameworkUpdate;
         StepChanged -= ResetRecommendation;
 
         Svc.PluginInterface.UiBuilder.BuildFonts -= AddCustomFont;
@@ -598,7 +608,150 @@ public unsafe class Artisan : IDalamudPlugin
 
     private void OnCommand(string command, string args)
     {
-        PluginUi.IsOpen = !PluginUi.IsOpen;
+        var subcommands = args.Split(' ');
+
+        if (subcommands.Length == 0)
+        {
+            PluginUi.IsOpen = !PluginUi.IsOpen;
+            return;
+        }
+
+        var firstArg = subcommands[0];
+
+        if (firstArg.ToLower() == "automode")
+        {
+            P.Config.AutoMode = !P.Config.AutoMode;
+            P.Config.Save();
+            return;
+        }
+        if (subcommands.Length >= 2)
+        {
+            Svc.Log.Debug($"{subcommands[1]}");
+            if (firstArg.ToLower() == "lists")
+            {
+                if (!CraftingListUI.Processing)
+                {
+                    if (int.TryParse(subcommands[1], out int id))
+                    {
+                        if (P.Config.CraftingLists.Any(x => x.ID == id))
+                        {
+                            if (subcommands.Length >= 3 && subcommands[2].ToLower() == "start")
+                            {
+                                if (!Endurance.Enable)
+                                {
+                                    CraftingListUI.selectedList = P.Config.CraftingLists.First(x => x.ID == id);
+                                    CraftingListUI.StartList();
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                ListEditor editor = new(id);
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            DuoLog.Error("List ID does not exist.");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        DuoLog.Error("Unable to parse ID as a number.");
+                        return;
+                    }
+                }
+                else
+                {
+                    DuoLog.Error("Unable to open list whilst processing.");
+                    return;
+                }
+            }
+
+            if (firstArg.ToLower() == "macros")
+            {
+                if (State != CraftingState.Crafting)
+                {
+                    if (int.TryParse(subcommands[1], out int id))
+                    {
+                        if (P.Config.UserMacros.Any(x => x.ID == id))
+                        {
+                            MacroEditor editor = new(id);
+                            return;
+                        }
+                        else
+                        {
+                            DuoLog.Error("Macro ID does not exist.");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        DuoLog.Error("Unable to parse ID as a number.");
+                        return;
+                    }
+                }
+                else
+                {
+                    DuoLog.Error("Unable to open edit macros whilst crafting.");
+                    return;
+                }
+            }
+
+            if (firstArg.ToLower() == "endurance")
+            {
+                if (subcommands[1].ToLower() is "start")
+                {
+                    if (CraftingListUI.Processing)
+                    {
+                        DuoLog.Error("Cannot start endurance whilst processing a list.");
+                        return;
+                    }
+                    if (Endurance.RecipeID == 0)
+                    {
+                        DuoLog.Error("Cannot start endurance without setting a recipe.");
+                        return;
+                    }
+                    if (!CraftingListFunctions.HasItemsForRecipe((uint)Endurance.RecipeID))
+                    {
+                        DuoLog.Error("Cannot start endurance as you do not possess all ingredients for your recipe in your inventory.");
+                        return;
+                    }
+
+                    if (!CraftingListUI.Processing && Endurance.RecipeID != 0)
+                    {
+                        Endurance.ToggleEndurance(true);
+                        return;
+                    }
+                }
+
+                if (subcommands[1].ToLower() is "stop")
+                {
+                    if (!Endurance.Enable)
+                    {
+                        DuoLog.Error("Endurance is not running so cannot be stopped.");
+                        return;
+                    }
+                    if (Endurance.Enable)
+                    {
+                        Endurance.ToggleEndurance(false);
+                        return;
+                    }
+                }
+            }
+        }
+
+        PluginUi.IsOpen = true;
+        PluginUi.OpenWindow = firstArg.ToLower() switch
+        {
+            "lists" => OpenWindow.Lists,
+            "endurance" => OpenWindow.Endurance,
+            "settings" => OpenWindow.Main,
+            "macros" => OpenWindow.Macro,
+            "builder" => OpenWindow.SpecialList,
+            "workshop" => OpenWindow.FCWorkshop,
+        };
     }
 
     private void DrawConfigUI()

@@ -98,8 +98,8 @@ namespace Artisan.MacroSystem
                 float longestName = 0;
                 foreach (var macro in P.Config.UserMacros)
                 {
-                    if (ImGui.CalcTextSize($"{macro.Name} (CP Cost: {GetCPCost(macro)})").Length() > longestName)
-                        longestName = ImGui.CalcTextSize($"{macro.Name} (CP Cost: {GetCPCost(macro)})").Length();
+                    if (ImGui.CalcTextSize($"{macro.Name} (CP Cost: {GetCPCost(macro)}) (ID: {macro.ID})").Length() > longestName)
+                        longestName = ImGui.CalcTextSize($"{macro.Name} (CP Cost: {GetCPCost(macro)}) (ID: {macro.ID})").Length();
 
                     if (macro.MacroStepOptions.Count == 0 && macro.MacroActions.Count > 0)
                     {
@@ -116,11 +116,10 @@ namespace Artisan.MacroSystem
                     {
                         var m = P.Config.UserMacros[i];
                         uint cpCost = GetCPCost(m);
-                        var selected = ImGui.Selectable($"{m.Name} (CP Cost: {cpCost})###{m.ID}");
+                        var selected = ImGui.Selectable($"{m.Name} (CP Cost: {cpCost}) (ID: {m.ID})###{m.ID}");
 
                         if (ImGui.IsItemActive() && !ImGui.IsItemHovered() && reorderMode)
                         {
-
                             int i_next = i + (ImGui.GetMouseDragDelta(0).Y < 0f ? -1 : 1);
                             if (i_next >= 0 && i_next < P.Config.UserMacros.Count)
                             {

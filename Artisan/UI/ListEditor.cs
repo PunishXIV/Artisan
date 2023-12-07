@@ -1176,7 +1176,7 @@ internal class ListFolders : ItemSelector<CraftingList>
             ImGui.BeginDisabled();
 
         using var id = ImRaii.PushId(idx);
-        var selected = ImGui.Selectable(P.Config.CraftingLists[idx].Name, idx == CurrentIdx);
+        var selected = ImGui.Selectable($"{P.Config.CraftingLists[idx].Name} (ID: {P.Config.CraftingLists[idx].ID})", idx == CurrentIdx);
         if (selected)
         {
             if (!P.ws.Windows.Any(x => x.WindowName.Contains(P.Config.CraftingLists[idx].ID.ToString())))

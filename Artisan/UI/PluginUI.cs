@@ -29,7 +29,7 @@ namespace Artisan.UI
 
 
         private bool visible = false;
-        public OpenWindow OpenWindow { get; private set; } = OpenWindow.Overview;
+        public OpenWindow OpenWindow { get; set; } = OpenWindow.Overview;
 
         public bool Visible
         {
@@ -578,6 +578,13 @@ namespace Artisan.UI
                 if (ImGui.SliderInt("###SliderMaxQuality", ref maxQuality, 0, 100, $"%d%%"))
                 {
                     P.Config.MaxPercentage = maxQuality;
+                    P.Config.Save();
+                }
+
+                ImGui.TextWrapped($"Progress Priority CP Threshold");
+                ImGuiComponents.HelpMarker($"Regardless of quality, once your CP is at or below this value, prioritise finishing the craft.");
+                if (ImGui.SliderInt("###ProgressModeCP", ref P.Config.PriorityProgress, 0, 1000))
+                {
                     P.Config.Save();
                 }
 

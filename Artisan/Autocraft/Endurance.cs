@@ -14,6 +14,7 @@ using ECommons.CircularBuffers;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -21,22 +22,30 @@ using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using static ECommons.GenericHelpers;
 using PluginLog = Dalamud.Logging.PluginLog;
 
 namespace Artisan.Autocraft
 {
-    internal unsafe class Endurance
+    internal class EnduranceIngredients
     {
-        private static bool enable = false;
+        public int HQSet { get; set; }
+        public int IngredientSlot { get; set; }
+        public int NQSet { get; set; }
+    }
+
+    internal static unsafe class Endurance
+    {
+        internal static bool SkipBuffs = false;
+        internal static List<Task> Tasks = new();
+        internal static CircularBuffer<long> Errors = new(5);
+
         internal static List<int>? HQData = null;
+
         internal static uint RecipeID = 0;
-        internal static string RecipeName
-        {
-            get => RecipeID == 0 ? "No Recipe Selected" : LuminaSheets.RecipeSheet[RecipeID].ItemResult.Value.Name.RawString;
-        }
+
+        internal static EnduranceIngredients[] SetIngredients = new EnduranceIngredients[6];
 
         internal static bool Enable
         {
@@ -48,192 +57,35 @@ namespace Artisan.Autocraft
             }
         }
 
-        internal static EnduranceIngredients[] SetIngredients = new EnduranceIngredients[6];
-
-        internal static CircularBuffer<long> Errors = new(5);
-        public static List<Task> Tasks = new();
-
-        public static bool SkipBuffs = false;
-        internal static void Init()
+        internal static string RecipeName
         {
-            Svc.Framework.Update += Framework_Update;
-            Svc.Toasts.ErrorToast += Toasts_ErrorToast;
-            Svc.Toasts.ErrorToast += CheckNonMaxQuantityModeFinished;
+            get => RecipeID == 0 ? "No Recipe Selected" : LuminaSheets.RecipeSheet[RecipeID].ItemResult.Value.Name.RawString.Trim();
         }
 
-        private static void CheckNonMaxQuantityModeFinished(ref SeString message, ref bool isHandled)
+        internal static void ToggleEndurance(bool enable)
         {
-            if (!P.Config.MaxQuantityMode && Enable &&
-                (message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1147).Text.ExtractText() ||
-                 message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1146).Text.ExtractText() ||
-                 message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1145).Text.ExtractText() ||
-                 message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1144).Text.ExtractText()))
+            if (RecipeID > 0)
             {
-                if (P.Config.PlaySoundFinishEndurance)
-                    SoundPlayer.PlaySound();
+                Enable = enable;
 
-                ToggleEndurance(false);
-            }
-        }
-
-        private static void Toasts_ErrorToast(ref Dalamud.Game.Text.SeStringHandling.SeString message, ref bool isHandled)
-        {
-            if (Enable)
-            {
-                Errors.PushBack(Environment.TickCount64);
-                if (Errors.Count() >= 5 && Errors.All(x => x > Environment.TickCount64 - 10 * 1000))
+                try
                 {
-                    Svc.Toasts.ShowError("Endurance has been disabled due to too many errors in succession.");
-                    DuoLog.Error("Endurance has been disabled due to too many errors in succession.");
-                    Enable = false;
-                    Errors.Clear();
+                    if (enable)
+                    {
+                        UpdateMacroTimer();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ex.Log();
                 }
             }
         }
-
         internal static void Dispose()
         {
             Svc.Framework.Update -= Framework_Update;
             Svc.Toasts.ErrorToast -= Toasts_ErrorToast;
             Svc.Toasts.ErrorToast -= CheckNonMaxQuantityModeFinished;
-        }
-
-        private static void Framework_Update(IFramework framework)
-        {
-            if ((Enable && P.Config.QuickSynthMode && CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0) || IPC.IPC.StopCraftingRequest || 
-                (Enable && P.Config.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
-            {
-                SolverLogic.CloseQuickSynthWindow();
-            }
-
-            if (Enable && !P.TM.IsBusy && CurrentCraft.State != CraftingState.Crafting)
-            {
-                var isCrafting = Svc.Condition[ConditionFlag.Crafting];
-                var preparing = Svc.Condition[ConditionFlag.PreparingToCraft];
-
-                if (!Throttler.Throttle(0))
-                {
-                    return;
-                }
-                if (P.Config.CraftingX && P.Config.CraftX == 0)
-                {
-                    Enable = false;
-                    P.Config.CraftingX = false;
-                    DuoLog.Information("Craft X has completed.");
-                    if (P.Config.PlaySoundFinishEndurance)
-                        Sounds.SoundPlayer.PlaySound();
-                    return;
-                }
-                if (Svc.Condition[ConditionFlag.Occupied39])
-                {
-                    Throttler.Rethrottle(1000);
-                }
-                if (DebugTab.Debug) PluginLog.Verbose("Throttle success");
-                if (RecipeID == 0)
-                {
-                    Svc.Toasts.ShowError("No recipe has been set for Endurance mode. Disabling Endurance mode.");
-                    DuoLog.Error("No recipe has been set for Endurance mode. Disabling Endurance mode.");
-                    Enable = false;
-                    return;
-                }
-                if (DebugTab.Debug) PluginLog.Verbose("HQ not null");
-
-                if (!Spiritbond.ExtractMateriaTask(P.Config.Materia, isCrafting, preparing))
-                    return;
-
-                if (P.Config.Repair && !RepairManager.ProcessRepair(false) && ((P.Config.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!P.Config.Materia)))
-                {
-                    if (DebugTab.Debug) PluginLog.Verbose("Entered repair check");
-                    if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
-                    {
-                        if (DebugTab.Debug) PluginLog.Verbose("Crafting");
-                        if (Throttler.Throttle(1000))
-                        {
-                            if (DebugTab.Debug) PluginLog.Verbose("Closing crafting log");
-                            CommandProcessor.ExecuteThrottled("/clog");
-                        }
-                    }
-                    else
-                    {
-                        if (DebugTab.Debug) PluginLog.Verbose("Not crafting");
-                        if (!Svc.Condition[ConditionFlag.Crafting]) RepairManager.ProcessRepair(true);
-                    }
-                    return;
-                }
-                if (DebugTab.Debug) PluginLog.Verbose("Repair ok");
-                if (P.Config.AbortIfNoFoodPot && !ConsumableChecker.CheckConsumables(false))
-                {
-                    if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
-                    {
-                        if (Throttler.Throttle(1000))
-                        {
-                            if (DebugTab.Debug) PluginLog.Verbose("Closing crafting log");
-                            CommandProcessor.ExecuteThrottled("/clog");
-                        }
-                    }
-                    else
-                    {
-                        if (!Svc.Condition[ConditionFlag.Crafting] && Enable) ConsumableChecker.CheckConsumables(true);
-                    }
-                    return;
-                }
-                if (DebugTab.Debug) PluginLog.Verbose("Consumables success");
-                {
-                    if (CraftingListFunctions.RecipeWindowOpen())
-                    {
-                        if (DebugTab.Debug) PluginLog.Verbose("Addon visible");
-
-                        if (DebugTab.Debug) PluginLog.Verbose("Error text not visible");
-
-                        if (P.Config.QuickSynthMode && LuminaSheets.RecipeSheet[RecipeID].CanQuickSynth)
-                        {
-                            P.TM.Enqueue(() => CraftingListFunctions.RecipeWindowOpen(), "EnduranceCheckRecipeWindow");
-                            P.TM.DelayNext("EnduranceThrottle", 100);
-
-                            P.TM.Enqueue(() => { if (!CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
-                            if (P.Config.CraftingX)
-                                P.TM.Enqueue(() => SolverLogic.QuickSynthItem(P.Config.CraftX));
-                            else
-                                P.TM.Enqueue(() => SolverLogic.QuickSynthItem(99));
-                        }
-                        else
-                        {
-                            P.TM.Enqueue(() => CraftingListFunctions.RecipeWindowOpen(), "EnduranceCheckRecipeWindow");
-                            if (P.Config.MaxQuantityMode)
-                                P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredients");
-                            else
-                                P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(SetIngredients), "EnduranceSetIngredients");
-
-                            P.TM.Enqueue(() => UpdateMacroTimer(), "UpdateEnduranceMacroTimer");
-                            P.TM.DelayNext("EnduranceThrottle", 100);
-                            P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) SolverLogic.RepeatActualCraft(); else { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
-                        }
-
-
-                    }
-                    else
-                    {
-                        if (!Svc.Condition[ConditionFlag.Crafting])
-                        {
-                            if (DebugTab.Debug) PluginLog.Verbose("Addon invisible");
-                            if (Tasks.Count == 0 && !Svc.Condition[ConditionFlag.Crafting40])
-                            {
-                                if (DebugTab.Debug) PluginLog.Verbose($"Opening crafting log {RecipeID}");
-                                if (RecipeID == 0)
-                                {
-                                    CommandProcessor.ExecuteThrottled("/clog");
-                                }
-                                else
-                                {
-                                    if (DebugTab.Debug) PluginLog.Debug($"Opening recipe {RecipeID}");
-                                    AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal((uint)RecipeID);
-                                }
-                            }
-                        }
-                    }
-
-                }
-            }
         }
 
         internal static void Draw()
@@ -287,7 +139,6 @@ namespace Artisan.Autocraft
             ImGuiComponents.HelpMarker("Artisan will require the configured food, manuals or medicine and refuse to craft if it cannot be found.");
             if (requireFoodPot)
             {
-
                 {
                     ImGuiEx.TextV("Food Usage:");
                     ImGui.SameLine(200f.Scale());
@@ -399,7 +250,6 @@ namespace Artisan.Autocraft
                         ImGui.EndCombo();
                     }
                 }
-
             }
 
             bool repairs = P.Config.Repair;
@@ -450,7 +300,6 @@ namespace Artisan.Autocraft
                 {
                     if (P.Config.CraftX < 0)
                         P.Config.CraftX = 0;
-
                 }
             }
 
@@ -506,46 +355,7 @@ namespace Artisan.Autocraft
 
                         if (addon->AtkUnitBase.UldManager.NodeList[49]->IsVisible)
                         {
-                            var text = addon->SelectedRecipeName->NodeText.ExtractText().Replace('', ' ').TrimEnd().Replace($"-{(char)13}", "");
-                            var firstCrystal = GetCrystal(addon, 1);
-                            var secondCrystal = GetCrystal(addon, 2);
-
-                            /*
-                             *  0	3	2	Woodworking
-                                1	1	5	Smithing
-                                2	3	1	Armorcraft
-                                3	2	4	Goldsmithing
-                                4	3	4	Leatherworking
-                                5	2	5	Clothcraft
-                                6	4	6	Alchemy
-                                7	5	6	Cooking
-
-                                8	carpenter
-                                9	blacksmith
-                                10	armorer
-                                11	goldsmith
-                                12	leatherworker
-                                13	weaver
-                                14	alchemist
-                                15	culinarian
-                                (ClassJob - 8)
-                             * 
-                             * */
-
-                            if (firstCrystal > 0 && secondCrystal > 0)
-                            {
-                                if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.RawString == text && x.UnkData5[8].ItemIngredient == firstCrystal && x.UnkData5[9].ItemIngredient == secondCrystal, out var id))
-                                {
-                                    RecipeID = id.RowId;
-                                }
-                            }
-                            else if (firstCrystal > 0)
-                            {
-                                if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value?.Name!.RawString == text && x.UnkData5[8].ItemIngredient == firstCrystal, out var id))
-                                {
-                                    RecipeID = id.RowId;
-                                }
-                            }
+                            RecipeID = RecipeNote.Instance()->RecipeList->SelectedRecipe->RecipeId;
                         }
                         Array.Clear(SetIngredients);
 
@@ -582,7 +392,6 @@ namespace Artisan.Autocraft
                             }
                             catch (Exception ex)
                             {
-
                             }
                         }
                     }
@@ -595,92 +404,175 @@ namespace Artisan.Autocraft
             }
         }
 
-        private static uint GetSelectedJobTab(AtkUnitBase* addon)
+        internal static void Init()
         {
-            for (int i = 91; i <= 98; i++)
+            Svc.Framework.Update += Framework_Update;
+            Svc.Toasts.ErrorToast += Toasts_ErrorToast;
+            Svc.Toasts.ErrorToast += CheckNonMaxQuantityModeFinished;
+        }
+
+        private static bool enable = false;
+        private static void CheckNonMaxQuantityModeFinished(ref SeString message, ref bool isHandled)
+        {
+            if (!P.Config.MaxQuantityMode && Enable &&
+                (message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1147).Text.ExtractText() ||
+                 message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1146).Text.ExtractText() ||
+                 message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1145).Text.ExtractText() ||
+                 message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1144).Text.ExtractText()))
             {
-                if (addon->UldManager.NodeList[i]->GetComponent()->UldManager.NodeList[5]->IsVisible)
+                if (P.Config.PlaySoundFinishEndurance)
+                    SoundPlayer.PlaySound();
+
+                ToggleEndurance(false);
+            }
+        }
+
+        private static void Framework_Update(IFramework framework)
+        {
+            if ((Enable && P.Config.QuickSynthMode && CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0) || IPC.IPC.StopCraftingRequest ||
+                (Enable && P.Config.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
+            {
+                SolverLogic.CloseQuickSynthWindow();
+            }
+
+            if (Enable && !P.TM.IsBusy && CurrentCraft.State != CraftingState.Crafting)
+            {
+                var isCrafting = Svc.Condition[ConditionFlag.Crafting];
+                var preparing = Svc.Condition[ConditionFlag.PreparingToCraft];
+
+                if (!Throttler.Throttle(0))
                 {
-                    return i switch
-                    {
-                        91 => 15,
-                        92 => 14,
-                        93 => 13,
-                        94 => 12,
-                        95 => 11,
-                        96 => 10,
-                        97 => 9,
-                        98 => 8,
-                        _ => throw new NotImplementedException()
-                    };
+                    return;
                 }
-            }
-
-            return 0;
-        }
-
-        private static int GetCrystal(AddonRecipeNoteFixed* addon, int slot)
-        {
-            try
-            {
-                var node = slot == 1 ? addon->AtkUnitBase.UldManager.NodeList[29]->GetComponent()->UldManager.NodeList[1]->GetAsAtkImageNode() : addon->AtkUnitBase.UldManager.NodeList[28]->GetComponent()->UldManager.NodeList[1]->GetAsAtkImageNode();
-                if (slot == 2 && !node->AtkResNode.IsVisible)
-                    return -1;
-
-                var texturePath = node->PartsList->Parts[node->PartId].UldAsset;
-
-                var texFileNameStdString = &texturePath->AtkTexture.Resource->TexFileResourceHandle->ResourceHandle.FileName;
-                var texString = texFileNameStdString->Length < 16
-                        ? Marshal.PtrToStringAnsi((IntPtr)texFileNameStdString->Buffer)
-                        : Marshal.PtrToStringAnsi((IntPtr)texFileNameStdString->BufferPtr);
-
-                if (texString.Contains("020001")) return 2;     //Fire shard
-                if (texString.Contains("020002")) return 7;     //Water shard
-                if (texString.Contains("020003")) return 3;     //Ice shard
-                if (texString.Contains("020004")) return 4;     //Wind shard
-                if (texString.Contains("020005")) return 6;     //Lightning shard
-                if (texString.Contains("020006")) return 5;     //Earth shard
-
-                if (texString.Contains("020007")) return 8;     //Fire crystal
-                if (texString.Contains("020008")) return 13;    //Water crystal
-                if (texString.Contains("020009")) return 9;     //Ice crystal
-                if (texString.Contains("020010")) return 10;    //Wind crystal
-                if (texString.Contains("020011")) return 12;    //Lightning crystal
-                if (texString.Contains("020012")) return 11;    //Earth crystal
-
-                if (texString.Contains("020013")) return 14;    //Fire cluster
-                if (texString.Contains("020014")) return 19;    //Water cluster
-                if (texString.Contains("020015")) return 15;    //Ice cluster
-                if (texString.Contains("020016")) return 16;    //Wind cluster
-                if (texString.Contains("020017")) return 18;    //Lightning cluster
-                if (texString.Contains("020018")) return 17;    //Earth cluster
-
-            }
-            catch
-            {
-
-            }
-
-            return -1;
-
-        }
-
-        public static void ToggleEndurance(bool enable)
-        {
-            if (RecipeID > 0)
-            {
-                Enable = enable;
-
-                try
+                if (P.Config.CraftingX && P.Config.CraftX == 0)
                 {
-                    if (enable)
+                    Enable = false;
+                    P.Config.CraftingX = false;
+                    DuoLog.Information("Craft X has completed.");
+                    if (P.Config.PlaySoundFinishEndurance)
+                        Sounds.SoundPlayer.PlaySound();
+                    return;
+                }
+                if (Svc.Condition[ConditionFlag.Occupied39])
+                {
+                    Throttler.Rethrottle(1000);
+                }
+                if (DebugTab.Debug) PluginLog.Verbose("Throttle success");
+                if (RecipeID == 0)
+                {
+                    Svc.Toasts.ShowError("No recipe has been set for Endurance mode. Disabling Endurance mode.");
+                    DuoLog.Error("No recipe has been set for Endurance mode. Disabling Endurance mode.");
+                    Enable = false;
+                    return;
+                }
+                if (DebugTab.Debug) PluginLog.Verbose("HQ not null");
+
+                if (!Spiritbond.ExtractMateriaTask(P.Config.Materia, isCrafting, preparing))
+                    return;
+
+                if (P.Config.Repair && !RepairManager.ProcessRepair(false) && ((P.Config.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!P.Config.Materia)))
+                {
+                    if (DebugTab.Debug) PluginLog.Verbose("Entered repair check");
+                    if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                     {
-                        UpdateMacroTimer();
+                        if (DebugTab.Debug) PluginLog.Verbose("Crafting");
+                        if (Throttler.Throttle(1000))
+                        {
+                            if (DebugTab.Debug) PluginLog.Verbose("Closing crafting log");
+                            CommandProcessor.ExecuteThrottled("/clog");
+                        }
+                    }
+                    else
+                    {
+                        if (DebugTab.Debug) PluginLog.Verbose("Not crafting");
+                        if (!Svc.Condition[ConditionFlag.Crafting]) RepairManager.ProcessRepair(true);
+                    }
+                    return;
+                }
+                if (DebugTab.Debug) PluginLog.Verbose("Repair ok");
+                if (P.Config.AbortIfNoFoodPot && !ConsumableChecker.CheckConsumables(false))
+                {
+                    if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
+                    {
+                        if (Throttler.Throttle(1000))
+                        {
+                            if (DebugTab.Debug) PluginLog.Verbose("Closing crafting log");
+                            CommandProcessor.ExecuteThrottled("/clog");
+                        }
+                    }
+                    else
+                    {
+                        if (!Svc.Condition[ConditionFlag.Crafting] && Enable) ConsumableChecker.CheckConsumables(true);
+                    }
+                    return;
+                }
+                if (DebugTab.Debug) PluginLog.Verbose("Consumables success");
+                {
+                    if (CraftingListFunctions.RecipeWindowOpen())
+                    {
+                        if (DebugTab.Debug) PluginLog.Verbose("Addon visible");
+
+                        if (DebugTab.Debug) PluginLog.Verbose("Error text not visible");
+
+                        if (P.Config.QuickSynthMode && LuminaSheets.RecipeSheet[RecipeID].CanQuickSynth)
+                        {
+                            P.TM.Enqueue(() => CraftingListFunctions.RecipeWindowOpen(), "EnduranceCheckRecipeWindow");
+                            P.TM.DelayNext("EnduranceThrottle", 100);
+
+                            P.TM.Enqueue(() => { if (!CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
+                            if (P.Config.CraftingX)
+                                P.TM.Enqueue(() => SolverLogic.QuickSynthItem(P.Config.CraftX));
+                            else
+                                P.TM.Enqueue(() => SolverLogic.QuickSynthItem(99));
+                        }
+                        else
+                        {
+                            P.TM.Enqueue(() => CraftingListFunctions.RecipeWindowOpen(), "EnduranceCheckRecipeWindow");
+                            if (P.Config.MaxQuantityMode)
+                                P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredients");
+                            else
+                                P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(SetIngredients), "EnduranceSetIngredients");
+
+                            P.TM.Enqueue(() => UpdateMacroTimer(), "UpdateEnduranceMacroTimer");
+                            P.TM.DelayNext("EnduranceThrottle", 100);
+                            P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) SolverLogic.RepeatActualCraft(); else { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
+                        }
+                    }
+                    else
+                    {
+                        if (!Svc.Condition[ConditionFlag.Crafting])
+                        {
+                            if (DebugTab.Debug) PluginLog.Verbose("Addon invisible");
+                            if (Tasks.Count == 0 && !Svc.Condition[ConditionFlag.Crafting40])
+                            {
+                                if (DebugTab.Debug) PluginLog.Verbose($"Opening crafting log {RecipeID}");
+                                if (RecipeID == 0)
+                                {
+                                    CommandProcessor.ExecuteThrottled("/clog");
+                                }
+                                else
+                                {
+                                    if (DebugTab.Debug) PluginLog.Debug($"Opening recipe {RecipeID}");
+                                    AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal((uint)RecipeID);
+                                }
+                            }
+                        }
                     }
                 }
-                catch (Exception ex)
+            }
+        }
+
+        private static void Toasts_ErrorToast(ref Dalamud.Game.Text.SeStringHandling.SeString message, ref bool isHandled)
+        {
+            if (Enable)
+            {
+                Errors.PushBack(Environment.TickCount64);
+                if (Errors.Count() >= 5 && Errors.All(x => x > Environment.TickCount64 - 10 * 1000))
                 {
-                    ex.Log();
+                    Svc.Toasts.ShowError("Endurance has been disabled due to too many errors in succession.");
+                    DuoLog.Error("Endurance has been disabled due to too many errors in succession.");
+                    Enable = false;
+                    Errors.Clear();
                 }
             }
         }
@@ -694,12 +586,5 @@ namespace Artisan.Autocraft
                 CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
             }
         }
-    }
-
-    public class EnduranceIngredients
-    {
-        public int IngredientSlot { get; set; }
-        public int NQSet { get; set; }
-        public int HQSet { get; set; }
     }
 }

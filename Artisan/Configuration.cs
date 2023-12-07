@@ -28,6 +28,7 @@ namespace Artisan
         }
         public bool DisableFailurePrediction { get; set; } = false;
         public int MaxPercentage { get; set; } = 100;
+        public int PriorityProgress = 0;
 
         public bool UseTricksGood { get; set; } = false;
 

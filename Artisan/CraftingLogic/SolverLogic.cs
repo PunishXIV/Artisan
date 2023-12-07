@@ -330,8 +330,9 @@ namespace Artisan.CraftingLogic
                 }
             }
 
-            goingForQuality = (!CurrentRecipe.ItemResult.Value.AlwaysCollectable && HighQualityPercentage < P.Config.MaxPercentage) ||
-                  (CurrentRecipe.ItemResult.Value.AlwaysCollectable && HighQualityPercentage < collectibilityCheck);
+            goingForQuality = ((!CurrentRecipe.ItemResult.Value.AlwaysCollectable && HighQualityPercentage < P.Config.MaxPercentage) ||
+                  (CurrentRecipe.ItemResult.Value.AlwaysCollectable && HighQualityPercentage < collectibilityCheck)) && 
+                  CharacterInfo.CurrentCP > P.Config.PriorityProgress;
         }
 
         private static bool ShouldMend(uint synthOption)
