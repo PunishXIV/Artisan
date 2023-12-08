@@ -30,6 +30,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using static Artisan.CraftingLogic.CurrentCraft;
 using Macro = Artisan.MacroSystem.Macro;
@@ -71,6 +72,7 @@ public unsafe class Artisan : IDalamudPlugin
         P = this;
 
         P.Config = Svc.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        ConvertConfig(P.Config);
 
         TM = new();
         TM.TimeLimitMS = 1000;
@@ -209,7 +211,7 @@ public unsafe class Artisan : IDalamudPlugin
 
     private void ResetRecommendation(object? sender, int e)
     {
-        CurrentRecommendation = 0;
+        CurrentRecommendation = Skills.None;
         if (e == 0)
         {
             ManipulationUsed = false;
@@ -271,7 +273,7 @@ public unsafe class Artisan : IDalamudPlugin
         if (!PluginUi.CraftingVisible) return;
 
         GetCraft();
-        if (SolverLogic.CanUse(Skills.BasicSynth) && CurrentRecommendation == 0 && Tasks.Count == 0 && CurrentStep >= 1)
+        if (SolverLogic.CanUse(Skills.BasicSynthesis) && CurrentRecommendation == Skills.None && Tasks.Count == 0 && CurrentStep >= 1)
         {
             if (CurrentRecipe is null && !warningMessage)
             {
@@ -411,7 +413,7 @@ public unsafe class Artisan : IDalamudPlugin
                             {
                                 if (macro.MacroStepOptions.Count == 0 || !macro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
                                 {
-                                    if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(macro) && ActionUpgradable(macro, out uint newAction))
+                                    if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(macro) && ActionUpgradable(macro, out var newAction))
                                     {
                                         CurrentRecommendation = newAction;
                                     }
@@ -440,53 +442,13 @@ public unsafe class Artisan : IDalamudPlugin
                 CurrentRecommendation = CurrentRecipe.IsExpert ? SolverLogic.GetExpertRecommendation() : SolverLogic.GetRecommendation();
             }
 
-            if (CurrentRecommendation != 0)
+            if (CurrentRecommendation != Skills.None)
             {
                 RecommendationName = CurrentRecommendation.NameOfAction();
-
-                if (LuminaSheets.ActionSheet.TryGetValue(CurrentRecommendation, out var normalAct))
+                if (!P.Config.DisableToasts)
                 {
-                    if (normalAct.ClassJob.Value.RowId != CharacterInfo.JobID)
-                    {
-                        var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == normalAct.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID).FirstOrDefault();
-                        CurrentRecommendation = newAct.RowId;
-                        if (!P.Config.DisableToasts)
-                        {
-                            QuestToastOptions options = new() { IconId = newAct.Icon };
-                            Svc.Toasts.ShowQuest($"Use {newAct.Name}", options);
-                        }
-
-                    }
-                    else
-                    {
-                        if (!P.Config.DisableToasts)
-                        {
-                            QuestToastOptions options = new() { IconId = normalAct.Icon };
-                            Svc.Toasts.ShowQuest($"Use {normalAct.Name}", options);
-                        }
-                    }
-                }
-
-                if (LuminaSheets.CraftActions.TryGetValue(CurrentRecommendation, out var craftAction))
-                {
-                    if (craftAction.ClassJob.Row != CharacterInfo.JobID)
-                    {
-                        var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == craftAction.Name.RawString && x.ClassJob.Row == CharacterInfo.JobID).FirstOrDefault();
-                        CurrentRecommendation = newAct.RowId;
-                        if (!P.Config.DisableToasts)
-                        {
-                            QuestToastOptions options = new() { IconId = newAct.Icon };
-                            Svc.Toasts.ShowQuest($"Use {newAct.Name}", options);
-                        }
-                    }
-                    else
-                    {
-                        if (!P.Config.DisableToasts)
-                        {
-                            QuestToastOptions options = new() { IconId = craftAction.Icon };
-                            Svc.Toasts.ShowQuest($"Use {craftAction.Name}", options);
-                        }
-                    }
+                    QuestToastOptions options = new() { IconId = CurrentRecommendation.IconOfAction(CharacterInfo.JobID) };
+                    Svc.Toasts.ShowQuest($"Use {RecommendationName}", options);
                 }
 
                 if (P.Config.AutoMode)
@@ -510,7 +472,7 @@ public unsafe class Artisan : IDalamudPlugin
         }
     }
 
-    private static bool ActionUpgradable(Macro macro, out uint newAction)
+    private static bool ActionUpgradable(Macro macro, out Skills newAction)
     {
         newAction = macro.MacroActions[MacroStep];
         if (CurrentCondition is CraftingLogic.CraftData.Condition.Good or CraftingLogic.CraftData.Condition.Excellent)
@@ -521,7 +483,7 @@ public unsafe class Artisan : IDalamudPlugin
                 case Skills.Groundwork:
                 case Skills.PrudentSynthesis:
                 case Skills.CarefulSynthesis:
-                case Skills.BasicSynth:
+                case Skills.BasicSynthesis:
                     newAction = Skills.IntensiveSynthesis;
                     break;
                 case Skills.HastyTouch:
@@ -799,6 +761,20 @@ public unsafe class Artisan : IDalamudPlugin
             case IPC.IPC.ArtisanMode.Lists:
                 CraftingListFunctions.Paused = false;
                 break;
+        }
+    }
+
+    private void ConvertConfig(Configuration config)
+    {
+        foreach (var m in config.UserMacros)
+        {
+            foreach (ref var action in CollectionsMarshal.AsSpan(m.MacroActions))
+            {
+                if (action > Skills.Count)
+                {
+                    action = SkillActionMap.ActionToSkill((uint)action);
+                }
+            }
         }
     }
 }

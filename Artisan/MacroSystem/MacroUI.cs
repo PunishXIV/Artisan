@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLogic;
+using Artisan.CraftingLogic.ExpertSolver;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
@@ -112,7 +113,7 @@ namespace Artisan.MacroSystem
                     for (int i = 0; i < P.Config.UserMacros.Count; i++)
                     {
                         var m = P.Config.UserMacros[i];
-                        uint cpCost = GetCPCost(m);
+                        int cpCost = GetCPCost(m);
                         var selected = ImGui.Selectable($"{m.Name} (CP Cost: {cpCost}) (ID: {m.ID})###{m.ID}");
 
                         if (ImGui.IsItemActive() && !ImGui.IsItemHovered() && reorderMode)
@@ -414,31 +415,15 @@ namespace Artisan.MacroSystem
             }
         }
 
-        private static uint GetCPCost(Macro m)
+        private static int GetCPCost(Macro m)
         {
-            uint previousAction = 0;
-            uint output = 0;
+            Skills previousAction = Skills.None;
+            int output = 0;
             foreach (var act in m.MacroActions)
             {
-                if ((act == Skills.StandardTouch && previousAction == Skills.BasicTouch) || (act == Skills.AdvancedTouch && previousAction == Skills.StandardTouch))
-                {
-                    output += 18;
-                    previousAction = act;
-                    continue;
-                }
-
-                if (act >= 100000)
-                {
-                    output += LuminaSheets.CraftActions[act].Cost;
-                }
-                else
-                {
-                    output += LuminaSheets.ActionSheet[act].PrimaryCostValue;
-                }
-
+                output += Simulator.GetBaseCPCost(act, previousAction);
                 previousAction = act;
             }
-
             return output;
         }
 
@@ -482,11 +467,11 @@ namespace Artisan.MacroSystem
             return output;
 
         }
-        public static bool ActionIsLengthyAnimation(uint id)
+        public static bool ActionIsLengthyAnimation(Skills id)
         {
             switch (id)
             {
-                case Skills.BasicSynth:
+                case Skills.BasicSynthesis:
                 case Skills.RapidSynthesis:
                 case Skills.MuscleMemory:
                 case Skills.CarefulSynthesis:
@@ -615,37 +600,19 @@ namespace Artisan.MacroSystem
 
                         if (action.Equals("Artisan Recommendation", StringComparison.CurrentCultureIgnoreCase) || action.Equals("*"))
                         {
-                            macro.MacroActions.Add(0);
+                            macro.MacroActions.Add(Skills.None);
                             macro.MacroStepOptions.Add(new());
                             continue;
                         }
 
-                        if (LuminaSheets.CraftActions.Values.Any(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0))
+                        var act = Enum.GetValues(typeof(Skills)).Cast<Skills>().FirstOrDefault(s => s.NameOfAction().Equals(action, StringComparison.CurrentCultureIgnoreCase));
+                        if (act == default)
                         {
-                            var act = LuminaSheets.CraftActions.Values.FirstOrDefault(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0);
-                            if (act == null)
-                            {
-                                Svc.Chat.PrintError($"Unable to parse action: {action}");
-                                continue;
-                            }
-                            macro.MacroActions.Add(act.RowId);
-                            macro.MacroStepOptions.Add(new());
+                            Svc.Chat.PrintError($"Unable to parse action: {action}");
                             continue;
-
                         }
-                        else
-                        {
-                            var act = LuminaSheets.ActionSheet.Values.FirstOrDefault(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0);
-                            if (act == null)
-                            {
-                                Svc.Chat.PrintError($"Unable to parse action: {action}");
-                                continue;
-                            }
-                            macro.MacroActions.Add(act.RowId);
-                            macro.MacroStepOptions.Add(new());
-                            continue;
-
-                        }
+                        macro.MacroActions.Add(act);
+                        macro.MacroStepOptions.Add(new());
                     }
                     else
                     {
@@ -665,37 +632,19 @@ namespace Artisan.MacroSystem
 
                         if (action.Equals("Artisan Recommendation", StringComparison.CurrentCultureIgnoreCase) || action == "*")
                         {
-                            macro.MacroActions.Add(0);
+                            macro.MacroActions.Add(Skills.None);
                             macro.MacroStepOptions.Add(new());
                             continue;
                         }
 
-                        if (LuminaSheets.CraftActions.Values.Any(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0))
+                        var act = Enum.GetValues(typeof(Skills)).Cast<Skills>().FirstOrDefault(s => s.NameOfAction().Equals(action, StringComparison.CurrentCultureIgnoreCase));
+                        if (act == default)
                         {
-                            var act = LuminaSheets.CraftActions.Values.FirstOrDefault(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0);
-                            if (act == null)
-                            {
-                                Svc.Chat.PrintError($"Unable to parse action: {action}");
-                                continue;
-                            }
-                            macro.MacroActions.Add(act.RowId);
-                            macro.MacroStepOptions.Add(new());
+                            Svc.Chat.PrintError($"Unable to parse action: {action}");
                             continue;
-
                         }
-                        else
-                        {
-                            var act = LuminaSheets.ActionSheet.Values.FirstOrDefault(x => x.Name.RawString.Equals(action, StringComparison.CurrentCultureIgnoreCase) && x.ClassJobCategory.Value.RowId != 0);
-                            if (act == null)
-                            {
-                                Svc.Chat.PrintError($"Unable to parse action: {action}");
-                                continue;
-                            }
-                            macro.MacroActions.Add(act.RowId);
-                            macro.MacroStepOptions.Add(new());
-                            continue;
-
-                        }
+                        macro.MacroActions.Add(act);
+                        macro.MacroStepOptions.Add(new());
                     }
                 }
             }

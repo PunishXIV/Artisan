@@ -1,5 +1,7 @@
 ﻿using Artisan.QuestSync;
+using Artisan.RawInformation.Character;
 using Dalamud;
+using Dalamud.Game.Gui.Toast;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Utility;
 using ECommons;
@@ -103,18 +105,16 @@ namespace Artisan.RawInformation
 
     public static class SheetExtensions
     {
-        public static string NameOfAction(this uint id)
+        public static string NameOfAction(this Skills skill)
         {
-            if (id == 0) return "Artisan Recommendation";
+            var id = skill.ActionId(ECommons.ExcelServices.Job.CRP);
+            return id == 0 ? "Artisan Recommendation" : id < 100000 ? LuminaSheets.ActionSheet[id].Name.RawString : LuminaSheets.CraftActions[id].Name.RawString;
+        }
 
-            if (id < 100000)
-            {
-                return LuminaSheets.ActionSheet[id].Name.RawString;
-            }
-            else
-            {
-                return LuminaSheets.CraftActions[id].Name.RawString;
-            }
+        public static ushort IconOfAction(this Skills skill, ECommons.ExcelServices.Job job)
+        {
+            var id = skill.ActionId(job);
+            return id == 0 ? default : id < 100000 ? LuminaSheets.ActionSheet[id].Icon : LuminaSheets.CraftActions[id].Icon;
         }
 
         public static string NameOfBuff(this ushort id)

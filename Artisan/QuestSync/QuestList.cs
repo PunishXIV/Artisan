@@ -1,6 +1,7 @@
 ﻿using Artisan.Autocraft;
 using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using System.Collections.Generic;
 using System.Linq;
@@ -241,25 +242,7 @@ namespace Artisan.QuestSync
                 {
                     if (Quests.TryGetValue(questId, out var dict))
                     {
-                        switch (CharacterInfo.JobID)
-                        {
-                            case 8:
-                                return dict.CRP;
-                            case 9:
-                                return dict.BSM;
-                            case 10:
-                                return dict.ARM;
-                            case 11:
-                                return dict.GSM;
-                            case 12:
-                                return dict.LTW;
-                            case 13:
-                                return dict.WVR;
-                            case 14:
-                                return dict.ALC;
-                            case 15:
-                                return dict.CUL;
-                        }
+                        return dict.ForJob(CharacterInfo.JobID);
                     }
                 }
             }
@@ -273,48 +256,12 @@ namespace Artisan.QuestSync
 
                     if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(step1.CRP))
                     {
-                        switch (CharacterInfo.JobID)
-                        {
-                            case 8:
-                                return step1.CRP;
-                            case 9:
-                                return step1.BSM;
-                            case 10:
-                                return step1.ARM;
-                            case 11:
-                                return step1.GSM;
-                            case 12:
-                                return step1.LTW;
-                            case 13:
-                                return step1.WVR;
-                            case 14:
-                                return step1.ALC;
-                            case 15:
-                                return step1.CUL;
-                        }
+                        return step1.ForJob(CharacterInfo.JobID);
                     }
 
                     if (CraftingLists.CraftingListFunctions.HasItemsForRecipe(step2.CRP))
                     {
-                        switch (CharacterInfo.JobID)
-                        {
-                            case 8:
-                                return step2.CRP;
-                            case 9:
-                                return step2.BSM;
-                            case 10:
-                                return step2.ARM;
-                            case 11:
-                                return step2.GSM;
-                            case 12:
-                                return step2.LTW;
-                            case 13:
-                                return step2.WVR;
-                            case 14:
-                                return step2.ALC;
-                            case 15:
-                                return step2.CUL;
-                        }
+                        return step2.ForJob(CharacterInfo.JobID);
                     }
                 }
 
@@ -322,25 +269,7 @@ namespace Artisan.QuestSync
                 {
                     if (Quests.TryGetValue(questId, out var dict))
                     {
-                        switch (CharacterInfo.JobID)
-                        {
-                            case 8:
-                                return dict.CRP;
-                            case 9:
-                                return dict.BSM;
-                            case 10:
-                                return dict.ARM;
-                            case 11:
-                                return dict.GSM;
-                            case 12:
-                                return dict.LTW;
-                            case 13:
-                                return dict.WVR;
-                            case 14:
-                                return dict.ALC;
-                            case 15:
-                                return dict.CUL;
-                        }
+                        return dict.ForJob(CharacterInfo.JobID);
                     }
                 }
             }
@@ -549,6 +478,19 @@ namespace Artisan.QuestSync
         public uint WVR;
         public uint ALC;
         public uint CUL;
+
+        public uint ForJob(Job job) => job switch
+        {
+            Job.CRP => CRP,
+            Job.BSM => BSM,
+            Job.ARM => ARM,
+            Job.GSM => GSM,
+            Job.LTW => LTW,
+            Job.WVR => WVR,
+            Job.ALC => ALC,
+            Job.CUL => CUL,
+            _ => 0
+        };
     }
 
     public class EmoteConverter

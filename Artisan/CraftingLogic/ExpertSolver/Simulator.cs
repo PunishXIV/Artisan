@@ -35,7 +35,7 @@ public static class Simulator
             : (step.Quality < craft.CraftQualityMin1 ? CraftStatus.FailedMinQuality : step.Quality < craft.CraftQualityMin2 ? CraftStatus.SucceededQ1 : step.Quality < craft.CraftQualityMin3 ? CraftStatus.SucceededQ2 : CraftStatus.SucceededQ3);
     }
 
-    public static (ExecuteResult, StepState) Execute(CraftState craft, StepState step, uint action, float actionSuccessRoll, float nextStateRoll)
+    public static (ExecuteResult, StepState) Execute(CraftState craft, StepState step, Skills action, float actionSuccessRoll, float nextStateRoll)
     {
         if (Status(craft, step) != CraftStatus.InProgress)
             return (ExecuteResult.CantUse, step); // can't execute action on craft that is not in progress
@@ -88,7 +88,7 @@ public static class Simulator
         next.RemainingCP = step.RemainingCP - GetCPCost(step, action);
         if (next.RemainingCP < 0)
             return (ExecuteResult.CantUse, step); // can't use action because of insufficient cp
-        if (action == Skills.Tricks) // can't fail
+        if (action == Skills.TricksOfTrade) // can't fail
             next.RemainingCP = Math.Min(craft.StatCP, next.RemainingCP + 20);
 
         // assume these can't fail
@@ -126,9 +126,9 @@ public static class Simulator
         return res;
     }
 
-    public static bool CanUseAction(CraftState craft, StepState step, uint action) => action switch
+    public static bool CanUseAction(CraftState craft, StepState step, Skills action) => action switch
     {
-        Skills.IntensiveSynthesis or Skills.PreciseTouch or Skills.Tricks => step.Condition is Condition.Good or Condition.Excellent || step.HeartAndSoulActive,
+        Skills.IntensiveSynthesis or Skills.PreciseTouch or Skills.TricksOfTrade => step.Condition is Condition.Good or Condition.Excellent || step.HeartAndSoulActive,
         Skills.PrudentSynthesis or Skills.PrudentTouch => step.WasteNotLeft == 0,
         Skills.MuscleMemory or Skills.Reflect => step.Index == 1,
         Skills.TrainedFinesse => step.IQStacks == 10,
@@ -139,10 +139,10 @@ public static class Simulator
         _ => true
     };
 
-    public static bool SkipUpdates(uint action) => action is Skills.CarefulObservation or Skills.FinalAppraisal or Skills.HeartAndSoul;
-    public static bool ConsumeHeartAndSoul(uint action) => action is Skills.IntensiveSynthesis or Skills.PreciseTouch or Skills.Tricks;
+    public static bool SkipUpdates(Skills action) => action is Skills.CarefulObservation or Skills.FinalAppraisal or Skills.HeartAndSoul;
+    public static bool ConsumeHeartAndSoul(Skills action) => action is Skills.IntensiveSynthesis or Skills.PreciseTouch or Skills.TricksOfTrade;
 
-    public static double GetSuccessRate(StepState step, uint action)
+    public static double GetSuccessRate(StepState step, Skills action)
     {
         var rate = action switch
         {
@@ -156,49 +156,51 @@ public static class Simulator
         return rate;
     }
 
-    public static int GetCPCost(StepState step, uint action)
+    public static int GetBaseCPCost(Skills action, Skills prevAction) => action switch
     {
-        var cost = action switch
-        {
-            Skills.CarefulSynthesis => 7,
-            Skills.FocusedSynthesis => 5,
-            Skills.Groundwork => 18,
-            Skills.IntensiveSynthesis => 6,
-            Skills.PrudentSynthesis => 18,
-            Skills.MuscleMemory => 6,
-            Skills.BasicTouch => 18,
-            Skills.StandardTouch => step.PrevComboAction == Skills.BasicTouch ? 18 : 32,
-            Skills.AdvancedTouch => step.PrevComboAction == Skills.StandardTouch ? 18 : 46,
-            Skills.FocusedTouch => 18,
-            Skills.PreparatoryTouch => 40,
-            Skills.PreciseTouch => 18,
-            Skills.PrudentTouch => 25,
-            Skills.TrainedFinesse => 32,
-            Skills.Reflect => 6,
-            Skills.ByregotsBlessing => 24,
-            Skills.TrainedEye => 250,
-            Skills.DelicateSynthesis => 32,
-            Skills.Veneration => 18,
-            Skills.Innovation => 18,
-            Skills.GreatStrides => 32,
-            Skills.MastersMend => 88,
-            Skills.Manipulation => 96,
-            Skills.WasteNot => 56,
-            Skills.WasteNot2 => 98,
-            Skills.Observe => 7,
-            Skills.FinalAppraisal => 1,
-            _ => 0
-        };
+        Skills.CarefulSynthesis => 7,
+        Skills.FocusedSynthesis => 5,
+        Skills.Groundwork => 18,
+        Skills.IntensiveSynthesis => 6,
+        Skills.PrudentSynthesis => 18,
+        Skills.MuscleMemory => 6,
+        Skills.BasicTouch => 18,
+        Skills.StandardTouch => prevAction == Skills.BasicTouch ? 18 : 32,
+        Skills.AdvancedTouch => prevAction == Skills.StandardTouch ? 18 : 46,
+        Skills.FocusedTouch => 18,
+        Skills.PreparatoryTouch => 40,
+        Skills.PreciseTouch => 18,
+        Skills.PrudentTouch => 25,
+        Skills.TrainedFinesse => 32,
+        Skills.Reflect => 6,
+        Skills.ByregotsBlessing => 24,
+        Skills.TrainedEye => 250,
+        Skills.DelicateSynthesis => 32,
+        Skills.Veneration => 18,
+        Skills.Innovation => 18,
+        Skills.GreatStrides => 32,
+        Skills.MastersMend => 88,
+        Skills.Manipulation => 96,
+        Skills.WasteNot => 56,
+        Skills.WasteNot2 => 98,
+        Skills.Observe => 7,
+        Skills.FinalAppraisal => 1,
+        _ => 0
+    };
+
+    public static int GetCPCost(StepState step, Skills action)
+    {
+        var cost = GetBaseCPCost(action, step.PrevComboAction);
         if (step.Condition == Condition.Pliant)
             cost -= cost / 2; // round up
         return cost;
     }
 
-    public static int GetDurabilityCost(StepState step, uint action)
+    public static int GetDurabilityCost(StepState step, Skills action)
     {
         var cost = action switch
         {
-            Skills.BasicSynth or Skills.CarefulSynthesis or Skills.RapidSynthesis or Skills.FocusedSynthesis or Skills.IntensiveSynthesis or Skills.MuscleMemory => 10,
+            Skills.BasicSynthesis or Skills.CarefulSynthesis or Skills.RapidSynthesis or Skills.FocusedSynthesis or Skills.IntensiveSynthesis or Skills.MuscleMemory => 10,
             Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.FocusedTouch or Skills.PreciseTouch or Skills.Reflect => 10,
             Skills.ByregotsBlessing or Skills.DelicateSynthesis => 10,
             Skills.Groundwork or Skills.PreparatoryTouch => 20,
@@ -213,13 +215,13 @@ public static class Simulator
     }
 
     public static int GetNewBuffDuration(StepState step, int baseDuration) => baseDuration + (step.Condition == Condition.Primed ? 2 : 0);
-    public static int GetOldBuffDuration(int prevDuration, uint action, bool consume = false) => consume || prevDuration == 0 ? 0 : SkipUpdates(action) ? prevDuration : prevDuration - 1;
+    public static int GetOldBuffDuration(int prevDuration, Skills action, bool consume = false) => consume || prevDuration == 0 ? 0 : SkipUpdates(action) ? prevDuration : prevDuration - 1;
 
-    public static int CalculateProgress(CraftState craft, StepState step, uint action)
+    public static int CalculateProgress(CraftState craft, StepState step, Skills action)
     {
         int potency = action switch
         {
-            Skills.BasicSynth => craft.StatLevel >= 31 ? 120 : 100,
+            Skills.BasicSynthesis => craft.StatLevel >= 31 ? 120 : 100,
             Skills.CarefulSynthesis => craft.StatLevel >= 82 ? 180 : 150,
             Skills.RapidSynthesis => craft.StatLevel >= 63 ? 500 : 250,
             Skills.FocusedSynthesis => 200,
@@ -240,7 +242,7 @@ public static class Simulator
         return (int)(BaseProgress(craft) * condMod * effPotency / 100);
     }
 
-    public static int CalculateQuality(CraftState craft, StepState step, uint action)
+    public static int CalculateQuality(CraftState craft, StepState step, Skills action)
     {
         int potency = action switch
         {
@@ -274,9 +276,9 @@ public static class Simulator
         return (int)(BaseQuality(craft) * condMod * effPotency / 100);
     }
 
-    public static bool WillFinishCraft(CraftState craft, StepState step, uint action) => step.FinalAppraisalLeft == 0 && step.Progress + CalculateProgress(craft, step, action) >= craft.CraftProgress;
+    public static bool WillFinishCraft(CraftState craft, StepState step, Skills action) => step.FinalAppraisalLeft == 0 && step.Progress + CalculateProgress(craft, step, action) >= craft.CraftProgress;
 
-    public static uint NextTouchCombo(StepState step) => step.PrevComboAction switch
+    public static Skills NextTouchCombo(StepState step) => step.PrevComboAction switch
     {
         Skills.BasicTouch => Skills.StandardTouch,
         Skills.StandardTouch => Skills.AdvancedTouch,

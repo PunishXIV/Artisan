@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLogic.CraftData;
+using Artisan.RawInformation.Character;
 
 namespace Artisan.CraftingLogic.ExpertSolver;
 
@@ -49,7 +50,7 @@ public class StepState
     public int CarefulObservationLeft;
     public bool HeartAndSoulActive;
     public bool HeartAndSoulAvailable;
-    public uint PrevComboAction;
+    public Skills PrevComboAction;
     public double ActionSuccessRoll;
     public double NextStateRoll;
 }

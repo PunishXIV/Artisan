@@ -172,16 +172,16 @@ namespace Artisan.UI
 
                 if (!Raweditor)
                 {
-                    if (ImGui.Button($"Insert New Action ({Skills.BasicSynth.NameOfAction()})"))
+                    if (ImGui.Button($"Insert New Action ({Skills.BasicSynthesis.NameOfAction()})"))
                     {
                         if (SelectedMacro.MacroActions.Count == 0)
                         {
-                            SelectedMacro.MacroActions.Add(Skills.BasicSynth);
+                            SelectedMacro.MacroActions.Add(Skills.BasicSynthesis);
                             SelectedMacro.MacroStepOptions.Add(new());
                         }
                         else
                         {
-                            SelectedMacro.MacroActions.Insert(selectedActionIndex + 1, Skills.BasicSynth);
+                            SelectedMacro.MacroActions.Insert(selectedActionIndex + 1, Skills.BasicSynthesis);
                             SelectedMacro.MacroStepOptions.Insert(selectedActionIndex + 1, new());
                         }
 
@@ -297,16 +297,16 @@ namespace Artisan.UI
                         {
                             if (ImGui.Selectable($"Artisan Recommendation"))
                             {
-                                SelectedMacro.MacroActions[selectedActionIndex] = 0;
+                                SelectedMacro.MacroActions[selectedActionIndex] = Skills.None;
 
                                 P.Config.Save();
                             }
 
-                            foreach (var constant in typeof(Skills).GetFields().OrderBy(x => ((uint)x.GetValue(null)!).NameOfAction()))
+                            foreach (var opt in Enum.GetValues(typeof(Skills)).Cast<Skills>().OrderBy(SheetExtensions.NameOfAction))
                             {
-                                if (ImGui.Selectable($"{((uint)constant.GetValue(null)!).NameOfAction()}"))
+                                if (ImGui.Selectable(opt.NameOfAction()))
                                 {
-                                    SelectedMacro.MacroActions[selectedActionIndex] = (uint)constant.GetValue(null)!;
+                                    SelectedMacro.MacroActions[selectedActionIndex] = opt;
 
                                     P.Config.Save();
                                 }

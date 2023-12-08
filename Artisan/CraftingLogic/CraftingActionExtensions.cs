@@ -8,15 +8,15 @@ namespace Artisan.CraftingLogic
 {
     public static class CraftingActionExtensions
     {
-        public static int ProgressIncrease(this uint Id)
+        public static int ProgressIncrease(this Skills id)
         {
-            var multiplier = Calculations.GetMultiplier(Id, false);
+            var multiplier = Calculations.GetMultiplier(id, false);
             double veneration = SolverLogic.GetStatus(Buffs.Veneration) != null ? 0.5 : 0;
             double muscleMemory = SolverLogic.GetStatus(Buffs.MuscleMemory) != null ? 1 : 0;
             return (int)Math.Floor(Calculations.BaseProgression() * multiplier * (veneration + muscleMemory + 1));
         }
 
-        public static int QualityIncrease(this uint id)
+        public static int QualityIncrease(this Skills id)
         {
             double efficiency = Calculations.GetMultiplier(id, true);
             double IQStacks = SolverLogic.GetStatus(Buffs.InnerQuiet) is null ? 1 : 1 + (SolverLogic.GetStatus(Buffs.InnerQuiet).StackCount * 0.1);

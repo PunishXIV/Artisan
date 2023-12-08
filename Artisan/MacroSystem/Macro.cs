@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Artisan.RawInformation.Character;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,7 +11,7 @@ namespace Artisan.MacroSystem
 
         public string? Name { get; set; }
 
-        public List<uint> MacroActions { get; set; } = new();
+        public List<Skills> MacroActions { get; set; } = new();
 
         public MacroOptions MacroOptions { get; set; } = new();
 

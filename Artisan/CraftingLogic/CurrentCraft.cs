@@ -6,6 +6,7 @@ using Artisan.RawInformation.Character;
 using Artisan.UI;
 using ECommons;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -50,7 +51,7 @@ namespace Artisan.CraftingLogic
         public static string? CollectabilityHigh { get; set; }
         public static string? ItemName { get; set; }
         public static Recipe? CurrentRecipe { get; set; }
-        public static uint CurrentRecommendation { get; set; }
+        public static Skills CurrentRecommendation { get; set; }
         public static bool CraftingWindowOpen { get; set; } = false;
         public static bool JustUsedFinalAppraisal { get; set; } = false;
         public static bool JustUsedObserve { get; set; } = false;
@@ -137,7 +138,7 @@ namespace Artisan.CraftingLogic
         private static CraftingState state = CraftingState.NotCrafting;
         public static bool LastItemWasHQ = false;
         public static Item? LastCraftedItem;
-        public static uint PreviousAction = 0;
+        public static Skills PreviousAction = Skills.None;
 
         public unsafe static bool GetCraft()
         {
@@ -216,7 +217,7 @@ namespace Artisan.CraftingLogic
 
                 if (CurrentRecipe is null || CurrentRecipe.ItemResult.Value.Name.ExtractText() != ItemName)
                 {
-                    var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.ExtractText().Equals(ItemName) && x.CraftType.Value.RowId == CharacterInfo.JobID - 8).FirstOrDefault();
+                    var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.ExtractText().Equals(ItemName) && x.CraftType.Value.RowId == CharacterInfo.JobID - Job.CRP).FirstOrDefault();
                     if (sheetItem != null)
                     {
                         CurrentRecipe = sheetItem;

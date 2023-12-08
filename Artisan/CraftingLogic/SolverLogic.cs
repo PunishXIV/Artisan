@@ -22,11 +22,11 @@ namespace Artisan.CraftingLogic
     public static class SolverLogic
     {
         private static StatusList statusList => Svc.ClientState.LocalPlayer!.StatusList;
-        private static bool InTouchRotation => (PreviousActionSameAs(Skills.BasicTouch) && Skills.StandardTouch.LevelChecked()) || (PreviousActionSameAs(Skills.StandardTouch) && Skills.AdvancedTouch.LevelChecked());
+        private static bool InTouchRotation => (PreviousAction == Skills.BasicTouch && Skills.StandardTouch.LevelChecked()) || (PreviousAction == Skills.StandardTouch && Skills.AdvancedTouch.LevelChecked());
 
         private static bool goingForQuality = true;
 
-        public static unsafe bool BestSynthesis(out uint action, bool allowComplete = true)
+        public static unsafe bool BestSynthesis(out Skills action, bool allowComplete = true)
         {
             var lastActionId = PreviousAction;
             var agentCraftActionSimulator = AgentModule.Instance()->GetAgentCraftActionSimulator();
@@ -43,9 +43,9 @@ namespace Artisan.CraftingLogic
                 return true;
             }
 
-            if (Calculations.CalculateNewProgress(Skills.BasicSynth) >= MaxProgress)
+            if (Calculations.CalculateNewProgress(Skills.BasicSynthesis) >= MaxProgress)
             {
-                action = Skills.BasicSynth;
+                action = Skills.BasicSynthesis;
                 return true;
             }
 
@@ -62,7 +62,7 @@ namespace Artisan.CraftingLogic
                 return true;
             }
 
-            if (PreviousActionSameAs(Skills.Observe) && progressActions->FocusedSynthesis.IsAvailable())
+            if (PreviousAction == Skills.Observe && progressActions->FocusedSynthesis.IsAvailable())
             {
                 action = Skills.FocusedSynthesis;
                 return progressActions->FocusedSynthesis.CanComplete(remainingProgress)!.Value;
@@ -83,7 +83,7 @@ namespace Artisan.CraftingLogic
 
             if (CanSpamBasicToComplete())
             {
-                action = Skills.BasicSynth;
+                action = Skills.BasicSynthesis;
                 return progressActions->BasicSynthesis.CanComplete(remainingProgress)!.Value;
             }
 
@@ -93,13 +93,13 @@ namespace Artisan.CraftingLogic
                 return progressActions->RapidSynthesis.CanComplete(remainingProgress)!.Value;
             }
 
-            action = Skills.BasicSynth;
+            action = Skills.BasicSynthesis;
             return progressActions->BasicSynthesis.CanComplete(remainingProgress)!.Value;
         }
 
         private unsafe static bool CanSpamBasicToComplete()
         {
-            var multiplier = Calculations.GetMultiplier(Skills.BasicSynth);
+            var multiplier = Calculations.GetMultiplier(Skills.BasicSynthesis);
             statusList.HasStatus(out int venestacks, CraftingPlayerStatuses.Veneration);
             statusList.HasStatus(out int wasteStacks, CraftingPlayerStatuses.WasteNot, CraftingPlayerStatuses.WasteNot2);
             statusList.HasStatus(out int manipStacks, CraftingPlayerStatuses.Manipulation);
@@ -127,7 +127,7 @@ namespace Artisan.CraftingLogic
 
         }
 
-        public unsafe static uint GetExpertRecommendation()
+        public unsafe static Skills GetExpertRecommendation()
         {
             if (P.Config.ExpertSolverConfig.Enabled)
             {
@@ -178,17 +178,8 @@ namespace Artisan.CraftingLogic
                     CarefulObservationLeft = CanUse(Skills.CarefulObservation) ? 1 : 0,
                     HeartAndSoulActive = GetStatus(Buffs.HeartAndSoul) != null,
                     HeartAndSoulAvailable = CanUse(Skills.HeartAndSoul),
-                    //PrevComboAction = PreviousAction,
+                    PrevComboAction = PreviousAction,
                 };
-                foreach (var m in typeof(Skills).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public))
-                {
-                    uint v = (uint?)m.GetRawConstantValue() ?? 0;
-                    if (PreviousActionSameAs(v))
-                    {
-                        step.PrevComboAction = v;
-                        break;
-                    }
-                }
                 var result = ExpertSolver.Solver.SolveNextStep(P.Config.ExpertSolverConfig, craft, step);
                 Svc.Log.Verbose($"{result.Item2}");
                 return result.Item1;
@@ -225,7 +216,7 @@ namespace Artisan.CraftingLogic
             if (CanUse(Skills.CarefulSynthesis)) return Skills.CarefulSynthesis;
             return CharacterInfo.HighestLevelSynth();
         }
-        public static uint GetRecommendation()
+        public static Skills GetRecommendation()
         {
             BestSynthesis(out var act);
             GoingForQuality();
@@ -234,15 +225,15 @@ namespace Artisan.CraftingLogic
             if (CanFinishCraft(act)) return act;
 
             if (Skills.TrainedEye.LevelChecked() && CanUse(Skills.TrainedEye) && (HighQualityPercentage < P.Config.MaxPercentage || CurrentRecipe.ItemResult.Value.AlwaysCollectable) && CurrentRecipe.CanHq) return Skills.TrainedEye;
-            if (CanUse(Skills.Tricks))
+            if (CanUse(Skills.TricksOfTrade))
             {
                 if (CurrentStep > 2 && ((CurrentCondition == Condition.Good && P.Config.UseTricksGood) || (CurrentCondition == Condition.Excellent && P.Config.UseTricksExcellent)))
-                    return Skills.Tricks;
+                    return Skills.TricksOfTrade;
 
                 if ((CharacterInfo.CurrentCP < 7) ||
                     (!Skills.PreciseTouch.LevelChecked() && CurrentCondition == Condition.Good && GetStatus(Buffs.Innovation) is null && !statusList.HasStatus(out _, CraftingPlayerStatuses.WasteNot2, CraftingPlayerStatuses.WasteNot) &&
                     !InTouchRotation))
-                    return Skills.Tricks;
+                    return Skills.TricksOfTrade;
             }
 
             if (ShouldMend(act) && CanUse(Skills.MastersMend)) return Skills.MastersMend;
@@ -335,8 +326,8 @@ namespace Artisan.CraftingLogic
                 if (JustUsedObserve && CanUse(Skills.FocusedTouch)) return Skills.FocusedTouch;
                 if (CanCompleteTouchCombo())
                 {
-                    if (PreviousActionSameAs(Skills.BasicTouch) && CanUse(Skills.StandardTouch)) return Skills.StandardTouch;
-                    if (PreviousActionSameAs(Skills.StandardTouch) && CanUse(Skills.AdvancedTouch)) return Skills.AdvancedTouch;
+                    if (PreviousAction == Skills.BasicTouch && CanUse(Skills.StandardTouch)) return Skills.StandardTouch;
+                    if (PreviousAction == Skills.StandardTouch && CanUse(Skills.AdvancedTouch)) return Skills.AdvancedTouch;
                     if (CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
                 }
                 if (CharacterInfo.HighestLevelTouch() != 0) return CharacterInfo.HighestLevelTouch();
@@ -399,7 +390,7 @@ namespace Artisan.CraftingLogic
                   CharacterInfo.CurrentCP > P.Config.PriorityProgress;
         }
 
-        private static bool ShouldMend(uint synthOption)
+        private static bool ShouldMend(Skills synthOption)
         {
             if (!ManipulationUsed && CanUse(Skills.Manipulation)) return false;
             if (!WasteNotUsed && CanUse(Skills.WasteNot)) return false;
@@ -446,7 +437,7 @@ namespace Artisan.CraftingLogic
 
             if (Skills.StandardTouch.LevelChecked() && !Skills.AdvancedTouch.LevelChecked())
             {
-                if (PreviousActionSameAs(Skills.BasicTouch)) return true; //Assume started
+                if (PreviousAction == Skills.BasicTouch) return true; //Assume started
                 if (CharacterInfo.CurrentCP < 36 || veneStacks < 2) return false;
 
                 var copyofDura = CurrentDurability;
@@ -460,7 +451,7 @@ namespace Artisan.CraftingLogic
 
             if (Skills.AdvancedTouch.LevelChecked())
             {
-                if (PreviousActionSameAs(Skills.BasicTouch) || PreviousActionSameAs(Skills.StandardTouch)) return true; //Assume started
+                if (PreviousAction == Skills.BasicTouch || PreviousAction == Skills.StandardTouch) return true; //Assume started
                 if (CharacterInfo.CurrentCP < 54 || veneStacks < 3) return false;
 
                 var copyofDura = CurrentDurability;
@@ -476,8 +467,6 @@ namespace Artisan.CraftingLogic
             return false;
         }
 
-        public static bool PreviousActionSameAs(uint id) => PreviousAction.NameOfAction() == id.NameOfAction();
-
         public static bool CheckForSuccess()
         {
             if (CurrentProgress < MaxProgress)
@@ -491,7 +480,7 @@ namespace Artisan.CraftingLogic
             return MaxProgress - CurrentProgress;
         }
 
-        public static bool CanFinishCraft(uint act)
+        public static bool CanFinishCraft(Skills act)
         {
             if (!CurrentRecipe.CanHq)
                 return Calculations.CalculateNewProgress(act) >= MaxProgress;
@@ -621,51 +610,10 @@ namespace Artisan.CraftingLogic
             }
         }
 
-        internal unsafe static uint CanUse2(uint id)
+        internal unsafe static bool CanUse(Skills id)
         {
-            ActionManager* actionManager = ActionManager.Instance();
-            if (actionManager == null)
-                return 1;
-
-            if (LuminaSheets.ActionSheet.TryGetValue(id, out var act1))
-            {
-                var canUse = actionManager->GetActionStatus(ActionType.Action, id);
-                return canUse;
-            }
-            if (LuminaSheets.CraftActions.TryGetValue(id, out var act2))
-            {
-                var canUse = actionManager->GetActionStatus(ActionType.CraftAction, id);
-                return canUse;
-            }
-
-            return 1;
-        }
-
-        internal static bool CanUse(uint id)
-        {
-            if (LuminaSheets.ActionSheet.TryGetValue(id, out var act1))
-            {
-                string skillName = act1.Name;
-                var allOfSameName = LuminaSheets.ActionSheet.Where(x => x.Value.Name == skillName).Select(x => x.Key);
-                foreach (var dupe in allOfSameName)
-                {
-                    if (CanUse2(dupe) == 0) return true;
-                }
-                return false;
-            }
-
-            if (LuminaSheets.CraftActions.TryGetValue(id, out var act2))
-            {
-                string skillName = act2.Name;
-                var allOfSameName = LuminaSheets.CraftActions.Where(x => x.Value.Name == skillName).Select(x => x.Key);
-                foreach (var dupe in allOfSameName)
-                {
-                    if (CanUse2(dupe) == 0) return true;
-                }
-                return false;
-            }
-
-            return false;
+            var actionId = id.ActionId(CharacterInfo.JobID);
+            return actionId != 0 ? ActionManager.Instance()->GetActionStatus(actionId >= 100000 ? ActionType.CraftAction : ActionType.Action, actionId) == 0 : false;
         }
 
         internal static Status? GetStatus(uint statusID)

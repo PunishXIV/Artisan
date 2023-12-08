@@ -1,6 +1,4 @@
-﻿using Artisan.RawInformation;
-
-namespace Artisan.CraftingLogic.CraftData
+﻿namespace Artisan.CraftingLogic.CraftData
 {
     public enum Condition
     {

@@ -1,6 +1,7 @@
 ﻿using Artisan.CraftingLogic;
 using Dalamud.Utility.Signatures;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using System;
@@ -16,7 +17,7 @@ namespace Artisan.RawInformation.Character
     {
         public static byte? CharacterLevel => Svc.ClientState.LocalPlayer?.Level;
 
-        public static uint? JobID => Svc.ClientState.LocalPlayer?.ClassJob.Id;
+        public static Job JobID => (Job)(Svc.ClientState.LocalPlayer?.ClassJob.Id ?? 0);
 
         public static bool IsCrafting { get; set; }
 
@@ -42,21 +43,14 @@ namespace Artisan.RawInformation.Character
             }
         }
 
-        public static bool LevelChecked(this uint id)
+        public static bool LevelChecked(this Skills skill)
         {
-            if (LuminaSheets.ActionSheet.TryGetValue(id, out var act1))
-            {
-                return CharacterLevel >= act1.ClassJobLevel;
-            }
-            if (LuminaSheets.CraftActions.TryGetValue(id, out var act2))
-            {
-                return CharacterLevel >= act2.ClassJobLevel;
-            }
-
-            return false;
+            var actionId = skill.ActionId(JobID);
+            var minLevel = actionId == 0 ? null : actionId >= 100000 ? Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.CraftAction>()?.GetRow(actionId)?.ClassJobLevel : Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.Action>()?.GetRow(actionId)?.ClassJobLevel;
+            return minLevel != null ? CharacterLevel >= minLevel.Value : false;
         }
        
-        public static uint HighestLevelTouch()
+        public static Skills HighestLevelTouch()
         {
             bool wasteNots = SolverLogic.GetStatus(Buffs.WasteNot) != null || SolverLogic.GetStatus(Buffs.WasteNot2) != null;
 
@@ -81,14 +75,14 @@ namespace Artisan.RawInformation.Character
             return 0;
         }
 
-        public static uint HighestLevelSynth()
+        public static Skills HighestLevelSynth()
         {
             if (SolverLogic.CanUse(Skills.IntensiveSynthesis)) return Skills.IntensiveSynthesis;
             if (SolverLogic.CanUse(Skills.FocusedSynthesis) && JustUsedObserve) return Skills.FocusedSynthesis;
             if (SolverLogic.CanUse(Skills.Groundwork) && CurrentDurability > 20) return Skills.Groundwork;
             if (SolverLogic.CanUse(Skills.PrudentSynthesis)) return Skills.PrudentSynthesis;
             if (SolverLogic.CanUse(Skills.CarefulSynthesis)) return Skills.CarefulSynthesis;
-            if (SolverLogic.CanUse(Skills.BasicSynth)) return Skills.BasicSynth;
+            if (SolverLogic.CanUse(Skills.BasicSynthesis)) return Skills.BasicSynthesis;
 
             return 0;
         }
@@ -97,14 +91,14 @@ namespace Artisan.RawInformation.Character
         {
             return JobID switch
             {
-                8 => QuestUnlocked(67979),
-                9 => QuestUnlocked(68153),
-                10 => QuestUnlocked(68132),
-                11 => QuestUnlocked(67974),
-                12 => QuestUnlocked(68147),
-                13 => QuestUnlocked(67969),
-                14 => QuestUnlocked(67974),
-                15 => QuestUnlocked(68142),
+                Job.CRP => QuestUnlocked(67979),
+                Job.BSM => QuestUnlocked(68153),
+                Job.ARM => QuestUnlocked(68132),
+                Job.GSM => QuestUnlocked(67974),
+                Job.LTW => QuestUnlocked(68147),
+                Job.WVR => QuestUnlocked(67969),
+                Job.ALC => QuestUnlocked(67974),
+                Job.CUL => QuestUnlocked(68142),
                 _ => false,
             };
         }

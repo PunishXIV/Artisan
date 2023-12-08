@@ -32,13 +32,9 @@ namespace Artisan.RawInformation
                 if (BlockAction)
                     return UseActionHook!.Original(actionManager, (uint)ActionType.Action, 7, targetObjectID, param, useType, pvp, isGroundTarget);
 
-                if (SolverLogic.CanUse(actionID))
+                if (actionManager->GetActionStatus((ActionType)actionType, actionID) == 0)
                 {
-                    PreviousAction = actionID;
-
-                    var allOfSameName = LuminaSheets.ActionSheet.ContainsKey(actionID) ? LuminaSheets.ActionSheet.Where(x => x.Value.Name == actionID.NameOfAction()).Select(x => x.Key) :
-                        LuminaSheets.CraftActions!.Where(x => x.Value.Name == actionID.NameOfAction())
-                                                 .Select(x => x.Key);
+                    PreviousAction = SkillActionMap.ActionToSkill(actionID);
 
                     if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId) is var macro && macro != null)
                     {
@@ -48,79 +44,21 @@ namespace Artisan.RawInformation
                         }
                     }
 
-                    if (LuminaSheets.ActionSheet.TryGetValue(actionID, out var act1))
+                    ManipulationUsed |= PreviousAction == Skills.Manipulation;
+                    WasteNotUsed |= PreviousAction is Skills.WasteNot or Skills.WasteNot2;
+                    JustUsedFinalAppraisal = PreviousAction == Skills.FinalAppraisal;
+                    JustUsedGreatStrides = PreviousAction == Skills.GreatStrides;
+                    InnovationUsed |= PreviousAction == Skills.Innovation;
+                    VenerationUsed |= PreviousAction == Skills.Veneration;
+                    JustUsedObserve = PreviousAction == Skills.Observe;
+                    BasicTouchUsed = PreviousAction == Skills.BasicTouch;
+                    StandardTouchUsed = PreviousAction == Skills.StandardTouch;
+                    AdvancedTouchUsed = PreviousAction == Skills.AdvancedTouch;
+
+                    if (PreviousAction is Skills.FinalAppraisal or Skills.HeartAndSoul or Skills.CarefulObservation)
                     {
-                        string skillName = act1.Name;
-
-                        if (allOfSameName.Any(x => x == Skills.Manipulation))
-                            ManipulationUsed = true;
-
-                        if (allOfSameName.Any(x => x == Skills.WasteNot || x == Skills.WasteNot2))
-                            WasteNotUsed = true;
-
-                        if (allOfSameName.Any(x => x == Skills.FinalAppraisal))
-                        {
-                            JustUsedFinalAppraisal = true;
-                            CurrentRecommendation = 0;
-                            Artisan.Tasks.Clear();
-                        }
-                        else
-                            JustUsedFinalAppraisal = false;
-
-                        if (allOfSameName.Any(x => x == Skills.GreatStrides))
-                            JustUsedGreatStrides = true;
-                        else
-                            JustUsedGreatStrides = false;
-
-                        if (allOfSameName.Any(x => x == Skills.Innovation))
-                            InnovationUsed = true;
-
-                        if (allOfSameName.Any(x => x == Skills.Veneration))
-                            VenerationUsed = true;
-
-                        JustUsedObserve = false;
-                        BasicTouchUsed = false;
-                        StandardTouchUsed = false;
-                        AdvancedTouchUsed = false;
-
-                    }
-                    if (LuminaSheets.CraftActions.TryGetValue(actionID, out var act2))
-                    {
-                        string skillName = act2.Name;
-
-                        if (allOfSameName.Any(x => x == Skills.Observe))
-                            JustUsedObserve = true;
-                        else
-                            JustUsedObserve = false;
-
-                        if (allOfSameName.Any(x => x == Skills.BasicTouch))
-                            BasicTouchUsed = true;
-                        else
-                            BasicTouchUsed = false;
-
-                        if (allOfSameName.Any(x => x == Skills.StandardTouch))
-                            StandardTouchUsed = true;
-                        else
-                            StandardTouchUsed = false;
-
-                        if (allOfSameName.Any(x => x == Skills.AdvancedTouch))
-                            AdvancedTouchUsed = true;
-                        else
-                            AdvancedTouchUsed = false;
-
-                        JustUsedFinalAppraisal = false;
-
-                        if (allOfSameName.Any(x => x == Skills.HeartAndSoul))
-                        {
-                            CurrentRecommendation = 0;
-                            Artisan.Tasks.Clear();
-                        }
-
-                        if (allOfSameName.Any(x => x == Skills.CarefulObservation))
-                        {
-                            CurrentRecommendation = 0;
-                            Artisan.Tasks.Clear();
-                        }
+                        CurrentRecommendation = Skills.None;
+                        Artisan.Tasks.Clear();
                     }
                 }
                 return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);

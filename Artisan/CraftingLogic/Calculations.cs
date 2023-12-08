@@ -89,7 +89,7 @@ namespace Artisan.CraftingLogic
             return 1 + (IQStacks * 0.2);
         }
 
-        public unsafe static uint CalculateNewProgress(uint id)
+        public unsafe static uint CalculateNewProgress(Skills id)
         {
             //var multiplier = GetMultiplier(id, false);
             //double veneration = GetStatus(Buffs.Veneration) != null ? 0.5 : 0;
@@ -99,7 +99,7 @@ namespace Artisan.CraftingLogic
             var acts = agentCraftActionSimulator->Progress;
             uint baseIncrease = id switch
             {
-                Skills.BasicSynth => acts->BasicSynthesis.ProgressIncrease,
+                Skills.BasicSynthesis => acts->BasicSynthesis.ProgressIncrease,
                 Skills.RapidSynthesis => acts->RapidSynthesis.ProgressIncrease,
                 Skills.MuscleMemory => acts->MuscleMemory.ProgressIncrease,
                 Skills.CarefulSynthesis => acts->CarefulSynthesis.ProgressIncrease,
@@ -117,7 +117,7 @@ namespace Artisan.CraftingLogic
 
         }
 
-        public unsafe static uint CalculateNewQuality(uint id)
+        public unsafe static uint CalculateNewQuality(Skills id)
         {
             //double efficiency = GetMultiplier(id, true);
             //double IQStacks = GetStatus(Buffs.InnerQuiet) is null ? 1 : 1 + (GetStatus(Buffs.InnerQuiet).StackCount * 0.1);
@@ -150,25 +150,11 @@ namespace Artisan.CraftingLogic
 
         }
 
-        public static double GetMultiplier(uint id, bool isQuality = false)
+        public static double GetMultiplier(Skills id, bool isQuality = false)
         {
-            if (id == 0) return 1;
-
-            if (id < 100000)
-            {
-                var newAct = LuminaSheets.ActionSheet.Values.Where(x => x.Name.RawString == id.NameOfAction() && x.ClassJob.Row == 8).FirstOrDefault();
-                id = newAct.RowId;
-            }
-            else
-            {
-                var newAct = LuminaSheets.CraftActions.Values.Where(x => x.Name.RawString == id.NameOfAction() && x.ClassJob.Row == CharacterInfo.JobID).FirstOrDefault();
-                id = newAct.CRP.Row;
-            }
-
-
             double baseMultiplier = id switch
             {
-                Skills.BasicSynth => Multipliers.BasicSynthesis,
+                Skills.BasicSynthesis => Multipliers.BasicSynthesis,
                 Skills.RapidSynthesis => Multipliers.RapidSynthesis,
                 Skills.MuscleMemory => Multipliers.MuscleMemory,
                 Skills.CarefulSynthesis => Multipliers.CarefulSynthesis,
@@ -197,7 +183,7 @@ namespace Artisan.CraftingLogic
                 baseMultiplier = 1.8;
             if (id == Skills.RapidSynthesis && CharacterInfo.CharacterLevel >= 63)
                 baseMultiplier = 5;
-            if (id == Skills.BasicSynth && CharacterInfo.CharacterLevel >= 31)
+            if (id == Skills.BasicSynthesis && CharacterInfo.CharacterLevel >= 31)
                 baseMultiplier = 1.2;
 
             if (!isQuality)
