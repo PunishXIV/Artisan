@@ -10,8 +10,6 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
-using System.Linq;
-using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan.RawInformation
 {
@@ -34,31 +32,14 @@ namespace Artisan.RawInformation
 
                 if (actionManager->GetActionStatus((ActionType)actionType, actionID) == 0)
                 {
-                    PreviousAction = SkillActionMap.ActionToSkill(actionID);
+                    CurrentCraft.NotifyUsedAction(SkillActionMap.ActionToSkill(actionID));
 
                     if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId) is var macro && macro != null)
                     {
-                        if (MacroStep < macro.MacroActions.Count)
+                        if (CurrentCraft.MacroStep < macro.MacroActions.Count)
                         {
-                            MacroStep++;
+                            CurrentCraft.MacroStep++;
                         }
-                    }
-
-                    ManipulationUsed |= PreviousAction == Skills.Manipulation;
-                    WasteNotUsed |= PreviousAction is Skills.WasteNot or Skills.WasteNot2;
-                    JustUsedFinalAppraisal = PreviousAction == Skills.FinalAppraisal;
-                    JustUsedGreatStrides = PreviousAction == Skills.GreatStrides;
-                    InnovationUsed |= PreviousAction == Skills.Innovation;
-                    VenerationUsed |= PreviousAction == Skills.Veneration;
-                    JustUsedObserve = PreviousAction == Skills.Observe;
-                    BasicTouchUsed = PreviousAction == Skills.BasicTouch;
-                    StandardTouchUsed = PreviousAction == Skills.StandardTouch;
-                    AdvancedTouchUsed = PreviousAction == Skills.AdvancedTouch;
-
-                    if (PreviousAction is Skills.FinalAppraisal or Skills.HeartAndSoul or Skills.CarefulObservation)
-                    {
-                        CurrentRecommendation = Skills.None;
-                        Artisan.Tasks.Clear();
                     }
                 }
                 return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);

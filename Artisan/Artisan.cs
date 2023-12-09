@@ -32,7 +32,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using static Artisan.CraftingLogic.CurrentCraft;
 using Macro = Artisan.MacroSystem.Macro;
 using SoundPlayer = Artisan.Sounds.SoundPlayer;
 
@@ -56,7 +55,6 @@ public unsafe class Artisan : IDalamudPlugin
     public static bool currentCraftFinished = false;
     public static readonly object _lockObj = new();
     public static List<Task> Tasks = new();
-    public static bool warningMessage = false;
     public static bool macroWarning = false;
     public static bool brokenWarning = false;
 
@@ -113,7 +111,7 @@ public unsafe class Artisan : IDalamudPlugin
         Svc.Condition.ConditionChange += Condition_ConditionChange;
         Svc.Chat.ChatMessage += ScanForHQItems;
         ActionWatching.Enable();
-        StepChanged += ResetRecommendation;
+        CurrentCraft.StepChanged += ResetRecommendation;
         ConsumableChecker.Init();
         Endurance.Init();
         IPC.IPC.Init();
@@ -150,10 +148,7 @@ public unsafe class Artisan : IDalamudPlugin
             if (message.Payloads.Any(x => x.Type == PayloadType.Item))
             {
                 var item = (ItemPayload)message.Payloads.First(x => x.Type == PayloadType.Item);
-                if (item.Item.CanBeHq)
-                    LastItemWasHQ = item.IsHQ;
-
-                LastCraftedItem = item.Item;
+                CurrentCraft.SetLastCraftedItem(item.Item, item.Item.CanBeHq && item.IsHQ);
             }
         }
     }
@@ -182,24 +177,9 @@ public unsafe class Artisan : IDalamudPlugin
         }
 
 
-        if (Svc.Condition[ConditionFlag.PreparingToCraft])
+        if (Svc.Condition[ConditionFlag.PreparingToCraft] && IPC.IPC.StopCraftingRequest)
         {
-            State = CraftingState.PreparingToCraft;
-            if (IPC.IPC.StopCraftingRequest)
-            {
-                Svc.Framework.RunOnTick(CraftingListFunctions.CloseCraftingMenu, TimeSpan.FromSeconds(1));
-            }
-            return;
-        }
-        if (Svc.Condition[ConditionFlag.Crafting] && !Svc.Condition[ConditionFlag.PreparingToCraft])
-        {
-            State = CraftingState.Crafting;
-            return;
-        }
-        if (!Svc.Condition[ConditionFlag.Crafting] && !Svc.Condition[ConditionFlag.PreparingToCraft])
-        {
-            State = CraftingState.NotCrafting;
-            return;
+            Svc.Framework.RunOnTick(CraftingListFunctions.CloseCraftingMenu, TimeSpan.FromSeconds(1));
         }
     }
 
@@ -209,36 +189,26 @@ public unsafe class Artisan : IDalamudPlugin
         CraftingListUI.Processing = false;
     }
 
-    private void ResetRecommendation(object? sender, int e)
+    private void ResetRecommendation()
     {
-        CurrentRecommendation = Skills.None;
-        if (e == 0)
+        if (CurrentCraft.CurStepState == null)
         {
-            ManipulationUsed = false;
-            JustUsedObserve = false;
-            VenerationUsed = false;
-            InnovationUsed = false;
-            WasteNotUsed = false;
-            JustUsedFinalAppraisal = false;
-            BasicTouchUsed = false;
-            StandardTouchUsed = false;
-            AdvancedTouchUsed = false;
-            ExpertCraftOpenerFinish = false;
-            MacroStep = 0;
-            warningMessage = false;
+            CurrentCraft.MacroStep = 0;
             macroWarning = false;
             brokenWarning = false;
         }
-        if (e > 0)
+        else
+        {
             Tasks.Clear();
+        }
     }
 
     public static bool CheckIfCraftFinished()
     {
         //if (QuickSynthMax > 0 && QuickSynthCurrent == QuickSynthMax) return true;
-        if (MaxProgress == 0) return false;
-        if (CurrentProgress == MaxProgress) return true;
-        if (CurrentProgress < MaxProgress && CurrentDurability == 0) return true;
+        if (CurrentCraft.CurCraftState == null || CurrentCraft.CurStepState == null) return false;
+        if (CurrentCraft.CurStepState.Progress == CurrentCraft.CurCraftState.CraftProgress) return true;
+        if (CurrentCraft.CurStepState.Progress < CurrentCraft.CurCraftState.CraftProgress && CurrentCraft.CurStepState.Durability == 0) return true;
         currentCraftFinished = false;
         return false;
     }
@@ -257,7 +227,7 @@ public unsafe class Artisan : IDalamudPlugin
 
         if (cw.repeatTrial && !Endurance.Enable)
         {
-            SolverLogic.RepeatTrialCraft();
+            CraftingOperations.RepeatTrialCraft();
         }
 
         PluginUi.CraftingVisible = Svc.Condition[ConditionFlag.Crafting] && !Svc.Condition[ConditionFlag.PreparingToCraft];
@@ -272,25 +242,11 @@ public unsafe class Artisan : IDalamudPlugin
 
         if (!PluginUi.CraftingVisible) return;
 
-        GetCraft();
-        if (SolverLogic.CanUse(Skills.BasicSynthesis) && CurrentRecommendation == Skills.None && Tasks.Count == 0 && CurrentStep >= 1)
+        CurrentCraft.Update();
+        if (CurrentCraft.CurStepState != null && CurrentCraft.CurrentRecommendation == Skills.None && Tasks.Count == 0)
         {
-            if (CurrentRecipe is null && !warningMessage)
-            {
-                Svc.Toasts.ShowError("Warning: Your recipe cannot be parsed in Artisan. Please report this to the Discord with the recipe name and client language.");
-                DuoLog.Error("Warning: Your recipe cannot be parsed in Artisan. Please report this to the Discord with the recipe name and client language.");
-                warningMessage = true;
-            }
-            else
-            {
-                warningMessage = false;
-            }
-
-            if (warningMessage)
-                return;
-
             var delay = P.Config.DelayRecommendation ? P.Config.RecommendationDelay : 0;
-            Tasks.Add(Svc.Framework.RunOnTick(() => FetchRecommendation(CurrentStep), TimeSpan.FromMilliseconds(delay)));
+            Tasks.Add(Svc.Framework.RunOnTick(FetchRecommendation, TimeSpan.FromMilliseconds(delay)));
         }
 
         if (CheckIfCraftFinished() && !currentCraftFinished)
@@ -320,7 +276,7 @@ public unsafe class Artisan : IDalamudPlugin
         }
     }
 
-    public static void FetchRecommendation(int e)
+    public static void FetchRecommendation()
     {
         if (Tasks.Count > 1)
             return;
@@ -358,106 +314,111 @@ public unsafe class Artisan : IDalamudPlugin
                     }
 
                 RestartRecommendation:
-                    if (MacroStep < macro.MacroActions.Count)
+                    if (CurrentCraft.MacroStep < macro.MacroActions.Count)
                     {
+                        var action = macro.MacroActions[CurrentCraft.MacroStep];
                         if (macro.MacroOptions.SkipQualityIfMet)
                         {
-                            if (CurrentQuality >= MaxQuality)
+                            if (CurrentCraft.CurStepState!.Quality >= CurrentCraft.CurCraftState!.CraftQualityMin3)
                             {
-                                if (ActionIsQuality(macro) && (!P.Config.SkipMacroStepIfUnable || (P.Config.SkipMacroStepIfUnable && SolverLogic.CanUse(macro.MacroActions[MacroStep]))))
+                                if (ActionIsQuality(action) && (!P.Config.SkipMacroStepIfUnable || (P.Config.SkipMacroStepIfUnable && CurrentCraft.CanUse(action))))
                                 {
-                                    MacroStep++;
+                                    CurrentCraft.MacroStep++;
                                     goto RestartRecommendation;
                                 }
                             }
                         }
 
-                        if (macro.MacroOptions.SkipObservesIfNotPoor && CurrentCondition != CraftingLogic.CraftData.Condition.Poor)
+                        if (macro.MacroOptions.SkipObservesIfNotPoor && CurrentCraft.CurStepState.Condition != CraftingLogic.CraftData.Condition.Poor)
                         {
-                            if (macro.MacroActions[MacroStep] == Skills.Observe || macro.MacroActions[MacroStep] == Skills.CarefulObservation)
+                            if (action == Skills.Observe || action == Skills.CarefulObservation)
                             {
-                                MacroStep++;
+                                CurrentCraft.MacroStep++;
                                 goto RestartRecommendation;
                             }
                         }
 
                         if (P.Config.SkipMacroStepIfUnable)
                         {
-                            if (!SolverLogic.CanUse(macro.MacroActions[MacroStep]))
+                            if (!CurrentCraft.CanUse(action))
                             {
-                                MacroStep++;
+                                CurrentCraft.MacroStep++;
                                 goto RestartRecommendation;
                             }
                         }
 
-                        if ((macro.MacroStepOptions[MacroStep].ExcludeNormal && CurrentCondition == CraftingLogic.CraftData.Condition.Normal) ||
-                            (macro.MacroStepOptions[MacroStep].ExcludeGood && CurrentCondition == CraftingLogic.CraftData.Condition.Good) ||
-                            (macro.MacroStepOptions[MacroStep].ExcludePoor && CurrentCondition == CraftingLogic.CraftData.Condition.Poor) ||
-                            (macro.MacroStepOptions[MacroStep].ExcludeExcellent && CurrentCondition == CraftingLogic.CraftData.Condition.Excellent) ||
-                            (macro.MacroStepOptions[MacroStep].ExcludeCentered && CurrentCondition == CraftingLogic.CraftData.Condition.Centered) ||
-                            (macro.MacroStepOptions[MacroStep].ExcludeSturdy && CurrentCondition == CraftingLogic.CraftData.Condition.Sturdy) ||
-                            (macro.MacroStepOptions[MacroStep].ExcludePliant && CurrentCondition == CraftingLogic.CraftData.Condition.Pliant) ||
-                            (macro.MacroStepOptions[MacroStep].ExcludeMalleable && CurrentCondition == CraftingLogic.CraftData.Condition.Malleable) ||
-                            (macro.MacroStepOptions[MacroStep].ExcludePrimed && CurrentCondition == CraftingLogic.CraftData.Condition.Primed) ||
-                            (macro.MacroStepOptions[MacroStep].ExcludeGoodOmen && CurrentCondition == CraftingLogic.CraftData.Condition.GoodOmen))
+                        if ((macro.MacroStepOptions[CurrentCraft.MacroStep].ExcludeNormal && CurrentCraft.CurStepState.Condition == CraftingLogic.CraftData.Condition.Normal) ||
+                            (macro.MacroStepOptions[CurrentCraft.MacroStep].ExcludeGood && CurrentCraft.CurStepState.Condition == CraftingLogic.CraftData.Condition.Good) ||
+                            (macro.MacroStepOptions[CurrentCraft.MacroStep].ExcludePoor && CurrentCraft.CurStepState.Condition == CraftingLogic.CraftData.Condition.Poor) ||
+                            (macro.MacroStepOptions[CurrentCraft.MacroStep].ExcludeExcellent && CurrentCraft.CurStepState.Condition == CraftingLogic.CraftData.Condition.Excellent) ||
+                            (macro.MacroStepOptions[CurrentCraft.MacroStep].ExcludeCentered && CurrentCraft.CurStepState.Condition == CraftingLogic.CraftData.Condition.Centered) ||
+                            (macro.MacroStepOptions[CurrentCraft.MacroStep].ExcludeSturdy && CurrentCraft.CurStepState.Condition == CraftingLogic.CraftData.Condition.Sturdy) ||
+                            (macro.MacroStepOptions[CurrentCraft.MacroStep].ExcludePliant && CurrentCraft.CurStepState.Condition == CraftingLogic.CraftData.Condition.Pliant) ||
+                            (macro.MacroStepOptions[CurrentCraft.MacroStep].ExcludeMalleable && CurrentCraft.CurStepState.Condition == CraftingLogic.CraftData.Condition.Malleable) ||
+                            (macro.MacroStepOptions[CurrentCraft.MacroStep].ExcludePrimed && CurrentCraft.CurStepState.Condition == CraftingLogic.CraftData.Condition.Primed) ||
+                            (macro.MacroStepOptions[CurrentCraft.MacroStep].ExcludeGoodOmen && CurrentCraft.CurStepState.Condition == CraftingLogic.CraftData.Condition.GoodOmen))
                         {
-                            MacroStep++;
+                            CurrentCraft.MacroStep++;
                             goto RestartRecommendation;
                         }
 
-                        CurrentRecommendation = MacroStep >= macro.MacroActions.Count || macro.MacroActions[MacroStep] == 0 ? (CurrentRecipe.IsExpert ? SolverLogic.GetExpertRecommendation() : SolverLogic.GetRecommendation()) : macro.MacroActions[MacroStep];
+                        if (action == Skills.None)
+                        {
+                            action = FetchSolverRecommendation(CurrentCraft.CurCraftState!, CurrentCraft.CurStepState!, CurrentCraft.PrevStepStates);
+                        }
 
                         try
                         {
-                            if (MacroStep < macro.MacroStepOptions.Count)
+                            if (CurrentCraft.MacroStep < macro.MacroStepOptions.Count)
                             {
-                                if (macro.MacroStepOptions.Count == 0 || !macro.MacroStepOptions[MacroStep].ExcludeFromUpgrade)
+                                if (macro.MacroStepOptions.Count == 0 || !macro.MacroStepOptions[CurrentCraft.MacroStep].ExcludeFromUpgrade)
                                 {
-                                    if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(macro) && ActionUpgradable(macro, out var newAction))
+                                    if (macro.MacroOptions.UpgradeQualityActions && ActionIsQuality(action) && ActionUpgradable(macro, out var newAction))
                                     {
-                                        CurrentRecommendation = newAction;
+                                        action = newAction;
                                     }
-                                    if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(macro) && ActionUpgradable(macro, out newAction))
+                                    if (macro.MacroOptions.UpgradeProgressActions && !ActionIsQuality(action) && ActionUpgradable(macro, out newAction))
                                     {
-                                        CurrentRecommendation = newAction;
+                                        action = newAction;
                                     }
                                 }
                             }
                         }
                         catch (Exception ex) { ex.Log(); }
+
+                        CurrentCraft.CurrentRecommendation = action;
                     }
                     else
                     {
                         if (!P.Config.DisableMacroArtisanRecommendation || CraftingListUI.Processing)
-                            CurrentRecommendation = CurrentRecipe.IsExpert ? SolverLogic.GetExpertRecommendation() : SolverLogic.GetRecommendation();
+                            CurrentCraft.CurrentRecommendation = FetchSolverRecommendation(CurrentCraft.CurCraftState!, CurrentCraft.CurStepState!, CurrentCraft.PrevStepStates);
                     }
                 }
                 else
                 {
-                    CurrentRecommendation = CurrentRecipe.IsExpert ? SolverLogic.GetExpertRecommendation() : SolverLogic.GetRecommendation();
+                    CurrentCraft.CurrentRecommendation = FetchSolverRecommendation(CurrentCraft.CurCraftState!, CurrentCraft.CurStepState!, CurrentCraft.PrevStepStates);
                 }
             }
             else
             {
-                CurrentRecommendation = CurrentRecipe.IsExpert ? SolverLogic.GetExpertRecommendation() : SolverLogic.GetRecommendation();
+                CurrentCraft.CurrentRecommendation = FetchSolverRecommendation(CurrentCraft.CurCraftState!, CurrentCraft.CurStepState!, CurrentCraft.PrevStepStates);
             }
 
-            if (CurrentRecommendation != Skills.None)
+            if (CurrentCraft.CurrentRecommendation != Skills.None)
             {
-                RecommendationName = CurrentRecommendation.NameOfAction();
                 if (!P.Config.DisableToasts)
                 {
-                    QuestToastOptions options = new() { IconId = CurrentRecommendation.IconOfAction(CharacterInfo.JobID) };
-                    Svc.Toasts.ShowQuest($"Use {RecommendationName}", options);
+                    QuestToastOptions options = new() { IconId = CurrentCraft.CurrentRecommendation.IconOfAction(CharacterInfo.JobID) };
+                    Svc.Toasts.ShowQuest($"Use {CurrentCraft.CurrentRecommendation.NameOfAction()}", options);
                 }
 
                 if (P.Config.AutoMode)
                 {
-                    if (SolverLogic.CanUse(CurrentRecommendation))
+                    if (CurrentCraft.CanUse(CurrentCraft.CurrentRecommendation))
                         ActionWatching.BlockAction = true;
 
                     P.CTM.DelayNext(P.Config.AutoDelay);
-                    P.CTM.Enqueue(() => Hotbars.ExecuteRecommended(CurrentRecommendation));
+                    P.CTM.Enqueue(() => Hotbars.ExecuteRecommended(CurrentCraft.CurrentRecommendation));
                     //Svc.Framework.RunOnTick(() => , TimeSpan.FromMilliseconds(P.Config.AutoDelay));
 
                     //Svc.Plugin.BotTask.Schedule(() => Hotbars.ExecuteRecommended(CurrentRecommendation), P.Config.AutoDelay);
@@ -472,10 +433,26 @@ public unsafe class Artisan : IDalamudPlugin
         }
     }
 
+    private static Skills FetchSolverRecommendation(CraftState craft, StepState step, List<StepState> prevSteps)
+    {
+        if (!craft.CraftExpert)
+        {
+            return SolverLogic.GetRecommendation(craft, step, prevSteps);
+        }
+        else if (P.Config.ExpertSolverConfig.Enabled)
+        {
+            return CraftingLogic.ExpertSolver.Solver.SolveNextStep(P.Config.ExpertSolverConfig, craft, step).Item1;
+        }
+        else
+        {
+            return SolverLogic.GetExpertRecommendation(craft, step);
+        }
+    }
+
     private static bool ActionUpgradable(Macro macro, out Skills newAction)
     {
-        newAction = macro.MacroActions[MacroStep];
-        if (CurrentCondition is CraftingLogic.CraftData.Condition.Good or CraftingLogic.CraftData.Condition.Excellent)
+        newAction = macro.MacroActions[CurrentCraft.MacroStep];
+        if (CurrentCraft.CurStepState.Condition is CraftingLogic.CraftData.Condition.Good or CraftingLogic.CraftData.Condition.Excellent)
         {
             switch (newAction)
             {
@@ -496,35 +473,14 @@ public unsafe class Artisan : IDalamudPlugin
                     break;
             }
 
-            return SolverLogic.CanUse(newAction);
+            return CurrentCraft.CanUse(newAction);
         }
 
         return false;
     }
 
-    public static bool ActionIsQuality(Macro macro)
-    {
-        var currentAction = macro.MacroActions[MacroStep];
-        switch (currentAction)
-        {
-            case Skills.BasicTouch:
-            case Skills.HastyTouch:
-            case Skills.StandardTouch:
-            case Skills.ByregotsBlessing:
-            case Skills.PreciseTouch:
-            case Skills.PrudentTouch:
-            case Skills.FocusedTouch:
-            case Skills.PreparatoryTouch:
-            case Skills.AdvancedTouch:
-            case Skills.GreatStrides:
-            case Skills.Innovation:
-            case Skills.TrainedFinesse:
-                return true;
-
-            default:
-                return false;
-        }
-    }
+    public static bool ActionIsQuality(Skills skill) => skill is Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.FocusedTouch or Skills.PreparatoryTouch
+        or Skills.PreciseTouch or Skills.PrudentTouch or Skills.TrainedFinesse or Skills.ByregotsBlessing or Skills.GreatStrides or Skills.Innovation;
 
     private void CheckForCraftedState(ConditionFlag flag, bool value)
     {
@@ -547,7 +503,7 @@ public unsafe class Artisan : IDalamudPlugin
         Svc.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
         Svc.PluginInterface.UiBuilder.Draw -= ws.Draw;
         Svc.Framework.Update -= OnFrameworkUpdate;
-        StepChanged -= ResetRecommendation;
+        CurrentCraft.StepChanged -= ResetRecommendation;
 
         Svc.PluginInterface.UiBuilder.BuildFonts -= AddCustomFont;
         ActionWatching.Dispose();
@@ -628,7 +584,7 @@ public unsafe class Artisan : IDalamudPlugin
 
             if (firstArg.ToLower() == "macros")
             {
-                if (State != CraftingState.Crafting)
+                if (CurrentCraft.State != CraftingState.Crafting)
                 {
                     if (int.TryParse(subcommands[1], out int id))
                     {

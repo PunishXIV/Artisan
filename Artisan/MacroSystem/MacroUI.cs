@@ -1,5 +1,4 @@
 ﻿using Artisan.CraftingLogic;
-using Artisan.CraftingLogic.ExpertSolver;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
@@ -13,7 +12,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
-using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan.MacroSystem
 {
@@ -47,7 +45,7 @@ namespace Artisan.MacroSystem
             ImGui.TextWrapped("This tab will allow you to add macros that Artisan can use instead of its own decisions. Once you create a new macro, click on it from the list below to open up the macro editor window for your macro.");
             ImGui.Separator();
 
-            if (State == CraftingState.Crafting)
+            if (CurrentCraft.State == CraftingState.Crafting)
             {
                 ImGui.Text($"Crafting in progress. Macro settings will be unavailable until you stop crafting.");
                 return;

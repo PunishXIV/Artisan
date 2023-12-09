@@ -431,7 +431,7 @@ namespace Artisan.Autocraft
             if ((Enable && P.Config.QuickSynthMode && CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0) || IPC.IPC.StopCraftingRequest ||
                 (Enable && P.Config.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
             {
-                SolverLogic.CloseQuickSynthWindow();
+                CraftingOperations.CloseQuickSynthWindow();
             }
 
             if (Enable && !P.TM.IsBusy && CurrentCraft.State != CraftingState.Crafting)
@@ -520,9 +520,9 @@ namespace Artisan.Autocraft
 
                             P.TM.Enqueue(() => { if (!CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
                             if (P.Config.CraftingX)
-                                P.TM.Enqueue(() => SolverLogic.QuickSynthItem(P.Config.CraftX));
+                                P.TM.Enqueue(() => CraftingOperations.QuickSynthItem(P.Config.CraftX));
                             else
-                                P.TM.Enqueue(() => SolverLogic.QuickSynthItem(99));
+                                P.TM.Enqueue(() => CraftingOperations.QuickSynthItem(99));
                         }
                         else
                         {
@@ -534,7 +534,7 @@ namespace Artisan.Autocraft
 
                             P.TM.Enqueue(() => UpdateMacroTimer(), "UpdateEnduranceMacroTimer");
                             P.TM.DelayNext("EnduranceThrottle", 100);
-                            P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) SolverLogic.RepeatActualCraft(); else { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
+                            P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CraftingOperations.RepeatActualCraft(); else { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
                         }
                     }
                     else

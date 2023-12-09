@@ -13,7 +13,7 @@ namespace Artisan.CraftingLogic.CraftData
         [FieldOffset(0x098)] public uint Quality;
         [FieldOffset(0x0A8)] public uint HqChance; // Does this make sense for Collectables?
 
-        [FieldOffset(0x0C8)] public SynthesisStatus Status;
+        [FieldOffset(0x0C8)] public Condition Status;
 
 
         [FieldOffset(0x0F8)] public uint Step;

@@ -719,7 +719,7 @@ namespace Artisan.UI.Tables
                 {
                     P.TM.Enqueue(() => CraftingListFunctions.OpenRecipeByID(item.CraftedRecipe.RowId));
                     P.TM.Enqueue(() => CraftingListFunctions.SwitchJobGearset(item.CraftedRecipe.CraftType.Row + 8));
-                    P.TM.Enqueue(() => SolverLogic.QuickSynthItem(item.Required));
+                    P.TM.Enqueue(() => CraftingOperations.QuickSynthItem(item.Required));
                 }
 
                 ImGuiComponents.HelpMarker("Quick Synths up to the required amount.");

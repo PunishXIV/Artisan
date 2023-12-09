@@ -2,7 +2,7 @@
 using Artisan.RawInformation.Character;
 using System;
 
-namespace Artisan.CraftingLogic.ExpertSolver;
+namespace Artisan.CraftingLogic;
 
 public static class Simulator
 {
@@ -25,14 +25,14 @@ public static class Simulator
         Succeeded
     }
 
-    public static StepState CreateInitial(CraftState craft, float actionSuccessRoll, float nextStateRoll)
-        => new() { Index = 1, Durability = craft.CraftDurability, RemainingCP = craft.StatCP, CarefulObservationLeft = craft.Specialist ? 3 : 0, HeartAndSoulAvailable = craft.Specialist, ActionSuccessRoll = actionSuccessRoll, NextStateRoll = nextStateRoll };
+    public static StepState CreateInitial(CraftState craft)
+        => new() { Index = 1, Durability = craft.CraftDurability, RemainingCP = craft.StatCP, CarefulObservationLeft = craft.Specialist ? 3 : 0, HeartAndSoulAvailable = craft.Specialist };
 
     public static CraftStatus Status(CraftState craft, StepState step)
     {
         return step.Progress < craft.CraftProgress
-            ? (step.Durability > 0 ? CraftStatus.InProgress : CraftStatus.FailedDurability)
-            : (step.Quality < craft.CraftQualityMin1 ? CraftStatus.FailedMinQuality : step.Quality < craft.CraftQualityMin2 ? CraftStatus.SucceededQ1 : step.Quality < craft.CraftQualityMin3 ? CraftStatus.SucceededQ2 : CraftStatus.SucceededQ3);
+            ? step.Durability > 0 ? CraftStatus.InProgress : CraftStatus.FailedDurability
+            : step.Quality < craft.CraftQualityMin1 ? CraftStatus.FailedMinQuality : step.Quality < craft.CraftQualityMin2 ? CraftStatus.SucceededQ1 : step.Quality < craft.CraftQualityMin3 ? CraftStatus.SucceededQ2 : CraftStatus.SucceededQ3;
     }
 
     public static (ExecuteResult, StepState) Execute(CraftState craft, StepState step, Skills action, float actionSuccessRoll, float nextStateRoll)
@@ -40,11 +40,10 @@ public static class Simulator
         if (Status(craft, step) != CraftStatus.InProgress)
             return (ExecuteResult.CantUse, step); // can't execute action on craft that is not in progress
 
-        var success = step.ActionSuccessRoll < GetSuccessRate(step, action);
+        var success = actionSuccessRoll < GetSuccessRate(step, action);
 
-        // TODO: check level requirements
         if (!CanUseAction(craft, step, action))
-            return (ExecuteResult.CantUse, step); // can't use action because of special conditions
+            return (ExecuteResult.CantUse, step); // can't use action because of level, insufficient cp or special conditions
 
         var next = new StepState();
         next.Index = SkipUpdates(action) ? step.Index : step.Index + 1;
@@ -86,8 +85,6 @@ public static class Simulator
             next.Quality = craft.CraftQualityMax;
 
         next.RemainingCP = step.RemainingCP - GetCPCost(step, action);
-        if (next.RemainingCP < 0)
-            return (ExecuteResult.CantUse, step); // can't use action because of insufficient cp
         if (action == Skills.TricksOfTrade) // can't fail
             next.RemainingCP = Math.Min(craft.StatCP, next.RemainingCP + 20);
 
@@ -103,9 +100,7 @@ public static class Simulator
             next.Durability = Math.Min(craft.CraftDurability, next.Durability + repair);
         }
 
-        next.Condition = action is Skills.FinalAppraisal or Skills.HeartAndSoul ? step.Condition : GetNextCondition(craft, step);
-        next.ActionSuccessRoll = actionSuccessRoll;
-        next.NextStateRoll = nextStateRoll;
+        next.Condition = action is Skills.FinalAppraisal or Skills.HeartAndSoul ? step.Condition : GetNextCondition(craft, step, nextStateRoll);
 
         return (success ? ExecuteResult.Succeeded : ExecuteResult.Failed, next);
     }
@@ -126,6 +121,44 @@ public static class Simulator
         return res;
     }
 
+    public static int MinLevel(Skills action) => action switch
+    {
+        Skills.BasicSynthesis => 1,
+        Skills.CarefulSynthesis => 62,
+        Skills.RapidSynthesis => 9,
+        Skills.FocusedSynthesis => 67,
+        Skills.Groundwork => 72,
+        Skills.IntensiveSynthesis => 78,
+        Skills.PrudentSynthesis => 88,
+        Skills.MuscleMemory => 54,
+        Skills.BasicTouch => 5,
+        Skills.StandardTouch => 18,
+        Skills.AdvancedTouch => 84,
+        Skills.HastyTouch => 9,
+        Skills.FocusedTouch => 68,
+        Skills.PreparatoryTouch => 71,
+        Skills.PreciseTouch => 53,
+        Skills.PrudentTouch => 66,
+        Skills.TrainedFinesse => 90,
+        Skills.Reflect => 69,
+        Skills.ByregotsBlessing => 50,
+        Skills.TrainedEye => 80,
+        Skills.DelicateSynthesis => 76,
+        Skills.Veneration => 15,
+        Skills.Innovation => 26,
+        Skills.GreatStrides => 21,
+        Skills.TricksOfTrade => 13,
+        Skills.MastersMend => 7,
+        Skills.Manipulation => 65,
+        Skills.WasteNot => 15,
+        Skills.WasteNot2 => 47,
+        Skills.Observe => 13,
+        Skills.CarefulObservation => 55,
+        Skills.FinalAppraisal => 42,
+        Skills.HeartAndSoul => 86,
+        _ => 0
+    };
+
     public static bool CanUseAction(CraftState craft, StepState step, Skills action) => action switch
     {
         Skills.IntensiveSynthesis or Skills.PreciseTouch or Skills.TricksOfTrade => step.Condition is Condition.Good or Condition.Excellent || step.HeartAndSoulActive,
@@ -134,10 +167,11 @@ public static class Simulator
         Skills.TrainedFinesse => step.IQStacks == 10,
         Skills.ByregotsBlessing => step.IQStacks > 0,
         Skills.TrainedEye => !craft.CraftExpert && craft.StatLevel >= craft.CraftLevel + 10 && step.Index == 1,
+        Skills.Manipulation => craft.UnlockedManipulation,
         Skills.CarefulObservation => step.CarefulObservationLeft > 0,
         Skills.HeartAndSoul => step.HeartAndSoulAvailable,
         _ => true
-    };
+    } && craft.StatLevel >= MinLevel(action) && step.RemainingCP >= GetCPCost(step, action);
 
     public static bool SkipUpdates(Skills action) => action is Skills.CarefulObservation or Skills.FinalAppraisal or Skills.HeartAndSoul;
     public static bool ConsumeHeartAndSoul(Skills action) => action is Skills.IntensiveSynthesis or Skills.PreciseTouch or Skills.TricksOfTrade;
@@ -225,7 +259,7 @@ public static class Simulator
             Skills.CarefulSynthesis => craft.StatLevel >= 82 ? 180 : 150,
             Skills.RapidSynthesis => craft.StatLevel >= 63 ? 500 : 250,
             Skills.FocusedSynthesis => 200,
-            Skills.Groundwork => step.Durability >= GetDurabilityCost(step, action) ? (craft.StatLevel >= 86 ? 360 : 300) : (craft.StatLevel >= 86 ? 180 : 150),
+            Skills.Groundwork => step.Durability >= GetDurabilityCost(step, action) ? craft.StatLevel >= 86 ? 360 : 300 : craft.StatLevel >= 86 ? 180 : 150,
             Skills.IntensiveSynthesis => 400,
             Skills.PrudentSynthesis => 180,
             Skills.MuscleMemory => 300,
@@ -285,20 +319,19 @@ public static class Simulator
         _ => Skills.BasicTouch
     };
 
-    public static Condition GetNextCondition(CraftState craft, StepState step) => step.Condition switch
+    public static Condition GetNextCondition(CraftState craft, StepState step, float roll) => step.Condition switch
     {
-        Condition.Normal => GetTransitionByRoll(craft, step),
-        Condition.Good => craft.CraftExpert ? GetTransitionByRoll(craft, step) : Condition.Normal,
+        Condition.Normal => GetTransitionByRoll(craft, step, roll),
+        Condition.Good => craft.CraftExpert ? GetTransitionByRoll(craft, step, roll) : Condition.Normal,
         Condition.Excellent => Condition.Poor,
         Condition.Poor => Condition.Normal,
         Condition.GoodOmen => Condition.Good,
-        _ => GetTransitionByRoll(craft, step)
+        _ => GetTransitionByRoll(craft, step, roll)
     };
 
-    public static Condition GetTransitionByRoll(CraftState craft, StepState step)
+    public static Condition GetTransitionByRoll(CraftState craft, StepState step, float roll)
     {
-        double roll = step.NextStateRoll;
-        for (int i = 2; i < craft.CraftConditionProbabilities.Length; ++i)
+        for (int i = 1; i < craft.CraftConditionProbabilities.Length; ++i)
         {
             roll -= craft.CraftConditionProbabilities[i];
             if (roll < 0)

@@ -177,7 +177,7 @@ namespace Artisan.CraftingLists
                 Svc.Log.Verbose("End of Index");
                 CurrentIndex = 0;
                 CraftingListUI.Processing = false;
-                SolverLogic.CloseQuickSynthWindow();
+                CraftingOperations.CloseQuickSynthWindow();
                 CLTM.Enqueue(() => CloseCraftingMenu(), "EndOfListCloseMenu");
 
                 if (P.Config.PlaySoundFinishList)
@@ -188,7 +188,7 @@ namespace Artisan.CraftingLists
             if ((CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0) || 
                 (selectedList.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
             {
-                SolverLogic.CloseQuickSynthWindow();
+                CraftingOperations.CloseQuickSynthWindow();
             }
 
             var recipe = CraftingListHelpers.FilteredList[CraftingListUI.CurrentProcessedItem];
@@ -410,12 +410,12 @@ namespace Artisan.CraftingLists
 
                         if (count >= 99)
                         {
-                            SolverLogic.QuickSynthItem(99);
+                            CraftingOperations.QuickSynthItem(99);
                             return;
                         }
                         else
                         {
-                            SolverLogic.QuickSynthItem(count);
+                            CraftingOperations.QuickSynthItem(count);
                             return;
                         }
 
@@ -425,7 +425,7 @@ namespace Artisan.CraftingLists
                         if (!CLTM.IsBusy)
                         {
                             CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
-                            CLTM.Enqueue(() => SolverLogic.RepeatActualCraft(), "ListCraft");
+                            CLTM.Enqueue(() => CraftingOperations.RepeatActualCraft(), "ListCraft");
                             return;
                         }
                     }
@@ -463,12 +463,12 @@ namespace Artisan.CraftingLists
 
                         if (count >= 99)
                         {
-                            SolverLogic.QuickSynthItem(99);
+                            CraftingOperations.QuickSynthItem(99);
                             return;
                         }
                         else
                         {
-                            SolverLogic.QuickSynthItem(count);
+                            CraftingOperations.QuickSynthItem(count);
                             return;
                         }
                     }
@@ -490,7 +490,7 @@ namespace Artisan.CraftingLists
 
                             CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
                             CLTM.DelayNext("CraftListDelay", (int)(P.Config.ListCraftThrottle * 1000));
-                            CLTM.Enqueue(() => { SolverLogic.RepeatActualCraft(); }, "ListCraft");
+                            CLTM.Enqueue(() => { CraftingOperations.RepeatActualCraft(); }, "ListCraft");
 
                             return;
                         }

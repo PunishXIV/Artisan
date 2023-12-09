@@ -1,73 +1,42 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.MacroSystem;
-using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
+using Dalamud.Game.ClientState.Conditions;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.Logging;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
+using static System.Windows.Forms.AxHost;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.CraftingLogic
 {
     public static unsafe class CurrentCraft
     {
-        public static event EventHandler<int>? StepChanged;
-        public static int CurrentDurability { get; set; } = 0;
-        public static int MaxDurability { get; set; } = 0;
-        public static int CurrentProgress { get; set; } = 0;
-        public static int MaxProgress { get; set; } = 0;
-        public static int CurrentQuality { get; set; } = 0;
-        public static int MaxQuality { get; set; } = 0;
-        public static int HighQualityPercentage { get; set; } = 0;
-        public static string? RecommendationName { get; set; }
-        public static Condition CurrentCondition { get; set; }
-        public static int CurrentStep
-        {
-            get { return currentStep; }
-            set
-            {
-                if (currentStep != value)
-                {
-                    currentStep = value;
-                    StepChanged?.Invoke(currentStep, value);
-                    P.TM.Abort();
-                }
+        public static event System.Action? StepChanged;
 
-            }
-        }
-        public static string? HQLiteral { get; set; }
-        public static bool CanHQ { get; set; }
-        public static string? CollectabilityLow { get; set; }
-        public static string? CollectabilityMid { get; set; }
-        public static string? CollectabilityHigh { get; set; }
-        public static string? ItemName { get; set; }
-        public static Recipe? CurrentRecipe { get; set; }
+        public static Recipe? CurrentRecipe { get; private set; }
+        public static CraftState? CurCraftState { get; private set; }
+        public static StepState? CurStepState { get; private set; }
+        public static List<StepState> PrevStepStates { get; private set; } = new();
         public static Skills CurrentRecommendation { get; set; }
-        public static bool CraftingWindowOpen { get; set; } = false;
-        public static bool JustUsedFinalAppraisal { get; set; } = false;
-        public static bool JustUsedObserve { get; set; } = false;
-        public static bool JustUsedGreatStrides { get; set; } = false;
-        public static bool ManipulationUsed { get; set; } = false;
-        public static bool WasteNotUsed { get; set; } = false;
-        public static bool InnovationUsed { get; set; } = false;
-        public static bool VenerationUsed { get; set; } = false;
-        public static bool BasicTouchUsed { get; set; } = false;
-        public static bool StandardTouchUsed { get; set; } = false;
-        public static bool AdvancedTouchUsed { get; set; } = false;
-        public static bool ExpertCraftOpenerFinish { get; set; } = false;
+
+        public static int HighQualityPercentage { get; private set; } = 0;
+        public static bool CanHQ  { get; private set; }
+
         public static int QuickSynthCurrent
         {
             get => quickSynthCurrent;
-            set
+            private set
             {
                 if (value != 0 && quickSynthCurrent != value)
                 {
@@ -78,92 +47,94 @@ namespace Artisan.CraftingLogic
                 quickSynthCurrent = value;
             }
         }
-        public static int QuickSynthMax { get; set; } = 0;
+        public static int QuickSynthMax { get; private set; } = 0;
         public static int MacroStep { get; set; } = 0;
-        public static bool DoingTrial { get; set; } = false;
-        public static CraftingState State
+        public static bool DoingTrial { get; private set; } = false;
+        public static CraftingState State { get; private set; } = CraftingState.NotCrafting;
+
+        private static int quickSynthCurrent = 0;
+        public static bool LastItemWasHQ { get; private set; } = false;
+        public static Item? LastCraftedItem { get; private set; }
+        public static Skills PreviousAction { get; private set; } = Skills.None;
+        public static bool JustUsedAction { get; private set; } = false;
+
+        public static void SetLastCraftedItem(Item? item, bool hq)
         {
-            get { return state; }
-            set
+            LastCraftedItem = item;
+            LastItemWasHQ = hq;
+        }
+
+        public static void NotifyUsedAction(Skills action)
+        {
+            PreviousAction = action;
+            JustUsedAction = true;
+            CurrentRecommendation = Skills.None;
+        }
+
+        public unsafe static bool Update()
+        {
+            var newState = Svc.Condition[ConditionFlag.PreparingToCraft] ? CraftingState.PreparingToCraft : Svc.Condition[ConditionFlag.Crafting] ? CraftingState.Crafting : CraftingState.NotCrafting;
+            if (State != newState)
             {
-                if (value != state)
+                if (CurCraftState != null && CurStepState != null && !P.Config.QuickSynthMode)
                 {
-                    if (state == CraftingState.Crafting)
+                    bool wasSuccess = CurStepState.Progress >= CurCraftState.CraftProgress;
+                    if (!wasSuccess && P.Config.EnduranceStopFail && Endurance.Enable)
                     {
-                        bool wasSuccess = SolverLogic.CheckForSuccess();
-                        if (!P.Config.QuickSynthMode && !wasSuccess && P.Config.EnduranceStopFail && Endurance.Enable)
-                        {
-                            Endurance.Enable = false;
-                            Svc.Toasts.ShowError("You failed a craft. Disabling Endurance.");
-                            DuoLog.Error("You failed a craft. Disabling Endurance.");
-                        }
-
-                        if (!P.Config.QuickSynthMode && P.Config.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && LastCraftedItem.CanBeHq && Endurance.Enable)
-                        {
-                            Endurance.Enable = false;
-                            Svc.Toasts.ShowError("You crafted a non-HQ item. Disabling Endurance.");
-                            DuoLog.Error("You crafted a non-HQ item. Disabling Endurance.");
-                        }
+                        Endurance.Enable = false;
+                        Svc.Toasts.ShowError("You failed a craft. Disabling Endurance.");
+                        DuoLog.Error("You failed a craft. Disabling Endurance.");
                     }
 
-
-                    if (value == CraftingState.NotCrafting || value == CraftingState.PreparingToCraft)
+                    if (P.Config.EnduranceStopNQ && !LastItemWasHQ && LastCraftedItem != null && !LastCraftedItem.IsCollectable && LastCraftedItem.CanBeHq && Endurance.Enable)
                     {
-                        CraftingWindow.MacroTime = new();
+                        Endurance.Enable = false;
+                        Svc.Toasts.ShowError("You crafted a non-HQ item. Disabling Endurance.");
+                        DuoLog.Error("You crafted a non-HQ item. Disabling Endurance.");
+                    }
+                }
+
+                if (newState != CraftingState.Crafting)
+                {
+                    CraftingWindow.MacroTime = new();
+                }
+                else
+                {
+                    if (CraftingWindow.MacroTime.Ticks <= 0 && P.Config.IRM.ContainsKey((uint)Endurance.RecipeID) && P.Config.UserMacros.TryGetFirst(x => x.ID == P.Config.IRM[(uint)Endurance.RecipeID], out var macro))
+                    {
+                        double timeInSeconds = MacroUI.GetMacroLength(macro); // Counting crafting duration + 2 seconds between crafts.
+                        CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
                     }
 
-                    if (value == CraftingState.Crafting)
+                    if (P.ws.Windows.Any(x => x.GetType() == typeof(MacroEditor)))
                     {
-                        if (CraftingWindow.MacroTime.Ticks <= 0 && P.Config.IRM.ContainsKey((uint)Endurance.RecipeID) && P.Config.UserMacros.TryGetFirst(x => x.ID == P.Config.IRM[(uint)Endurance.RecipeID], out var macro))
+                        foreach (var window in P.ws.Windows.Where(x => x.GetType() == typeof(MacroEditor)))
                         {
-                            Double timeInSeconds = MacroUI.GetMacroLength(macro); // Counting crafting duration + 2 seconds between crafts.
-                            CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
-                        }
-
-                        if (P.ws.Windows.Any(x => x.GetType() == typeof(MacroEditor)))
-                        {
-                            foreach (var window in P.ws.Windows.Where(x => x.GetType() == typeof(MacroEditor)))
-                            {
-                                window.IsOpen = false;
-                            }
+                            window.IsOpen = false;
                         }
                     }
                 }
-                state = value;
+                State = newState;
             }
-        }
 
-        private static int currentStep = 0;
-        private static int quickSynthCurrent = 0;
-        private static CraftingState state = CraftingState.NotCrafting;
-        public static bool LastItemWasHQ = false;
-        public static Item? LastCraftedItem;
-        public static Skills PreviousAction = Skills.None;
-
-        public unsafe static bool GetCraft()
-        {
             try
             {
-                var quickSynthPTR = Svc.GameGui.GetAddonByName("SynthesisSimple", 1);
-                if (quickSynthPTR != IntPtr.Zero)
+                var quickSynthWindow = (AtkUnitBase*)Svc.GameGui.GetAddonByName("SynthesisSimple", 1);
+                if (quickSynthWindow != null)
                 {
-                    var quickSynthWindow = (AtkUnitBase*)quickSynthPTR;
-                    if (quickSynthWindow != null)
+                    try
                     {
-                        try
-                        {
-                            var currentTextNode = (AtkTextNode*)quickSynthWindow->UldManager.NodeList[20];
-                            var maxTextNode = (AtkTextNode*)quickSynthWindow->UldManager.NodeList[18];
+                        var currentTextNode = (AtkTextNode*)quickSynthWindow->UldManager.NodeList[20];
+                        var maxTextNode = (AtkTextNode*)quickSynthWindow->UldManager.NodeList[18];
 
-                            QuickSynthCurrent = Convert.ToInt32(currentTextNode->NodeText.ToString());
-                            QuickSynthMax = Convert.ToInt32(maxTextNode->NodeText.ToString());
-                        }
-                        catch
-                        {
-
-                        }
-                        return true;
+                        QuickSynthCurrent = Convert.ToInt32(currentTextNode->NodeText.ToString());
+                        QuickSynthMax = Convert.ToInt32(maxTextNode->NodeText.ToString());
                     }
+                    catch
+                    {
+
+                    }
+                    return true;
                 }
                 else
                 {
@@ -171,94 +142,84 @@ namespace Artisan.CraftingLogic
                     QuickSynthMax = 0;
                 }
 
-                IntPtr synthWindow = Svc.GameGui.GetAddonByName("Synthesis", 1);
-                if (synthWindow == IntPtr.Zero)
+                var synthWindow = (AddonSynthesis*)Svc.GameGui.GetAddonByName("Synthesis", 1);
+                CharacterInfo.IsCrafting = synthWindow != null && synthWindow->AtkUnitBase.AtkValuesCount >= 26 && synthWindow->AtkUnitBase.UldManager.NodeListCount > 99;
+                if (!CharacterInfo.IsCrafting)
                 {
-                    CurrentStep = 0;
-                    CharacterInfo.IsCrafting = false;
+                    ClearCraft();
                     return false;
                 }
 
-                var craft = Marshal.PtrToStructure<AddonSynthesis>(synthWindow);
-                if (craft.Equals(default(AddonSynthesis))) return false;
-                if (craft.ItemName == null) { CraftingWindowOpen = false; return false; }
+                DoingTrial = synthWindow->AtkUnitBase.UldManager.NodeList[99]->IsVisible;
 
-                CraftingWindowOpen = true;
-
-                var cd = *craft.CurrentDurability;
-                var md = *craft.StartingDurability;
-                var mp = *craft.MaxProgress;
-                var cp = *craft.CurrentProgress;
-                var cq = *craft.CurrentQuality;
-                var mq = *craft.MaxQuality;
-                var hqp = *craft.HQPercentage;
-                var cond = *craft.Condition;
-                var cs = *craft.StepNumber;
-                var hql = *craft.HQLiteral;
-                var collectLow = *craft.CollectabilityLow;
-                var collectMid = *craft.CollectabilityMid;
-                var collectHigh = *craft.CollectabilityHigh;
-                var item = *craft.ItemName;
-
-                DoingTrial = craft.AtkUnitBase.UldManager.NodeList[99]->IsVisible;
-                CharacterInfo.IsCrafting = true;
-                CurrentDurability = Convert.ToInt32(cd.NodeText.ToString());
-                MaxDurability = Convert.ToInt32(md.NodeText.ToString());
-                CurrentProgress = Convert.ToInt32(cp.NodeText.ToString());
-                MaxProgress = Convert.ToInt32(mp.NodeText.ToString());
-                CurrentQuality = Convert.ToInt32(cq.NodeText.ToString());
-                MaxQuality = Convert.ToInt32(mq.NodeText.ToString());
-                ItemName = item.NodeText.ExtractText();
-                //ItemName = ItemName.Remove(ItemName.Length - 10, 10);
-                if (ItemName[^1] == '')
+                var itemID = synthWindow->AtkUnitBase.AtkValues[16].UInt;
+                var classID = CharacterInfo.JobID - Job.CRP;
+                if (CurCraftState == null || CurrentRecipe == null || CurrentRecipe.ItemResult.Row != itemID || CurrentRecipe.CraftType.Row != classID)
                 {
-                    ItemName = ItemName.Remove(ItemName.Length - 1, 1).Trim();
-                }
-
-                if (CurrentRecipe is null || CurrentRecipe.ItemResult.Value.Name.ExtractText() != ItemName)
-                {
-                    var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.ExtractText().Equals(ItemName) && x.CraftType.Value.RowId == CharacterInfo.JobID - Job.CRP).FirstOrDefault();
-                    if (sheetItem != null)
+                    CurrentRecipe = Svc.Data.GetExcelSheet<Recipe>()?.FirstOrDefault(r => r.ItemResult.Row == itemID && r.CraftType.Row == classID);
+                    if (CurrentRecipe == null)
                     {
-                        CurrentRecipe = sheetItem;
+                        Svc.Log.Error($"Failed to find recipe for {CharacterInfo.JobID} #{itemID}");
+                        ClearCraft();
+                        return false;
                     }
-                }
-                if (CurrentRecipe != null)
-                {
-                    if (CurrentRecipe.CanHq)
+                    CanHQ = CurrentRecipe.CanHq;
+
+                    var lt = CurrentRecipe.RecipeLevelTable.Value;
+                    var weapon = Svc.Data.GetExcelSheet<Item>()?.GetRow(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemID);
+                    CurCraftState = new()
                     {
-                        CanHQ = true;
-                        HighQualityPercentage = Convert.ToInt32(hqp.NodeText.ToString());
+                        StatCraftsmanship = CharacterInfo.Craftsmanship,
+                        StatControl = CharacterInfo.Control,
+                        StatCP = (int)CharacterInfo.MaxCP,
+                        StatLevel = CharacterInfo.CharacterLevel ?? 0,
+                        UnlockedManipulation = CharacterInfo.IsManipulationUnlocked(),
+                        Specialist = InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 13)->ItemID != 0, // specialist == job crystal equipped
+                        Splendorous = weapon?.LevelEquip == 90 && weapon?.Rarity >= 4,
+                        CraftExpert = CurrentRecipe.IsExpert,
+                        CraftLevel = lt?.ClassJobLevel ?? 0,
+                        CraftDurability = lt?.Durability * CurrentRecipe.DurabilityFactor / 100 ?? 0, // atkvalue[8]
+                        CraftProgress = lt?.Difficulty * CurrentRecipe.DifficultyFactor / 100 ?? 0, // atkvalue[6]
+                        CraftProgressDivider = lt?.ProgressDivider ?? 180,
+                        CraftProgressModifier = lt?.ProgressModifier ?? 100,
+                        CraftQualityDivider = lt?.QualityDivider ?? 180,
+                        CraftQualityModifier = lt?.QualityModifier ?? 180,
+                        CraftQualityMax = (int)(lt?.Quality * CurrentRecipe.QualityFactor / 100 ?? 0), // atkvalue[17]
+                    };
+                    if (synthWindow->AtkUnitBase.AtkValues[22].UInt != 0)
+                    {
+                        // three quality levels
+                        CurCraftState.CraftQualityMin1 = synthWindow->AtkUnitBase.AtkValues[22].Int * 10;
+                        CurCraftState.CraftQualityMin2 = synthWindow->AtkUnitBase.AtkValues[23].Int * 10;
+                        CurCraftState.CraftQualityMin3 = synthWindow->AtkUnitBase.AtkValues[24].Int * 10;
+                    }
+                    else if (synthWindow->AtkUnitBase.AtkValues[18].Int != 0)
+                    {
+                        // min quality => assume no point in having more
+                        CurCraftState.CraftQualityMin1 = CurCraftState.CraftQualityMin2 = CurCraftState.CraftQualityMin3 = synthWindow->AtkUnitBase.AtkValues[18].Int;
                     }
                     else
                     {
-                        CanHQ = false;
-                        HighQualityPercentage = 0;
+                        // normal craft
+                        CurCraftState.CraftQualityMin1 = 0;
+                        CurCraftState.CraftQualityMin2 = CurCraftState.CraftQualityMin3 = CanHQ ? CurCraftState.CraftQualityMax : 0;
                     }
                 }
 
+                HighQualityPercentage = CanHQ ? synthWindow->AtkUnitBase.AtkValues[10].Int : 0;
 
-                CurrentCondition = Condition.Unknown;
-                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[229].Text.RawString) CurrentCondition = Condition.Poor;
-                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[227].Text.RawString) CurrentCondition = Condition.Good;
-                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[226].Text.RawString) CurrentCondition = Condition.Normal;
-                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[228].Text.RawString) CurrentCondition = Condition.Excellent;
-                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[239].Text.RawString) CurrentCondition = Condition.Centered;
-                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[240].Text.RawString) CurrentCondition = Condition.Sturdy;
-                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[241].Text.RawString) CurrentCondition = Condition.Pliant;
-                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[13455].Text.RawString) CurrentCondition = Condition.Malleable;
-                if (cond.NodeText.ToString() == LuminaSheets.AddonSheet[13454].Text.RawString) CurrentCondition = Condition.Primed;
-                if (LuminaSheets.AddonSheet.ContainsKey(14214) && cond.NodeText.ToString() == LuminaSheets.AddonSheet[14214].Text.RawString) CurrentCondition = Condition.GoodOmen;
-
-                CurrentStep = Convert.ToInt32(cs.NodeText.ToString());
-                HQLiteral = hql.NodeText.ToString();
-                CollectabilityLow = collectLow.NodeText.ToString().GetNumbers().Length == 0 ? "0" : collectLow.NodeText.ToString().GetNumbers();
-                CollectabilityMid = collectMid.NodeText.ToString().GetNumbers().Length == 0 ? "0" : collectMid.NodeText.ToString().GetNumbers();
-                CollectabilityHigh = collectHigh.NodeText.ToString().GetNumbers().Length == 0 ? "0" : collectHigh.NodeText.ToString().GetNumbers();
+                if (CurStepState == null || JustUsedAction)
+                {
+                    UpdateStep(synthWindow);
+                    JustUsedAction = false;
+                }
+                else if (CurStepState.Index != synthWindow->AtkUnitBase.AtkValues[15].Int || CurStepState.Condition != (Condition)synthWindow->AtkUnitBase.AtkValues[12].Int || CurStepState.PrevComboAction != PreviousAction)
+                {
+                    Svc.Log.Error("Unexpected step change without recorded action");
+                    UpdateStep(synthWindow);
+                }
 
                 return true;
-
-
             }
             catch (Exception ex)
             {
@@ -266,5 +227,60 @@ namespace Artisan.CraftingLogic
                 return false;
             }
         }
+
+        private static void ClearCraft()
+        {
+            bool wasActive = CurCraftState != null;
+
+            CurrentRecipe = null;
+            CurCraftState = null;
+            CurStepState = null;
+            PrevStepStates.Clear();
+            CurrentRecommendation = Skills.None;
+
+            DoingTrial = false;
+            JustUsedAction = false;
+
+            if (wasActive)
+                StepChanged.Invoke();
+        }
+
+        private static void UpdateStep(AddonSynthesis* synth)
+        {
+            if (CurStepState != null)
+                PrevStepStates.Add(CurStepState);
+
+            CurStepState = new()
+            {
+                Index = synth->AtkUnitBase.AtkValues[15].Int,
+                Progress = synth->AtkUnitBase.AtkValues[5].Int,
+                Quality = synth->AtkUnitBase.AtkValues[9].Int,
+                Durability = synth->AtkUnitBase.AtkValues[7].Int,
+                RemainingCP = (int)CharacterInfo.CurrentCP,
+                Condition = (Condition)synth->AtkUnitBase.AtkValues[12].Int,
+                IQStacks = GetStatus(Buffs.InnerQuiet)?.Param ?? 0,
+                WasteNotLeft = GetStatus(Buffs.WasteNot2)?.Param ?? GetStatus(Buffs.WasteNot)?.Param ?? 0,
+                ManipulationLeft = GetStatus(Buffs.Manipulation)?.Param ?? 0,
+                GreatStridesLeft = GetStatus(Buffs.GreatStrides)?.Param ?? 0,
+                InnovationLeft = GetStatus(Buffs.Innovation)?.Param ?? 0,
+                VenerationLeft = GetStatus(Buffs.Veneration)?.Param ?? 0,
+                MuscleMemoryLeft = GetStatus(Buffs.MuscleMemory)?.Param ?? 0,
+                FinalAppraisalLeft = GetStatus(Buffs.FinalAppraisal)?.Param ?? 0,
+                CarefulObservationLeft = P.Config.UseSpecialist && CanUse(Skills.CarefulObservation) ? 1 : 0,
+                HeartAndSoulActive = GetStatus(Buffs.HeartAndSoul) != null,
+                HeartAndSoulAvailable = P.Config.UseSpecialist && CanUse(Skills.HeartAndSoul),
+                PrevComboAction = PreviousAction,
+            };
+
+            StepChanged.Invoke();
+        }
+
+        public unsafe static bool CanUse(Skills id)
+        {
+            var actionId = id.ActionId(CharacterInfo.JobID);
+            return actionId != 0 ? ActionManager.Instance()->GetActionStatus(actionId >= 100000 ? ActionType.CraftAction : ActionType.Action, actionId) == 0 : false;
+        }
+
+        private static Dalamud.Game.ClientState.Statuses.Status? GetStatus(uint statusID) => Svc.ClientState.LocalPlayer?.StatusList.FirstOrDefault(s => s.StatusId == statusID);
     }
 }

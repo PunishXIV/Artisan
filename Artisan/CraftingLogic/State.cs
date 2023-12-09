@@ -1,16 +1,20 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation.Character;
 
-namespace Artisan.CraftingLogic.ExpertSolver;
+namespace Artisan.CraftingLogic;
 
 public class CraftState
 {
+    // player stats
     public int StatCraftsmanship;
     public int StatControl;
     public int StatCP;
     public int StatLevel;
+    public bool UnlockedManipulation;
     public bool Specialist;
     public bool Splendorous;
+
+    // recipe stats
     public bool CraftExpert;
     public int CraftLevel; // Recipe.RecipeLevelTable.ClassJobLevel
     public int CraftDurability; // Recipe.RecipeLevelTable.Durability * Recipe.DurabilityFactor / 100
@@ -23,12 +27,12 @@ public class CraftState
     public int CraftQualityMin1; // min/first breakpoint
     public int CraftQualityMin2;
     public int CraftQualityMin3;
-    public double[] CraftConditionProbabilities = { }; // TODO: this assumes that new condition does not depend on prev - this is what my preliminary findings suggest (except for forced transitions)
+    public float[] CraftConditionProbabilities = { }; // TODO: this assumes that new condition does not depend on prev - this is what my preliminary findings suggest (except for forced transitions)
 
-    public static double[] NormalCraftConditionProbabilities(int statLevel) => [0, 1, statLevel >= 63 ? 0.25 : 0.2, 0.04];
-    public static double[] EWRelicT1CraftConditionProbabilities() => [0, 1, 0.03, 0, 0.12, 0.12, 0.12, 0, 0, 0.12];
-    public static double[] EWRelicT2CraftConditionProbabilities() => [0, 1, 0.04, 0, 0, 0.15, 0.12, 0.12, 0.15, 0.12];
-    public static double[] EW5StarCraftConditionProbabilities() => [0, 1, 0.04, 0, 0.12, 0.12, 0.10, 0.10, 0.12, 0.12];
+    public static float[] NormalCraftConditionProbabilities(int statLevel) => [1, statLevel >= 63 ? 0.25f : 0.2f, 0.04f];
+    public static float[] EWRelicT1CraftConditionProbabilities() => [1, 0.03f, 0, 0, 0.12f, 0.12f, 0.12f, 0, 0, 0.12f];
+    public static float[] EWRelicT2CraftConditionProbabilities() => [1, 0.04f, 0, 0, 0, 0.15f, 0.12f, 0.12f, 0.15f, 0.12f];
+    public static float[] EW5StarCraftConditionProbabilities() => [1, 0.04f, 0, 0, 0.12f, 0.12f, 0.10f, 0.10f, 0.12f, 0.12f];
 }
 
 public class StepState
@@ -51,6 +55,4 @@ public class StepState
     public bool HeartAndSoulActive;
     public bool HeartAndSoulAvailable;
     public Skills PrevComboAction;
-    public double ActionSuccessRoll;
-    public double NextStateRoll;
 }

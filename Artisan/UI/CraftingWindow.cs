@@ -1,18 +1,16 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
-using Artisan.CraftingLogic.ExpertSolver;
+using Artisan.CraftingLogic;
 using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Style;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
 using System;
 using System.Linq;
-using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan.UI
 {
@@ -61,14 +59,14 @@ namespace Artisan.UI
         public override void Draw()
         {
             if (!P.Config.DisableHighlightedAction)
-                Hotbars.MakeButtonsGlow(CurrentRecommendation);
+                Hotbars.MakeButtonsGlow(CurrentCraft.CurrentRecommendation);
 
             if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
             {
                 P.PluginUi.IsOpen = true;
             }
 
-            if (CurrentRecipe is not null && CurrentRecipe.IsExpert && !P.Config.IRM.ContainsKey(CurrentRecipe.RowId))
+            if (CurrentCraft.CurrentRecipe is not null && CurrentCraft.CurrentRecipe.IsExpert && !P.Config.IRM.ContainsKey(CurrentCraft.CurrentRecipe.RowId))
             {
                 ImGui.Dummy(new System.Numerics.Vector2(12f));
                 if (!P.Config.ExpertSolverConfig.Enabled)
@@ -77,9 +75,9 @@ namespace Artisan.UI
                     ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is an expert recipe. You are using the experimental solver currently. Your success rate may vary.", this.SizeConstraints?.MaximumSize.X ?? 0);
             }
 
-            if (CurrentRecipe is not null && CurrentRecipe.SecretRecipeBook.Row > 0 && CurrentRecipe.RecipeLevelTable.Value.ClassJobLevel == CharacterInfo.CharacterLevel && !P.Config.IRM.ContainsKey(CurrentRecipe.RowId))
+            if (CurrentCraft.CurrentRecipe is not null && CurrentCraft.CurrentRecipe.SecretRecipeBook.Row > 0 && CurrentCraft.CurrentRecipe.RecipeLevelTable.Value.ClassJobLevel == CharacterInfo.CharacterLevel && !P.Config.IRM.ContainsKey(CurrentCraft.CurrentRecipe.RowId))
             {
-                if (!CurrentRecipe.IsExpert)
+                if (!CurrentCraft.CurrentRecipe.IsExpert)
                 {
                     ImGui.Dummy(new System.Numerics.Vector2(12f));
                     ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.", this.SizeConstraints?.MaximumSize.X ?? 0);
@@ -120,15 +118,15 @@ namespace Artisan.UI
                 }
             }
 
-            if (!Endurance.Enable && DoingTrial)
+            if (!Endurance.Enable && CurrentCraft.DoingTrial)
                 ImGui.Checkbox("Trial Craft Repeat", ref repeatTrial);
 
             if (P.Config.IRM.ContainsKey((uint)Endurance.RecipeID))
             {
                 var macro = P.Config.UserMacros.FirstOrDefault(x => x.ID == P.Config.IRM[(uint)Endurance.RecipeID]);
-                ImGui.TextWrapped($"Using Macro: {macro.Name} ({(MacroStep >= macro.MacroActions.Count ? macro.MacroActions.Count : MacroStep + 1)}/{macro.MacroActions.Count})");
+                ImGui.TextWrapped($"Using Macro: {macro.Name} ({(CurrentCraft.MacroStep >= macro.MacroActions.Count ? macro.MacroActions.Count : CurrentCraft.MacroStep + 1)}/{macro.MacroActions.Count})");
 
-                if (MacroStep >= macro.MacroActions.Count)
+                if (CurrentCraft.MacroStep >= macro.MacroActions.Count)
                 {
                     ImGui.TextWrapped($"Macro has completed. {(!P.Config.DisableMacroArtisanRecommendation ? "Now continuing with solver." : "Please continue to manually craft.")}");
                 }
@@ -161,12 +159,12 @@ namespace Artisan.UI
 
                 if (ImGui.Button("Execute recommended action"))
                 {
-                    Hotbars.ExecuteRecommended(CurrentRecommendation);
+                    Hotbars.ExecuteRecommended(CurrentCraft.CurrentRecommendation);
                 }
                 if (ImGui.Button("Fetch Recommendation"))
                 {
                     Artisan.Tasks.Clear();
-                    FetchRecommendation(CurrentStep);
+                    FetchRecommendation();
                 }
             }
         }

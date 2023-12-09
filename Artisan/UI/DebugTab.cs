@@ -117,37 +117,37 @@ namespace Artisan.UI
                     }
                 }
 
-                if (ImGui.CollapsingHeader("Crafting Stats"))
+                if (ImGui.CollapsingHeader("Crafting Stats") && CurrentCraft.CurCraftState != null && CurrentCraft.CurStepState != null)
                 {
-                    SolverLogic.BestSynthesis(out var act);
-                    ImGui.Text($"Control: {CharacterInfo.Control}");
-                    ImGui.Text($"Craftsmanship: {CharacterInfo.Craftsmanship}");
-                    ImGui.Text($"Current Durability: {CurrentCraft.CurrentDurability}");
-                    ImGui.Text($"Max Durability: {CurrentCraft.MaxDurability}");
-                    ImGui.Text($"Current Progress: {CurrentCraft.CurrentProgress}");
-                    ImGui.Text($"Max Progress: {CurrentCraft.MaxProgress}");
-                    ImGui.Text($"Current Quality: {CurrentCraft.CurrentQuality}");
-                    ImGui.Text($"Max Quality: {CurrentCraft.MaxQuality}");
+                    ImGui.Text($"Control: {CurrentCraft.CurCraftState.StatControl}");
+                    ImGui.Text($"Craftsmanship: {CurrentCraft.CurCraftState.StatCraftsmanship}");
+                    ImGui.Text($"Current Durability: {CurrentCraft.CurStepState.Durability}");
+                    ImGui.Text($"Max Durability: {CurrentCraft.CurCraftState.CraftDurability}");
+                    ImGui.Text($"Current Progress: {CurrentCraft.CurStepState.Progress}");
+                    ImGui.Text($"Max Progress: {CurrentCraft.CurCraftState.CraftProgress}");
+                    ImGui.Text($"Current Quality: {CurrentCraft.CurStepState.Quality}");
+                    ImGui.Text($"Max Quality: {CurrentCraft.CurCraftState.CraftQualityMax}");
                     ImGui.Text($"Quality Percent: {Calculations.GetHQChance()}");
-                    ImGui.Text($"Item name: {CurrentCraft.ItemName}");
-                    ImGui.Text($"Current Condition: {CurrentCraft.CurrentCondition}");
-                    ImGui.Text($"Current Step: {CurrentCraft.CurrentStep}");
+                    ImGui.Text($"Item name: {CurrentCraft.CurrentRecipe?.ItemResult.Value?.Name}");
+                    ImGui.Text($"Current Condition: {CurrentCraft.CurStepState.Condition}");
+                    ImGui.Text($"Current Step: {CurrentCraft.CurStepState.Index}");
                     ImGui.Text($"Current Quick Synth Step: {CurrentCraft.QuickSynthCurrent}");
                     ImGui.Text($"Max Quick Synth Step: {CurrentCraft.QuickSynthMax}");
-                    ImGui.Text($"GS+ByregotCombo: {Calculations.GreatStridesByregotCombo()}");
-                    ImGui.Text($"Base Quality: {Calculations.BaseQuality()}");
-                    ImGui.Text($"Predicted Quality: {Calculations.CalculateNewQuality(CurrentCraft.CurrentRecommendation)}");
-                    ImGui.Text($"Predicted Progress: {Calculations.CalculateNewProgress(CurrentCraft.CurrentRecommendation)}");
+                    ImGui.Text($"GS+ByregotCombo: {SolverLogic.GreatStridesByregotCombo(CurrentCraft.CurCraftState, CurrentCraft.CurStepState)}");
+                    ImGui.Text($"Base Quality: {Simulator.BaseQuality(CurrentCraft.CurCraftState)}");
+                    ImGui.Text($"Base Progress: {Simulator.BaseProgress(CurrentCraft.CurCraftState)}");
+                    ImGui.Text($"Predicted Quality: {SolverLogic.CalculateNewQuality(CurrentCraft.CurCraftState, CurrentCraft.CurStepState, CurrentCraft.CurrentRecommendation)}");
+                    ImGui.Text($"Predicted Progress: {SolverLogic.CalculateNewProgress(CurrentCraft.CurCraftState, CurrentCraft.CurStepState, CurrentCraft.CurrentRecommendation)}");
                     ImGui.Text($"Macro Step: {CurrentCraft.MacroStep}");
-                    ImGui.Text($"Collectibility Low: {CurrentCraft.CollectabilityLow}");
-                    ImGui.Text($"Collectibility Mid: {CurrentCraft.CollectabilityMid}");
-                    ImGui.Text($"Collectibility High: {CurrentCraft.CollectabilityHigh}");
+                    ImGui.Text($"Collectibility Low: {CurrentCraft.CurCraftState.CraftQualityMin1}");
+                    ImGui.Text($"Collectibility Mid: {CurrentCraft.CurCraftState.CraftQualityMin2}");
+                    ImGui.Text($"Collectibility High: {CurrentCraft.CurCraftState.CraftQualityMin3}");
                     ImGui.Text($"Crafting State: {CurrentCraft.State}");
-                    ImGui.Text($"Can Finish: {SolverLogic.CanFinishCraft(act)}");
-                    ImGui.Text($"Current Rec: {CurrentCraft.RecommendationName}");
+                    ImGui.Text($"Can Finish: {SolverLogic.CanFinishCraft(CurrentCraft.CurCraftState, CurrentCraft.CurStepState, SolverLogic.BestSynthesis(CurrentCraft.CurCraftState, CurrentCraft.CurStepState))}");
+                    ImGui.Text($"Current Rec: {CurrentCraft.CurrentRecommendation.NameOfAction()}");
                     ImGui.Text($"Previous Action: {CurrentCraft.PreviousAction.NameOfAction()}");
                     ImGui.Text($"Tasks?: {Artisan.Tasks.Count}");
-                    ImGui.Text($"{CurrentCraft.CurrentStep == 1 && Calculations.CalculateNewProgress(Skills.DelicateSynthesis) >= CurrentCraft.MaxProgress && Calculations.CalculateNewQuality(Skills.DelicateSynthesis) >= CurrentCraft.MaxQuality}");
+                    ImGui.Text($"Can insta delicate: {CurrentCraft.CurStepState.Index == 1 && SolverLogic.CanFinishCraft(CurrentCraft.CurCraftState, CurrentCraft.CurStepState, Skills.DelicateSynthesis) && SolverLogic.CalculateNewQuality(CurrentCraft.CurCraftState, CurrentCraft.CurStepState, Skills.DelicateSynthesis) >= CurrentCraft.CurCraftState.CraftQualityMin3}");
                 }
 
                 if (ImGui.CollapsingHeader("Spiritbonds"))
@@ -254,11 +254,11 @@ namespace Artisan.UI
 
                 if (ImGui.Button($"Open And Quick Synth"))
                 {
-                    SolverLogic.QuickSynthItem(DebugValue);
+                    CraftingOperations.QuickSynthItem(DebugValue);
                 }
                 if (ImGui.Button($"Close Quick Synth Window"))
                 {
-                    SolverLogic.CloseQuickSynthWindow();
+                    CraftingOperations.CloseQuickSynthWindow();
                 }
                 if (ImGui.Button($"Open Materia Window"))
                 {
