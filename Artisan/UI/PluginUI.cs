@@ -2,7 +2,6 @@
 using Artisan.CraftingLists;
 using Artisan.FCWorkshops;
 using Artisan.IPC;
-using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface;

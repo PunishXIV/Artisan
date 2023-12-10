@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Artisan.RawInformation.Character;
+using Lumina.Excel.GeneratedSheets;
+using System;
 using System.Collections.Generic;
 
 namespace Artisan.CraftingLogic
@@ -22,6 +24,41 @@ namespace Artisan.CraftingLogic
                 percent = 100;
 
             return HQChance[(int)percent];
+        }
+
+        public static int RecipeDifficulty(Recipe recipe) => recipe.RecipeLevelTable.Value?.Difficulty * recipe.DifficultyFactor / 100 ?? 0;
+        public static int RecipeMaxQuality(Recipe recipe) => (int)(recipe.RecipeLevelTable.Value?.Quality * recipe.QualityFactor / 100 ?? 0);
+        public static int RecipeDurability(Recipe recipe) => recipe.RecipeLevelTable.Value?.Durability * recipe.DurabilityFactor / 100 ?? 0;
+
+        public static bool ActionIsLengthyAnimation(this Skills id)
+        {
+            switch (id)
+            {
+                case Skills.BasicSynthesis:
+                case Skills.RapidSynthesis:
+                case Skills.MuscleMemory:
+                case Skills.CarefulSynthesis:
+                case Skills.FocusedSynthesis:
+                case Skills.Groundwork:
+                case Skills.DelicateSynthesis:
+                case Skills.IntensiveSynthesis:
+                case Skills.PrudentSynthesis:
+                case Skills.BasicTouch:
+                case Skills.HastyTouch:
+                case Skills.StandardTouch:
+                case Skills.PreciseTouch:
+                case Skills.PrudentTouch:
+                case Skills.FocusedTouch:
+                case Skills.Reflect:
+                case Skills.PreparatoryTouch:
+                case Skills.AdvancedTouch:
+                case Skills.TrainedFinesse:
+                case Skills.ByregotsBlessing:
+                case Skills.MastersMend:
+                    return true;
+                default:
+                    return false;
+            };
         }
     }
 }

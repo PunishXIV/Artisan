@@ -1,13 +1,12 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 using static Artisan.RawInformation.AddonExtensions;
 
-namespace Artisan.CraftingLogic.ExpertSolver;
+namespace Artisan.CraftingLogic.Solvers;
 
-public class Settings
+public class ExpertSolverSettings
 {
     public bool Enabled = true;
     public bool UseReflectOpener;

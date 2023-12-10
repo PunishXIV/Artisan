@@ -1,6 +1,5 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
-using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.Sounds;
@@ -578,11 +577,11 @@ namespace Artisan.Autocraft
 
         private static void UpdateMacroTimer()
         {
-            if (P.Config.CraftingX && P.Config.CraftX > 0 && P.Config.IRM.ContainsKey(RecipeID))
+            if (P.Config.CraftingX && P.Config.CraftX > 0)
             {
-                var macro = P.Config.UserMacros.FirstOrDefault(x => x.ID == P.Config.IRM[RecipeID]);
-                double timeInSeconds = macro != null ? MacroUI.GetMacroLength(macro) * P.Config.CraftX : 0; // Counting crafting duration + 2 seconds between crafts.
-                CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
+                var recipe = Svc.Data.GetExcelSheet<Recipe>()?.GetRow(RecipeID);
+                if (recipe != null)
+                    CraftingWindow.MacroTime = P.Config.CraftX * CurrentCraft.EstimateCraftTime(recipe, CurrentCraft.BuildCraftStateForRecipe(recipe));
             }
         }
     }

@@ -66,7 +66,7 @@ namespace Artisan.CraftingLists
         {
             var rng = new Random();
             var proposedRNG = rng.Next(1, 50000);
-            while (P.Config.UserMacros.Where(x => x.ID == proposedRNG).Any())
+            while (P.Config.CraftingLists.Where(x => x.ID == proposedRNG).Any())
             {
                 proposedRNG = rng.Next(1, 50000);
             }

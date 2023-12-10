@@ -1,5 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.CraftingLogic;
 using Artisan.FCWorkshops;
 using Artisan.IPC;
 using Artisan.RawInformation;
@@ -7,6 +8,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ECommons;
 using ECommons.ChatMethods;
@@ -646,31 +648,32 @@ namespace Artisan
                 {
                     ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, $@"Warning: You have the ""Auto Focus Recipe Search"" SimpleTweak enabled. This is highly incompatible with Artisan and is recommended to disable it.");
                 }
-                if (P.Config.UserMacros.Count > 0)
+                if (Endurance.RecipeID != 0)
                 {
-                    if (Endurance.RecipeID != 0)
+                    ImGui.Text($"Use a macro for this recipe ({Endurance.RecipeName})");
+                    var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
+                    var craft = CurrentCraft.BuildCraftStateForRecipe(recipe);
+                    var s = P.GetSolverForRecipe(Endurance.RecipeID, craft);
+                    if (ImGui.BeginCombo("", s.solver.Name(s.flavour)))
                     {
-                        ImGui.Text($"Use a macro for this recipe ({Endurance.RecipeName})");
-                        string? preview = P.Config.IRM.TryGetValue((uint)Endurance.RecipeID, out var prevMacro) ? P.Config.UserMacros.First(x => x.ID == prevMacro).Name : "";
-                        if (ImGui.BeginCombo("", preview))
+                        foreach (var opt in P.GetAvailableSolversForRecipe(craft, true))
                         {
-                            if (ImGui.Selectable(""))
+                            bool selected = opt.solver == s.solver && opt.flavour == s.flavour;
+                            if (ImGui.Selectable(opt.solver.Name(opt.flavour), selected))
                             {
-                                P.Config.IRM.Remove((uint)Endurance.RecipeID);
+                                P.Config.RecipeSolverAssignment[Endurance.RecipeID] = (opt.solver.GetType().FullName!, opt.flavour);
                                 P.Config.Save();
                             }
-                            foreach (var macro in P.Config.UserMacros)
-                            {
-                                bool selected = P.Config.IRM.TryGetValue((uint)Endurance.RecipeID, out var selectedMacro);
-                                if (ImGui.Selectable(macro.Name, selected))
-                                {
-                                    P.Config.IRM[(uint)Endurance.RecipeID] = macro.ID;
-                                    P.Config.Save();
-                                }
-                            }
-
-                            ImGui.EndCombo();
                         }
+
+                        ImGui.EndCombo();
+                    }
+
+                    var hq = CurrentCraft.EstimateHQPercent(recipe, craft); // TODO: use starting quality from currently selected hq mats
+                    if (hq < 100)
+                    {
+                        using var c = ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.DalamudRed);
+                        ImGui.TextUnformatted($"Warning: this solver will HQ only {hq}% of time");
                     }
                 }
 

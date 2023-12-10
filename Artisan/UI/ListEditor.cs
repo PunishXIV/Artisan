@@ -11,6 +11,7 @@ using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using global::Artisan.CraftingLogic.Solvers;
 using global::Artisan.UI.Tables;
 using ImGuiNET;
 using IPC;
@@ -948,29 +949,28 @@ internal class ListEditor : Window, IDisposable
             }
         }
 
-        if (P.Config.UserMacros.Count > 0)
+        if (P.Config.MacroSolverConfig.Macros.Count > 0)
         {
             ImGui.TextWrapped("Use a macro for this recipe");
 
-            var preview = P.Config.IRM.TryGetValue(selectedListItem, out var prevMacro)
-                              ? P.Config.UserMacros.First(x => x.ID == prevMacro).Name
+            var preview = P.Config.RecipeSolverAssignment.TryGetValue(selectedListItem, out var prevAssignment) && prevAssignment.type == typeof(MacroSolver).FullName
+                              ? P.Config.MacroSolverConfig.FindMacro(prevAssignment.flavour)?.Name ?? ""
                               : string.Empty;
             ImGuiEx.SetNextItemFullWidth(-30);
             if (ImGui.BeginCombo(string.Empty, preview))
             {
                 if (ImGui.Selectable(string.Empty))
                 {
-                    P.Config.IRM.Remove(selectedListItem);
+                    P.Config.RecipeSolverAssignment.Remove(selectedListItem);
                     P.Config.Save();
                 }
 
-                foreach (var macro in P.Config.UserMacros)
+                foreach (var macro in P.Config.MacroSolverConfig.Macros)
                 {
-                    var selected = P.Config.IRM.TryGetValue(selectedListItem, out var selectedMacro)
-                                   && macro.ID == selectedMacro;
+                    var selected = prevAssignment.type == typeof(MacroSolver).FullName && prevAssignment.flavour == macro.ID;
                     if (ImGui.Selectable(macro.Name, selected))
                     {
-                        P.Config.IRM[selectedListItem] = macro.ID;
+                        P.Config.RecipeSolverAssignment[selectedListItem] = (typeof(MacroSolver).FullName!, macro.ID);
                         P.Config.Save();
                     }
                 }

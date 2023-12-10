@@ -1,5 +1,4 @@
 ﻿using Artisan.CraftingLogic;
-using Artisan.MacroSystem;
 using Artisan.RawInformation.Character;
 using Dalamud.Hooking;
 using ECommons.Automation;
@@ -28,26 +27,18 @@ namespace Artisan.RawInformation
             try
             {
                 if (BlockAction)
-                    return UseActionHook!.Original(actionManager, (uint)ActionType.Action, 7, targetObjectID, param, useType, pvp, isGroundTarget);
+                    return UseActionHook.Original(actionManager, (uint)ActionType.Action, 7, targetObjectID, param, useType, pvp, isGroundTarget);
 
                 if (actionManager->GetActionStatus((ActionType)actionType, actionID) == 0)
                 {
                     CurrentCraft.NotifyUsedAction(SkillActionMap.ActionToSkill(actionID));
-
-                    if (MacroFunctions.GetMacro(AgentRecipeNote.Instance()->ActiveCraftRecipeId) is var macro && macro != null)
-                    {
-                        if (CurrentCraft.MacroStep < macro.MacroActions.Count)
-                        {
-                            CurrentCraft.MacroStep++;
-                        }
-                    }
                 }
-                return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
+                return UseActionHook.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
             }
             catch (Exception ex)
             {
                 Svc.Log.Error(ex, "UseActionDetour");
-                return UseActionHook!.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
+                return UseActionHook.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
             }
         }
 

@@ -1,7 +1,7 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
-using Artisan.MacroSystem;
+using Artisan.CraftingLogic.Solvers;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface;
@@ -66,26 +66,28 @@ namespace Artisan.UI
                 P.PluginUi.IsOpen = true;
             }
 
-            if (CurrentCraft.CurrentRecipe is not null && CurrentCraft.CurrentRecipe.IsExpert && !P.Config.IRM.ContainsKey(CurrentCraft.CurrentRecipe.RowId))
-            {
-                ImGui.Dummy(new System.Numerics.Vector2(12f));
-                if (!P.Config.ExpertSolverConfig.Enabled)
-                    ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, "This is an expert recipe. It is strongly recommended to use an Artisan macro or manually solve this.", this.SizeConstraints?.MaximumSize.X ?? 0);
-                else
-                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is an expert recipe. You are using the experimental solver currently. Your success rate may vary.", this.SizeConstraints?.MaximumSize.X ?? 0);
-            }
+            var solver = CurrentCraft.CurrentRecipe != null && CurrentCraft.CurCraftState != null ? P.GetSolverForRecipe(CurrentCraft.CurrentRecipe.RowId, CurrentCraft.CurCraftState) : default;
 
-            if (CurrentCraft.CurrentRecipe is not null && CurrentCraft.CurrentRecipe.SecretRecipeBook.Row > 0 && CurrentCraft.CurrentRecipe.RecipeLevelTable.Value.ClassJobLevel == CharacterInfo.CharacterLevel && !P.Config.IRM.ContainsKey(CurrentCraft.CurrentRecipe.RowId))
+            if (CurrentCraft.CurrentRecipe?.IsExpert ?? false)
             {
-                if (!CurrentCraft.CurrentRecipe.IsExpert)
+                if (solver.solver is StandardSolver)
                 {
                     ImGui.Dummy(new System.Numerics.Vector2(12f));
-                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.", this.SizeConstraints?.MaximumSize.X ?? 0);
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, "This is an expert recipe. It is strongly recommended to use an Artisan macro or manually solve this.", this.SizeConstraints?.MaximumSize.X ?? 0);
                 }
+                else if (solver.solver is ExpertSolver)
+                {
+                    ImGui.Dummy(new System.Numerics.Vector2(12f));
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is an expert recipe. You are using the experimental solver currently. Your success rate may vary.", this.SizeConstraints?.MaximumSize.X ?? 0);
+                }
+            }
+            else if (CurrentCraft.CurrentRecipe?.SecretRecipeBook.Row > 0 && CurrentCraft.CurCraftState?.CraftLevel == CurrentCraft.CurCraftState?.StatLevel)
+            {
+                ImGui.Dummy(new System.Numerics.Vector2(12f));
+                ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.", this.SizeConstraints?.MaximumSize.X ?? 0);
             }
 
             bool autoMode = P.Config.AutoMode;
-
             if (ImGui.Checkbox("Auto Action Mode", ref autoMode))
             {
                 if (!autoMode)
@@ -109,7 +111,6 @@ namespace Artisan.UI
                 }
             }
 
-
             if (Endurance.RecipeID != 0 && !CraftingListUI.Processing && Endurance.Enable)
             {
                 if (ImGui.Button("Disable Endurance"))
@@ -121,36 +122,18 @@ namespace Artisan.UI
             if (!Endurance.Enable && CurrentCraft.DoingTrial)
                 ImGui.Checkbox("Trial Craft Repeat", ref repeatTrial);
 
-            if (P.Config.IRM.ContainsKey((uint)Endurance.RecipeID))
-            {
-                var macro = P.Config.UserMacros.FirstOrDefault(x => x.ID == P.Config.IRM[(uint)Endurance.RecipeID]);
-                ImGui.TextWrapped($"Using Macro: {macro.Name} ({(CurrentCraft.MacroStep >= macro.MacroActions.Count ? macro.MacroActions.Count : CurrentCraft.MacroStep + 1)}/{macro.MacroActions.Count})");
-
-                if (CurrentCraft.MacroStep >= macro.MacroActions.Count)
-                {
-                    ImGui.TextWrapped($"Macro has completed. {(!P.Config.DisableMacroArtisanRecommendation ? "Now continuing with solver." : "Please continue to manually craft.")}");
-                }
-            }
-            else
-            {
-                ImGui.TextColored(ImGuiColors.DalamudYellow, "No macro set");
-            }
+            var text = $"Using {solver.solver.Name(solver.flavour)}";
+            if (CurrentCraft.CurrentRecommendationComment.Length > 0)
+                text += $" ({CurrentCraft.CurrentRecommendationComment})";
+            ImGui.TextWrapped(text);
 
             if (P.Config.CraftingX && Endurance.Enable)
                 ImGui.Text($"Remaining Crafts: {P.Config.CraftX}");
 
-            if (P.Config.AutoMode)
+            if (P.Config.AutoMode && MacroTime.Ticks > 0)
             {
-                if (P.Config.IRM.TryGetValue((uint)Endurance.RecipeID, out var prevMacro))
-                {
-                    Macro? macro = P.Config.UserMacros.First(x => x.ID == prevMacro);
-                    if (macro != null)
-                    {
-                        string duration = string.Format("{0:D2}h {1:D2}m {2:D2}s", MacroTime.Hours, MacroTime.Minutes, MacroTime.Seconds);
-
-                        ImGui.Text($"Approximate Remaining Duration: {duration}");
-                    }
-                }
+                string duration = string.Format("{0:D2}h {1:D2}m {2:D2}s", MacroTime.Hours, MacroTime.Minutes, MacroTime.Seconds);
+                ImGui.Text($"Approximate Remaining Duration: {duration}");
             }
 
             if (!P.Config.AutoMode)
@@ -164,7 +147,7 @@ namespace Artisan.UI
                 if (ImGui.Button("Fetch Recommendation"))
                 {
                     Artisan.Tasks.Clear();
-                    FetchRecommendation();
+                    P.FetchRecommendation();
                 }
             }
         }

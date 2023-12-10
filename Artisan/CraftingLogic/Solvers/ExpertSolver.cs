@@ -1,8 +1,8 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation.Character;
-using ECommons.DalamudServices;
+using System.Collections.Generic;
 
-namespace Artisan.CraftingLogic.ExpertSolver;
+namespace Artisan.CraftingLogic.Solvers;
 
 // some thoughts:
 // - any time we want to regain some dura, we can bait pliant and use manip
@@ -45,9 +45,20 @@ namespace Artisan.CraftingLogic.ExpertSolver;
 // - after reaching 10iq, focus on quality instead - use gs/inno combos
 // -- consider what to do with progress: either force finish before starting quality (wastes good opportunities like centered later between combos) or just start quality combos immediately (harder to estimate needed cp to finish the craft)
 // - after reaching quality cap, just get progress
-public static class Solver
+public class ExpertSolver : ISolver
 {
-    public static (Skills, string) SolveNextStep(Settings cfg, CraftState craft, StepState step)
+    public string Name(int flavour) => "New expert solver (experimental)";
+
+    public IEnumerable<(int flavour, int priority, string unsupportedReason)> Flavours(CraftState craft)
+    {
+        if (craft.CraftExpert && P.Config.ExpertSolverConfig.Enabled)
+            yield return (0, 2, craft.StatLevel >= 90 ? "" : "Requires L90");
+    }
+
+    public (Skills action, string comment) Solve(CraftState craft, StepState step, List<StepState> prevSteps, int flavour) => SolveNextStep(P.Config.ExpertSolverConfig, craft, step);
+
+
+    public static (Skills, string) SolveNextStep(ExpertSolverSettings cfg, CraftState craft, StepState step)
     {
         if (step.Index == 1)
         {
@@ -93,7 +104,7 @@ public static class Solver
         return (SolveFinishProgress(craft, step), isMid ? "finish emergency" : "finish");
     }
 
-    private static Skills SolveOpenerMuMe(Settings cfg, CraftState craft, StepState step)
+    private static Skills SolveOpenerMuMe(ExpertSolverSettings cfg, CraftState craft, StepState step)
     {
         // we don't really have any concerns about cp or durability during mume - we might end up with quite low final durability though...
         var lastChance = step.MuscleMemoryLeft == 1; // if we don't use successful touch now, we'll waste mume
@@ -145,7 +156,7 @@ public static class Solver
     private static Skills SolveOpenerMuMeTouch(CraftState craft, StepState step, bool intensive)
         => !intensive ? Skills.RapidSynthesis : Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis) ? Skills.IntensiveSynthesis : step.HeartAndSoulAvailable ? Skills.HeartAndSoul : Skills.RapidSynthesis;
 
-    private static (Skills, string) SolveMid(Settings cfg, CraftState craft, StepState step, int progressDeficit, int availableCP)
+    private static (Skills, string) SolveMid(ExpertSolverSettings cfg, CraftState craft, StepState step, int progressDeficit, int availableCP)
     {
         var reservedCPForFinisher = 24 + 32 + (step.InnovationLeft > 2 ? 0 : 18); // we'll need to get gs up for byregot and maybe reapply inno if we do not go for the quality finisher now
         if (step.IQStacks < 10 || progressDeficit > 0 && cfg.MidFinishProgressBeforeQuality)
@@ -162,7 +173,7 @@ public static class Solver
         }
     }
 
-    private static (Skills, string) SolveMidPreQuality(Settings cfg, CraftState craft, StepState step, int progressDeficit, int availableCP)
+    private static (Skills, string) SolveMidPreQuality(ExpertSolverSettings cfg, CraftState craft, StepState step, int progressDeficit, int availableCP)
     {
         // build up iq, or finish up progress before moving to quality
         // see if there are nice conditions to exploit
@@ -223,7 +234,7 @@ public static class Solver
         return (Skills.Observe, "mid pre quality: no options");
     }
 
-    private static (Skills, string) SolveMidStartQuality(Settings cfg, CraftState craft, StepState step, int progressDeficit, int availableCP, int reservedCP)
+    private static (Skills, string) SolveMidStartQuality(ExpertSolverSettings cfg, CraftState craft, StepState step, int progressDeficit, int availableCP, int reservedCP)
     {
         // no buffs up, this is a good chance to get some dura back if needed, and then get some iq/progress/quality, maybe start dedicated progress/quality phase
         // first see whether we have some nice conditions to exploit for progress or iq
@@ -288,7 +299,7 @@ public static class Solver
         return (Skills.Innovation, "mid start quality");
     }
 
-    private static (Skills, string) SolveMidQuality(Settings cfg, CraftState craft, StepState step, int availableCP, int reservedCP)
+    private static (Skills, string) SolveMidQuality(ExpertSolverSettings cfg, CraftState craft, StepState step, int availableCP, int reservedCP)
     {
         // some rough estimations (potency numbers are pre-iq for simplicity, since it just effectively doubles the base quality rate at this point):
         // - typically after iq stacks we need ~2250p worth of quality
@@ -465,7 +476,7 @@ public static class Solver
     }
 
     // TODO: consider waste-not...
-    private static Skills SolveMidDurabilityPreQuality(Settings cfg, CraftState craft, StepState step, int availableCP, bool allowObserveOnLowDura, bool wantProgress)
+    private static Skills SolveMidDurabilityPreQuality(ExpertSolverSettings cfg, CraftState craft, StepState step, int availableCP, bool allowObserveOnLowDura, bool wantProgress)
     {
         // during the mid phase, durability is a serious concern
         if (step.ManipulationLeft > 0 && step.Durability + 5 > craft.CraftDurability)
@@ -492,7 +503,7 @@ public static class Solver
             Condition.Malleable => !wantProgress, // this is useless if we don't need more progress
             _ => false
         };
-        var lowDurabilityThreshold = wantObserveOnLowDura ? (step.ManipulationLeft > 0 ? 20 : 25) : criticalDurabilityThreshold;
+        var lowDurabilityThreshold = wantObserveOnLowDura ? step.ManipulationLeft > 0 ? 20 : 25 : criticalDurabilityThreshold;
         if (step.Durability <= lowDurabilityThreshold)
         {
             // we really need to do something about durability, we don't even have useful actions to perform
@@ -511,7 +522,7 @@ public static class Solver
         return Skills.None;
     }
 
-    private static Skills SolveMidDurabilityStartQuality(Settings cfg, CraftState craft, StepState step, int availableCP)
+    private static Skills SolveMidDurabilityStartQuality(ExpertSolverSettings cfg, CraftState craft, StepState step, int availableCP)
     {
         // when we start doing quality, we do a lot of observes/buffs, so effective dura matters more than actual
         var effectiveDura = step.Durability + step.ManipulationLeft * 5;
@@ -551,7 +562,7 @@ public static class Solver
         return Skills.None;
     }
 
-    private static Skills SolveMidDurabilityQualityPliant(Settings cfg, CraftState craft, StepState step, int availableCP)
+    private static Skills SolveMidDurabilityQualityPliant(ExpertSolverSettings cfg, CraftState craft, StepState step, int availableCP)
     {
         var effectiveDura = step.Durability + step.ManipulationLeft * 5; // since we are going to use a lot of non-dura actions (buffs/observes), this is what really matters
         if (step.ManipulationLeft <= 1 && availableCP >= Simulator.GetCPCost(step, Skills.Manipulation) + EstimateCPToUtilizeDurabilityForQuality(effectiveDura, 4))
@@ -579,7 +590,7 @@ public static class Solver
         return Skills.None;
     }
 
-    private static Skills SolveMidHighPriorityIQ(Settings cfg, StepState step, bool allowPrecise)
+    private static Skills SolveMidHighPriorityIQ(ExpertSolverSettings cfg, StepState step, bool allowPrecise)
     {
         if (step.Condition is Condition.Good or Condition.Excellent && allowPrecise && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreciseTouch))
             return Skills.PreciseTouch;
@@ -730,7 +741,7 @@ public static class Solver
     public static Skills SafeCraftAction(CraftState craft, StepState step, Skills action) => Simulator.WillFinishCraft(craft, step, action) ? Skills.FinalAppraisal : action;
 
     // try to use tricks, if needed use h&s
-    public static Skills EmergencyRestoreCP(Settings cfg, CraftState craft, StepState step)
+    public static Skills EmergencyRestoreCP(ExpertSolverSettings cfg, CraftState craft, StepState step)
     {
         if (Simulator.CanUseAction(craft, step, Skills.TricksOfTrade))
             return Skills.TricksOfTrade;

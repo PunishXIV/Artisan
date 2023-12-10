@@ -1,6 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
-using Artisan.MacroSystem;
+using Artisan.CraftingLogic.Solvers;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
 using Dalamud.Game.ClientState.Conditions;
@@ -9,6 +9,7 @@ using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
@@ -29,6 +30,7 @@ namespace Artisan.CraftingLogic
         public static StepState? CurStepState { get; private set; }
         public static List<StepState> PrevStepStates { get; private set; } = new();
         public static Skills CurrentRecommendation { get; set; }
+        public static string CurrentRecommendationComment { get; set; } = "";
 
         public static int HighQualityPercentage { get; private set; } = 0;
         public static bool CanHQ  { get; private set; }
@@ -48,7 +50,6 @@ namespace Artisan.CraftingLogic
             }
         }
         public static int QuickSynthMax { get; private set; } = 0;
-        public static int MacroStep { get; set; } = 0;
         public static bool DoingTrial { get; private set; } = false;
         public static CraftingState State { get; private set; } = CraftingState.NotCrafting;
 
@@ -69,6 +70,7 @@ namespace Artisan.CraftingLogic
             PreviousAction = action;
             JustUsedAction = true;
             CurrentRecommendation = Skills.None;
+            CurrentRecommendationComment = "";
         }
 
         public unsafe static bool Update()
@@ -100,18 +102,9 @@ namespace Artisan.CraftingLogic
                 }
                 else
                 {
-                    if (CraftingWindow.MacroTime.Ticks <= 0 && P.Config.IRM.ContainsKey((uint)Endurance.RecipeID) && P.Config.UserMacros.TryGetFirst(x => x.ID == P.Config.IRM[(uint)Endurance.RecipeID], out var macro))
+                    foreach (var window in P.ws.Windows.Where(x => x.GetType() == typeof(MacroEditor)))
                     {
-                        double timeInSeconds = MacroUI.GetMacroLength(macro); // Counting crafting duration + 2 seconds between crafts.
-                        CraftingWindow.MacroTime = TimeSpan.FromSeconds(timeInSeconds);
-                    }
-
-                    if (P.ws.Windows.Any(x => x.GetType() == typeof(MacroEditor)))
-                    {
-                        foreach (var window in P.ws.Windows.Where(x => x.GetType() == typeof(MacroEditor)))
-                        {
-                            window.IsOpen = false;
-                        }
+                        window.IsOpen = false;
                     }
                 }
                 State = newState;
@@ -167,25 +160,7 @@ namespace Artisan.CraftingLogic
 
                     var lt = CurrentRecipe.RecipeLevelTable.Value;
                     var weapon = Svc.Data.GetExcelSheet<Item>()?.GetRow(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemID);
-                    CurCraftState = new()
-                    {
-                        StatCraftsmanship = CharacterInfo.Craftsmanship,
-                        StatControl = CharacterInfo.Control,
-                        StatCP = (int)CharacterInfo.MaxCP,
-                        StatLevel = CharacterInfo.CharacterLevel ?? 0,
-                        UnlockedManipulation = CharacterInfo.IsManipulationUnlocked(),
-                        Specialist = InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 13)->ItemID != 0, // specialist == job crystal equipped
-                        Splendorous = weapon?.LevelEquip == 90 && weapon?.Rarity >= 4,
-                        CraftExpert = CurrentRecipe.IsExpert,
-                        CraftLevel = lt?.ClassJobLevel ?? 0,
-                        CraftDurability = lt?.Durability * CurrentRecipe.DurabilityFactor / 100 ?? 0, // atkvalue[8]
-                        CraftProgress = lt?.Difficulty * CurrentRecipe.DifficultyFactor / 100 ?? 0, // atkvalue[6]
-                        CraftProgressDivider = lt?.ProgressDivider ?? 180,
-                        CraftProgressModifier = lt?.ProgressModifier ?? 100,
-                        CraftQualityDivider = lt?.QualityDivider ?? 180,
-                        CraftQualityModifier = lt?.QualityModifier ?? 180,
-                        CraftQualityMax = (int)(lt?.Quality * CurrentRecipe.QualityFactor / 100 ?? 0), // atkvalue[17]
-                    };
+                    CurCraftState = BuildCraftStateForRecipe(CurrentRecipe);
                     if (synthWindow->AtkUnitBase.AtkValues[22].UInt != 0)
                     {
                         // three quality levels
@@ -198,11 +173,10 @@ namespace Artisan.CraftingLogic
                         // min quality => assume no point in having more
                         CurCraftState.CraftQualityMin1 = CurCraftState.CraftQualityMin2 = CurCraftState.CraftQualityMin3 = synthWindow->AtkUnitBase.AtkValues[18].Int;
                     }
-                    else
+
+                    if (CraftingWindow.MacroTime.Ticks <= 0)
                     {
-                        // normal craft
-                        CurCraftState.CraftQualityMin1 = 0;
-                        CurCraftState.CraftQualityMin2 = CurCraftState.CraftQualityMin3 = CanHQ ? CurCraftState.CraftQualityMax : 0;
+                        CraftingWindow.MacroTime = EstimateCraftTime(CurrentRecipe, CurCraftState);
                     }
                 }
 
@@ -237,6 +211,7 @@ namespace Artisan.CraftingLogic
             CurStepState = null;
             PrevStepStates.Clear();
             CurrentRecommendation = Skills.None;
+            CurrentRecommendationComment = "";
 
             DoingTrial = false;
             JustUsedAction = false;
@@ -282,5 +257,90 @@ namespace Artisan.CraftingLogic
         }
 
         private static Dalamud.Game.ClientState.Statuses.Status? GetStatus(uint statusID) => Svc.ClientState.LocalPlayer?.StatusList.FirstOrDefault(s => s.StatusId == statusID);
+
+        public static CraftState BuildCraftStateForRecipe(Recipe recipe)
+        {
+            var lt = recipe.RecipeLevelTable.Value;
+            var weapon = Svc.Data.GetExcelSheet<Item>()?.GetRow(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemID);
+            var res = new CraftState()
+            {
+                StatCraftsmanship = CharacterInfo.Craftsmanship,
+                StatControl = CharacterInfo.Control,
+                StatCP = (int)CharacterInfo.MaxCP,
+                StatLevel = CharacterInfo.CharacterLevel ?? 0,
+                UnlockedManipulation = CharacterInfo.IsManipulationUnlocked(),
+                Specialist = InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 13)->ItemID != 0, // specialist == job crystal equipped
+                Splendorous = weapon?.LevelEquip == 90 && weapon?.Rarity >= 4,
+                CraftExpert = recipe.IsExpert,
+                CraftLevel = lt?.ClassJobLevel ?? 0,
+                CraftDurability = Calculations.RecipeDurability(recipe), // atkvalue[8]
+                CraftProgress = Calculations.RecipeDifficulty(recipe), // atkvalue[6]
+                CraftProgressDivider = lt?.ProgressDivider ?? 180,
+                CraftProgressModifier = lt?.ProgressModifier ?? 100,
+                CraftQualityDivider = lt?.QualityDivider ?? 180,
+                CraftQualityModifier = lt?.QualityModifier ?? 180,
+                CraftQualityMax = Calculations.RecipeMaxQuality(recipe), // atkvalue[17]
+            };
+            // TODO: figure out a way to get quality breakpoints from data
+            if (recipe.CanHq)
+            {
+                res.CraftQualityMin2 = res.CraftQualityMin3 = res.CraftQualityMax;
+            }
+            return res;
+        }
+
+        public static TimeSpan EstimateCraftTime(Recipe recipe, CraftState craft)
+        {
+            var s = P.GetSolverForRecipe(recipe.RowId, craft);
+            if (s.solver == null)
+                return default;
+
+            var delay = (double)P.Config.AutoDelay + (P.Config.DelayRecommendation ? P.Config.RecommendationDelay : 0);
+            var delaySeconds = delay / 1000;
+
+            double duration = 0;
+            var step = Simulator.CreateInitial(craft);
+            var prev = new List<StepState>();
+            while (Simulator.Status(craft, step) == Simulator.CraftStatus.InProgress)
+            {
+                var action = s.solver.Solve(craft, step, prev, s.flavour).action;
+                if (action == Skills.None)
+                    break;
+
+                duration += (action.ActionIsLengthyAnimation() ? 2.5 : 1.25) + delaySeconds;
+
+                prev.Add(step);
+                var (res, next) = Simulator.Execute(craft, step, action, 0, 1);
+                if (res == Simulator.ExecuteResult.CantUse)
+                    break;
+                step = next;
+            }
+
+            return TimeSpan.FromSeconds(Math.Round(duration, 2)); // Counting crafting duration + 2 seconds between crafts.
+        }
+
+        public static int EstimateHQPercent(Recipe recipe, CraftState craft)
+        {
+            var s = P.GetSolverForRecipe(recipe.RowId, craft);
+            if (s.solver == null)
+                return 0;
+
+            var step = Simulator.CreateInitial(craft);
+            var prev = new List<StepState>();
+            while (Simulator.Status(craft, step) == Simulator.CraftStatus.InProgress)
+            {
+                var action = s.solver.Solve(craft, step, prev, s.flavour).action;
+                if (action == Skills.None)
+                    return 0;
+
+                prev.Add(step);
+                var (res, next) = Simulator.Execute(craft, step, action, 0, 1);
+                if (res == Simulator.ExecuteResult.CantUse)
+                    return 0;
+                step = next;
+            }
+
+            return step.Progress < craft.CraftProgress ? 0 : craft.CraftQualityMin3 == 0 ? 100 : Calculations.GetHQChance(step.Quality * 100.0 / craft.CraftQualityMin3);
+        }
     }
 }
