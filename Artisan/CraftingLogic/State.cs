@@ -15,6 +15,7 @@ public class CraftState
     public bool Splendorous;
 
     // recipe stats
+    public bool CraftCollectible;
     public bool CraftExpert;
     public int CraftLevel; // Recipe.RecipeLevelTable.ClassJobLevel
     public int CraftDurability; // Recipe.RecipeLevelTable.Durability * Recipe.DurabilityFactor / 100
@@ -55,4 +56,13 @@ public class StepState
     public bool HeartAndSoulActive;
     public bool HeartAndSoulAvailable;
     public Skills PrevComboAction;
+
+    public override string ToString()
+    {
+        return $"Index: {Index}, Progress: {Progress}, Quality: {Quality}, Durability: {Durability}, CP: {RemainingCP}, Condition: {Condition}\n" +
+            $"IQStacks: {IQStacks}, WasteNotLeft: {WasteNotLeft}, ManipulationLeft: {ManipulationLeft}, GreatStridesLeft: {GreatStridesLeft}\n" +
+            $"InnovationLeft: {InnovationLeft}, VenerationLeft: {VenerationLeft}, MuscleMemoryLeft: {MuscleMemoryLeft}, FinalAppraisalLeft: {FinalAppraisalLeft}\n" +
+            $"CarefulObservationLeft: {CarefulObservationLeft}, HeartAndSoulActive: {HeartAndSoulActive}, HeartandSoulAvailable: {HeartAndSoulAvailable}\n" +
+            $"PrevComboAction: {PrevComboAction}";
+    }
 }

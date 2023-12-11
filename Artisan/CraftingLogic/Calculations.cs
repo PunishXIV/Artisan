@@ -1,4 +1,5 @@
 ﻿using Artisan.RawInformation.Character;
+using ECommons.DalamudServices;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ namespace Artisan.CraftingLogic
         public static int GetHQChance(double percent = 0)
         {
             if (percent == 0 && CurrentCraft.CurCraftState != null && CurrentCraft.CurStepState != null)
-                percent = Math.Floor(CurrentCraft.CurStepState.Quality * 100.0 / CurrentCraft.CurCraftState.CraftQualityMax);
+                percent = Math.Floor((double)CurrentCraft.CurStepState.Quality / CurrentCraft.CurCraftState.CraftQualityMax);
 
             if (percent > 100)
                 percent = 100;

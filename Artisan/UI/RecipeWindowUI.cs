@@ -8,16 +8,12 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ECommons;
-using ECommons.ChatMethods;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using OtterGui;
@@ -669,12 +665,35 @@ namespace Artisan
                         ImGui.EndCombo();
                     }
 
-                    var hq = CurrentCraft.EstimateHQPercent(recipe, craft); // TODO: use starting quality from currently selected hq mats
-                    if (hq < 100)
+                    if (recipe.CanHq)
                     {
-                        using var c = ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.DalamudRed);
-                        ImGui.TextUnformatted($"Warning: this solver will HQ only {hq}% of time");
+                        var progress = CurrentCraft.EstimateProgressChance(recipe, craft);
+
+                        if (recipe.ItemResult.Value.IsCollectable)
+                        {
+                            var breakpointHit = CurrentCraft.EstimateCollectibleThreshold(recipe, craft);
+                            if (breakpointHit == "Fail")
+                                ImGuiEx.Text(ImGuiColors.DalamudRed, $"This solver will fail.");
+                            else
+                            {
+                                Vector4 c = progress ? breakpointHit switch
+                                {
+                                    "Low" => new Vector4(0.7f, 0.5f, 0.5f, 1f),
+                                    "Mid" => new Vector4(0.5f, 0.5f, 0.7f, 1f),
+                                    "High" => new Vector4(0.5f, 1f, 0.5f, 1f)
+                                } : ImGuiColors.DalamudRed;
+
+                                ImGuiEx.Text(c, $"This solver will hit the {breakpointHit} threshold {(progress ? "and will complete" : "but will not complete")} the craft.");
+                            }
+                        }
+                        else
+                        {
+                            var hq = CurrentCraft.EstimateHQPercent(recipe, craft); // TODO: use starting quality from currently selected hq mats
+                            var c = progress ? new Vector4(1 - (hq / 100f), 0 + (hq / 100f), 1 - (hq / 100f), 255) : ImGuiColors.DalamudRed;
+                            ImGuiEx.Text(c, $"This solver will HQ {hq}% of the time {(progress ? "and will complete" : "but will not complete")} the craft.");
+                        }
                     }
+
                 }
 
                 ImGui.End();

@@ -2,6 +2,7 @@
 using System.Linq;
 using Skills = Artisan.RawInformation.Character.Skills;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
+using ECommons.DalamudServices;
 
 namespace Artisan.CraftingLogic.Solvers
 {
@@ -67,10 +68,10 @@ namespace Artisan.CraftingLogic.Solvers
                 return Skills.BasicSynthesis;
             }
 
-            if (Simulator.CanUseAction(craft, step, Skills.RapidSynthesis) && step.RemainingCP < 18)
-            {
-                return Skills.RapidSynthesis;
-            }
+            //if (Simulator.CanUseAction(craft, step, Skills.RapidSynthesis) && step.RemainingCP < 18)
+            //{
+            //    return Skills.RapidSynthesis;
+            //}
 
             return Skills.BasicSynthesis;
         }
@@ -143,7 +144,8 @@ namespace Artisan.CraftingLogic.Solvers
 
             if (ShouldMend(craft, step, act, manipulationUsed, wasteNotUsed, goingForQuality) && Simulator.CanUseAction(craft, step, Skills.MastersMend)) return Skills.MastersMend;
 
-            if (maxQuality == 0 || P.Config.MaxPercentage == 0)
+            //Svc.Log.Debug($"{maxQuality}");
+            if ((maxQuality == 0 || P.Config.MaxPercentage == 0) && !craft.CraftCollectible)
             {
                 if (step.Index == 1 && Simulator.CanUseAction(craft, step, Skills.MuscleMemory)) return Skills.MuscleMemory;
                 if (CanFinishCraft(craft, step, act)) return act;
@@ -236,7 +238,7 @@ namespace Artisan.CraftingLogic.Solvers
             if (craft.CraftQualityMin1 == 0)
             {
                 // normal craft
-                maxQuality = craft.CraftQualityMin3;
+                maxQuality = craft.CraftQualityMax;
                 wantMoreQuality = maxQuality > 0 && Calculations.GetHQChance(step.Quality * 100.0 / maxQuality) < P.Config.MaxPercentage;
             }
             else
@@ -256,15 +258,15 @@ namespace Artisan.CraftingLogic.Solvers
 
         private static bool ShouldMend(CraftState craft, StepState step, Skills synthOption, bool manipulationUsed, bool wasteNotUsed, bool goingForQuality)
         {
-            if (!manipulationUsed && Simulator.CanUseAction(craft, step, Skills.Manipulation)) return false;
-            if (!wasteNotUsed && Simulator.CanUseAction(craft, step, Skills.WasteNot)) return false;
-
             bool wasteNots = step.WasteNotLeft > 0;
             var nextReduction = wasteNots ? 5 : 10;
 
             int advancedDegrade = 30 - 5 * step.WasteNotLeft;
             if (goingForQuality)
             {
+                if (!manipulationUsed && Simulator.CanUseAction(craft, step, Skills.Manipulation)) return false;
+                if (!wasteNotUsed && Simulator.CanUseAction(craft, step, Skills.WasteNot)) return false;
+
                 if (Simulator.CanUseAction(craft, step, Skills.PrudentTouch) && step.Durability == 10) return false;
                 if (craft.StatLevel < Simulator.MinLevel(Skills.AdvancedTouch) && craft.StatLevel >= Simulator.MinLevel(Skills.StandardTouch) && step.Durability <= 20 && craft.CraftDurability >= 50 && step.Condition != Condition.Excellent) return true;
                 if (craft.StatLevel >= Simulator.MinLevel(Skills.AdvancedTouch) && step.Durability <= advancedDegrade && !InTouchRotation(craft, step) && craft.CraftDurability >= 50 && step.Condition != Condition.Excellent) return true;

@@ -1,22 +1,19 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
-using Artisan.CraftingLogic.Solvers;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
 using Dalamud.Game.ClientState.Conditions;
-using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
+using OtterGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using static System.Windows.Forms.AxHost;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.CraftingLogic
@@ -24,6 +21,19 @@ namespace Artisan.CraftingLogic
     public static unsafe class CurrentCraft
     {
         public static event System.Action? StepChanged;
+
+        public static int CurrentStep
+        {
+            get => currentStep;
+            set
+            {
+                if (value != currentStep)
+                {
+                    currentStep = value;
+                    StepChanged?.Invoke();
+                }
+            }
+        }
 
         public static Recipe? CurrentRecipe { get; private set; }
         public static CraftState? CurCraftState { get; private set; }
@@ -33,7 +43,7 @@ namespace Artisan.CraftingLogic
         public static string CurrentRecommendationComment { get; set; } = "";
 
         public static int HighQualityPercentage { get; private set; } = 0;
-        public static bool CanHQ  { get; private set; }
+        public static bool CanHQ { get; private set; }
 
         public static int QuickSynthCurrent
         {
@@ -54,6 +64,8 @@ namespace Artisan.CraftingLogic
         public static CraftingState State { get; private set; } = CraftingState.NotCrafting;
 
         private static int quickSynthCurrent = 0;
+        private static int currentStep = 0;
+
         public static bool LastItemWasHQ { get; private set; } = false;
         public static Item? LastCraftedItem { get; private set; }
         public static Skills PreviousAction { get; private set; } = Skills.None;
@@ -71,6 +83,8 @@ namespace Artisan.CraftingLogic
             JustUsedAction = true;
             CurrentRecommendation = Skills.None;
             CurrentRecommendationComment = "";
+            if (action is Skills.FinalAppraisal or Skills.HeartAndSoul)
+                StepChanged?.Invoke();
         }
 
         public unsafe static bool Update()
@@ -144,6 +158,7 @@ namespace Artisan.CraftingLogic
                 }
 
                 DoingTrial = synthWindow->AtkUnitBase.UldManager.NodeList[99]->IsVisible;
+                CurrentStep = synthWindow->AtkUnitBase.AtkValues[15].Int;
 
                 var itemID = synthWindow->AtkUnitBase.AtkValues[16].UInt;
                 var classID = CharacterInfo.JobID - Job.CRP;
@@ -182,17 +197,6 @@ namespace Artisan.CraftingLogic
 
                 HighQualityPercentage = CanHQ ? synthWindow->AtkUnitBase.AtkValues[10].Int : 0;
 
-                if (CurStepState == null || JustUsedAction)
-                {
-                    UpdateStep(synthWindow);
-                    JustUsedAction = false;
-                }
-                else if (CurStepState.Index != synthWindow->AtkUnitBase.AtkValues[15].Int || CurStepState.Condition != (Condition)synthWindow->AtkUnitBase.AtkValues[12].Int || CurStepState.PrevComboAction != PreviousAction)
-                {
-                    Svc.Log.Error("Unexpected step change without recorded action");
-                    UpdateStep(synthWindow);
-                }
-
                 return true;
             }
             catch (Exception ex)
@@ -212,6 +216,8 @@ namespace Artisan.CraftingLogic
             PrevStepStates.Clear();
             CurrentRecommendation = Skills.None;
             CurrentRecommendationComment = "";
+            CurrentStep = 0;
+            Artisan.Tasks.Clear();
 
             DoingTrial = false;
             JustUsedAction = false;
@@ -220,14 +226,18 @@ namespace Artisan.CraftingLogic
                 StepChanged.Invoke();
         }
 
-        private static void UpdateStep(AddonSynthesis* synth)
+        public static void UpdateStep()
         {
+            var synth = (AddonSynthesis*)Svc.GameGui.GetAddonByName("Synthesis");
+            if (synth == null)
+                return;
+
             if (CurStepState != null)
                 PrevStepStates.Add(CurStepState);
 
             CurStepState = new()
             {
-                Index = synth->AtkUnitBase.AtkValues[15].Int,
+                Index = PrevStepStates.Count > 0 ? PrevStepStates.Last().Index + 1 : 1,
                 Progress = synth->AtkUnitBase.AtkValues[5].Int,
                 Quality = synth->AtkUnitBase.AtkValues[9].Int,
                 Durability = synth->AtkUnitBase.AtkValues[7].Int,
@@ -240,14 +250,14 @@ namespace Artisan.CraftingLogic
                 InnovationLeft = GetStatus(Buffs.Innovation)?.Param ?? 0,
                 VenerationLeft = GetStatus(Buffs.Veneration)?.Param ?? 0,
                 MuscleMemoryLeft = GetStatus(Buffs.MuscleMemory)?.Param ?? 0,
-                FinalAppraisalLeft = GetStatus(Buffs.FinalAppraisal)?.Param ?? 0,
+                FinalAppraisalLeft = PreviousAction == Skills.FinalAppraisal ? 5 : GetStatus(Buffs.FinalAppraisal)?.Param ?? 0,
                 CarefulObservationLeft = P.Config.UseSpecialist && CanUse(Skills.CarefulObservation) ? 1 : 0,
                 HeartAndSoulActive = GetStatus(Buffs.HeartAndSoul) != null,
                 HeartAndSoulAvailable = P.Config.UseSpecialist && CanUse(Skills.HeartAndSoul),
                 PrevComboAction = PreviousAction,
             };
 
-            StepChanged.Invoke();
+            Svc.Log.Debug($"{CurStepState}");
         }
 
         public unsafe static bool CanUse(Skills id)
@@ -271,6 +281,7 @@ namespace Artisan.CraftingLogic
                 UnlockedManipulation = CharacterInfo.IsManipulationUnlocked(),
                 Specialist = InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 13)->ItemID != 0, // specialist == job crystal equipped
                 Splendorous = weapon?.LevelEquip == 90 && weapon?.Rarity >= 4,
+                CraftCollectible = recipe.ItemResult.Value.IsCollectable,
                 CraftExpert = recipe.IsExpert,
                 CraftLevel = lt?.ClassJobLevel ?? 0,
                 CraftDurability = Calculations.RecipeDurability(recipe), // atkvalue[8]
@@ -281,11 +292,23 @@ namespace Artisan.CraftingLogic
                 CraftQualityModifier = lt?.QualityModifier ?? 180,
                 CraftQualityMax = Calculations.RecipeMaxQuality(recipe), // atkvalue[17]
             };
+
             // TODO: figure out a way to get quality breakpoints from data
-            if (recipe.CanHq)
+            if (recipe.ItemResult.Value.IsCollectable)
             {
-                res.CraftQualityMin2 = res.CraftQualityMin3 = res.CraftQualityMax;
+                var shopSheet = Svc.Data.Excel.GetSheet<CollectablesShopItem>();
+                if (shopSheet!.FindFirst(x => x.Item.Row == recipe.ItemResult.Row, out var collectibleItem))
+                {
+                    res.CraftQualityMin1 = collectibleItem.CollectablesShopRefine.Value.LowCollectability * 10;
+                    res.CraftQualityMin2 = collectibleItem.CollectablesShopRefine.Value.MidCollectability * 10;
+                    res.CraftQualityMin3 = collectibleItem.CollectablesShopRefine.Value.HighCollectability * 10;
+                }
             }
+            if (recipe.RequiredQuality > 0)
+            {
+                res.CraftQualityMax = (int)recipe.RequiredQuality;
+            }
+
             return res;
         }
 
@@ -340,7 +363,58 @@ namespace Artisan.CraftingLogic
                 step = next;
             }
 
-            return step.Progress < craft.CraftProgress ? 0 : craft.CraftQualityMin3 == 0 ? 100 : Calculations.GetHQChance(step.Quality * 100.0 / craft.CraftQualityMin3);
+            double percent = (double)step.Quality / craft.CraftQualityMax * 100;
+            return Calculations.GetHQChance(percent);
+        }
+
+        public static bool EstimateProgressChance(Recipe recipe, CraftState craft)
+        {
+            var s = P.GetSolverForRecipe(recipe.RowId, craft);
+            if (s.solver == null)
+                return false;
+
+            var step = Simulator.CreateInitial(craft);
+            var prev = new List<StepState>();
+            while (Simulator.Status(craft, step) == Simulator.CraftStatus.InProgress)
+            {
+                var action = s.solver.Solve(craft, step, prev, s.flavour).action;
+                if (action == Skills.None)
+                    return false;
+
+                prev.Add(step);
+                var (res, next) = Simulator.Execute(craft, step, action, 0, 1);
+                if (res == Simulator.ExecuteResult.CantUse)
+                    return false;
+                step = next;
+            }
+
+            return step.Progress >= craft.CraftProgress;
+        }
+
+        public static string EstimateCollectibleThreshold(Recipe recipe, CraftState craft)
+        {
+            var s = P.GetSolverForRecipe(recipe.RowId, craft);
+            if (s.solver == null)
+                return "";
+
+            var step = Simulator.CreateInitial(craft);
+            var prev = new List<StepState>();
+            while (Simulator.Status(craft, step) == Simulator.CraftStatus.InProgress)
+            {
+                var action = s.solver.Solve(craft, step, prev, s.flavour).action;
+                if (action == Skills.None)
+                    return "";
+
+                prev.Add(step);
+                var (res, next) = Simulator.Execute(craft, step, action, 0, 1);
+                if (res == Simulator.ExecuteResult.CantUse)
+                    return "";
+                step = next;
+            }
+
+
+            return step.Quality >= craft.CraftQualityMin3 ? "High" : step.Quality >= craft.CraftQualityMin2 ? "Mid" : step.Quality >= craft.CraftQualityMin1 ? "Low" : "Fail";
+
         }
     }
 }

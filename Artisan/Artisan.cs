@@ -22,7 +22,7 @@ using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.Logging;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 using OtterGui.Classes;
 using PunishLib;
@@ -30,7 +30,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using SoundPlayer = Artisan.Sounds.SoundPlayer;
 
@@ -204,6 +203,7 @@ public unsafe class Artisan : IDalamudPlugin
         {
             Tasks.Clear();
         }
+        CurrentCraft.UpdateStep();
     }
 
     public static bool CheckIfCraftFinished()
@@ -246,7 +246,7 @@ public unsafe class Artisan : IDalamudPlugin
         if (!PluginUi.CraftingVisible) return;
 
         CurrentCraft.Update();
-        if (CurrentCraft.CurStepState != null && CurrentCraft.CurrentRecommendation == Skills.None && Tasks.Count == 0)
+        if (CurrentCraft.CurStepState != null && ActionManager.Instance()->GetActionStatus(ActionType.CraftAction, Skills.BasicSynthesis.ActionId(CharacterInfo.JobID)) == 0 && CurrentCraft.CurrentRecommendation == Skills.None && Tasks.Count == 0)
         {
             var delay = P.Config.DelayRecommendation ? P.Config.RecommendationDelay : 0;
             Tasks.Add(Svc.Framework.RunOnTick(FetchRecommendation, TimeSpan.FromMilliseconds(delay)));

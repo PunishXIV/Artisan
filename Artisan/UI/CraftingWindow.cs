@@ -81,7 +81,7 @@ namespace Artisan.UI
                     ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is an expert recipe. You are using the experimental solver currently. Your success rate may vary.", this.SizeConstraints?.MaximumSize.X ?? 0);
                 }
             }
-            else if (CurrentCraft.CurrentRecipe?.SecretRecipeBook.Row > 0 && CurrentCraft.CurCraftState?.CraftLevel == CurrentCraft.CurCraftState?.StatLevel)
+            else if (CurrentCraft.CurrentRecipe?.SecretRecipeBook.Row > 0 && CurrentCraft.CurCraftState?.CraftLevel == CurrentCraft.CurCraftState?.StatLevel && solver.solver is not MacroSolver)
             {
                 ImGui.Dummy(new System.Numerics.Vector2(12f));
                 ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.", this.SizeConstraints?.MaximumSize.X ?? 0);
@@ -122,10 +122,13 @@ namespace Artisan.UI
             if (!Endurance.Enable && CurrentCraft.DoingTrial)
                 ImGui.Checkbox("Trial Craft Repeat", ref repeatTrial);
 
-            var text = $"Using {solver.solver.Name(solver.flavour)}";
-            if (CurrentCraft.CurrentRecommendationComment.Length > 0)
-                text += $" ({CurrentCraft.CurrentRecommendationComment})";
-            ImGui.TextWrapped(text);
+            if (solver.solver != null)
+            {
+                var text = $"Using {solver.solver.Name(solver.flavour)}";
+                if (CurrentCraft.CurrentRecommendationComment.Length > 0)
+                    text += $" ({CurrentCraft.CurrentRecommendationComment})";
+                ImGui.TextWrapped(text);
+            }
 
             if (P.Config.CraftingX && Endurance.Enable)
                 ImGui.Text($"Remaining Crafts: {P.Config.CraftX}");
