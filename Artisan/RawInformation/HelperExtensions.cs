@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLogic.CraftData;
+using Newtonsoft.Json;
 using System.Linq;
 
 namespace Artisan.RawInformation
@@ -19,6 +20,18 @@ namespace Artisan.RawInformation
             if (tail_length >= source.Length)
                 return source;
             return source.Substring(source.Length - tail_length);
+        }
+
+        public static bool TryParseJson<T>(this string @this, out T result)
+        {
+            bool success = true;
+            var settings = new JsonSerializerSettings
+            {
+                Error = (sender, args) => { success = false; args.ErrorContext.Handled = true; },
+                MissingMemberHandling = MissingMemberHandling.Error
+            };
+            result = JsonConvert.DeserializeObject<T>(@this, settings);
+            return success;
         }
     }
 

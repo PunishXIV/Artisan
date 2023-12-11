@@ -9,6 +9,7 @@ using Dalamud.Game.Text.SeStringHandling.Payloads;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
+using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -232,6 +233,7 @@ namespace Artisan.CraftingLists
                 {
                     if (CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult)
                     {
+                        Svc.Chat.PrintError($"Skipping {recipe.ItemResult.Value.Name} due to having enough in inventory [Skip Items you already have enough of]");
                         if (Throttler.Throttle(500))
                         {
                             var currentRecipe = selectedList.Items[CurrentIndex];
@@ -249,6 +251,7 @@ namespace Artisan.CraftingLists
                 }
                 else
                 {
+                    Svc.Chat.PrintError($"Skipping {recipe.ItemResult.Value.Name} due to having enough in inventory [Skip Items you already have enough of]");
                     PluginLog.Debug($"{recipe.RowId.NameOfRecipe()} {CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId)} {Materials.First(x => x.Key == recipe.ItemResult.Row).Value}");
                     if (Throttler.Throttle(500))
                     {
@@ -434,7 +437,7 @@ namespace Artisan.CraftingLists
 
             }
 
-            if ((CurrentIndex == 0 && CraftingListUI.CurrentProcessedItem != Endurance.RecipeID) || (CurrentIndex > 0 && CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1] && Endurance.RecipeID != CraftingListUI.CurrentProcessedItem) || (CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0))
+            if ((CurrentIndex == 0 && CraftingListUI.CurrentProcessedItem != Endurance.RecipeID) || (CurrentIndex > 0 && CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1] && Endurance.RecipeID != CraftingListUI.CurrentProcessedItem))
             {
                 if (RecipeWindowOpen())
                 {

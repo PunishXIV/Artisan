@@ -272,8 +272,6 @@ public unsafe class Artisan : IDalamudPlugin
         if (!Endurance.Enable)
             Endurance.DrawRecipeData();
 
-        if (!PluginUi.CraftingVisible) return;
-
         GetCraft();
         if (SolverLogic.CanUse(Skills.BasicSynth) && CurrentRecommendation == 0 && Tasks.Count == 0 && CurrentStep >= 1)
         {

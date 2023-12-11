@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-
+using System.Windows.Forms;
 using Artisan.Autocraft;
 using Artisan.IPC;
 using Artisan.RawInformation;
@@ -10,6 +10,7 @@ using Artisan.UI;
 using Dalamud.Interface.Colors;
 using Dalamud.Logging;
 using ECommons;
+using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -108,21 +109,27 @@ namespace Artisan.CraftingLists
             {
                 try
                 {
-                    var clipboard = ImGui.GetClipboardText();
-                    if (clipboard != null)
+                    var clipboard = Clipboard.GetText();
+                    if (clipboard != string.Empty)
                     {
-                        var import = JsonConvert.DeserializeObject<CraftingList>(clipboard);
-                        if (import != null)
+                        if (clipboard.TryParseJson<CraftingList>(out var import))
                         {
                             import.SetID();
                             import.Save(true);
                         }
+                        else
+                        {
+                            Notify.Error("Invalid import string.");
+                        }
+                    }
+                    else
+                    {
+                        Notify.Error("Clipboard is empty.");
                     }
                 }
                 catch(Exception ex)
                 {
                     ex.Log();
-                    Notify.Error("Unable to import.");
                 }
             }
 
