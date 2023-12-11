@@ -283,7 +283,7 @@ namespace Artisan.CraftingLogic.Solvers
         private static bool CanCompleteTouchCombo(CraftState craft, StepState step)
         {
             int wasteStacks = step.WasteNotLeft;
-            var veneStacks = step.VenerationLeft; // TODO: wtf???
+            var innoStacks = step.InnovationLeft;
 
             if (craft.StatLevel < Simulator.MinLevel(Skills.StandardTouch))
             {
@@ -292,7 +292,7 @@ namespace Artisan.CraftingLogic.Solvers
             else if (craft.StatLevel < Simulator.MinLevel(Skills.AdvancedTouch))
             {
                 if (step.PrevComboAction == Skills.BasicTouch) return true; //Assume started
-                if (step.RemainingCP < 36 || veneStacks < 2) return false;
+                if (step.RemainingCP < 36 || innoStacks < 2) return false;
 
                 var copyofDura = step.Durability;
                 for (int i = 1; i == 2; i++)
@@ -305,7 +305,7 @@ namespace Artisan.CraftingLogic.Solvers
             else
             {
                 if (step.PrevComboAction is Skills.BasicTouch or Skills.StandardTouch) return true; //Assume started
-                if (step.RemainingCP < 54 || veneStacks < 3) return false;
+                if (step.RemainingCP < 54 || innoStacks < 3) return false;
 
                 var copyofDura = step.Durability;
                 for (int i = 1; i == 3; i++)
