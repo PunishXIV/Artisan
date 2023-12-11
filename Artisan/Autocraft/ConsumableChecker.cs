@@ -1,7 +1,6 @@
 ﻿using Artisan.RawInformation;
 using ECommons;
 using ECommons.DalamudServices;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -11,6 +10,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Artisan.CraftingLists;
 using ECommons.Logging;
+using Artisan.GameInterop;
+using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace Artisan.Autocraft
 {
@@ -189,10 +190,8 @@ namespace Artisan.Autocraft
             return false;
         }
 
-        internal static unsafe bool UseItem2(uint itemID) =>
-            ActionManager.Instance() is not null && ActionManager.Instance()->UseAction(ActionType.Item, itemID, a4: 65535);
+        internal static unsafe bool UseItem2(uint itemID) => ActionManagerEx.UseItem(itemID);
 
-        internal static unsafe uint GetItemStatus(uint itemID) => ActionManager.Instance() is null ? uint.MaxValue : ActionManager.Instance()->GetActionStatus(ActionType.Item, itemID);
         internal static bool CheckConsumables(bool use = true, ListItemOptions? listItemOptions = null)
         {
             if (Endurance.SkipBuffs) return false;

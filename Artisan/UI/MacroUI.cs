@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLogic;
 using Artisan.CraftingLogic.Solvers;
+using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using ECommons;
@@ -45,7 +46,7 @@ namespace Artisan.UI
             ImGui.TextWrapped("This tab will allow you to add macros that Artisan can use instead of its own decisions. Once you create a new macro, click on it from the list below to open up the macro editor window for your macro.");
             ImGui.Separator();
 
-            if (CurrentCraft.State == CraftingState.Crafting)
+            if (Crafting.CurState is not Crafting.State.IdleNormal and not Crafting.State.IdleBetween)
             {
                 ImGui.Text($"Crafting in progress. Macro settings will be unavailable until you stop crafting.");
                 return;
@@ -276,7 +277,7 @@ namespace Artisan.UI
                 int numberFound = 0;
                 foreach (var recipe in filteredRecipes)
                 {
-                    P.Config.RecipeSolverAssignment[recipe.RowId] = (typeof(MacroSolver).FullName!, selectedAssignMacro.ID);
+                    P.Config.RecipeSolverAssignment[recipe.RowId] = (typeof(MacroSolverDefinition).FullName!, selectedAssignMacro.ID);
                     if (P.Config.ShowMacroAssignResults)
                     {
                         P.TM.DelayNext(400);
@@ -300,7 +301,7 @@ namespace Artisan.UI
             {
                 int count = 0;
                 foreach (var e in P.Config.RecipeSolverAssignment)
-                    if (e.Value.type == typeof(MacroSolver).FullName && e.Value.flavour == selectedAssignMacro.ID)
+                    if (e.Value.type == typeof(MacroSolverDefinition).FullName && e.Value.flavour == selectedAssignMacro.ID)
                         P.Config.RecipeSolverAssignment.Remove(e.Key);
                 P.Config.Save();
                 if (count > 0)

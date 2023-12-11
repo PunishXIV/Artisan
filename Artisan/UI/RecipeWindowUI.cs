@@ -2,6 +2,7 @@
 using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.FCWorkshops;
+using Artisan.GameInterop;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Game.Text.SeStringHandling;
@@ -648,16 +649,16 @@ namespace Artisan
                 {
                     ImGui.Text($"Use a macro for this recipe ({Endurance.RecipeName})");
                     var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
-                    var craft = CurrentCraft.BuildCraftStateForRecipe(recipe);
-                    var s = P.GetSolverForRecipe(Endurance.RecipeID, craft);
-                    if (ImGui.BeginCombo("", s.solver.Name(s.flavour)))
+                    var craft = Crafting.BuildCraftStateForRecipe(recipe);
+                    var s = CraftingProcessor.GetSolverForRecipe(Endurance.RecipeID, craft);
+                    if (ImGui.BeginCombo("", s.Name))
                     {
-                        foreach (var opt in P.GetAvailableSolversForRecipe(craft, true))
+                        foreach (var opt in CraftingProcessor.GetAvailableSolversForRecipe(craft, true))
                         {
-                            bool selected = opt.solver == s.solver && opt.flavour == s.flavour;
-                            if (ImGui.Selectable(opt.solver.Name(opt.flavour), selected))
+                            bool selected = opt.Def == s.Def && opt.Flavour == s.Flavour;
+                            if (ImGui.Selectable(opt.Name, selected))
                             {
-                                P.Config.RecipeSolverAssignment[Endurance.RecipeID] = (opt.solver.GetType().FullName!, opt.flavour);
+                                P.Config.RecipeSolverAssignment[Endurance.RecipeID] = (opt.Def.GetType().FullName!, opt.Flavour);
                                 P.Config.Save();
                             }
                         }
@@ -667,11 +668,12 @@ namespace Artisan
 
                     if (recipe.CanHq)
                     {
-                        var progress = CurrentCraft.EstimateProgressChance(recipe, craft);
+                        var solver = s.CreateSolver(craft);
+                        var progress = SolverUtils.EstimateProgressChance(solver, craft);
 
                         if (recipe.ItemResult.Value.IsCollectable)
                         {
-                            var breakpointHit = CurrentCraft.EstimateCollectibleThreshold(recipe, craft);
+                            var breakpointHit = SolverUtils.EstimateCollectibleThreshold(solver, craft);
                             if (breakpointHit == "Fail")
                                 ImGuiEx.Text(ImGuiColors.DalamudRed, $"This solver will fail.");
                             else
@@ -680,7 +682,8 @@ namespace Artisan
                                 {
                                     "Low" => new Vector4(0.7f, 0.5f, 0.5f, 1f),
                                     "Mid" => new Vector4(0.5f, 0.5f, 0.7f, 1f),
-                                    "High" => new Vector4(0.5f, 1f, 0.5f, 1f)
+                                    "High" => new Vector4(0.5f, 1f, 0.5f, 1f),
+                                    _ => ImGuiColors.DalamudRed
                                 } : ImGuiColors.DalamudRed;
 
                                 ImGuiEx.Text(c, $"This solver will hit the {breakpointHit} threshold {(progress ? "and will complete" : "but will not complete")} the craft.");
@@ -688,9 +691,10 @@ namespace Artisan
                         }
                         else
                         {
-                            var hq = CurrentCraft.EstimateHQPercent(recipe, craft); // TODO: use starting quality from currently selected hq mats
+                            var q = SolverUtils.EstimateQualityPercent(solver, craft); // TODO: use starting quality from currently selected hq mats
+                            var hq = Calculations.GetHQChance(q);
                             var c = progress ? new Vector4(1 - (hq / 100f), 0 + (hq / 100f), 1 - (hq / 100f), 255) : ImGuiColors.DalamudRed;
-                            ImGuiEx.Text(c, $"This solver will HQ {hq}% of the time {(progress ? "and will complete" : "but will not complete")} the craft.");
+                            ImGuiEx.Text(c, $"This solver will HQ {hq}% of the time ({q:f0}% quality) {(progress ? "and will complete" : "but will not complete")} the craft.");
                         }
                     }
 

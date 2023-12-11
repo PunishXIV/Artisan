@@ -16,16 +16,7 @@ namespace Artisan.CraftingLogic
             74, 76, 78, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 94, 96, 98, 100
         };
 
-        public static int GetHQChance(double percent = 0)
-        {
-            if (percent == 0 && CurrentCraft.CurCraftState != null && CurrentCraft.CurStepState != null)
-                percent = Math.Floor((double)CurrentCraft.CurStepState.Quality / CurrentCraft.CurCraftState.CraftQualityMax);
-
-            if (percent > 100)
-                percent = 100;
-
-            return HQChance[(int)percent];
-        }
+        public static int GetHQChance(double percent) => HQChance[Math.Clamp((int)percent, 0, 100)];
 
         public static int RecipeDifficulty(Recipe recipe) => recipe.RecipeLevelTable.Value?.Difficulty * recipe.DifficultyFactor / 100 ?? 0;
         public static int RecipeMaxQuality(Recipe recipe) => (int)(recipe.RecipeLevelTable.Value?.Quality * recipe.QualityFactor / 100 ?? 0);

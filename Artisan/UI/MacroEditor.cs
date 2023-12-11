@@ -11,6 +11,8 @@ using System.Numerics;
 using Artisan.RawInformation;
 using Newtonsoft.Json;
 using Artisan.CraftingLogic.Solvers;
+using Artisan.GameInterop;
+using Artisan.CraftingLogic;
 
 namespace Artisan.UI
 {
@@ -32,6 +34,8 @@ namespace Artisan.UI
             this.Size = new Vector2(600, 600);
             this.SizeCondition = ImGuiCond.Appearing;
             ShowCloseButton = true;
+
+            Crafting.CraftStarted += OnCraftStarted;
         }
 
         public override void PreDraw()
@@ -57,6 +61,7 @@ namespace Artisan.UI
 
         public override void OnClose()
         {
+            Crafting.CraftStarted -= OnCraftStarted;
             base.OnClose();
             P.ws.RemoveWindow(this);
         }
@@ -90,7 +95,7 @@ namespace Artisan.UI
                 {
                     P.Config.MacroSolverConfig.Macros.Remove(SelectedMacro);
                     foreach (var e in P.Config.RecipeSolverAssignment)
-                        if (e.Value.type == typeof(MacroSolver).FullName && e.Value.flavour == SelectedMacro.ID)
+                        if (e.Value.type == typeof(MacroSolverDefinition).FullName && e.Value.flavour == SelectedMacro.ID)
                             P.Config.RecipeSolverAssignment.Remove(e.Key);
                     P.Config.Save();
                     SelectedMacro = new();
@@ -363,5 +368,7 @@ namespace Artisan.UI
                 selectedStepIndex = -1;
             }
         }
+
+        private void OnCraftStarted(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState initialStep, bool trial) => IsOpen = false;
     }
 }

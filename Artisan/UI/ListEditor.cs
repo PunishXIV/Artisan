@@ -11,7 +11,9 @@ using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using global::Artisan.CraftingLogic;
 using global::Artisan.CraftingLogic.Solvers;
+using global::Artisan.GameInterop;
 using global::Artisan.UI.Tables;
 using ImGuiNET;
 using IPC;
@@ -951,26 +953,19 @@ internal class ListEditor : Window, IDisposable
 
         if (P.Config.MacroSolverConfig.Macros.Count > 0)
         {
-            ImGui.TextWrapped("Use a macro for this recipe");
+            ImGui.TextWrapped("Use solver for this recipe");
 
-            var preview = P.Config.RecipeSolverAssignment.TryGetValue(selectedListItem, out var prevAssignment) && prevAssignment.type == typeof(MacroSolver).FullName
-                              ? P.Config.MacroSolverConfig.FindMacro(prevAssignment.flavour)?.Name ?? ""
-                              : string.Empty;
+            var craft = Crafting.BuildCraftStateForRecipe(recipe);
+            var s = CraftingProcessor.GetSolverForRecipe(Endurance.RecipeID, craft);
             ImGuiEx.SetNextItemFullWidth(-30);
-            if (ImGui.BeginCombo(string.Empty, preview))
+            if (ImGui.BeginCombo("", s.Name))
             {
-                if (ImGui.Selectable(string.Empty))
+                foreach (var opt in CraftingProcessor.GetAvailableSolversForRecipe(craft, true))
                 {
-                    P.Config.RecipeSolverAssignment.Remove(selectedListItem);
-                    P.Config.Save();
-                }
-
-                foreach (var macro in P.Config.MacroSolverConfig.Macros)
-                {
-                    var selected = prevAssignment.type == typeof(MacroSolver).FullName && prevAssignment.flavour == macro.ID;
-                    if (ImGui.Selectable(macro.Name, selected))
+                    bool selected = opt.Def == s.Def && opt.Flavour == s.Flavour;
+                    if (ImGui.Selectable(opt.Name, selected))
                     {
-                        P.Config.RecipeSolverAssignment[selectedListItem] = (typeof(MacroSolver).FullName!, macro.ID);
+                        P.Config.RecipeSolverAssignment[Endurance.RecipeID] = (opt.Def.GetType().FullName!, opt.Flavour);
                         P.Config.Save();
                     }
                 }

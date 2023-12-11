@@ -1,6 +1,5 @@
 ﻿using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -13,8 +12,6 @@ namespace Artisan.RawInformation
         private static Skills[] HotBarSkills = new Skills[10 * 12];
         private static unsafe AtkUnitBase* HotBarRef { get; set; } = null;
         private static unsafe AtkResNode* HotBarSlotRef { get; set; } = null;
-
-        public static unsafe ActionManager* actionManager = ActionManager.Instance();
 
         public void Dispose()
         {
@@ -77,19 +74,6 @@ namespace Artisan.RawInformation
             for (int i = 0; i < HotBarSkills.Length; ++i)
                 if (HotBarSkills[i] == rec)
                     MakeButtonGlow(i);
-        }
-
-        internal unsafe static bool ExecuteRecommended(Skills currentRecommendation)
-        {
-            var actionId = currentRecommendation.ActionId(CharacterInfo.JobID);
-            if (actionId == 0 || actionManager == null)
-                return false;
-            ActionType actionType = actionId >= 100000 ? ActionType.CraftAction : ActionType.Action;
-            if (actionManager->GetActionStatus(actionType, actionId, Svc.ClientState.LocalPlayer.ObjectId) != 0)
-                return false;
-            ActionWatching.BlockAction = false;
-            actionManager->UseAction(actionType, actionId);
-            return true;
         }
     }
 }

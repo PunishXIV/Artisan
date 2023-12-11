@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using Artisan.GameInterop;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
 using ClickLib.Clicks;
@@ -64,7 +65,7 @@ namespace Artisan.RawInformation
             {
                 if (Throttler.Throttle(1000))
                 {
-                    ActionManager.Instance()->UseAction(ActionType.GeneralAction, 14);
+                    ActionManagerEx.UseMateriaExtraction();
                 }
             }
         }
@@ -75,7 +76,7 @@ namespace Artisan.RawInformation
             {
                 if (Throttler.Throttle(1000))
                 {
-                    ActionManager.Instance()->UseAction(ActionType.GeneralAction, 14);
+                    ActionManagerEx.UseMateriaExtraction();
                 }
             }
         }

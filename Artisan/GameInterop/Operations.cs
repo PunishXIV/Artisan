@@ -8,9 +8,9 @@ using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 
-namespace Artisan.CraftingLogic;
+namespace Artisan.GameInterop;
 
-public static unsafe class CraftingOperations
+public static unsafe class Operations
 {
     public unsafe static void RepeatTrialCraft()
     {
@@ -36,7 +36,7 @@ public static unsafe class CraftingOperations
         try
         {
             var recipeWindow = Svc.GameGui.GetAddonByName("RecipeNote", 1);
-            if (recipeWindow == IntPtr.Zero)
+            if (recipeWindow == nint.Zero)
                 return;
 
             GenericHelpers.TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon);
@@ -57,7 +57,7 @@ public static unsafe class CraftingOperations
                     ClickRecipeNote.Using(recipeWindow).QuickSynthesis();
 
                     var quickSynthPTR = Svc.GameGui.GetAddonByName("SynthesisSimpleDialog", 1);
-                    if (quickSynthPTR == IntPtr.Zero)
+                    if (quickSynthPTR == nint.Zero)
                         return;
 
                     var quickSynthWindow = (AtkUnitBase*)quickSynthPTR;
@@ -99,7 +99,7 @@ public static unsafe class CraftingOperations
         try
         {
             var quickSynthPTR = Svc.GameGui.GetAddonByName("SynthesisSimple", 1);
-            if (quickSynthPTR == IntPtr.Zero)
+            if (quickSynthPTR == nint.Zero)
                 return;
 
             var quickSynthWindow = (AtkUnitBase*)quickSynthPTR;
@@ -123,7 +123,7 @@ public static unsafe class CraftingOperations
             {
                 if (GenericHelpers.TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var recipenote))
                 {
-                    ClickRecipeNote.Using(new IntPtr(&recipenote->AtkUnitBase)).Synthesize();
+                    ClickRecipeNote.Using(new nint(&recipenote->AtkUnitBase)).Synthesize();
                     Endurance.Tasks.Clear();
                 }
             }

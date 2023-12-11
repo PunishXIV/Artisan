@@ -1,5 +1,5 @@
 ﻿using Artisan.CraftingLists;
-using Artisan.RawInformation;
+using Artisan.GameInterop;
 using Artisan.TemporaryFixes;
 using Artisan.UI;
 using ClickLib.Clicks;
@@ -61,7 +61,7 @@ namespace Artisan.Autocraft
                     if (Throttler.Throttle(500))
                     {
                         if (DebugTab.Debug) Svc.Log.Verbose("Closing repair window");
-                        Hotbars.actionManager->UseAction(ActionType.GeneralAction, 6);
+                        ActionManagerEx.UseRepair();
                     }
                     return false;
                 }
@@ -86,7 +86,7 @@ namespace Artisan.Autocraft
                         if (Throttler.Throttle(500))
                         {
                             if (DebugTab.Debug) Svc.Log.Verbose($"Opening repair");
-                            Hotbars.actionManager->UseAction(ActionType.GeneralAction, 6);
+                            ActionManagerEx.UseRepair();
                         }
                     }
                 }

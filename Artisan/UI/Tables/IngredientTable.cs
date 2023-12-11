@@ -1,6 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
-using Artisan.CraftingLogic;
+using Artisan.GameInterop;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Interface.Colors;
@@ -719,7 +719,7 @@ namespace Artisan.UI.Tables
                 {
                     P.TM.Enqueue(() => CraftingListFunctions.OpenRecipeByID(item.CraftedRecipe.RowId));
                     P.TM.Enqueue(() => CraftingListFunctions.SwitchJobGearset(item.CraftedRecipe.CraftType.Row + 8));
-                    P.TM.Enqueue(() => CraftingOperations.QuickSynthItem(item.Required));
+                    P.TM.Enqueue(() => Operations.QuickSynthItem(item.Required));
                 }
 
                 ImGuiComponents.HelpMarker("Quick Synths up to the required amount.");

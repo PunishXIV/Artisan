@@ -1,5 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLogic;
+using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using ClickLib.Clicks;
@@ -18,7 +19,6 @@ using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Forms;
 using static ECommons.GenericHelpers;
 
 namespace Artisan.CraftingLists
@@ -111,7 +111,7 @@ namespace Artisan.CraftingLists
 
         public static unsafe void OpenCraftingMenu()
         {
-            if (CurrentCraft.State == CraftingState.Crafting) return;
+            if (Crafting.CurState != Crafting.State.IdleNormal) return;
 
             if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
             {
@@ -137,7 +137,7 @@ namespace Artisan.CraftingLists
 
         public static unsafe void OpenRecipeByID(uint recipeID, bool skipThrottle = false)
         {
-            if (CurrentCraft.State == CraftingState.Crafting) return;
+            if (Crafting.CurState != Crafting.State.IdleNormal) return;
 
             if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
             {
@@ -177,7 +177,7 @@ namespace Artisan.CraftingLists
                 Svc.Log.Verbose("End of Index");
                 CurrentIndex = 0;
                 CraftingListUI.Processing = false;
-                CraftingOperations.CloseQuickSynthWindow();
+                Operations.CloseQuickSynthWindow();
                 CLTM.Enqueue(() => CloseCraftingMenu(), "EndOfListCloseMenu");
 
                 if (P.Config.PlaySoundFinishList)
@@ -185,10 +185,9 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if ((CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0) || 
-                (selectedList.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
+            if (QuickCrafting.Max > 0 && (QuickCrafting.Completed || selectedList.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
             {
-                CraftingOperations.CloseQuickSynthWindow();
+                Operations.CloseQuickSynthWindow();
             }
 
             var recipe = CraftingListHelpers.FilteredList[CraftingListUI.CurrentProcessedItem];
@@ -410,12 +409,12 @@ namespace Artisan.CraftingLists
 
                         if (count >= 99)
                         {
-                            CraftingOperations.QuickSynthItem(99);
+                            Operations.QuickSynthItem(99);
                             return;
                         }
                         else
                         {
-                            CraftingOperations.QuickSynthItem(count);
+                            Operations.QuickSynthItem(count);
                             return;
                         }
 
@@ -425,7 +424,7 @@ namespace Artisan.CraftingLists
                         if (!CLTM.IsBusy)
                         {
                             CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
-                            CLTM.Enqueue(() => CraftingOperations.RepeatActualCraft(), "ListCraft");
+                            CLTM.Enqueue(() => Operations.RepeatActualCraft(), "ListCraft");
                             return;
                         }
                     }
@@ -433,7 +432,9 @@ namespace Artisan.CraftingLists
 
             }
 
-            if ((CurrentIndex == 0 && CraftingListUI.CurrentProcessedItem != Endurance.RecipeID) || (CurrentIndex > 0 && CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1] && Endurance.RecipeID != CraftingListUI.CurrentProcessedItem) || (CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0))
+            if ((CurrentIndex == 0 && CraftingListUI.CurrentProcessedItem != Endurance.RecipeID)
+                || (CurrentIndex > 0 && CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1] && Endurance.RecipeID != CraftingListUI.CurrentProcessedItem)
+                || QuickCrafting.Completed)
             {
                 if (RecipeWindowOpen())
                 {
@@ -443,7 +444,7 @@ namespace Artisan.CraftingLists
                         return;
                     }
 
-                    if (CheckIfCraftFinished())
+                    if (Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
                     {
                         CloseCraftingMenu();
                         return;
@@ -463,12 +464,12 @@ namespace Artisan.CraftingLists
 
                         if (count >= 99)
                         {
-                            CraftingOperations.QuickSynthItem(99);
+                            Operations.QuickSynthItem(99);
                             return;
                         }
                         else
                         {
-                            CraftingOperations.QuickSynthItem(count);
+                            Operations.QuickSynthItem(count);
                             return;
                         }
                     }
@@ -490,7 +491,7 @@ namespace Artisan.CraftingLists
 
                             CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
                             CLTM.DelayNext("CraftListDelay", (int)(P.Config.ListCraftThrottle * 1000));
-                            CLTM.Enqueue(() => { CraftingOperations.RepeatActualCraft(); }, "ListCraft");
+                            CLTM.Enqueue(() => { Operations.RepeatActualCraft(); }, "ListCraft");
 
                             return;
                         }

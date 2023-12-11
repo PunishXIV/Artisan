@@ -1,12 +1,10 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.CraftingLogic.Solvers;
-using Artisan.RawInformation;
-using Artisan.RawInformation.Character;
+using Artisan.GameInterop;
 using Artisan.UI.Tables;
 using Dalamud.Configuration;
 using ECommons.DalamudServices;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -25,7 +23,7 @@ namespace Artisan
             {
                 if (value)
                 {
-                    Hotbars.ExecuteRecommended(CurrentCraft.CurrentRecommendation);
+                    ActionManagerEx.UseSkill(CraftingProcessor.NextRec.Action);
                 }
                 autoMode = value;
             }
@@ -180,7 +178,7 @@ namespace Artisan
                             for (int i = 0; i < actions.Count; ++i)
                             {
                                 var step = stepopts != null && i < stepopts.Count ? stepopts[i] : new JObject();
-                                step["Action"] = (int)SkillActionMap.ActionToSkill(actions[i].Value<uint>());
+                                step["Action"] = actions[i];
                                 steps.Add(step);
                             }
                             m["Steps"] = steps;
@@ -199,7 +197,7 @@ namespace Artisan
                             continue;
                         var id = v!.Value<int>();
                         var c = new JObject();
-                        c["Item1"] = typeof(MacroSolver).FullName;
+                        c["Item1"] = typeof(MacroSolverDefinition).FullName;
                         c["Item2"] = v;
                         cvt[k] = c;
                     }

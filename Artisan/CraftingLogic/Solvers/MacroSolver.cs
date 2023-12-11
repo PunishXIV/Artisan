@@ -6,46 +6,63 @@ using Skills = Artisan.RawInformation.Character.Skills;
 
 namespace Artisan.CraftingLogic.Solvers;
 
-public class MacroSolver : ISolver
+public class MacroSolverDefinition : ISolverDefinition
 {
-    public string Name(int flavour) => $"Macro: {P.Config.MacroSolverConfig.FindMacro(flavour)?.Name}";
-
-    public IEnumerable<(int flavour, int priority, string unsupportedReason)> Flavours(CraftState craft)
+    public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
     {
         foreach (var m in P.Config.MacroSolverConfig.Macros)
         {
             var statsOk = m.Options.MinCraftsmanship <= craft.StatCraftsmanship && m.Options.MinControl <= craft.StatControl && m.Options.MinCP <= craft.StatCP;
-            yield return (m.ID, 0, statsOk ? "" : "You do not meet the minimum stats for this macro");
+            yield return new(this, m.ID, 0, $"Macro: {m.Name}", statsOk ? "" : "You do not meet the minimum stats for this macro");
         }
     }
 
-    public (Skills action, string comment) Solve(CraftState craft, StepState step, List<StepState> prevSteps, int flavour)
-    {
-        var macro = P.Config.MacroSolverConfig.FindMacro(flavour);
-        if (macro == null)
-            return (Skills.None, "Macro not found");
+    public Solver Create(CraftState craft, int flavour, string name) => new MacroSolver(P.Config.MacroSolverConfig.FindMacro(flavour) ?? new(), name, craft);
+}
 
-        // TODO: this is a terrible terrible hack, we probably need stateful solvers
-        while (prevSteps.Count < macro.Steps.Count)
+public class MacroSolver : Solver
+{
+    private MacroSolverSettings.Macro _macro;
+    private Solver _fallback;
+    private int _nextStep;
+
+    public MacroSolver(MacroSolverSettings.Macro m, string name, CraftState craft) : base(name)
+    {
+        _macro = m;
+        _fallback = CraftingProcessor.GetAvailableSolversForRecipe(craft, false, typeof(MacroSolverDefinition)).MaxBy(f => f.Priority).CreateSolver(craft);
+    }
+
+    public override Solver Clone()
+    {
+        var res = (MacroSolver)MemberwiseClone();
+        res._fallback = _fallback.Clone();
+        return res;
+    }
+
+    public override Recommendation Solve(CraftState craft, StepState step)
+    {
+        var fallback = _fallback.Solve(craft, step); // note: we need to call it, even if we provide rec from macro, to ensure fallback solver's state is updated
+
+        while (_nextStep < _macro.Steps.Count)
         {
-            var s = macro.Steps[prevSteps.Count];
+            var s = _macro.Steps[_nextStep];
             var action = s.Action;
 
-            if (macro.Options.SkipQualityIfMet && step.Quality >= craft.CraftQualityMin3 && ActionIsQuality(action))
+            if (_macro.Options.SkipQualityIfMet && step.Quality >= craft.CraftQualityMin3 && ActionIsQuality(action))
             {
-                prevSteps.Add(step);
+                ++_nextStep;
                 continue;
             }
 
-            if (macro.Options.SkipObservesIfNotPoor && step.Condition != Condition.Poor && action is Skills.Observe or Skills.CarefulObservation)
+            if (_macro.Options.SkipObservesIfNotPoor && step.Condition != Condition.Poor && action is Skills.Observe or Skills.CarefulObservation)
             {
-                prevSteps.Add(step);
+                ++_nextStep;
                 continue;
             }
 
             if (P.Config.SkipMacroStepIfUnable && !Simulator.CanUseAction(craft, step, action))
             {
-                prevSteps.Add(step);
+                ++_nextStep;
                 continue;
             }
 
@@ -60,41 +77,36 @@ public class MacroSolver : ISolver
                 (s.ExcludePrimed && step.Condition == Condition.Primed) ||
                 (s.ExcludeGoodOmen && step.Condition == Condition.GoodOmen))
             {
-                prevSteps.Add(step);
+                ++_nextStep;
                 continue;
             }
 
             if (action == Skills.None)
             {
-                action = SolveFallback(craft, step, prevSteps);
+                action = fallback.Action;
             }
 
             if (!s.ExcludeFromUpgrade && step.Condition is Condition.Good or Condition.Excellent)
             {
-                if (macro.Options.UpgradeQualityActions && ActionIsUpgradeableQuality(action) && Simulator.CanUseAction(craft, step, Skills.PreciseTouch))
+                if (_macro.Options.UpgradeQualityActions && ActionIsUpgradeableQuality(action) && Simulator.CanUseAction(craft, step, Skills.PreciseTouch))
                 {
                     action = Skills.PreciseTouch;
                 }
-                if (macro.Options.UpgradeProgressActions && ActionIsUpgradeableProgress(action) && Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis))
+                if (_macro.Options.UpgradeProgressActions && ActionIsUpgradeableProgress(action) && Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis))
                 {
                     action = Skills.IntensiveSynthesis;
                 }
             }
 
-            return (action, $"{prevSteps.Count + 1}/{macro.Steps.Count}");
+            ++_nextStep;
+            return new(action, $"{_nextStep}/{_macro.Steps.Count}");
         }
 
         // we've run out of macro steps, see if we can use solver to continue
         // TODO: this is not a very good condition, it depends on external state...
         if (!P.Config.DisableMacroArtisanRecommendation || CraftingListUI.Processing)
-            return (SolveFallback(craft, step, prevSteps), "Macro has completed. Now continuing with solver.");
-        return (Skills.None, "Macro has completed. Please continue to manually craft.");
-    }
-
-    private Skills SolveFallback(CraftState craft, StepState step, List<StepState> prevSteps)
-    {
-        var s = P.GetAvailableSolversForRecipe(craft, false, this).MaxBy(f => f.priority);
-        return s.solver != null ? s.solver.Solve(craft, step, prevSteps, s.flavour).action : Skills.None;
+            return new(fallback.Action, "Macro has completed. Now continuing with solver.");
+        return new(Skills.None, "Macro has completed. Please continue to manually craft.");
     }
 
     private static bool ActionIsQuality(Skills skill) => skill is Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.FocusedTouch or Skills.PreparatoryTouch

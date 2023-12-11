@@ -8,43 +8,16 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
-using System;
 
 namespace Artisan.RawInformation
 {
     internal unsafe class ActionWatching
     {
-        public delegate byte UseActionDelegate(ActionManager* actionManager, uint actionType, uint actionID, long targetObjectID, uint param, uint useType, int pvp, bool* isGroundTarget);
-        public static Hook<UseActionDelegate> UseActionHook;
-        public static uint LastUsedAction = 0;
-        public static TaskManager ATM = new();
-        public static bool BlockAction = false;
-
         private delegate void* ClickSynthesisButton(void* a1, void* a2);
         private static Hook<ClickSynthesisButton> clickSynthesisButtonHook;
-        private static byte UseActionDetour(ActionManager* actionManager, uint actionType, uint actionID, long targetObjectID, uint param, uint useType, int pvp, bool* isGroundTarget)
-        {
-            try
-            {
-                if (BlockAction)
-                    return UseActionHook.Original(actionManager, (uint)ActionType.Action, 7, targetObjectID, param, useType, pvp, isGroundTarget);
-
-                if (actionManager->GetActionStatus((ActionType)actionType, actionID) == 0)
-                {
-                    CurrentCraft.NotifyUsedAction(SkillActionMap.ActionToSkill(actionID));
-                }
-                return UseActionHook.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
-            }
-            catch (Exception ex)
-            {
-                Svc.Log.Error(ex, "UseActionDetour");
-                return UseActionHook.Original(actionManager, actionType, actionID, targetObjectID, param, useType, pvp, isGroundTarget);
-            }
-        }
 
         static ActionWatching()
         {
-            UseActionHook = Svc.Hook.HookFromSignature<UseActionDelegate>(ActionManager.Addresses.UseAction.String, UseActionDetour);
             clickSynthesisButtonHook = Svc.Hook.HookFromSignature<ClickSynthesisButton>("E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 33 D2", ClickSynthesisButtonDetour);
             clickSynthesisButtonHook.Enable();
         }
@@ -162,32 +135,8 @@ namespace Artisan.RawInformation
             return clickSynthesisButtonHook.Original(a1, a2);
         }
 
-        public static void TryEnable()
-        {
-            if (!UseActionHook.IsEnabled)
-                UseActionHook.Enable();
-        }
-
-        public static void TryDisable()
-        {
-            if (UseActionHook.IsEnabled)
-                UseActionHook.Disable();
-        }
-        public static void Enable()
-        {
-            UseActionHook.Enable();
-        }
-
-        public static void Disable()
-        {
-            UseActionHook.Disable();
-        }
-
         public static void Dispose()
         {
-            TryDisable();
-
-            UseActionHook.Dispose();
             clickSynthesisButtonHook.Dispose();
         }
 

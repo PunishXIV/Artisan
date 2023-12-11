@@ -1,6 +1,7 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.FCWorkshops;
+using Artisan.GameInterop;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
@@ -460,9 +461,6 @@ namespace Artisan.UI
             {
                 if (ImGui.Checkbox("Automatic Action Execution Mode", ref autoEnabled))
                 {
-                    if (!autoEnabled)
-                        ActionWatching.BlockAction = false;
-
                     P.Config.AutoMode = autoEnabled;
                     P.Config.Save();
                 }

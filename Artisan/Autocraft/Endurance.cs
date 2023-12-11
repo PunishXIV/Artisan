@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
+using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.Sounds;
@@ -65,23 +66,11 @@ namespace Artisan.Autocraft
             if (RecipeID > 0)
             {
                 Enable = enable;
-
-                try
-                {
-                    if (enable)
-                    {
-                        UpdateMacroTimer();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ex.Log();
-                }
             }
         }
+
         internal static void Dispose()
         {
-            Svc.Framework.Update -= Framework_Update;
             Svc.Toasts.ErrorToast -= Toasts_ErrorToast;
             Svc.Toasts.ErrorToast -= CheckNonMaxQuantityModeFinished;
         }
@@ -404,7 +393,6 @@ namespace Artisan.Autocraft
 
         internal static void Init()
         {
-            Svc.Framework.Update += Framework_Update;
             Svc.Toasts.ErrorToast += Toasts_ErrorToast;
             Svc.Toasts.ErrorToast += CheckNonMaxQuantityModeFinished;
         }
@@ -425,15 +413,15 @@ namespace Artisan.Autocraft
             }
         }
 
-        private static void Framework_Update(IFramework framework)
+        public static void Update()
         {
-            if ((Enable && P.Config.QuickSynthMode && CurrentCraft.QuickSynthCurrent == CurrentCraft.QuickSynthMax && CurrentCraft.QuickSynthMax > 0) || IPC.IPC.StopCraftingRequest ||
+            if ((Enable && P.Config.QuickSynthMode && QuickCrafting.Completed) || IPC.IPC.StopCraftingRequest ||
                 (Enable && P.Config.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
             {
-                CraftingOperations.CloseQuickSynthWindow();
+                Operations.CloseQuickSynthWindow();
             }
 
-            if (Enable && !P.TM.IsBusy && CurrentCraft.State != CraftingState.Crafting)
+            if (Enable && !P.TM.IsBusy && Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
             {
                 var isCrafting = Svc.Condition[ConditionFlag.Crafting];
                 var preparing = Svc.Condition[ConditionFlag.PreparingToCraft];
@@ -519,9 +507,9 @@ namespace Artisan.Autocraft
 
                             P.TM.Enqueue(() => { if (!CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
                             if (P.Config.CraftingX)
-                                P.TM.Enqueue(() => CraftingOperations.QuickSynthItem(P.Config.CraftX));
+                                P.TM.Enqueue(() => Operations.QuickSynthItem(P.Config.CraftX));
                             else
-                                P.TM.Enqueue(() => CraftingOperations.QuickSynthItem(99));
+                                P.TM.Enqueue(() => Operations.QuickSynthItem(99));
                         }
                         else
                         {
@@ -531,9 +519,8 @@ namespace Artisan.Autocraft
                             else
                                 P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(SetIngredients), "EnduranceSetIngredients");
 
-                            P.TM.Enqueue(() => UpdateMacroTimer(), "UpdateEnduranceMacroTimer");
                             P.TM.DelayNext("EnduranceThrottle", 100);
-                            P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) CraftingOperations.RepeatActualCraft(); else { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
+                            P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) Operations.RepeatActualCraft(); else { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
                         }
                     }
                     else
@@ -572,16 +559,6 @@ namespace Artisan.Autocraft
                     Enable = false;
                     Errors.Clear();
                 }
-            }
-        }
-
-        private static void UpdateMacroTimer()
-        {
-            if (P.Config.CraftingX && P.Config.CraftX > 0)
-            {
-                var recipe = Svc.Data.GetExcelSheet<Recipe>()?.GetRow(RecipeID);
-                if (recipe != null)
-                    CraftingWindow.MacroTime = P.Config.CraftX * CurrentCraft.EstimateCraftTime(recipe, CurrentCraft.BuildCraftStateForRecipe(recipe));
             }
         }
     }

@@ -17,8 +17,6 @@ namespace Artisan.RawInformation.Character
 
         public static Job JobID => (Job)(Svc.ClientState.LocalPlayer?.ClassJob.Id ?? 0);
 
-        public static bool IsCrafting { get; set; }
-
         public static uint CurrentCP => Svc.ClientState.LocalPlayer.CurrentCp;
 
         public static uint MaxCP => Svc.ClientState.LocalPlayer.MaxCp;
