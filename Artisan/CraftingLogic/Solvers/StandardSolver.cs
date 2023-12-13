@@ -159,7 +159,6 @@ namespace Artisan.CraftingLogic.Solvers
 
             if (ShouldMend(craft, step, act, goingForQuality) && Simulator.CanUseAction(craft, step, Skills.MastersMend)) return new(Skills.MastersMend);
 
-            //Svc.Log.Debug($"{maxQuality}");
             if ((maxQuality == 0 || P.Config.MaxPercentage == 0) && !craft.CraftCollectible)
             {
                 if (step.Index == 1 && Simulator.CanUseAction(craft, step, Skills.MuscleMemory)) return new(Skills.MuscleMemory);

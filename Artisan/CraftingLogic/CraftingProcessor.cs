@@ -119,9 +119,12 @@ public static class CraftingProcessor
         var solverRef = new SolverRef(_activeSolver);
         SolverStarted?.Invoke(recipe, solverRef, craft, initialStep);
 
-        _nextRec = _activeSolver.Solve(craft, initialStep);
-        if (_nextRec.Action != Skills.None)
-            RecommendationReady?.Invoke(recipe, solverRef, craft, initialStep, _nextRec);
+        Svc.Framework.RunOnTick(() =>
+        {
+            _nextRec = _activeSolver.Solve(craft, initialStep);
+            if (_nextRec.Action != Skills.None)
+                RecommendationReady?.Invoke(recipe, solverRef, craft, initialStep, _nextRec);
+        }, TimeSpan.FromMilliseconds(P.Config.DelayRecommendation ? P.Config.RecommendationDelay : 0));
     }
 
     private static void OnCraftAdvanced(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState step)
@@ -130,9 +133,12 @@ public static class CraftingProcessor
         if (_activeSolver == null)
             return;
 
-        _nextRec = _activeSolver.Solve(craft, step);
-        if (_nextRec.Action != Skills.None)
-            RecommendationReady?.Invoke(recipe, new(_activeSolver), craft, step, _nextRec);
+        Svc.Framework.RunOnTick(() =>
+        {
+            _nextRec = _activeSolver.Solve(craft, step);
+            if (_nextRec.Action != Skills.None)
+                RecommendationReady?.Invoke(recipe, new(_activeSolver), craft, step, _nextRec);
+        }, TimeSpan.FromMilliseconds(P.Config.DelayRecommendation ? P.Config.RecommendationDelay : 0));
     }
 
     private static void OnCraftFinished(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState finalStep, bool cancelled)
