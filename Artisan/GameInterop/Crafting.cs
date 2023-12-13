@@ -23,9 +23,10 @@ public static unsafe class Crafting
         InProgress, // crafting is in progress, waiting for next action
         WaitAction, // we've executed an action and are waiting for results
         WaitFinish, // we're waiting for a craft to end (success / failure / cancel)
+        InvalidState, // we're in a state we probably shouldn't be, such as reloading the plugin mid-craft
     }
 
-    public static State CurState { get; private set; }
+    public static State CurState { get; private set; } = State.InvalidState;
     public static event Action<State>? StateChanged;
 
     public static Lumina.Excel.GeneratedSheets.Recipe? CurRecipe { get; private set; }
@@ -121,6 +122,7 @@ public static unsafe class Crafting
             State.InProgress => TransitionFromInProgress(),
             State.WaitAction => TransitionFromWaitAction(),
             State.WaitFinish => TransitionFromWaitFinish(),
+            State.InvalidState => TransitionFromInvalid(),
             _ => CurState
         };
         if (newState != CurState)
@@ -131,6 +133,14 @@ public static unsafe class Crafting
         }
     }
 
+    private static State TransitionFromInvalid()
+    {
+        if (!Svc.Condition[ConditionFlag.Crafting] && !Svc.Condition[ConditionFlag.Crafting40])
+            return State.WaitFinish;
+
+        return State.InvalidState;
+    }
+
     private static State TransitionFromIdle()
     {
         if (Svc.Condition[ConditionFlag.Crafting40])
@@ -139,7 +149,10 @@ public static unsafe class Crafting
         if (Svc.Condition[ConditionFlag.PreparingToCraft])
         {
             if (CurState != State.IdleBetween)
+            {
                 Svc.Log.Error("Unexpected crafting state transition: from idle to preparing");
+                return State.InvalidState;
+            }
             return State.IdleBetween;
         }
 

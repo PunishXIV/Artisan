@@ -287,7 +287,7 @@ namespace Artisan.UI
                 e.Log();
             }
 
-
+            ImGui.Text($"{Crafting.CurState}");
         }
 
         public class Item

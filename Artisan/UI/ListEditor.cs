@@ -953,7 +953,7 @@ internal class ListEditor : Window, IDisposable
 
         if (P.Config.MacroSolverConfig.Macros.Count > 0)
         {
-            ImGui.TextWrapped("Use solver for this recipe");
+            ImGui.TextWrapped("Select a solver for this recipe");
 
             var craft = Crafting.BuildCraftStateForRecipe(recipe);
             var s = CraftingProcessor.GetSolverForRecipe(Endurance.RecipeID, craft);

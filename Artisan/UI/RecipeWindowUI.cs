@@ -647,7 +647,7 @@ namespace Artisan
                 }
                 if (Endurance.RecipeID != 0)
                 {
-                    ImGui.Text($"Use a macro for this recipe ({Endurance.RecipeName})");
+                    ImGui.Text($"Select a solver for this recipe ({Endurance.RecipeName})");
                     var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
                     var craft = Crafting.BuildCraftStateForRecipe(recipe);
                     var s = CraftingProcessor.GetSolverForRecipe(Endurance.RecipeID, craft);
