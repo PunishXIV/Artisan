@@ -45,24 +45,21 @@ public class MacroSolver : Solver
 
         while (_nextStep < _macro.Steps.Count)
         {
-            var s = _macro.Steps[_nextStep];
+            var s = _macro.Steps[_nextStep++];
             var action = s.Action;
 
             if (_macro.Options.SkipQualityIfMet && step.Quality >= craft.CraftQualityMin3 && ActionIsQuality(action))
             {
-                ++_nextStep;
                 continue;
             }
 
             if (_macro.Options.SkipObservesIfNotPoor && step.Condition != Condition.Poor && action is Skills.Observe or Skills.CarefulObservation)
             {
-                ++_nextStep;
                 continue;
             }
 
             if (P.Config.SkipMacroStepIfUnable && !Simulator.CanUseAction(craft, step, action))
             {
-                ++_nextStep;
                 continue;
             }
 
@@ -77,7 +74,6 @@ public class MacroSolver : Solver
                 (s.ExcludePrimed && step.Condition == Condition.Primed) ||
                 (s.ExcludeGoodOmen && step.Condition == Condition.GoodOmen))
             {
-                ++_nextStep;
                 continue;
             }
 
@@ -98,7 +94,6 @@ public class MacroSolver : Solver
                 }
             }
 
-            ++_nextStep;
             return new(action, $"{_nextStep}/{_macro.Steps.Count}");
         }
 

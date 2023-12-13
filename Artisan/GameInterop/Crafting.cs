@@ -46,6 +46,7 @@ public static unsafe class Crafting
     public static event CraftFinishedDelegate? CraftFinished;
 
     private static Skills _pendingAction;
+    private static StepState? _predictedNextStep;
 
     public static void Dispose()
     {
@@ -106,12 +107,16 @@ public static unsafe class Crafting
         // 2c. some time later, animation ends - at this point synth addon is updated and Crafting40 condition flag is cleared - at this point we transition to InProgress state
         // 3. user executes an action that doesn't complete a craft
         // 3a. UseAction hook detects action requests, we save the pending action
-        // 3b. action animation starts - this is signified by Crafting40 condition flag, we transition to WaitAction state
-        // 3c. some time later, animation ends - at this point synth addon is updated and Crafting40 condition flag is cleared - at this point we transition back to InProgress state
+        // 3b. on the next frame, client sets Crafting40 condition flag - we transition to WaitAction state (TODO: consider a timeout if flag isn't set, this probably means something went wrong and action was not executed...)
+        // 3c. a bit later client receives a bunch of packets: ActorControl (to start animation), StatusEffectList (containing previous statuses and new cp) and UpdateClassInfo (irrelevant)
+        // 3d. a few seconds later client receives another bunch of packets: some misc ones, EventPlay64 (contains new crafting state - progress/quality/condition/etc), StatusEffectList (contains new statuses and new cp) and UpdateClassInfo (irrelevant)
+        // 3e. on the next frame after receiving EventPlay64, Crafting40 flag is cleared and player is unblocked
+        // 3f. sometimes EventPlay64 and final StatusEffectList might end up in a different packet bundle and can get delayed for arbitrary time (and it won't be sent at all if there are no status updates) - we transition back to InProgress state only once statuses are updated
         // 4. user executes an action that completes a craft in any way (success or failure)
-        // 4a/b - same as 3a/b
-        // 4c. some time later, animation ends - at this point synth addon is updated, but Crafting40 condition flag remains set (finish animation starts) - at this point we transition to WaitFinish state
-        // 4d. some time later, finish animation ends - Crafting40 condition flag is cleared, PreparingToCraft flag is set - at this point we transition to IdleBetween state
+        // 4a-d - same as 3a-d
+        // 4e. same as 3e, however Crafting40 flag remains set and crafting finish animation starts playing
+        // 4f. as soon as we've got fully updated state, we transition to WaitFinish state
+        // 4g. some time later, finish animation ends - Crafting40 condition flag is cleared, PreparingToCraft flag is set - at this point we transition to IdleBetween state
         // 5. user exits crafting mode - condition flags are cleared, we transition to IdleNormal state
         // 6. if at some point during craft (InProgress state) user cancels it, we get Crafting40 condition flag without preceeding UseAction - at this point we transition to WaitFinish state
         // since an action can complete a craft only if it increases progress or reduces durability, we can use that to determine when to transition from WaitAction to WaitFinish
@@ -122,8 +127,7 @@ public static unsafe class Crafting
             State.InProgress => TransitionFromInProgress(),
             State.WaitAction => TransitionFromWaitAction(),
             State.WaitFinish => TransitionFromWaitFinish(),
-            State.InvalidState => TransitionFromInvalid(),
-            _ => CurState
+            _ => TransitionFromInvalid()
         };
         if (newState != CurState)
         {
@@ -135,10 +139,13 @@ public static unsafe class Crafting
 
     private static State TransitionFromInvalid()
     {
-        if (!Svc.Condition[ConditionFlag.Crafting] && !Svc.Condition[ConditionFlag.Crafting40])
-            return State.WaitFinish;
+        if (Svc.Condition[ConditionFlag.Crafting40] || Svc.Condition[ConditionFlag.Crafting] != Svc.Condition[ConditionFlag.PreparingToCraft])
+            return State.InvalidState; // stay in this state until we get to one of the idle states
 
-        return State.InvalidState;
+        // wrap up
+        if (CurRecipe != null && CurCraft != null && CurStep != null)
+            CraftFinished?.Invoke(CurRecipe, CurCraft, CurStep, true); // emulate cancel (TODO reconsider)
+        return State.WaitFinish;
     }
 
     private static State TransitionFromIdle()
@@ -197,12 +204,21 @@ public static unsafe class Crafting
     private static State TransitionFromInProgress()
     {
         if (!Svc.Condition[ConditionFlag.Crafting40])
-            return State.InProgress; // all transitions (actions or cancel) start with this state
+            return State.InProgress; // when either action is executed or craft is cancelled, this condition flag will be set
+
         if (_pendingAction != Skills.None)
-            return State.WaitAction; // waiting for action result
-        // transition withou action is cancel
-        CraftFinished?.Invoke(CurRecipe!, CurCraft!, CurStep!, true);
-        return State.WaitFinish; // transition without action is cancel
+        {
+            // we've just tried to execute an action and now got the transition - assume action execution started
+            // TODO: consider some timeout? e.g. if action execution did _not_ start for whatever reason, and later user cancelled the craft
+            _predictedNextStep = Simulator.Execute(CurCraft!, CurStep!, _pendingAction, 0, 1).Item2;
+            return State.WaitAction;
+        }
+        else
+        {
+            // transition without action is cancel
+            CraftFinished?.Invoke(CurRecipe!, CurCraft!, CurStep!, true);
+            return State.WaitFinish; // transition without action is cancel
+        }
     }
 
     private static State TransitionFromWaitAction()
@@ -211,28 +227,36 @@ public static unsafe class Crafting
         if (synthWindow == null)
         {
             Svc.Log.Error($"Unexpected addon state when action should've been finished");
-            return State.WaitAction; // try again next frame
+            return State.InvalidState;
         }
 
         var prevIndex = CurStep!.Index;
         if (!Svc.Condition[ConditionFlag.Crafting40])
         {
-            // action execution finished, step advanced
-            CurStep = BuildStepState(synthWindow);
-            var stepIndexIncrement = CurStep.PrevComboAction is Skills.FinalAppraisal or Skills.HeartAndSoul or Skills.CarefulObservation ? 0 : 1;
-            if (CurStep.Index != prevIndex + stepIndexIncrement)
-                Svc.Log.Error($"Unexpected step index: got {CurStep.Index}, expected {prevIndex}+{stepIndexIncrement} (action={CurStep.PrevComboAction})");
+            // action execution finished, step advanced - make sure all statuses are updated correctly
+            var step = BuildStepState(synthWindow);
+            if (!StatusesUpdated(step))
+                return State.WaitAction;
+            var stepIndexIncrement = step.PrevComboAction is Skills.FinalAppraisal or Skills.HeartAndSoul or Skills.CarefulObservation ? 0 : 1;
+            if (step.Index != prevIndex + stepIndexIncrement)
+                Svc.Log.Error($"Unexpected step index: got {step.Index}, expected {prevIndex}+{stepIndexIncrement} (action={step.PrevComboAction})");
             _pendingAction = Skills.None;
+            _predictedNextStep = null;
+            CurStep = step;
             CraftAdvanced?.Invoke(CurRecipe!, CurCraft!, CurStep);
             return State.InProgress;
         }
-        else if (CurStep!.Progress != GetStepProgress(synthWindow) && CurStep!.Durability != GetStepDurability(synthWindow))
+        else if (CurStep!.Progress != GetStepProgress(synthWindow) || CurStep!.Durability != GetStepDurability(synthWindow))
         {
             // action execution finished, craft completes
-            CurStep = BuildStepState(synthWindow);
-            if (CurStep.Index != prevIndex)
-                Svc.Log.Error($"Unexpected step index: got {CurStep.Index}, expected {prevIndex} (action={CurStep.PrevComboAction})");
+            var step = BuildStepState(synthWindow);
+            if (!StatusesUpdated(step))
+                return State.WaitAction;
+            if (step.Index != prevIndex)
+                Svc.Log.Error($"Unexpected step index: got {step.Index}, expected {prevIndex} (action={step.PrevComboAction})");
             _pendingAction = Skills.None;
+            _predictedNextStep = null;
+            CurStep = step;
             CraftFinished?.Invoke(CurRecipe!, CurCraft!, CurStep, false);
             return State.WaitFinish;
         }
@@ -250,6 +274,7 @@ public static unsafe class Crafting
 
         ActionManagerEx.ActionUsed -= OnActionUsed;
         _pendingAction = Skills.None;
+        _predictedNextStep = null;
         CurRecipe = null;
         CurCraft = null;
         CurStep = null;
@@ -299,6 +324,25 @@ public static unsafe class Crafting
         HeartAndSoulAvailable = P.Config.UseSpecialist && ActionManagerEx.CanUseSkill(Skills.HeartAndSoul),
         PrevComboAction = _pendingAction,
     };
+
+    private static bool StatusesEqual(StepState l, StepState r) =>
+        (l.IQStacks, l.WasteNotLeft, l.ManipulationLeft, l.GreatStridesLeft, l.InnovationLeft, l.VenerationLeft, l.MuscleMemoryLeft, l.FinalAppraisalLeft, l.HeartAndSoulActive) ==
+        (r.IQStacks, r.WasteNotLeft, r.ManipulationLeft, r.GreatStridesLeft, r.InnovationLeft, r.VenerationLeft, r.MuscleMemoryLeft, r.FinalAppraisalLeft, r.HeartAndSoulActive);
+
+    private static bool StatusesUpdated(StepState step)
+    {
+        // this is a bit of a hack to work around for statuses being updated by a packet that arrives after EventPlay64, which updates the actual crafting state
+        if (StatusesEqual(step, _predictedNextStep!))
+            return true; // all good, updated
+        if (StatusesEqual(step, CurStep!))
+        {
+            Svc.Log.Debug("Waiting for status update...");
+            return false; // still old ones, waiting...
+        }
+        // ok, so statuses have changed, just not in the way we expect - complain and consider them to be updated
+        Svc.Log.Error($"Unexpected status update: had {CurStep}, expected {_predictedNextStep}, got {step} - probably there's a bug in simulator");
+        return true;
+    }
 
     private static void OnActionUsed(Skills action) => _pendingAction = action;
 

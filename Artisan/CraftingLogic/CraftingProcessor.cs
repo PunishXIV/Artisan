@@ -3,11 +3,9 @@ using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Environment;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using static OtterGui.Widgets.Tutorial;
 
 namespace Artisan.CraftingLogic;
 
@@ -119,26 +117,20 @@ public static class CraftingProcessor
         var solverRef = new SolverRef(_activeSolver);
         SolverStarted?.Invoke(recipe, solverRef, craft, initialStep);
 
-        Svc.Framework.RunOnTick(() =>
-        {
-            _nextRec = _activeSolver.Solve(craft, initialStep);
-            if (_nextRec.Action != Skills.None)
-                RecommendationReady?.Invoke(recipe, solverRef, craft, initialStep, _nextRec);
-        }, TimeSpan.FromMilliseconds(P.Config.DelayRecommendation ? P.Config.RecommendationDelay : 0));
+        _nextRec = _activeSolver.Solve(craft, initialStep);
+        if (_nextRec.Action != Skills.None)
+            RecommendationReady?.Invoke(recipe, solverRef, craft, initialStep, _nextRec);
     }
 
     private static void OnCraftAdvanced(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState step)
     {
-        Svc.Log.Debug($"[CProc] OnCraftAdvanced #{recipe.RowId} (solver={_activeSolver != null})");
+        Svc.Log.Debug($"[CProc] OnCraftAdvanced #{recipe.RowId} (solver={_activeSolver != null}): {step}");
         if (_activeSolver == null)
             return;
 
-        Svc.Framework.RunOnTick(() =>
-        {
-            _nextRec = _activeSolver.Solve(craft, step);
-            if (_nextRec.Action != Skills.None)
-                RecommendationReady?.Invoke(recipe, new(_activeSolver), craft, step, _nextRec);
-        }, TimeSpan.FromMilliseconds(P.Config.DelayRecommendation ? P.Config.RecommendationDelay : 0));
+        _nextRec = _activeSolver.Solve(craft, step);
+        if (_nextRec.Action != Skills.None)
+            RecommendationReady?.Invoke(recipe, new(_activeSolver), craft, step, _nextRec);
     }
 
     private static void OnCraftFinished(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState finalStep, bool cancelled)
@@ -149,6 +141,6 @@ public static class CraftingProcessor
 
         SolverFinished?.Invoke(recipe, new(_activeSolver), craft, finalStep);
         _activeSolver = null;
-        _nextRec = default;
+        _nextRec = new();
     }
 }

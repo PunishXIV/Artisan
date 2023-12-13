@@ -124,9 +124,7 @@ namespace Artisan.CraftingLists
 
         public static unsafe bool RecipeWindowOpen()
         {
-            return TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) && 
-                addon->AtkUnitBase.IsVisible && RecipeNote.Instance()->RecipeList is var rl && 
-                rl != null && rl->Recipes != null && rl->SelectedIndex < *(int*)((byte*)rl + 8);
+            return TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) && addon->AtkUnitBase.IsVisible && RecipeNote.Instance()->RecipeList is var rl && rl != null && rl->Recipes != null;
         }
 
         public static unsafe void CloseCraftingMenu()
