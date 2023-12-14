@@ -3,7 +3,6 @@ using ECommons.DalamudServices;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Artisan.CraftingLogic
 {
@@ -72,7 +71,7 @@ namespace Artisan.CraftingLogic
                 sumLevel += ilvl * i.AmountIngredient;
                 sumLevelHQ += ilvl * Math.Clamp(numHQ, 0, i.AmountIngredient);
             }
-            return sumLevelHQ * RecipeMaxQuality(recipe) * recipe.MaterialQualityFactor / (sumLevel * 100);
+            return sumLevel == 0? 0 : sumLevelHQ * RecipeMaxQuality(recipe) * recipe.MaterialQualityFactor / (sumLevel * 100);
         }
     }
 }

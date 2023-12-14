@@ -1,5 +1,4 @@
-﻿using Dalamud.Game.ClientState.Objects.Enums;
-using ECommons.Automation;
+﻿using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.Reflection;
 using ECommons.Throttlers;

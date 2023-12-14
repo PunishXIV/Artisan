@@ -1,6 +1,4 @@
-﻿using Artisan.CraftingLogic;
-using Artisan.RawInformation.Character;
-using Dalamud.Hooking;
+﻿using Dalamud.Hooking;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;

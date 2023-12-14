@@ -1,5 +1,4 @@
 ﻿using Artisan.CraftingLists;
-using Artisan.CraftingLogic;
 using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;

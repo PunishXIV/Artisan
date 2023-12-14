@@ -684,9 +684,9 @@ namespace Artisan
                             {
                                 Vector4 c = progress ? breakpointHit switch
                                 {
-                                    "Low" => new Vector4(0.7f, 0.5f, 0.5f, 1f),
-                                    "Mid" => new Vector4(0.5f, 0.5f, 0.7f, 1f),
-                                    "High" => new Vector4(0.5f, 1f, 0.5f, 1f),
+                                    "1st" => new Vector4(0.7f, 0.5f, 0.5f, 1f),
+                                    "2nd" => new Vector4(0.5f, 0.5f, 0.7f, 1f),
+                                    "3rd" => new Vector4(0.5f, 1f, 0.5f, 1f),
                                     _ => ImGuiColors.DalamudRed
                                 } : ImGuiColors.DalamudRed;
 

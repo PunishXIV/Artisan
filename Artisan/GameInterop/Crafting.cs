@@ -6,6 +6,7 @@ using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using OtterGui;
 using System;
 using System.Linq;
 
@@ -81,12 +82,40 @@ public static unsafe class Crafting
 
         if (res.CraftCollectible)
         {
+            // Check regular collectibles first
             var breakpoints = Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.CollectablesShopItem>()?.FirstOrDefault(x => x.Item.Row == recipe.ItemResult.Row)?.CollectablesShopRefine.Value;
             if (breakpoints != null)
             {
                 res.CraftQualityMin1 = breakpoints.LowCollectability * 10;
                 res.CraftQualityMin2 = breakpoints.MidCollectability * 10;
                 res.CraftQualityMin3 = breakpoints.HighCollectability * 10;
+            }
+            else // Then check custom delivery
+            {
+                var satisfaction = Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.SatisfactionSupply>()?.FirstOrDefault(x => x.Item.Row == recipe.ItemResult.Row);
+                if (satisfaction != null)
+                {
+                    res.CraftQualityMin1 = satisfaction.CollectabilityLow * 10;
+                    res.CraftQualityMin2 = satisfaction.CollectabilityMid * 10;
+                    res.CraftQualityMin3 = satisfaction.CollectabilityHigh * 10;
+                }
+                else // Finally, check Ishgard Restoration
+                {
+                    var hwdSheet = Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.HWDCrafterSupply>()?.FirstOrDefault(x => x.ItemTradeIn.Any(y => y.Row == recipe.ItemResult.Row));
+                    if (hwdSheet != null)
+                    {
+                        var index = hwdSheet.ItemTradeIn.IndexOf(x => x.Row == recipe.ItemResult.Row);
+                        res.CraftQualityMin1 = hwdSheet.BaseCollectableRating[index];
+                        res.CraftQualityMin2 = hwdSheet.MidCollectableRating[index];
+                        res.CraftQualityMin3 = hwdSheet.HighCollectableRating[index];
+                    }
+                }
+            }
+
+            if (res.CraftQualityMin3 == 0)
+            {
+                res.CraftQualityMin3 = res.CraftQualityMin2;
+                res.CraftQualityMin2 = res.CraftQualityMin1;
             }
         }
         else if (recipe.RequiredQuality > 0)

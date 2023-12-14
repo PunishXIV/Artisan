@@ -8,7 +8,6 @@ using ImGuiNET;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System;
-using Dalamud.Interface;
 using SharpDX;
 using SharpDX.DirectWrite;
 using System.IO;

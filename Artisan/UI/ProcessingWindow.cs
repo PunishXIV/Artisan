@@ -1,5 +1,4 @@
 ﻿using Artisan.CraftingLists;
-using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using ImGuiNET;

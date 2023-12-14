@@ -1,5 +1,4 @@
-﻿using Artisan.CraftingLogic;
-using Dalamud.Utility.Signatures;
+﻿using Dalamud.Utility.Signatures;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -7,7 +6,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.RawInformation.Character
 {

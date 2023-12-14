@@ -59,6 +59,7 @@ public static class SolverUtils
     public static string EstimateCollectibleThreshold(Solver solver, CraftState craft, int startingQuality)
     {
         var res = SimulateSolverExecution(solver, craft, startingQuality);
-        return res == null || res.Quality < craft.CraftQualityMin1 || res.Progress < craft.CraftProgress ? "Fail" : res.Quality >= craft.CraftQualityMin3 ? "High" : res.Quality >= craft.CraftQualityMin2 ? "Mid" : "Low";
+        string finalBreakpoint = craft.CraftQualityMin2 != craft.CraftQualityMin1 ? "3rd" : "2nd";
+        return res == null || res.Quality < craft.CraftQualityMin1 || res.Progress < craft.CraftProgress ? "Fail" : res.Quality >= craft.CraftQualityMin3 ? $"{finalBreakpoint}" : res.Quality >= craft.CraftQualityMin2 && craft.CraftQualityMin2 != craft.CraftQualityMin1 ? "2nd" : "1st";
     }
 }

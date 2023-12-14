@@ -1,7 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.FCWorkshops;
-using Artisan.GameInterop;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;

@@ -2,7 +2,6 @@
 using Artisan.ContextMenus;
 using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
-using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.IPC;
 using Artisan.RawInformation;
@@ -11,10 +10,6 @@ using Artisan.UI;
 using Artisan.Universalis;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
-using Dalamud.Game.Gui.Toast;
-using Dalamud.Game.Text;
-using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Style;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
@@ -27,11 +22,8 @@ using ImGuiNET;
 using OtterGui.Classes;
 using PunishLib;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using SoundPlayer = Artisan.Sounds.SoundPlayer;
 
 namespace Artisan;
 
