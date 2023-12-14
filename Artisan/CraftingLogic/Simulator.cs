@@ -25,8 +25,8 @@ public static class Simulator
         Succeeded
     }
 
-    public static StepState CreateInitial(CraftState craft)
-        => new() { Index = 1, Durability = craft.CraftDurability, RemainingCP = craft.StatCP, CarefulObservationLeft = craft.Specialist ? 3 : 0, HeartAndSoulAvailable = craft.Specialist };
+    public static StepState CreateInitial(CraftState craft, int startingQuality)
+        => new() { Index = 1, Durability = craft.CraftDurability, Quality = startingQuality, RemainingCP = craft.StatCP, CarefulObservationLeft = craft.Specialist ? 3 : 0, HeartAndSoulAvailable = craft.Specialist };
 
     public static CraftStatus Status(CraftState craft, StepState step)
     {

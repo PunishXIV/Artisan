@@ -3,6 +3,7 @@ using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.FCWorkshops;
 using Artisan.GameInterop;
+using Artisan.GameInterop.CSExt;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Game.Text.SeStringHandling;
@@ -669,11 +670,14 @@ namespace Artisan
                     if (recipe.CanHq)
                     {
                         var solver = s.CreateSolver(craft);
-                        var progress = SolverUtils.EstimateProgressChance(solver, craft);
+                        var rd = RecipeNoteRecipeData.Ptr();
+                        var re = rd != null ? rd->FindRecipeById(recipe.RowId) : null;
+                        var startingQuality = re != null ? Calculations.GetStartingQuality(recipe, re->GetAssignedHQIngredients()) : 0;
+                        var progress = SolverUtils.EstimateProgressChance(solver, craft, startingQuality);
 
                         if (recipe.ItemResult.Value.IsCollectable)
                         {
-                            var breakpointHit = SolverUtils.EstimateCollectibleThreshold(solver, craft);
+                            var breakpointHit = SolverUtils.EstimateCollectibleThreshold(solver, craft, startingQuality);
                             if (breakpointHit == "Fail")
                                 ImGuiEx.Text(ImGuiColors.DalamudRed, $"This solver will fail.");
                             else
@@ -691,7 +695,7 @@ namespace Artisan
                         }
                         else
                         {
-                            var q = SolverUtils.EstimateQualityPercent(solver, craft); // TODO: use starting quality from currently selected hq mats
+                            var q = SolverUtils.EstimateQualityPercent(solver, craft, startingQuality);
                             var hq = Calculations.GetHQChance(q);
                             var c = progress ? new Vector4(1 - (hq / 100f), 0 + (hq / 100f), 1 - (hq / 100f), 255) : ImGuiColors.DalamudRed;
                             ImGuiEx.Text(c, $"This solver will HQ {hq}% of the time ({q:f0}% quality) {(progress ? "and will complete" : "but will not complete")} the craft.");

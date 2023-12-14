@@ -182,7 +182,7 @@ namespace Artisan.UI
         {
             if (P.Config.AutoMode && solver)
             {
-                var estimatedTime = SolverUtils.EstimateCraftTime(solver.Clone()!, craft);
+                var estimatedTime = SolverUtils.EstimateCraftTime(solver.Clone()!, craft, initialStep.Quality);
                 var count = P.Config.CraftingX && Endurance.Enable ? P.Config.CraftX : 1;
                 _estimatedCraftEnd = DateTime.Now + count * estimatedTime;
             }

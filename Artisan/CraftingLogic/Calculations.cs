@@ -3,6 +3,7 @@ using ECommons.DalamudServices;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Artisan.CraftingLogic
 {
@@ -51,6 +52,27 @@ namespace Artisan.CraftingLogic
                 default:
                     return false;
             };
+        }
+
+        public static int GetStartingQuality(Recipe recipe, int[] hqCount)
+        {
+            var itemSheet = Svc.Data.GetExcelSheet<Item>();
+            int sumLevelHQ = 0, sumLevel = 0, idx = 0;
+            foreach (var i in recipe.UnkData5)
+            {
+                var numHQ = idx < hqCount.Length ? hqCount[idx] : 0;
+                ++idx;
+
+                if (i.AmountIngredient == 0 || i.ItemIngredient <= 0)
+                    continue;
+                var item = itemSheet?.GetRow((uint)i.ItemIngredient);
+                if (item == null || !item.CanBeHq)
+                    continue;
+                var ilvl = (int)item.LevelItem.Row;
+                sumLevel += ilvl * i.AmountIngredient;
+                sumLevelHQ += ilvl * Math.Clamp(numHQ, 0, i.AmountIngredient);
+            }
+            return sumLevelHQ * RecipeMaxQuality(recipe) * recipe.MaterialQualityFactor / (sumLevel * 100);
         }
     }
 }

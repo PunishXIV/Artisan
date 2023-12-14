@@ -15,6 +15,8 @@ using Artisan.Autocraft;
 using Lumina.Excel.GeneratedSheets;
 using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
+using Artisan.GameInterop.CSExt;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Artisan.UI
 {
@@ -231,6 +233,21 @@ namespace Artisan.UI
                     }
                 }
 
+                if (ImGui.CollapsingHeader("RecipeNote"))
+                {
+                    var recipes = RecipeNoteRecipeData.Ptr();
+                    if (recipes != null && recipes->Recipes != null)
+                    {
+                        DrawRecipeEntry($"Selected", recipes->Recipes + recipes->SelectedIndex);
+                        for (int i = 0; i < recipes->RecipesCount; ++i)
+                            DrawRecipeEntry(i.ToString(), recipes->Recipes + i);
+                    }
+                    else
+                    {
+                        ImGui.TextUnformatted($"Null: {(nint)recipes:X}");
+                    }
+                }
+
                 ImGui.Separator();
 
                 if (ImGui.Button("Repair all"))
@@ -288,6 +305,31 @@ namespace Artisan.UI
             }
 
             ImGui.Text($"{Crafting.CurState}");
+        }
+
+        private static void DrawRecipeEntry(string tag, RecipeNoteRecipeEntry* e)
+        {
+            var recipe = Svc.Data.GetExcelSheet<Recipe>()?.GetRow(e->RecipeId);
+            using var n = ImRaii.TreeNode($"{tag}: {e->RecipeId} '{recipe?.ItemResult.Value?.Name}'###{tag}");
+            if (!n)
+                return;
+
+            int i = 0;
+            foreach (ref var ing in e->IngredientsSpan)
+            {
+                if (ing.NumTotal != 0)
+                {
+                    var item = Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()?.GetRow(ing.ItemId);
+                    using var n1 = ImRaii.TreeNode($"Ingredient {i}: {ing.ItemId} '{item?.Name}' (ilvl={item?.LevelItem.Row}, hq={item?.CanBeHq}), max={ing.NumTotal}, nq={ing.NumAssignedNQ}/{ing.NumAvailableNQ}, hq={ing.NumAssignedHQ}/{ing.NumAvailableHQ}", ImGuiTreeNodeFlags.Leaf);
+                }
+                i++;
+            }
+
+            if (recipe != null)
+            {
+                var startingQuality = Calculations.GetStartingQuality(recipe, e->GetAssignedHQIngredients());
+                using var n2 = ImRaii.TreeNode($"Starting quality: {startingQuality}/{Calculations.RecipeMaxQuality(recipe)}", ImGuiTreeNodeFlags.Leaf);
+            }
         }
 
         public class Item
