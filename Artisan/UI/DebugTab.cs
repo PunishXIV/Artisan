@@ -17,6 +17,9 @@ using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.GameInterop.CSExt;
 using Dalamud.Interface.Utility.Raii;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using System.Runtime.CompilerServices;
+using ECommons.ExcelServices;
 
 namespace Artisan.UI
 {
@@ -248,6 +251,14 @@ namespace Artisan.UI
                     }
                 }
 
+                if (ImGui.CollapsingHeader("Gear"))
+                {
+                    ImGui.TextUnformatted($"In-game stats: {CharacterInfo.Craftsmanship}/{CharacterInfo.Control}/{CharacterInfo.MaxCP}");
+                    DrawEquippedGear();
+                    foreach (ref var gs in RaptureGearsetModule.Instance()->EntriesSpan)
+                        DrawGearset(ref gs);
+                }
+
                 ImGui.Separator();
 
                 if (ImGui.Button("Repair all"))
@@ -329,6 +340,70 @@ namespace Artisan.UI
             {
                 var startingQuality = Calculations.GetStartingQuality(recipe, e->GetAssignedHQIngredients());
                 using var n2 = ImRaii.TreeNode($"Starting quality: {startingQuality}/{Calculations.RecipeMaxQuality(recipe)}", ImGuiTreeNodeFlags.Leaf);
+            }
+        }
+
+        private static void DrawEquippedGear()
+        {
+            using var nodeEquipped = ImRaii.TreeNode("Equipped gear");
+            if (!nodeEquipped)
+                return;
+
+            var stats = CharacterStats.GetBaseStatsEquipped();
+            ImGui.TextUnformatted($"Total stats: {stats.Craftsmanship}/{stats.Control}/{stats.CP}/{stats.Splendorous}/{stats.Specialist}");
+
+            var inventory = InventoryManager.Instance()->GetInventoryContainer(InventoryType.EquippedItems);
+            if (inventory == null)
+                return;
+
+            for (int i = 0; i < inventory->Size; ++i)
+            {
+                var item = inventory->Items + i;
+                var details = new ItemStats(item);
+                if (details.Data == null)
+                    continue;
+
+                using var n = ImRaii.TreeNode($"{i}: {item->ItemID} '{details.Data.Name}' ({item->Flags}): crs={details.Stats[0].Base}+{details.Stats[0].Melded}/{details.Stats[0].Max}, ctrl={details.Stats[1].Base}+{details.Stats[1].Melded}/{details.Stats[1].Max}, cp={details.Stats[2].Base}+{details.Stats[2].Melded}/{details.Stats[2].Max}");
+                if (n)
+                {
+                    for (int j = 0; j < 5; ++j)
+                    {
+                        using var m = ImRaii.TreeNode($"Materia {j}: {item->Materia[j]} {item->MateriaGrade[j]}", ImGuiTreeNodeFlags.Leaf);
+                    }
+                }
+            }
+        }
+
+        private static void DrawGearset(ref RaptureGearsetModule.GearsetEntry gs)
+        {
+            if (!gs.Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists))
+                return;
+
+            fixed (byte* name = gs.Name)
+            {
+                using var nodeGearset = ImRaii.TreeNode($"Gearset {gs.ID} '{Dalamud.Memory.MemoryHelper.ReadString((nint)name, 48)}' {(Job)gs.ClassJob} ({gs.Flags})");
+                if (!nodeGearset)
+                    return;
+
+                var stats = CharacterStats.GetBaseStatsGearset(ref gs);
+                ImGui.TextUnformatted($"Total stats: {stats.Craftsmanship}/{stats.Control}/{stats.CP}/{stats.Splendorous}/{stats.Specialist}");
+
+                for (int i = 0; i < gs.ItemsSpan.Length; ++i)
+                {
+                    ref var item = ref gs.ItemsSpan[i];
+                    var details = new ItemStats((RaptureGearsetModule.GearsetItem*)Unsafe.AsPointer(ref item));
+                    if (details.Data == null)
+                        continue;
+
+                    using var n = ImRaii.TreeNode($"{i}: {item.ItemID} '{details.Data.Name}' ({item.Flags}): crs={details.Stats[0].Base}+{details.Stats[0].Melded}/{details.Stats[0].Max}, ctrl={details.Stats[1].Base}+{details.Stats[1].Melded}/{details.Stats[1].Max}, cp={details.Stats[2].Base}+{details.Stats[2].Melded}/{details.Stats[2].Max}");
+                    if (n)
+                    {
+                        for (int j = 0; j < 5; ++j)
+                        {
+                            using var m = ImRaii.TreeNode($"Materia {j}: {item.Materia[j]} {item.MateriaGrade[j]}", ImGuiTreeNodeFlags.Leaf);
+                        }
+                    }
+                }
             }
         }
 

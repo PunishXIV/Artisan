@@ -1,0 +1,223 @@
+﻿using Artisan.RawInformation.Character;
+using ECommons.DalamudServices;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using Lumina.Excel.GeneratedSheets;
+using System;
+using System.Runtime.CompilerServices;
+
+namespace Artisan.GameInterop;
+
+public unsafe static class CharacterStatsUtils
+{
+    public enum Stat { Craftsmanship, Control, CP, Count }
+
+    public static uint[] ParamIds = [70, 71, 11]; // rows in BaseParam table
+    public static int[,] StatCapModifiers = GetStatCapModifiers(); // [equipslot, stat]
+
+    private static int[,] GetStatCapModifiers()
+    {
+        var res = new int[23, (int)Stat.Count];
+        var sheet = Svc.Data.GetExcelSheet<BaseParam>()!;
+        for (var stat = Stat.Craftsmanship; stat < Stat.Count; ++stat)
+        {
+            var row = sheet.GetRowParser(ParamIds[(int)stat])!;
+            for (int i = 1; i < 23; ++i)
+            {
+                res[i, (int)stat] = row.ReadColumn<ushort>(i + 3);
+            }
+        }
+        return res;
+    }
+}
+
+public unsafe struct ItemStats
+{
+    public struct StatValue
+    {
+        public int Max; // depends on item level and slot
+        public int Base; // nq/hq stats
+        public int Melded;
+
+        public int Effective => Math.Min(Max, Base + Melded);
+    }
+
+    public bool HQ;
+    public Item? Data;
+    public StatValue[] Stats = new StatValue[(int)CharacterStatsUtils.Stat.Count];
+
+    public ItemStats(uint itemID, bool hq, ushort* materia, byte* materiaGrades)
+    {
+        HQ = hq;
+        if (itemID == 0)
+            return;
+
+        Data = Svc.Data.GetExcelSheet<Item>()?.GetRow(itemID);
+        if (Data == null)
+            return;
+
+        foreach (var p in Data.UnkData59)
+        {
+            if (Array.IndexOf(CharacterStatsUtils.ParamIds, p.BaseParam) is var stat && stat >= 0)
+            {
+                Stats[stat].Base += p.BaseParamValue;
+            }
+        }
+        if (hq)
+        {
+            foreach (var p in Data.UnkData73)
+            {
+                if (Array.IndexOf(CharacterStatsUtils.ParamIds, p.BaseParamSpecial) is var stat && stat >= 0)
+                {
+                    Stats[stat].Base += p.BaseParamValueSpecial;
+                }
+            }
+        }
+
+        var ilvl = Data.LevelItem.Value;
+        Stats[0].Max = Math.Max(Stats[0].Base, (int)(0.5 + 0.001 * CharacterStatsUtils.StatCapModifiers[Data.EquipSlotCategory.Row, 0] * ilvl.Craftsmanship));
+        Stats[1].Max = Math.Max(Stats[1].Base, (int)(0.5 + 0.001 * CharacterStatsUtils.StatCapModifiers[Data.EquipSlotCategory.Row, 1] * ilvl.Control));
+        Stats[2].Max = Math.Max(Stats[2].Base, (int)(0.5 + 0.001 * CharacterStatsUtils.StatCapModifiers[Data.EquipSlotCategory.Row, 2] * ilvl.CP));
+
+        var sheetMat = Svc.Data.GetExcelSheet<Materia>();
+        for (int i = 0; i < 5; ++i)
+        {
+            if (materia[i] == 0)
+                continue;
+
+            var materiaRow = sheetMat?.GetRow(materia[i]);
+            if (materiaRow == null)
+                continue;
+
+            var stat = Array.IndexOf(CharacterStatsUtils.ParamIds, materiaRow.BaseParam.Row);
+            if (stat >= 0)
+                Stats[stat].Melded += materiaRow.Value[materiaGrades[i]];
+        }
+    }
+    public ItemStats(InventoryItem* item) : this(item->ItemID, item->Flags.HasFlag(InventoryItem.ItemFlags.HQ), item->Materia, item->MateriaGrade) { }
+    public ItemStats(RaptureGearsetModule.GearsetItem* item) : this(item->ItemID % 1000000, item->ItemID >= 1000000, item->Materia, item->MateriaGrade) { }
+}
+
+public unsafe struct ConsumableStats
+{
+    public struct StatValue
+    {
+        public int Percent;
+        public int Max;
+
+        public int Effective(int baseValue) => Percent <= 0 ? Max : Math.Max(Max, baseValue * Percent / 100);
+    }
+
+    public bool HQ;
+    public Item? Data;
+    public StatValue[] Stats = new StatValue[(int)CharacterStatsUtils.Stat.Count];
+
+    public int EffectiveValue(CharacterStatsUtils.Stat stat, int baseValue) => (int)stat < Stats.Length ? Stats[(int)stat].Effective(baseValue) : 0;
+
+    public ConsumableStats(uint itemID, bool hq)
+    {
+        HQ = hq;
+        if (itemID == 0)
+            return;
+
+        Data = Svc.Data.GetExcelSheet<Item>()?.GetRow(itemID);
+        if (Data == null)
+            return;
+
+        var action = Data.ItemAction.Value;
+        if (action == null)
+            return;
+
+        var actionParams = hq ? action.DataHQ : action.Data; // [0] = status, [1] = extra == ItemFood row, [2] = duration
+        if (actionParams[0] is not 48 and not 49)
+            return; // not 'well fed' or 'medicated'
+
+        var food = Svc.Data.GetExcelSheet<ItemFood>()?.GetRow(actionParams[1]);
+        if (food == null)
+            return;
+
+        foreach (var p in food.UnkData1)
+        {
+            var stat = Array.IndexOf(CharacterStatsUtils.ParamIds, p.BaseParam);
+            if (stat >= 0)
+            {
+                var val = hq ? p.ValueHQ : p.Value;
+                var max = hq ? p.MaxHQ : p.Max;
+                Stats[stat].Percent = p.IsRelative ? val : 0;
+                Stats[stat].Max = p.IsRelative ? max : val;
+            }
+        }
+    }
+}
+
+public unsafe struct CharacterStats
+{
+    public int Craftsmanship;
+    public int Control;
+    public int CP;
+    public bool Splendorous;
+    public bool Specialist;
+
+    // current in-game stats
+    public static CharacterStats GetCurrentStats() => new()
+    {
+        Craftsmanship = CharacterInfo.Craftsmanship,
+        Control = CharacterInfo.Control,
+        CP = (int)CharacterInfo.MaxCP,
+        Specialist = InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 13)->ItemID != 0, // specialist == job crystal equipped
+        Splendorous = Svc.Data.GetExcelSheet<Item>()?.GetRow(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemID) is { LevelEquip: 90, Rarity: >= 4 }
+    };
+
+    // base naked stats
+    public static CharacterStats GetBaseStatsNaked() => new() { CP = 180 };
+
+    // base stats (i.e. without consumables) with currently equipped gear
+    public static CharacterStats GetBaseStatsEquipped()
+    {
+        var res = GetBaseStatsNaked();
+        var inventory = InventoryManager.Instance()->GetInventoryContainer(InventoryType.EquippedItems);
+        if (inventory == null)
+            return res;
+
+        for (int i = 0; i < inventory->Size; ++i)
+        {
+            var details = new ItemStats(inventory->Items + i);
+            if (details.Data != null)
+                res.AddItem(i, ref details);
+        }
+        return res;
+    }
+
+    // base stats (i.e. without consumables) with specified gearset
+    public static CharacterStats GetBaseStatsGearset(ref RaptureGearsetModule.GearsetEntry gs)
+    {
+        var res = GetBaseStatsNaked();
+        if (!gs.Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists))
+            return res;
+
+        for (int i = 0; i < gs.ItemsSpan.Length; ++i)
+        {
+            var details = new ItemStats((RaptureGearsetModule.GearsetItem*)Unsafe.AsPointer(ref gs.ItemsSpan[i]));
+            if (details.Data != null)
+                res.AddItem(i, ref details);
+        }
+        return res;
+    }
+
+    public void AddItem(int slot, ref ItemStats item)
+    {
+        Craftsmanship += item.Stats[(int)CharacterStatsUtils.Stat.Craftsmanship].Effective;
+        Control += item.Stats[(int)CharacterStatsUtils.Stat.Control].Effective;
+        CP += item.Stats[(int)CharacterStatsUtils.Stat.CP].Effective;
+        Splendorous |= slot == 0 && item.Data.LevelEquip == 90 && item.Data.Rarity >= 4;
+        Specialist |= slot == 13; // specialist == job crystal equipped
+    }
+
+    public void AddConsumables(ConsumableStats food, ConsumableStats pot)
+    {
+        Craftsmanship += food.EffectiveValue(CharacterStatsUtils.Stat.Craftsmanship, Craftsmanship) + pot.EffectiveValue(CharacterStatsUtils.Stat.Craftsmanship, Craftsmanship);
+        Control += food.EffectiveValue(CharacterStatsUtils.Stat.Control, Control) + pot.EffectiveValue(CharacterStatsUtils.Stat.Control, Control);
+        CP += food.EffectiveValue(CharacterStatsUtils.Stat.CP, CP) + pot.EffectiveValue(CharacterStatsUtils.Stat.CP, CP);
+    }
+}

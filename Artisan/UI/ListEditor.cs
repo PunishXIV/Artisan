@@ -954,7 +954,7 @@ internal class ListEditor : Window, IDisposable
         {
             ImGui.TextWrapped("Select a solver for this recipe");
 
-            var craft = Crafting.BuildCraftStateForRecipe(recipe);
+            var craft = Crafting.BuildCraftStateForRecipe(CharacterStats.GetCurrentStats(), recipe); // TODO: should not use current stats!
             var s = CraftingProcessor.GetSolverForRecipe(Endurance.RecipeID, craft);
             ImGuiEx.SetNextItemFullWidth(-30);
             if (ImGui.BeginCombo("", s.Name))

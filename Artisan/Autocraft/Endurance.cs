@@ -125,71 +125,8 @@ namespace Artisan.Autocraft
             ImGuiComponents.HelpMarker("Artisan will require the configured food, manuals or medicine and refuse to craft if it cannot be found.");
             if (requireFoodPot)
             {
-                {
-                    ImGuiEx.TextV("Food Usage:");
-                    ImGui.SameLine(200f.Scale());
-                    ImGuiEx.SetNextItemFullWidth();
-                    if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == P.Config.Food, out var item) ? $"{(P.Config.FoodHQ ? " " : "")}{item.Name}" : $"{(P.Config.Food == 0 ? "Disabled" : $"{(P.Config.FoodHQ ? " " : "")}{P.Config.Food}")}"))
-                    {
-                        if (ImGui.Selectable("Disable"))
-                        {
-                            P.Config.Food = 0;
-                            P.Config.Save();
-                        }
-                        foreach (var x in ConsumableChecker.GetFood(true))
-                        {
-                            if (ImGui.Selectable($"{x.Name}"))
-                            {
-                                P.Config.Food = x.Id;
-                                P.Config.FoodHQ = false;
-                                P.Config.Save();
-                            }
-                        }
-                        foreach (var x in ConsumableChecker.GetFood(true, true))
-                        {
-                            if (ImGui.Selectable($" {x.Name}"))
-                            {
-                                P.Config.Food = x.Id;
-                                P.Config.FoodHQ = true;
-                                P.Config.Save();
-                            }
-                        }
-                        ImGui.EndCombo();
-                    }
-                }
-
-                {
-                    ImGuiEx.TextV("Medicine Usage:");
-                    ImGui.SameLine(200f.Scale());
-                    ImGuiEx.SetNextItemFullWidth();
-                    if (ImGui.BeginCombo("##potBuff", ConsumableChecker.Pots.TryGetFirst(x => x.Id == P.Config.Potion, out var item) ? $"{(P.Config.PotHQ ? " " : "")}{item.Name}" : $"{(P.Config.Potion == 0 ? "Disabled" : $"{(P.Config.PotHQ ? " " : "")}{P.Config.Potion}")}"))
-                    {
-                        if (ImGui.Selectable("Disable"))
-                        {
-                            P.Config.Potion = 0;
-                            P.Config.Save();
-                        }
-                        foreach (var x in ConsumableChecker.GetPots(true))
-                        {
-                            if (ImGui.Selectable($"{x.Name}"))
-                            {
-                                P.Config.Potion = x.Id;
-                                P.Config.PotHQ = false;
-                                P.Config.Save();
-                            }
-                        }
-                        foreach (var x in ConsumableChecker.GetPots(true, true))
-                        {
-                            if (ImGui.Selectable($" {x.Name}"))
-                            {
-                                P.Config.Potion = x.Id;
-                                P.Config.PotHQ = true;
-                                P.Config.Save();
-                            }
-                        }
-                        ImGui.EndCombo();
-                    }
-                }
+                DrawFood();
+                DrawPot();
 
                 {
                     ImGuiEx.TextV("Manual Usage:");
@@ -314,6 +251,74 @@ namespace Artisan.Autocraft
             }
 
             ImGuiComponents.HelpMarker("Will set ingredients for you, to maximise the amount of crafts possible.");
+        }
+
+        internal static void DrawFood()
+        {
+            ImGuiEx.TextV("Food Usage:");
+            ImGui.SameLine(200f.Scale());
+            ImGuiEx.SetNextItemFullWidth();
+            if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == P.Config.Food, out var item) ? $"{(P.Config.FoodHQ ? " " : "")}{item.Name}" : $"{(P.Config.Food == 0 ? "Disabled" : $"{(P.Config.FoodHQ ? " " : "")}{P.Config.Food}")}"))
+            {
+                if (ImGui.Selectable("Disable"))
+                {
+                    P.Config.Food = 0;
+                    P.Config.Save();
+                }
+                foreach (var x in ConsumableChecker.GetFood(true))
+                {
+                    if (ImGui.Selectable($"{x.Name}"))
+                    {
+                        P.Config.Food = x.Id;
+                        P.Config.FoodHQ = false;
+                        P.Config.Save();
+                    }
+                }
+                foreach (var x in ConsumableChecker.GetFood(true, true))
+                {
+                    if (ImGui.Selectable($" {x.Name}"))
+                    {
+                        P.Config.Food = x.Id;
+                        P.Config.FoodHQ = true;
+                        P.Config.Save();
+                    }
+                }
+                ImGui.EndCombo();
+            }
+        }
+
+        internal static void DrawPot()
+        {
+            ImGuiEx.TextV("Medicine Usage:");
+            ImGui.SameLine(200f.Scale());
+            ImGuiEx.SetNextItemFullWidth();
+            if (ImGui.BeginCombo("##potBuff", ConsumableChecker.Pots.TryGetFirst(x => x.Id == P.Config.Potion, out var item) ? $"{(P.Config.PotHQ ? " " : "")}{item.Name}" : $"{(P.Config.Potion == 0 ? "Disabled" : $"{(P.Config.PotHQ ? " " : "")}{P.Config.Potion}")}"))
+            {
+                if (ImGui.Selectable("Disable"))
+                {
+                    P.Config.Potion = 0;
+                    P.Config.Save();
+                }
+                foreach (var x in ConsumableChecker.GetPots(true))
+                {
+                    if (ImGui.Selectable($"{x.Name}"))
+                    {
+                        P.Config.Potion = x.Id;
+                        P.Config.PotHQ = false;
+                        P.Config.Save();
+                    }
+                }
+                foreach (var x in ConsumableChecker.GetPots(true, true))
+                {
+                    if (ImGui.Selectable($" {x.Name}"))
+                    {
+                        P.Config.Potion = x.Id;
+                        P.Config.PotHQ = true;
+                        P.Config.Save();
+                    }
+                }
+                ImGui.EndCombo();
+            }
         }
 
         internal static void DrawRecipeData()
