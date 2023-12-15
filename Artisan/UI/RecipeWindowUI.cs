@@ -20,6 +20,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using OtterGui;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using static ECommons.GenericHelpers;
@@ -648,34 +649,20 @@ namespace Artisan
                 }
                 if (Endurance.RecipeID != 0)
                 {
-                    Endurance.DrawFood();
-                    Endurance.DrawPot();
-
                     var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
+                    var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
                     var stats = CharacterStats.GetBaseStatsEquipped();
-                    stats.AddConsumables(new(P.Config.Food, P.Config.FoodHQ), new(P.Config.Potion, P.Config.PotHQ));
+                    stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
                     var craft = Crafting.BuildCraftStateForRecipe(stats, recipe);
-                    var s = CraftingProcessor.GetSolverForRecipe(Endurance.RecipeID, craft);
-
-                    ImGui.Text($"Select a solver for this recipe ({Endurance.RecipeName})");
-                    if (ImGui.BeginCombo("", s.Name))
+                    if (config.Draw(craft))
                     {
-                        foreach (var opt in CraftingProcessor.GetAvailableSolversForRecipe(craft, true))
-                        {
-                            bool selected = opt.Def == s.Def && opt.Flavour == s.Flavour;
-                            if (ImGui.Selectable(opt.Name, selected))
-                            {
-                                P.Config.RecipeSolverAssignment[Endurance.RecipeID] = (opt.Def.GetType().FullName!, opt.Flavour);
-                                P.Config.Save();
-                            }
-                        }
-
-                        ImGui.EndCombo();
+                        P.Config.RecipeConfigs[recipe.RowId] = config;
+                        P.Config.Save();
                     }
 
                     if (recipe.CanHq)
                     {
-                        var solver = s.CreateSolver(craft);
+                        var solver = CraftingProcessor.GetSolverForRecipe(config, craft).CreateSolver(craft);
                         var rd = RecipeNoteRecipeData.Ptr();
                         var re = rd != null ? rd->FindRecipeById(recipe.RowId) : null;
                         var startingQuality = re != null ? Calculations.GetStartingQuality(recipe, re->GetAssignedHQIngredients()) : 0;

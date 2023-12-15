@@ -735,7 +735,6 @@ internal class ListEditor : Window, IDisposable
 
     private void DrawRecipeSettings()
     {
-
         var selectedListItem = RecipeSelector.Items[RecipeSelector.CurrentIdx];
         var recipe = CraftingListHelpers.FilteredList[RecipeSelector.Current];
         var count = SelectedList.Items.Count(x => x == selectedListItem);
@@ -834,39 +833,14 @@ internal class ListEditor : Window, IDisposable
                 ImGui.EndCombo();
             }
         }
+
+        var config = P.Config.RecipeConfigs.GetValueOrDefault(selectedListItem) ?? new();
         var buttonWidth = ImGui.CalcTextSize($"Apply to all");
         {
-            ImGui.TextWrapped("Use a food item for this recipe");
-            ImGuiEx.SetNextItemFullWidth(-30 - (int)buttonWidth.X);
-            if (ImGui.BeginCombo(
-                    "##foodBuff",
-                    ConsumableChecker.Food.TryGetFirst(x => x.Id == options.Food, out var item)
-                        ? $"{(options.FoodHQ ? " " : string.Empty)}{item.Name}"
-                        : $"{(options.Food == 0 ? "Disabled" : $"{(options.FoodHQ ? " " : string.Empty)}{options.Food}")}"))
+            if (config.DrawFood(-30 - (int)buttonWidth.X))
             {
-                if (ImGui.Selectable("Disable"))
-                {
-                    options.Food = 0;
-                    P.Config.Save();
-                }
-
-                foreach (var x in ConsumableChecker.GetFood(true))
-                    if (ImGui.Selectable($"{x.Name}"))
-                    {
-                        options.Food = x.Id;
-                        options.FoodHQ = false;
-                        P.Config.Save();
-                    }
-
-                foreach (var x in ConsumableChecker.GetFood(true, true))
-                    if (ImGui.Selectable($" {x.Name}"))
-                    {
-                        options.Food = x.Id;
-                        options.FoodHQ = true;
-                        P.Config.Save();
-                    }
-
-                ImGui.EndCombo();
+                P.Config.RecipeConfigs[selectedListItem] = config;
+                P.Config.Save();
             }
 
             ImGui.SameLine();
@@ -875,55 +849,19 @@ internal class ListEditor : Window, IDisposable
             {
                 foreach (var r in SelectedList.Items.Distinct())
                 {
-                    if (!SelectedList.ListItemOptions.ContainsKey(r))
-                    {
-                        SelectedList.ListItemOptions.TryAdd(r, new ListItemOptions());
-                        var re = CraftingListHelpers.FilteredList[r];
-                        if (SelectedList.AddAsQuickSynth && re.CanQuickSynth)
-                            SelectedList.ListItemOptions[r].NQOnly = true;
-                    }
-
-                    SelectedList.ListItemOptions.TryGetValue(r, out var o);
-
-                    o.Food = options.Food;
-                    o.FoodHQ = options.FoodHQ;
+                    var o = P.Config.RecipeConfigs.GetValueOrDefault(r) ?? new();
+                    o.RequiredFood = config.RequiredFood;
+                    o.RequiredFoodHQ = config.RequiredFoodHQ;
+                    P.Config.RecipeConfigs[r] = o;
                 }
-
                 P.Config.Save();
             }
         }
         {
-            ImGui.TextWrapped("Use a potion item for this recipe");
-            ImGuiEx.SetNextItemFullWidth(-30 - (int)buttonWidth.X);
-            if (ImGui.BeginCombo(
-                    "##potBuff",
-                    ConsumableChecker.Pots.TryGetFirst(x => x.Id == options.Potion, out var item)
-                        ? $"{(options.PotHQ ? " " : string.Empty)}{item.Name}"
-                        : $"{(options.Potion == 0 ? "Disabled" : $"{(options.PotHQ ? " " : string.Empty)}{options.Potion}")}"))
+            if (config.DrawPotion(-30 - (int)buttonWidth.X))
             {
-                if (ImGui.Selectable("Disabled"))
-                {
-                    options.Potion = 0;
-                    P.Config.Save();
-                }
-
-                foreach (var x in ConsumableChecker.GetPots(true))
-                    if (ImGui.Selectable($"{x.Name}"))
-                    {
-                        options.Potion = x.Id;
-                        options.PotHQ = false;
-                        P.Config.Save();
-                    }
-
-                foreach (var x in ConsumableChecker.GetPots(true, true))
-                    if (ImGui.Selectable($" {x.Name}"))
-                    {
-                        options.Potion = x.Id;
-                        options.PotHQ = true;
-                        P.Config.Save();
-                    }
-
-                ImGui.EndCombo();
+                P.Config.RecipeConfigs[selectedListItem] = config;
+                P.Config.Save();
             }
 
             ImGui.SameLine();
@@ -932,45 +870,20 @@ internal class ListEditor : Window, IDisposable
             {
                 foreach (var r in SelectedList.Items.Distinct())
                 {
-                    if (!SelectedList.ListItemOptions.ContainsKey(r))
-                    {
-                        SelectedList.ListItemOptions.TryAdd(r, new ListItemOptions());
-                        var re = CraftingListHelpers.FilteredList[r];
-                        if (SelectedList.AddAsQuickSynth && re.CanQuickSynth)
-                            SelectedList.ListItemOptions[r].NQOnly = true;
-                    }
-
-                    SelectedList.ListItemOptions.TryGetValue(r, out var o);
-
-                    o.Potion = options.Potion;
-                    o.PotHQ = options.PotHQ;
+                    var o = P.Config.RecipeConfigs.GetValueOrDefault(r) ?? new();
+                    o.RequiredPotion = config.RequiredPotion;
+                    o.RequiredPotionHQ = config.RequiredPotionHQ;
+                    P.Config.RecipeConfigs[r] = o;
                 }
-
                 P.Config.Save();
             }
         }
 
-        if (P.Config.MacroSolverConfig.Macros.Count > 0)
+        var craft = Crafting.BuildCraftStateForRecipe(CharacterStats.GetCurrentStats(), recipe); // TODO: should not use current stats!
+        if (config.DrawSolver(craft, -30))
         {
-            ImGui.TextWrapped("Select a solver for this recipe");
-
-            var craft = Crafting.BuildCraftStateForRecipe(CharacterStats.GetCurrentStats(), recipe); // TODO: should not use current stats!
-            var s = CraftingProcessor.GetSolverForRecipe(Endurance.RecipeID, craft);
-            ImGuiEx.SetNextItemFullWidth(-30);
-            if (ImGui.BeginCombo("", s.Name))
-            {
-                foreach (var opt in CraftingProcessor.GetAvailableSolversForRecipe(craft, true))
-                {
-                    bool selected = opt.Def == s.Def && opt.Flavour == s.Flavour;
-                    if (ImGui.Selectable(opt.Name, selected))
-                    {
-                        P.Config.RecipeSolverAssignment[Endurance.RecipeID] = (opt.Def.GetType().FullName!, opt.Flavour);
-                        P.Config.Save();
-                    }
-                }
-
-                ImGui.EndCombo();
-            }
+            P.Config.RecipeConfigs[selectedListItem] = config;
+            P.Config.Save();
         }
     }
 

@@ -17,7 +17,7 @@ public class MacroSolverDefinition : ISolverDefinition
         }
     }
 
-    public Solver Create(CraftState craft, int flavour, string name) => new MacroSolver(P.Config.MacroSolverConfig.FindMacro(flavour) ?? new(), name, craft);
+    public Solver Create(CraftState craft, int flavour) => new MacroSolver(P.Config.MacroSolverConfig.FindMacro(flavour) ?? new(), craft);
 }
 
 public class MacroSolver : Solver
@@ -26,7 +26,7 @@ public class MacroSolver : Solver
     private Solver _fallback;
     private int _nextStep;
 
-    public MacroSolver(MacroSolverSettings.Macro m, string name, CraftState craft) : base(name)
+    public MacroSolver(MacroSolverSettings.Macro m, CraftState craft)
     {
         _macro = m;
         _fallback = CraftingProcessor.GetAvailableSolversForRecipe(craft, false, typeof(MacroSolverDefinition)).MaxBy(f => f.Priority).CreateSolver(craft);

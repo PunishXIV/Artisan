@@ -277,7 +277,11 @@ namespace Artisan.UI
                 int numberFound = 0;
                 foreach (var recipe in filteredRecipes)
                 {
-                    P.Config.RecipeSolverAssignment[recipe.RowId] = (typeof(MacroSolverDefinition).FullName!, selectedAssignMacro.ID);
+                    var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId);
+                    if (config == null)
+                        P.Config.RecipeConfigs[recipe.RowId] = config = new();
+                    config.SolverType = typeof(MacroSolverDefinition).FullName!;
+                    config.SolverFlavour = selectedAssignMacro.ID;
                     if (P.Config.ShowMacroAssignResults)
                     {
                         P.TM.DelayNext(400);
@@ -300,9 +304,9 @@ namespace Artisan.UI
             if (ImGui.Button($"Unassign Macro From All Recipes (Hold Ctrl)", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())) && ImGui.GetIO().KeyCtrl)
             {
                 int count = 0;
-                foreach (var e in P.Config.RecipeSolverAssignment)
-                    if (e.Value.type == typeof(MacroSolverDefinition).FullName && e.Value.flavour == selectedAssignMacro.ID)
-                        P.Config.RecipeSolverAssignment.Remove(e.Key);
+                foreach (var e in P.Config.RecipeConfigs)
+                    if (e.Value.SolverType == typeof(MacroSolverDefinition).FullName && e.Value.SolverFlavour == selectedAssignMacro.ID)
+                        P.Config.RecipeConfigs.Remove(e.Key); // TODO: do we want to preserve other configs?..
                 P.Config.Save();
                 if (count > 0)
                     Notify.Success($"Removed from {count} recipes.");

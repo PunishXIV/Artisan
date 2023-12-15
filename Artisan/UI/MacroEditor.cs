@@ -94,9 +94,9 @@ namespace Artisan.UI
                 if (ImGui.Button("Delete Macro (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                 {
                     P.Config.MacroSolverConfig.Macros.Remove(SelectedMacro);
-                    foreach (var e in P.Config.RecipeSolverAssignment)
-                        if (e.Value.type == typeof(MacroSolverDefinition).FullName && e.Value.flavour == SelectedMacro.ID)
-                            P.Config.RecipeSolverAssignment.Remove(e.Key);
+                    foreach (var e in P.Config.RecipeConfigs)
+                        if (e.Value.SolverType == typeof(MacroSolverDefinition).FullName && e.Value.SolverFlavour == SelectedMacro.ID)
+                            P.Config.RecipeConfigs.Remove(e.Key); // TODO: do we want to preserve other configs?..
                     P.Config.Save();
                     SelectedMacro = new();
                     selectedStepIndex = -1;

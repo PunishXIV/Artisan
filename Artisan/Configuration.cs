@@ -46,19 +46,14 @@ namespace Artisan
 
         public CraftingLogic.Solvers.ExpertSolverSettings ExpertSolverConfig = new();
         public CraftingLogic.Solvers.MacroSolverSettings MacroSolverConfig = new();
-        public Dictionary<uint, (string type, int flavour)> RecipeSolverAssignment = new();
+
+        public Dictionary<uint, RecipeConfig> RecipeConfigs = new();
 
         public List<CraftingList> CraftingLists { get; set; } = new();
 
         public int AutoDelay { get; set; } = 0;
 
-        public uint Food = 0;
-        public uint Potion = 0;
-        public uint Manual = 0;
-        public uint SquadronManual = 0;
         public bool AbortIfNoFoodPot { get; set; } = false;
-        public bool FoodHQ = true;
-        public bool PotHQ = true;
         public bool Repair { get; set; } = false;
         public bool QuickSynthMode = false;
         public bool DisableToasts { get; set; } = false;
@@ -195,13 +190,12 @@ namespace Artisan
                     {
                         if (k == "$type")
                             continue;
-                        var id = v!.Value<int>();
                         var c = new JObject();
-                        c["Item1"] = typeof(MacroSolverDefinition).FullName;
-                        c["Item2"] = v;
+                        c["SolverType"] = typeof(MacroSolverDefinition).FullName;
+                        c["SolverFlavour"] = v;
                         cvt[k] = c;
                     }
-                    json["RecipeSolverAssignment"] = cvt;
+                    json["RecipeConfigs"] = cvt;
                 }
             }
         }

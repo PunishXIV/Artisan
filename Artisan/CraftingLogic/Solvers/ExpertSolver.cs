@@ -12,7 +12,7 @@ public class ExpertSolverDefinition : ISolverDefinition
             yield return new(this, 0, 2, "New expert solver (experimental)", craft.StatLevel >= 90 ? "" : "Requires L90");
     }
 
-    public Solver Create(CraftState craft, int flavour, string name) => new ExpertSolver(name);
+    public Solver Create(CraftState craft, int flavour) => new ExpertSolver();
 }
 
 // some thoughts:
@@ -58,8 +58,6 @@ public class ExpertSolverDefinition : ISolverDefinition
 // - after reaching quality cap, just get progress
 public class ExpertSolver : Solver
 {
-    public ExpertSolver(string name) : base(name) { }
-
     public override Recommendation Solve(CraftState craft, StepState step) => SolveNextStep(P.Config.ExpertSolverConfig, craft, step);
 
     public static Recommendation SolveNextStep(ExpertSolverSettings cfg, CraftState craft, StepState step)

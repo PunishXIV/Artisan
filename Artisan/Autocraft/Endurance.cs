@@ -125,53 +125,15 @@ namespace Artisan.Autocraft
             ImGuiComponents.HelpMarker("Artisan will require the configured food, manuals or medicine and refuse to craft if it cannot be found.");
             if (requireFoodPot)
             {
-                DrawFood();
-                DrawPot();
-
+                var recipe = LuminaSheets.RecipeSheet[RecipeID];
+                var config = P.Config.RecipeConfigs.GetValueOrDefault(RecipeID) ?? new();
+                var stats = CharacterStats.GetBaseStatsEquipped();
+                stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
+                var craft = Crafting.BuildCraftStateForRecipe(stats, recipe);
+                if (config.Draw(craft))
                 {
-                    ImGuiEx.TextV("Manual Usage:");
-                    ImGui.SameLine(200f.Scale());
-                    ImGuiEx.SetNextItemFullWidth();
-                    if (ImGui.BeginCombo("##manualBuff", ConsumableChecker.Manuals.TryGetFirst(x => x.Id == P.Config.Manual, out var item) ? $"{item.Name}" : $"{(P.Config.Manual == 0 ? "Disabled" : $"{P.Config.Manual}")}"))
-                    {
-                        if (ImGui.Selectable("Disable"))
-                        {
-                            P.Config.Manual = 0;
-                            P.Config.Save();
-                        }
-                        foreach (var x in ConsumableChecker.GetManuals(true))
-                        {
-                            if (ImGui.Selectable($"{x.Name}"))
-                            {
-                                P.Config.Manual = x.Id;
-                                P.Config.Save();
-                            }
-                        }
-                        ImGui.EndCombo();
-                    }
-                }
-
-                {
-                    ImGuiEx.TextV("Squadron Manual Usage:");
-                    ImGui.SameLine(200f.Scale());
-                    ImGuiEx.SetNextItemFullWidth();
-                    if (ImGui.BeginCombo("##squadronManualBuff", ConsumableChecker.SquadronManuals.TryGetFirst(x => x.Id == P.Config.SquadronManual, out var item) ? $"{item.Name}" : $"{(P.Config.SquadronManual == 0 ? "Disabled" : $"{P.Config.SquadronManual}")}"))
-                    {
-                        if (ImGui.Selectable("Disable"))
-                        {
-                            P.Config.SquadronManual = 0;
-                            P.Config.Save();
-                        }
-                        foreach (var x in ConsumableChecker.GetSquadronManuals(true))
-                        {
-                            if (ImGui.Selectable($"{x.Name}"))
-                            {
-                                P.Config.SquadronManual = x.Id;
-                                P.Config.Save();
-                            }
-                        }
-                        ImGui.EndCombo();
-                    }
+                    P.Config.RecipeConfigs[recipe.RowId] = config;
+                    P.Config.Save();
                 }
             }
 
@@ -251,74 +213,6 @@ namespace Artisan.Autocraft
             }
 
             ImGuiComponents.HelpMarker("Will set ingredients for you, to maximise the amount of crafts possible.");
-        }
-
-        internal static void DrawFood()
-        {
-            ImGuiEx.TextV("Food Usage:");
-            ImGui.SameLine(200f.Scale());
-            ImGuiEx.SetNextItemFullWidth();
-            if (ImGui.BeginCombo("##foodBuff", ConsumableChecker.Food.TryGetFirst(x => x.Id == P.Config.Food, out var item) ? $"{(P.Config.FoodHQ ? " " : "")}{item.Name}" : $"{(P.Config.Food == 0 ? "Disabled" : $"{(P.Config.FoodHQ ? " " : "")}{P.Config.Food}")}"))
-            {
-                if (ImGui.Selectable("Disable"))
-                {
-                    P.Config.Food = 0;
-                    P.Config.Save();
-                }
-                foreach (var x in ConsumableChecker.GetFood(true))
-                {
-                    if (ImGui.Selectable($"{x.Name}"))
-                    {
-                        P.Config.Food = x.Id;
-                        P.Config.FoodHQ = false;
-                        P.Config.Save();
-                    }
-                }
-                foreach (var x in ConsumableChecker.GetFood(true, true))
-                {
-                    if (ImGui.Selectable($" {x.Name}"))
-                    {
-                        P.Config.Food = x.Id;
-                        P.Config.FoodHQ = true;
-                        P.Config.Save();
-                    }
-                }
-                ImGui.EndCombo();
-            }
-        }
-
-        internal static void DrawPot()
-        {
-            ImGuiEx.TextV("Medicine Usage:");
-            ImGui.SameLine(200f.Scale());
-            ImGuiEx.SetNextItemFullWidth();
-            if (ImGui.BeginCombo("##potBuff", ConsumableChecker.Pots.TryGetFirst(x => x.Id == P.Config.Potion, out var item) ? $"{(P.Config.PotHQ ? " " : "")}{item.Name}" : $"{(P.Config.Potion == 0 ? "Disabled" : $"{(P.Config.PotHQ ? " " : "")}{P.Config.Potion}")}"))
-            {
-                if (ImGui.Selectable("Disable"))
-                {
-                    P.Config.Potion = 0;
-                    P.Config.Save();
-                }
-                foreach (var x in ConsumableChecker.GetPots(true))
-                {
-                    if (ImGui.Selectable($"{x.Name}"))
-                    {
-                        P.Config.Potion = x.Id;
-                        P.Config.PotHQ = false;
-                        P.Config.Save();
-                    }
-                }
-                foreach (var x in ConsumableChecker.GetPots(true, true))
-                {
-                    if (ImGui.Selectable($" {x.Name}"))
-                    {
-                        P.Config.Potion = x.Id;
-                        P.Config.PotHQ = true;
-                        P.Config.Save();
-                    }
-                }
-                ImGui.EndCombo();
-            }
         }
 
         internal static void DrawRecipeData()
@@ -480,7 +374,8 @@ namespace Artisan.Autocraft
                     return;
                 }
                 if (DebugTab.Debug) Svc.Log.Verbose("Repair ok");
-                if (P.Config.AbortIfNoFoodPot && !ConsumableChecker.CheckConsumables(false))
+                var config = P.Config.RecipeConfigs.GetValueOrDefault(RecipeID) ?? new();
+                if (P.Config.AbortIfNoFoodPot && !ConsumableChecker.CheckConsumables(config, false))
                 {
                     if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                     {
@@ -492,7 +387,7 @@ namespace Artisan.Autocraft
                     }
                     else
                     {
-                        if (!Svc.Condition[ConditionFlag.Crafting] && Enable) ConsumableChecker.CheckConsumables(true);
+                        if (!Svc.Condition[ConditionFlag.Crafting] && Enable) ConsumableChecker.CheckConsumables(config, true);
                     }
                     return;
                 }

@@ -46,11 +46,9 @@ namespace Artisan.CraftingLists
     public class ListItemOptions
     {
         public bool NQOnly { get; set; }
-        public uint Food = 0;
-        public bool FoodHQ { get; set; } = false;
-        public uint Potion = 0;
-        public bool PotHQ { get; set; } = false;
+        // TODO: custom RecipeConfig?
     }
+
     public static class CraftingListFunctions
     {
         public static int CurrentIndex;
@@ -358,25 +356,24 @@ namespace Artisan.CraftingLists
 
             selectedList.ListItemOptions.TryAdd(CraftingListUI.CurrentProcessedItem, new ListItemOptions());
 
-            if (selectedList.ListItemOptions.TryGetValue(CraftingListUI.CurrentProcessedItem, out var options) && (options.Food != 0 || options.Potion != 0))
+            var options = selectedList.ListItemOptions.GetValueOrDefault(CraftingListUI.CurrentProcessedItem);
+            var config = /* options?.CustomConfig ?? */ P.Config.RecipeConfigs.GetValueOrDefault(CraftingListUI.CurrentProcessedItem) ?? new();
+            if (!ConsumableChecker.CheckConsumables(config, false))
             {
-                if (!ConsumableChecker.CheckConsumables(false, options))
+                if (RecipeWindowOpen() && Svc.Condition[ConditionFlag.Crafting])
                 {
-                    if (RecipeWindowOpen() && Svc.Condition[ConditionFlag.Crafting])
+                    if (Throttler.Throttle(1000))
                     {
-                        if (Throttler.Throttle(1000))
-                        {
-                            CloseCraftingMenu();
-                        }
+                        CloseCraftingMenu();
                     }
-                    else
-                    {
-                        if (!isCrafting)
-                            ConsumableChecker.CheckConsumables(true, options);
-                    }
-
-                    return;
                 }
+                else
+                {
+                    if (!isCrafting)
+                        ConsumableChecker.CheckConsumables(config, true);
+                }
+
+                return;
             }
 
             if (isCrafting && !preparing)
@@ -400,7 +397,7 @@ namespace Artisan.CraftingLists
 
                 if (RecipeWindowOpen())
                 {
-                    if (options.NQOnly && recipe.CanQuickSynth && P.ri.HasRecipeCrafted(recipe.RowId))
+                    if ((options?.NQOnly ?? false) && recipe.CanQuickSynth && P.ri.HasRecipeCrafted(recipe.RowId))
                     {
                         var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
                         var count = lastIndex - CurrentIndex + 1;
@@ -455,7 +452,7 @@ namespace Artisan.CraftingLists
             {
                 if (RecipeWindowOpen())
                 {
-                    if (options.NQOnly && recipe.CanQuickSynth && P.ri.HasRecipeCrafted(recipe.RowId))
+                    if ((options?.NQOnly ?? false) && recipe.CanQuickSynth && P.ri.HasRecipeCrafted(recipe.RowId))
                     {
                         var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
                         var count = lastIndex - CurrentIndex + 1;

@@ -14,7 +14,7 @@ namespace Artisan.CraftingLogic;
 public static class CraftingProcessor
 {
     public static Solver.Recommendation NextRec => _nextRec;
-    public static SolverRef ActiveSolver => new(_activeSolver);
+    public static SolverRef ActiveSolver = new("");
 
     public delegate void SolverStartedDelegate(Lumina.Excel.GeneratedSheets.Recipe recipe, SolverRef solver, CraftState craft, StepState initialStep);
     public static event SolverStartedDelegate? SolverStarted;
@@ -68,21 +68,18 @@ public static class CraftingProcessor
         }
     }
 
-    public static ISolverDefinition.Desc GetSolverForRecipe(uint recipeID, CraftState craft)
+    public static ISolverDefinition.Desc? FindSolver(CraftState craft, string type, int flavour)
     {
-        if (P.Config.RecipeSolverAssignment.TryGetValue(recipeID, out var assignment))
-        {
-            var solver = _solverDefs.Find(s => s.GetType().FullName == assignment.type);
-            if (solver != null)
-            {
-                foreach (var f in solver.Flavours(craft).Where(f => f.Flavour == assignment.flavour))
-                {
-                    return f;
-                }
-            }
-        }
-        return GetAvailableSolversForRecipe(craft, false).MaxBy(f => f.Priority);
+        var solver = type.Length > 0 ? _solverDefs.Find(s => s.GetType().FullName == type) : null;
+        if (solver == null)
+            return null;
+        foreach (var f in solver.Flavours(craft).Where(f => f.Flavour == flavour))
+            return f;
+        return null;
     }
+
+    public static ISolverDefinition.Desc GetSolverForRecipe(RecipeConfig? recipeConfig, CraftState craft)
+        => FindSolver(craft, recipeConfig?.SolverType ?? "", recipeConfig?.SolverFlavour ?? 0) ?? GetAvailableSolversForRecipe(craft, false).MaxBy(f => f.Priority);
 
     private static void OnCraftStarted(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState initialStep, bool trial)
     {
@@ -91,6 +88,7 @@ public static class CraftingProcessor
         {
             Svc.Log.Error($"Unexpected recipe started: expected {_expectedRecipe}, got {recipe.RowId}");
             _activeSolver = null; // something wrong has happened
+            ActiveSolver = new("");
         }
         _expectedRecipe = null;
 
@@ -99,48 +97,50 @@ public static class CraftingProcessor
         {
             SolverFailed?.Invoke(recipe, "You have broken gear");
             _activeSolver = null;
+            ActiveSolver = new("");
             return;
         }
 
         if (_activeSolver == null)
         {
             // if we didn't provide an explicit solver, create one - but make sure if we have manually assigned one, it is actually supported
-            var autoSolver = GetSolverForRecipe(recipe.RowId, craft);
+            var autoSolver = GetSolverForRecipe(P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId), craft);
             if (autoSolver.UnsupportedReason.Length > 0)
             {
                 SolverFailed?.Invoke(recipe, autoSolver.UnsupportedReason);
                 return;
             }
             _activeSolver = autoSolver.CreateSolver(craft);
+            ActiveSolver = new(autoSolver.Name, _activeSolver);
         }
 
-        var solverRef = new SolverRef(_activeSolver);
-        SolverStarted?.Invoke(recipe, solverRef, craft, initialStep);
+        SolverStarted?.Invoke(recipe, ActiveSolver, craft, initialStep);
 
         _nextRec = _activeSolver.Solve(craft, initialStep);
         if (_nextRec.Action != Skills.None)
-            RecommendationReady?.Invoke(recipe, solverRef, craft, initialStep, _nextRec);
+            RecommendationReady?.Invoke(recipe, ActiveSolver, craft, initialStep, _nextRec);
     }
 
     private static void OnCraftAdvanced(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState step)
     {
-        Svc.Log.Debug($"[CProc] OnCraftAdvanced #{recipe.RowId} (solver={_activeSolver != null}): {step}");
+        Svc.Log.Debug($"[CProc] OnCraftAdvanced #{recipe.RowId} (solver={ActiveSolver.Name}): {step}");
         if (_activeSolver == null)
             return;
 
         _nextRec = _activeSolver.Solve(craft, step);
         if (_nextRec.Action != Skills.None)
-            RecommendationReady?.Invoke(recipe, new(_activeSolver), craft, step, _nextRec);
+            RecommendationReady?.Invoke(recipe, ActiveSolver, craft, step, _nextRec);
     }
 
     private static void OnCraftFinished(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState finalStep, bool cancelled)
     {
-        Svc.Log.Debug($"[CProc] OnCraftFinished #{recipe.RowId} (cancel={cancelled}, solver={_activeSolver != null})");
+        Svc.Log.Debug($"[CProc] OnCraftFinished #{recipe.RowId} (cancel={cancelled}, solver={ActiveSolver.Name})");
         if (_activeSolver == null)
             return;
 
-        SolverFinished?.Invoke(recipe, new(_activeSolver), craft, finalStep);
+        SolverFinished?.Invoke(recipe, ActiveSolver, craft, finalStep);
         _activeSolver = null;
+        ActiveSolver = new("");
         _nextRec = new();
     }
 }

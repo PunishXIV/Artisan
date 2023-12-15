@@ -12,6 +12,7 @@ using Artisan.CraftingLists;
 using ECommons.Logging;
 using Artisan.GameInterop;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using Artisan.CraftingLogic;
 
 namespace Artisan.Autocraft
 {
@@ -122,44 +123,28 @@ namespace Artisan.Autocraft
         }
 
 
-        internal static bool IsFooded(ListItemOptions? listItemOptions = null)
+        internal static bool IsFooded(RecipeConfig? config)
         {
-            if (listItemOptions != null && listItemOptions.Food == 0) return true;
-            if (Svc.ClientState.LocalPlayer.StatusList.Any(x => x.StatusId == 48 & x.RemainingTime > 10f))
-            {
-                var configFood = listItemOptions != null ? listItemOptions.Food : P.Config.Food;
-                var configFoodHQ = listItemOptions != null ? listItemOptions.FoodHQ : P.Config.FoodHQ;
-
-                var foodBuff = Svc.ClientState.LocalPlayer.StatusList.First(x => x.StatusId == 48);
-                var desiredFood = LuminaSheets.ItemSheet[configFood].ItemAction.Value;
-                var itemFood = LuminaSheets.ItemFoodSheet[configFoodHQ ? desiredFood.DataHQ[1] : desiredFood.Data[1]];
-                if (foodBuff.Param != (itemFood.RowId + (configFoodHQ ? 10000 : 0)))
-                {
-                    return false;
-                }
-                return true;
-            }
-            return false;
+            if (config == null || config.RequiredFood == 0)
+                return true; // don't need a food
+            var foodBuff = Svc.ClientState.LocalPlayer.StatusList.FirstOrDefault(x => x.StatusId == 48 & x.RemainingTime > 10f);
+            if (foodBuff == null)
+                return false; // don't have any well-fed buff
+            var desiredFood = LuminaSheets.ItemSheet[config.RequiredFood].ItemAction.Value;
+            var itemFood = LuminaSheets.ItemFoodSheet[config.RequiredFoodHQ ? desiredFood.DataHQ[1] : desiredFood.Data[1]];
+            return foodBuff.Param == itemFood.RowId + (config.RequiredFoodHQ ? 10000 : 0);
         }
 
-        internal static bool IsPotted(ListItemOptions? listItemOptions = null)
+        internal static bool IsPotted(RecipeConfig? config)
         {
-            if (listItemOptions != null && listItemOptions.Potion == 0) return true;
-            if (Svc.ClientState.LocalPlayer.StatusList.Any(x => x.StatusId == 49 && x.RemainingTime > 10f))
-            {
-                var configPot = listItemOptions != null ? listItemOptions.Potion : P.Config.Potion ;
-                var configPotHQ = listItemOptions != null ? listItemOptions.PotHQ : P.Config.PotHQ;
-
-                var potBuff = Svc.ClientState.LocalPlayer.StatusList.First(x => x.StatusId == 49);
-                var desiredPot = LuminaSheets.ItemSheet[configPot].ItemAction.Value;
-                var itemFood = LuminaSheets.ItemFoodSheet[configPotHQ ? desiredPot.DataHQ[1] : desiredPot.Data[1]];
-                if (potBuff.Param != (itemFood.RowId + (configPotHQ ? 10000 : 0)))
-                {
-                    return false;
-                }
-                return true;
-            }
-            return false;
+            if (config == null || config.RequiredPotion == 0)
+                return true; // don't need a pot
+            var potBuff = Svc.ClientState.LocalPlayer.StatusList.FirstOrDefault(x => x.StatusId == 49 & x.RemainingTime > 10f);
+            if (potBuff == null)
+                return false; // don't have any well-fed buff
+            var desiredPot = LuminaSheets.ItemSheet[config.RequiredPotion].ItemAction.Value;
+            var itemPot = LuminaSheets.ItemFoodSheet[config.RequiredPotionHQ ? desiredPot.DataHQ[1] : desiredPot.Data[1]];
+            return potBuff.Param == itemPot.RowId + (config.RequiredPotionHQ ? 10000 : 0);
         }
 
         internal static bool IsManualled()
@@ -192,21 +177,16 @@ namespace Artisan.Autocraft
 
         internal static unsafe bool UseItem2(uint itemID) => ActionManagerEx.UseItem(itemID);
 
-        internal static bool CheckConsumables(bool use = true, ListItemOptions? listItemOptions = null)
+        internal static bool CheckConsumables(RecipeConfig config, bool use = true)
         {
             if (Endurance.SkipBuffs) return false;
 
-            uint desiredFood = listItemOptions != null ? listItemOptions.Food : P.Config.Food;
-            bool desiredFoodHQ = listItemOptions != null ? listItemOptions.FoodHQ : P.Config.FoodHQ;
-            uint desiredPot = listItemOptions != null ? listItemOptions.Potion : P.Config.Potion;
-            bool desiredPotHQ = listItemOptions != null ? listItemOptions.PotHQ : P.Config.PotHQ;
-
-            var fooded = IsFooded(listItemOptions) || (desiredFood == 0 && Endurance.Enable);
+            var fooded = IsFooded(config) || (config.RequiredFood == 0 && Endurance.Enable);
             if (!fooded)
             {
-                if (GetFood(true, desiredFoodHQ).Any(x => x.Id == desiredFood))
+                if (GetFood(true, config.RequiredFoodHQ).Any(x => x.Id == config.RequiredFood))
                 {
-                    if (use) UseItem(desiredFood, desiredFoodHQ);
+                    if (use) UseItem(config.RequiredFood, config.RequiredFoodHQ);
                     return false;
                 }
                 else
@@ -220,12 +200,12 @@ namespace Artisan.Autocraft
                     fooded = !P.Config.AbortIfNoFoodPot;
                 }
             }
-            var potted = IsPotted(listItemOptions) || (P.Config.Potion == 0 && Endurance.Enable);
+            var potted = IsPotted(config) || (config.RequiredPotion == 0 && Endurance.Enable);
             if (!potted)
             {
-                if (GetPots(true, desiredPotHQ).Any(x => x.Id == desiredPot))
+                if (GetPots(true, config.RequiredPotionHQ).Any(x => x.Id == config.RequiredPotion))
                 {
-                    if (use) UseItem(desiredPot, desiredPotHQ);
+                    if (use) UseItem(config.RequiredPotion, config.RequiredPotionHQ);
                     return false;
                 }
                 else
@@ -239,52 +219,45 @@ namespace Artisan.Autocraft
                     potted = !P.Config.AbortIfNoFoodPot;
                 }
             }
-            if (listItemOptions == null)
+            var manualed = IsManualled() || (config.RequiredManual == 0 && Endurance.Enable);
+            if (!manualed)
             {
-                var manualed = IsManualled() || (P.Config.Manual == 0 && Endurance.Enable);
-                if (!manualed)
+                if (GetManuals(true).Any(x => x.Id == config.RequiredManual))
                 {
-                    if (GetManuals(true).Any(x => x.Id == P.Config.Manual))
-                    {
-                        if (use) UseItem(P.Config.Manual);
-                        return false;
-                    }
-                    else
-                    {
-                        if (Endurance.Enable)
-                        {
-                            Svc.Toasts.ShowError("Manual not found. Disabling Endurance.");
-                            DuoLog.Error("Manual not found. Disabling Endurance.");
-                            Endurance.Enable = false;
-                        }
-                        manualed = !P.Config.AbortIfNoFoodPot;
-                    }
+                    if (use) UseItem(config.RequiredManual);
+                    return false;
                 }
-                var squadronManualed = IsSquadronManualled() || (P.Config.SquadronManual == 0 && Endurance.Enable);
-                if (!squadronManualed)
+                else
                 {
-                    if (GetSquadronManuals(true).Any(x => x.Id == P.Config.SquadronManual))
+                    if (Endurance.Enable)
                     {
-                        if (use) UseItem(P.Config.SquadronManual);
-                        return false;
+                        Svc.Toasts.ShowError("Manual not found. Disabling Endurance.");
+                        DuoLog.Error("Manual not found. Disabling Endurance.");
+                        Endurance.Enable = false;
                     }
-                    else
-                    {
-                        if (Endurance.Enable)
-                        {
-                            Svc.Toasts.ShowError("Squadron Manual not found. Disabling Endurance.");
-                            DuoLog.Error("Squadron Manual not found. Disabling Endurance.");
-                            Endurance.Enable = false;
-                        }
-                        squadronManualed = !P.Config.AbortIfNoFoodPot;
-                    }
+                    manualed = !P.Config.AbortIfNoFoodPot;
                 }
-                var ret = potted && fooded && manualed && squadronManualed;
-                return ret;
             }
-
-            return potted && fooded;
+            var squadronManualed = IsSquadronManualled() || (config.RequiredSquadronManual == 0 && Endurance.Enable);
+            if (!squadronManualed)
+            {
+                if (GetSquadronManuals(true).Any(x => x.Id == config.RequiredSquadronManual))
+                {
+                    if (use) UseItem(config.RequiredSquadronManual);
+                    return false;
+                }
+                else
+                {
+                    if (Endurance.Enable)
+                    {
+                        Svc.Toasts.ShowError("Squadron Manual not found. Disabling Endurance.");
+                        DuoLog.Error("Squadron Manual not found. Disabling Endurance.");
+                        Endurance.Enable = false;
+                    }
+                    squadronManualed = !P.Config.AbortIfNoFoodPot;
+                }
+            }
+            return potted && fooded && manualed && squadronManualed;
         }
-
     }
 }

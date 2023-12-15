@@ -14,7 +14,7 @@ namespace Artisan.CraftingLogic.Solvers
                 yield return new(this, 0, 1, "Standard normal solver");
         }
 
-        public Solver Create(CraftState craft, int flavour, string name) => new StandardSolver(flavour != 0, name);
+        public Solver Create(CraftState craft, int flavour) => new StandardSolver(flavour != 0);
     }
 
     public class StandardSolver : Solver
@@ -25,7 +25,7 @@ namespace Artisan.CraftingLogic.Solvers
         private bool _manipulationUsed;
         private bool _wasteNotUsed;
 
-        public StandardSolver(bool expert, string name) : base(name)
+        public StandardSolver(bool expert)
         {
             _expert = expert;
         }
