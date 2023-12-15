@@ -3,6 +3,7 @@ using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,21 +24,20 @@ namespace Artisan.RawInformation.Character
 
         public static unsafe int Control => PlayerState.Instance()->Attributes[71];
 
-        internal static bool IsManipulationUnlocked()
+        public static unsafe int JobLevel(Job job) => PlayerState.Instance()->ClassJobLevelArray[Svc.Data.GetExcelSheet<ClassJob>()?.GetRow((uint)job)?.ExpArrayIndex ?? 0];
+
+        internal static bool IsManipulationUnlocked(Job job) => job switch
         {
-            return JobID switch
-            {
-                Job.CRP => QuestUnlocked(67979),
-                Job.BSM => QuestUnlocked(68153),
-                Job.ARM => QuestUnlocked(68132),
-                Job.GSM => QuestUnlocked(67974),
-                Job.LTW => QuestUnlocked(68147),
-                Job.WVR => QuestUnlocked(67969),
-                Job.ALC => QuestUnlocked(67974),
-                Job.CUL => QuestUnlocked(68142),
-                _ => false,
-            };
-        }
+            Job.CRP => QuestUnlocked(67979),
+            Job.BSM => QuestUnlocked(68153),
+            Job.ARM => QuestUnlocked(68132),
+            Job.GSM => QuestUnlocked(67974),
+            Job.LTW => QuestUnlocked(68147),
+            Job.WVR => QuestUnlocked(67969),
+            Job.ALC => QuestUnlocked(67974),
+            Job.CUL => QuestUnlocked(68142),
+            _ => false,
+        };
 
         private unsafe static bool QuestUnlocked(int v)
         {

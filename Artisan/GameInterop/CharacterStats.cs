@@ -1,7 +1,7 @@
 ﻿using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.GeneratedSheets;
 using System;
@@ -203,6 +203,17 @@ public unsafe struct CharacterStats
                 res.AddItem(i, ref details);
         }
         return res;
+    }
+
+    // base stats (i.e. without consumables) with rear for specified class (either currently equipped or first found matching gearset)
+    public static CharacterStats GetBaseStatsForClassHeuristic(Job job)
+    {
+        if (CharacterInfo.JobID == job)
+            return GetBaseStatsEquipped();
+        foreach (ref var gs in RaptureGearsetModule.Instance()->EntriesSpan)
+            if ((Job)gs.ClassJob == job)
+                return GetBaseStatsGearset(ref gs);
+        return GetBaseStatsEquipped(); // fallback
     }
 
     public void AddItem(int slot, ref ItemStats item)

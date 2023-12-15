@@ -55,7 +55,7 @@ public static unsafe class Crafting
     }
 
     // note: this uses current character stats & equipped gear
-    public static CraftState BuildCraftStateForRecipe(CharacterStats stats, Lumina.Excel.GeneratedSheets.Recipe recipe)
+    public static CraftState BuildCraftStateForRecipe(CharacterStats stats, Job job, Lumina.Excel.GeneratedSheets.Recipe recipe)
     {
         var lt = recipe.RecipeLevelTable.Value;
         var res = new CraftState()
@@ -63,8 +63,8 @@ public static unsafe class Crafting
             StatCraftsmanship = stats.Craftsmanship,
             StatControl = stats.Control,
             StatCP = stats.CP,
-            StatLevel = CharacterInfo.CharacterLevel ?? 0,
-            UnlockedManipulation = CharacterInfo.IsManipulationUnlocked(),
+            StatLevel = CharacterInfo.JobLevel(job),
+            UnlockedManipulation = CharacterInfo.IsManipulationUnlocked(job),
             Specialist = stats.Specialist,
             Splendorous = stats.Splendorous,
             CraftCollectible = recipe.ItemResult.Value?.IsCollectable ?? false,
@@ -218,7 +218,7 @@ public static unsafe class Crafting
         }
 
         var canHQ = CurRecipe.CanHq;
-        CurCraft = BuildCraftStateForRecipe(CharacterStats.GetCurrentStats(), CurRecipe);
+        CurCraft = BuildCraftStateForRecipe(CharacterStats.GetCurrentStats(), CharacterInfo.JobID, CurRecipe);
         CurStep = BuildStepState(synthWindow);
         if (CurStep.Index != 1 || CurStep.Condition != Condition.Normal || CurStep.PrevComboAction != Skills.None)
             Svc.Log.Error($"Unexpected initial state: {CurStep}");

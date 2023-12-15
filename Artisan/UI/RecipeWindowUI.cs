@@ -13,6 +13,7 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
 using ECommons;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -651,9 +652,9 @@ namespace Artisan
                 {
                     var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
                     var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
-                    var stats = CharacterStats.GetBaseStatsEquipped();
+                    var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.Row);
                     stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
-                    var craft = Crafting.BuildCraftStateForRecipe(stats, recipe);
+                    var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.Row, recipe);
                     if (config.Draw(craft))
                     {
                         P.Config.RecipeConfigs[recipe.RowId] = config;

@@ -8,6 +8,7 @@ using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using ECommons;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -879,7 +880,9 @@ internal class ListEditor : Window, IDisposable
             }
         }
 
-        var craft = Crafting.BuildCraftStateForRecipe(CharacterStats.GetCurrentStats(), recipe); // TODO: should not use current stats!
+        var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.Row);
+        stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
+        var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.Row, recipe);
         if (config.DrawSolver(craft, -30))
         {
             P.Config.RecipeConfigs[selectedListItem] = config;
