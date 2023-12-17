@@ -36,6 +36,8 @@ public static unsafe class ActionManagerEx
         }
     }
 
+    public static float AnimationLock => ((float*)ActionManager.Instance())[2];
+
     // hook is automatically enabled when useful
     private delegate byte UseActionDelegate(ActionManager* actionManager, ActionType actionType, uint actionID, long targetObjectID, uint param, uint useType, int pvp, bool* isGroundTarget);
     private static Hook<UseActionDelegate> _useActionHook;

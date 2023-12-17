@@ -677,13 +677,6 @@ namespace Artisan.UI
                     P.Config.Save();
 
                 ImGuiComponents.HelpMarker("These are the new options when you right click or press square on a recipe in the recipe list.");
-
-                if (SimpleTweaks.IsEnabled())
-                {
-                    if (ImGui.Checkbox("Disable SimpleTweaks Job Change reminder.", ref P.Config.DisableSTMessage))
-                        P.Config.Save();
-                }
-
             }
             if (ImGui.CollapsingHeader("List Settings"))
             {

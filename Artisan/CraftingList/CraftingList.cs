@@ -182,7 +182,7 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if (QuickCrafting.Max > 0 && (QuickCrafting.Completed || selectedList.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
+            if (Crafting.QuickSynthState.Max > 0 && (Crafting.QuickSynthCompleted || selectedList.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
             {
                 Operations.CloseQuickSynthWindow();
             }
@@ -430,7 +430,7 @@ namespace Artisan.CraftingLists
 
             if ((CurrentIndex == 0 && CraftingListUI.CurrentProcessedItem != Endurance.RecipeID)
                 || (CurrentIndex > 0 && CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1] && Endurance.RecipeID != CraftingListUI.CurrentProcessedItem)
-                || QuickCrafting.Completed)
+                || Crafting.QuickSynthCompleted)
             {
                 if (RecipeWindowOpen())
                 {

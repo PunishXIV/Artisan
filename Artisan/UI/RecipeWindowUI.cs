@@ -59,56 +59,6 @@ namespace Artisan
             DrawSupplyMissionOverlay();
 
             DrawMacroOptions();
-
-            if (SimpleTweaks.IsEnabled() && !SimpleTweaks.IsImprovedLogEnabled())
-            {
-                TweakMessage();
-            }
-        }
-
-        private unsafe void TweakMessage()
-        {
-            if (TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
-            {
-                if (addon->AtkUnitBase.IsVisible)
-                {
-                    var recipe = RecipeNote.Instance()->RecipeList->SelectedRecipe;
-                    if (Svc.ClientState.LocalPlayer.ClassJob.Id != recipe->CraftType + 8 && !P.Config.DisableSTMessage)
-                    {
-                        var seString = new SeString();
-                        seString.Append(new TextPayload("SimpleTweaks"));
-                        seString.Append(NewLinePayload.Payload);
-                        seString.Append(new TextPayload("Switches Jobs"));
-                        seString.Append(NewLinePayload.Payload);
-                        seString.Append(NewLinePayload.Payload);
-                        seString.Append(new TextPayload("(Disable this message in Artisan UI Settings"));
-                        seString.Append(NewLinePayload.Payload);
-                        seString.Append(new TextPayload("or enable SimpleTweaks Improved Crafting Log)"));
-
-                        float posX, posY = 0;
-                        addon->SynthesizeButton->ButtonTextNode->AtkResNode.GetPositionFloat(&posX, &posY);
-                        addon->SynthesizeButton->ButtonTextNode->AtkResNode.SetPositionFloat(posX, 1f);
-                        addon->SynthesizeButton->ButtonTextNode->FontSize = 12;
-                        addon->SynthesizeButton->ButtonTextNode->CharSpacing = 1;
-                        addon->SynthesizeButton->ButtonTextNode->LineSpacing = 14;
-                        addon->SynthesizeButton->ButtonTextNode->AlignmentType = AlignmentType.Top;
-                        addon->SynthesizeButton->ButtonTextNode->SetText(seString.Encode());
-                        addon->SynthesizeButton->ButtonTextNode->TextFlags |= (byte)TextFlags.MultiLine;
-                    }
-                    else
-                    {
-                        addon->SynthesizeButton->ButtonTextNode->FontSize = 14;
-                        addon->SynthesizeButton->ButtonTextNode->CharSpacing = 0;
-                        addon->SynthesizeButton->ButtonTextNode->LineSpacing = 14;
-                        addon->SynthesizeButton->ButtonTextNode->SetText("Synthesize");
-                        addon->SynthesizeButton->ButtonTextNode->AlignmentType = AlignmentType.Center;
-                        addon->SynthesizeButton->ButtonTextNode->TextFlags = 41;
-                        addon->SynthesizeButton->ButtonTextNode->TextFlags2 = 128;
-                        addon->SynthesizeButton->ButtonTextNode->AtkResNode.SetHeight(24);
-                    }
-
-                }
-            }
         }
 
         private unsafe void DrawSupplyMissionOverlay()

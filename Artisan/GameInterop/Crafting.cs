@@ -4,15 +4,15 @@ using Artisan.RawInformation.Character;
 using Dalamud.Game.ClientState.Conditions;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using OtterGui;
 using System;
 using System.Linq;
 
 namespace Artisan.GameInterop;
 
-// state of the normal (non-quick) crafting process
+// state of the crafting process
 // manages the 'inner loop' (executing actions to complete a single craft)
 public static unsafe class Crafting
 {
@@ -20,10 +20,11 @@ public static unsafe class Crafting
     {
         IdleNormal, // we're not crafting - the default state of the game
         IdleBetween, // we've finished a craft and have not yet started another, sitting in the menu
-        WaitStart, // we're waiting for a new craft to start
+        WaitStart, // we're waiting for a new (quick) craft to start
         InProgress, // crafting is in progress, waiting for next action
         WaitAction, // we've executed an action and are waiting for results
         WaitFinish, // we're waiting for a craft to end (success / failure / cancel)
+        QuickCraft, // we're inside quick craft loop
         InvalidState, // we're in a state we probably shouldn't be, such as reloading the plugin mid-craft
     }
 
@@ -35,6 +36,9 @@ public static unsafe class Crafting
     public static StepState? CurStep { get; private set; }
     public static bool IsTrial { get; private set; }
 
+    public static (int Cur, int Max) QuickSynthState { get; private set; }
+    public static bool QuickSynthCompleted => QuickSynthState.Cur == QuickSynthState.Max && QuickSynthState.Max > 0;
+
     public delegate void CraftStartedDelegate(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState initialStep, bool trial);
     public static event CraftStartedDelegate? CraftStarted;
 
@@ -45,6 +49,9 @@ public static unsafe class Crafting
     // note: final action that completes/fails a craft does not advance step index
     public delegate void CraftFinishedDelegate(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState finalStep, bool cancelled);
     public static event CraftFinishedDelegate? CraftFinished;
+
+    public delegate void QuickSynthProgressDelegate(int cur, int max);
+    public static event QuickSynthProgressDelegate? QuickSynthProgress;
 
     private static Skills _pendingAction;
     private static StepState? _predictedNextStep;
@@ -150,11 +157,13 @@ public static unsafe class Crafting
         // since an action can complete a craft only if it increases progress or reduces durability, we can use that to determine when to transition from WaitAction to WaitFinish
         var newState = CurState switch
         {
-            State.IdleNormal or State.IdleBetween => TransitionFromIdle(),
+            State.IdleNormal => TransitionFromIdleNormal(),
+            State.IdleBetween => TransitionFromIdleBetween(),
             State.WaitStart => TransitionFromWaitStart(),
             State.InProgress => TransitionFromInProgress(),
             State.WaitAction => TransitionFromWaitAction(),
             State.WaitFinish => TransitionFromWaitFinish(),
+            State.QuickCraft => TransitionFromQuickCraft(),
             _ => TransitionFromInvalid()
         };
         if (newState != CurState)
@@ -176,18 +185,14 @@ public static unsafe class Crafting
         return State.WaitFinish;
     }
 
-    private static State TransitionFromIdle()
+    private static State TransitionFromIdleNormal()
     {
         if (Svc.Condition[ConditionFlag.Crafting40])
             return State.WaitStart; // craft started, but we don't yet know details
 
         if (Svc.Condition[ConditionFlag.PreparingToCraft])
         {
-            if (CurState != State.IdleBetween)
-            {
-                Svc.Log.Error("Unexpected crafting state transition: from idle to preparing");
-                return State.InvalidState;
-            }
+            Svc.Log.Error("Unexpected crafting state transition: from idle to preparing");
             return State.IdleBetween;
         }
 
@@ -195,8 +200,25 @@ public static unsafe class Crafting
         return State.IdleNormal;
     }
 
+    private static State TransitionFromIdleBetween()
+    {
+        // note that Crafting40 remains set after exiting from quick-synth mode
+        if (Svc.Condition[ConditionFlag.PreparingToCraft])
+            return State.IdleBetween; // still in idle state
+
+        if (Svc.Condition[ConditionFlag.Crafting40])
+            return State.WaitStart; // craft started, but we don't yet know details
+
+        // exit crafting menu
+        return State.IdleNormal;
+    }
+
     private static State TransitionFromWaitStart()
     {
+        var quickSynth = GetQuickSynthAddon();
+        if (quickSynth != null)
+            return State.QuickCraft; // we've actually started quick synth
+
         if (Svc.Condition[ConditionFlag.Crafting40])
             return State.WaitStart; // still waiting
 
@@ -310,6 +332,21 @@ public static unsafe class Crafting
         return Svc.Condition[ConditionFlag.PreparingToCraft] ? State.IdleBetween : State.IdleNormal;
     }
 
+    private static State TransitionFromQuickCraft()
+    {
+        if (Svc.Condition[ConditionFlag.PreparingToCraft])
+        {
+            UpdateQuickSynthState((0, 0));
+            return State.IdleBetween; // exit quick-craft menu
+        }
+        else
+        {
+            var quickSynth = GetQuickSynthAddon();
+            UpdateQuickSynthState(quickSynth != null ? GetQuickSynthState(quickSynth) : (0, 0));
+            return State.QuickCraft;
+        }
+    }
+
     private static AddonSynthesis* GetAddon()
     {
         var synthWindow = (AddonSynthesis*)Svc.GameGui.GetAddonByName("Synthesis");
@@ -323,6 +360,41 @@ public static unsafe class Crafting
         }
 
         return synthWindow;
+    }
+
+    private static AtkUnitBase* GetQuickSynthAddon()
+    {
+        var addon = (AtkUnitBase*)Svc.GameGui.GetAddonByName("SynthesisSimple");
+        if (addon == null)
+            return null;
+
+        if (addon->AtkValuesCount < 9)
+        {
+            Svc.Log.Error($"Unexpected quicksynth addon state: 0x{(nint)addon:X} {addon->AtkValuesCount} {addon->UldManager.NodeListCount})");
+            return null;
+        }
+
+        return addon;
+    }
+
+    private static (int cur, int max) GetQuickSynthState(AtkUnitBase* quickSynthWindow)
+    {
+        var cur = quickSynthWindow->AtkValues[3].Int;
+        var max = quickSynthWindow->AtkValues[4].Int;
+        //var succeededNQ = quickSynthWindow->AtkValues[5].Int;
+        //var succeededHQ = quickSynthWindow->AtkValues[8].Int;
+        //var failed = quickSynthWindow->AtkValues[6].Int;
+        //var itemId = quickSynthWindow->AtkValues[7].UInt;
+        return (cur, max);
+    }
+
+    private static void UpdateQuickSynthState((int cur, int max) state)
+    {
+        if (QuickSynthState == state)
+            return;
+        QuickSynthState = state;
+        Svc.Log.Debug($"Quick-synth progress update: {QuickSynthState}");
+        QuickSynthProgress?.Invoke(QuickSynthState.Cur, QuickSynthState.Max);
     }
 
     private static int GetStepIndex(AddonSynthesis* synthWindow) => synthWindow->AtkUnitBase.AtkValues[15].Int;

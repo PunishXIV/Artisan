@@ -8,7 +8,6 @@ using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Artisan.CraftingLists;
 using ECommons.Logging;
 using Artisan.GameInterop;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -131,8 +130,11 @@ namespace Artisan.Autocraft
             if (foodBuff == null)
                 return false; // don't have any well-fed buff
             var desiredFood = LuminaSheets.ItemSheet[config.RequiredFood].ItemAction.Value;
-            var itemFood = LuminaSheets.ItemFoodSheet[config.RequiredFoodHQ ? desiredFood.DataHQ[1] : desiredFood.Data[1]];
-            return foodBuff.Param == itemFood.RowId + (config.RequiredFoodHQ ? 10000 : 0);
+            if (foodBuff.Param == desiredFood.DataHQ[1] + 10000)
+                return true; // we have HQ food, assume it's ok even if recipe requires NQ
+            if (foodBuff.Param == desiredFood.Data[1] && !config.RequiredFoodHQ)
+                return true; // we have NQ food and don't require HQ
+            return false;
         }
 
         internal static bool IsPotted(RecipeConfig? config)
@@ -143,17 +145,24 @@ namespace Artisan.Autocraft
             if (potBuff == null)
                 return false; // don't have any well-fed buff
             var desiredPot = LuminaSheets.ItemSheet[config.RequiredPotion].ItemAction.Value;
-            var itemPot = LuminaSheets.ItemFoodSheet[config.RequiredPotionHQ ? desiredPot.DataHQ[1] : desiredPot.Data[1]];
-            return potBuff.Param == itemPot.RowId + (config.RequiredPotionHQ ? 10000 : 0);
+            if (potBuff.Param == desiredPot.DataHQ[1] + 10000)
+                return true; // we have HQ pot, assume it's ok even if recipe requires NQ
+            if (potBuff.Param == desiredPot.Data[1] && !config.RequiredPotionHQ)
+                return true; // we have NQ pot and don't require HQ
+            return false;
         }
 
-        internal static bool IsManualled()
+        internal static bool IsManualled(RecipeConfig? config)
         {
+            if (config == null || config.RequiredManual == 0)
+                return true; // don't need a manual
             return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.StatusId == 45) == true;
         }
 
-        internal static bool IsSquadronManualled()
+        internal static bool IsSquadronManualled(RecipeConfig? config)
         {
+            if (config == null || config.RequiredSquadronManual == 0)
+                return true; // don't need a squadron manual
             // Squadron engineering/spiritbonding/rationing/gear manual.
             uint[] SquadronManualBuffss = { 1082, 1083, 1084, 1085 };
             return Svc.ClientState.LocalPlayer?.StatusList.Any(x => SquadronManualBuffss.Contains(x.StatusId)) == true;
@@ -219,7 +228,7 @@ namespace Artisan.Autocraft
                     potted = !P.Config.AbortIfNoFoodPot;
                 }
             }
-            var manualed = IsManualled() || (config.RequiredManual == 0 && Endurance.Enable);
+            var manualed = IsManualled(config) || (config.RequiredManual == 0 && Endurance.Enable);
             if (!manualed)
             {
                 if (GetManuals(true).Any(x => x.Id == config.RequiredManual))
@@ -238,7 +247,7 @@ namespace Artisan.Autocraft
                     manualed = !P.Config.AbortIfNoFoodPot;
                 }
             }
-            var squadronManualed = IsSquadronManualled() || (config.RequiredSquadronManual == 0 && Endurance.Enable);
+            var squadronManualed = IsSquadronManualled(config) || (config.RequiredSquadronManual == 0 && Endurance.Enable);
             if (!squadronManualed)
             {
                 if (GetSquadronManuals(true).Any(x => x.Id == config.RequiredSquadronManual))

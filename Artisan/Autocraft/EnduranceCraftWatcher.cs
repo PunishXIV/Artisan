@@ -14,13 +14,13 @@ namespace Artisan.Autocraft
         public static void Setup()
         {
             Crafting.CraftFinished += OnCraftFinished;
-            QuickCrafting.StateChanged += OnQuickSynthChanged;
+            Crafting.QuickSynthProgress += OnQuickSynthProgress;
         }
 
         public static void Dispose()
         {
             Crafting.CraftFinished -= OnCraftFinished;
-            QuickCrafting.StateChanged -= OnQuickSynthChanged;
+            Crafting.QuickSynthProgress -= OnQuickSynthProgress;
         }
 
         private static void OnCraftFinished(Recipe recipe, CraftState craft, StepState finalStep, bool cancelled)
@@ -68,7 +68,7 @@ namespace Artisan.Autocraft
             }
         }
 
-        private static void OnQuickSynthChanged(int cur, int max)
+        private static void OnQuickSynthProgress(int cur, int max)
         {
             if (cur == 0)
                 return;

@@ -314,7 +314,7 @@ namespace Artisan.Autocraft
 
         public static void Update()
         {
-            if ((Enable && P.Config.QuickSynthMode && QuickCrafting.Completed) || IPC.IPC.StopCraftingRequest ||
+            if ((Enable && P.Config.QuickSynthMode && Crafting.QuickSynthCompleted) || IPC.IPC.StopCraftingRequest ||
                 (Enable && P.Config.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
             {
                 Operations.CloseQuickSynthWindow();

@@ -170,7 +170,7 @@ public unsafe class Artisan : IDalamudPlugin
         }
 
         Crafting.Update();
-        QuickCrafting.Update();
+        PreCrafting.Update();
         Endurance.Update();
 
         if (cw.RepeatTrial && !Endurance.Enable)
@@ -200,11 +200,11 @@ public unsafe class Artisan : IDalamudPlugin
         Svc.Framework.Update -= OnFrameworkUpdate;
 
         Svc.PluginInterface.UiBuilder.BuildFonts -= AddCustomFont;
-        ActionWatching.Dispose();
         ws.RemoveAllWindows();
         ws = null!;
 
         EnduranceCraftWatcher.Dispose();
+        PreCrafting.Dispose();
         CraftingProcessor.Dispose();
         Crafting.Dispose();
         ActionManagerEx.Dispose();

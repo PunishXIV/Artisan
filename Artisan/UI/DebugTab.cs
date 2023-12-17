@@ -138,7 +138,7 @@ namespace Artisan.UI
                     ImGui.Text($"Item name: {Crafting.CurRecipe?.ItemResult.Value?.Name}");
                     ImGui.Text($"Current Condition: {Crafting.CurStep.Condition}");
                     ImGui.Text($"Current Step: {Crafting.CurStep.Index}");
-                    ImGui.Text($"Quick Synth: {QuickCrafting.Cur} / {QuickCrafting.Max}");
+                    ImGui.Text($"Quick Synth: {Crafting.QuickSynthState.Cur} / {Crafting.QuickSynthState.Max}");
                     ImGui.Text($"GS+ByregotCombo: {StandardSolver.GreatStridesByregotCombo(Crafting.CurCraft, Crafting.CurStep)}");
                     ImGui.Text($"Base Quality: {Simulator.BaseQuality(Crafting.CurCraft)}");
                     ImGui.Text($"Base Progress: {Simulator.BaseProgress(Crafting.CurCraft)}");
