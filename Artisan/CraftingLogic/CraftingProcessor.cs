@@ -38,6 +38,7 @@ public static class CraftingProcessor
         _solverDefs.Add(new StandardSolverDefinition());
         _solverDefs.Add(new ExpertSolverDefinition());
         _solverDefs.Add(new MacroSolverDefinition());
+        _solverDefs.Add(new ScriptSolverDefinition());
 
         Crafting.CraftStarted += OnCraftStarted;
         Crafting.CraftAdvanced += OnCraftAdvanced;

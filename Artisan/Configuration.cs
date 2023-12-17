@@ -46,6 +46,7 @@ namespace Artisan
 
         public CraftingLogic.Solvers.ExpertSolverSettings ExpertSolverConfig = new();
         public CraftingLogic.Solvers.MacroSolverSettings MacroSolverConfig = new();
+        public CraftingLogic.Solvers.ScriptSolverSettings ScriptSolverConfig = new();
 
         public Dictionary<uint, RecipeConfig> RecipeConfigs = new();
 
