@@ -56,6 +56,7 @@ public static unsafe class Crafting
     private static Skills _pendingAction;
     private static StepState? _predictedNextStepSucc;
     private static StepState? _predictedNextStepFail;
+    private static DateTime _predictionDeadline;
 
     public static void Dispose()
     {
@@ -287,13 +288,14 @@ public static unsafe class Crafting
         {
             // action execution finished, step advanced - make sure all statuses are updated correctly
             var step = BuildStepState(synthWindow);
-            if (!StatusesUpdated(step))
+            if (!StatusesUpdated(step, step.Progress != CurStep.Progress || step.Quality != CurStep.Quality))
                 return State.WaitAction;
             var stepIndexIncrement = step.PrevComboAction is Skills.FinalAppraisal or Skills.HeartAndSoul or Skills.CarefulObservation ? 0 : 1;
             if (step.Index != prevIndex + stepIndexIncrement)
                 Svc.Log.Error($"Unexpected step index: got {step.Index}, expected {prevIndex}+{stepIndexIncrement} (action={step.PrevComboAction})");
             _pendingAction = Skills.None;
             _predictedNextStepSucc = _predictedNextStepFail = null;
+            _predictionDeadline = default;
             CurStep = step;
             CraftAdvanced?.Invoke(CurRecipe!, CurCraft!, CurStep);
             return State.InProgress;
@@ -306,6 +308,7 @@ public static unsafe class Crafting
                 Svc.Log.Error($"Unexpected step index: got {step.Index}, expected {prevIndex} (action={step.PrevComboAction})");
             _pendingAction = Skills.None;
             _predictedNextStepSucc = _predictedNextStepFail = null;
+            _predictionDeadline = default;
             CurStep = step;
             CraftFinished?.Invoke(CurRecipe!, CurCraft!, CurStep, false);
             return State.WaitFinish;
@@ -325,6 +328,7 @@ public static unsafe class Crafting
         ActionManagerEx.ActionUsed -= OnActionUsed;
         _pendingAction = Skills.None;
         _predictedNextStepSucc = _predictedNextStepFail = null;
+        _predictionDeadline = default;
         CurRecipe = null;
         CurCraft = null;
         CurStep = null;
@@ -429,18 +433,24 @@ public static unsafe class Crafting
         (l.IQStacks, l.WasteNotLeft, l.ManipulationLeft, l.GreatStridesLeft, l.InnovationLeft, l.VenerationLeft, l.MuscleMemoryLeft, l.FinalAppraisalLeft, l.HeartAndSoulActive) ==
         (r.IQStacks, r.WasteNotLeft, r.ManipulationLeft, r.GreatStridesLeft, r.InnovationLeft, r.VenerationLeft, r.MuscleMemoryLeft, r.FinalAppraisalLeft, r.HeartAndSoulActive);
 
-    private static bool StatusesUpdated(StepState step)
+    private static bool StatusesUpdated(StepState step, bool succeeded)
     {
         // this is a bit of a hack to work around for statuses being updated by a packet that arrives after EventPlay64, which updates the actual crafting state
-        if (StatusesEqual(step, _predictedNextStepSucc!) || StatusesEqual(step, _predictedNextStepFail!))
+        // note that when statuses are 'consumed' by actions (e.g. mume, gs), these are removed immediately by EventPlay64 handler
+        var predicted = succeeded ? _predictedNextStepSucc : _predictedNextStepFail;
+        if (StatusesEqual(step, predicted!))
             return true; // all good, updated
-        if (StatusesEqual(step, CurStep!))
+
+        if (_predictionDeadline == default)
+            _predictionDeadline = DateTime.Now.AddSeconds(0.5); // assume if we don't get expected results in 500ms, sim is wrong
+        if (_predictionDeadline > DateTime.Now)
         {
             Svc.Log.Debug("Waiting for status update...");
-            return false; // still old ones, waiting...
+            return false; // wait for a bit...
         }
-        // ok, so statuses have changed, just not in the way we expect - complain and consider them to be updated
-        Svc.Log.Error($"Unexpected status update - probably a simulator bug:\n     had {CurStep}\nexpected {_predictedNextStepSucc}\n      or {_predictedNextStepFail}\n     got {step}");
+
+        // ok, we've been waiting too long - complain and consider current state to be correct
+        Svc.Log.Error($"Unexpected status update - probably a simulator bug:\n     had {CurStep}\nexpected {predicted}\n     got {step}");
         return true;
     }
 
