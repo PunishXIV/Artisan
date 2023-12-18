@@ -54,6 +54,7 @@ public unsafe class Artisan : IDalamudPlugin
         P = this;
 
         P.Config = Configuration.Load();
+        P.Config.ScriptSolverConfig.Init();
 
         TM = new();
         TM.TimeLimitMS = 1000;
