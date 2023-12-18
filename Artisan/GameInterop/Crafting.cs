@@ -262,7 +262,7 @@ public static unsafe class Crafting
             // we've just tried to execute an action and now got the transition - assume action execution started
             // TODO: consider some timeout? e.g. if action execution did _not_ start for whatever reason, and later user cancelled the craft
             _predictedNextStepSucc = Simulator.Execute(CurCraft!, CurStep!, _pendingAction, 0, 1).Item2;
-            _predictedNextStepFail = Simulator.Execute(CurCraft!, CurStep!, _pendingAction, 1, 1).Item2;
+            _predictedNextStepFail = Simulator.Execute(CurCraft!, CurStep!, _pendingAction, 0.99f, 1).Item2;
             return State.WaitAction;
         }
         else
@@ -440,7 +440,7 @@ public static unsafe class Crafting
             return false; // still old ones, waiting...
         }
         // ok, so statuses have changed, just not in the way we expect - complain and consider them to be updated
-        Svc.Log.Error($"Unexpected status update: had {CurStep}, expected {_predictedNextStepSucc} or {_predictedNextStepFail}, got {step} - probably there's a bug in simulator");
+        Svc.Log.Error($"Unexpected status update - probably a simulator bug:\n     had {CurStep}\nexpected {_predictedNextStepSucc}\n      or {_predictedNextStepFail}\n     got {step}");
         return true;
     }
 
