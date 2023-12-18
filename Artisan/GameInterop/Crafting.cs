@@ -54,7 +54,8 @@ public static unsafe class Crafting
     public static event QuickSynthProgressDelegate? QuickSynthProgress;
 
     private static Skills _pendingAction;
-    private static StepState? _predictedNextStep;
+    private static StepState? _predictedNextStepSucc;
+    private static StepState? _predictedNextStepFail;
 
     public static void Dispose()
     {
@@ -260,7 +261,8 @@ public static unsafe class Crafting
         {
             // we've just tried to execute an action and now got the transition - assume action execution started
             // TODO: consider some timeout? e.g. if action execution did _not_ start for whatever reason, and later user cancelled the craft
-            _predictedNextStep = Simulator.Execute(CurCraft!, CurStep!, _pendingAction, 0, 1).Item2;
+            _predictedNextStepSucc = Simulator.Execute(CurCraft!, CurStep!, _pendingAction, 0, 1).Item2;
+            _predictedNextStepFail = Simulator.Execute(CurCraft!, CurStep!, _pendingAction, 1, 1).Item2;
             return State.WaitAction;
         }
         else
@@ -291,7 +293,7 @@ public static unsafe class Crafting
             if (step.Index != prevIndex + stepIndexIncrement)
                 Svc.Log.Error($"Unexpected step index: got {step.Index}, expected {prevIndex}+{stepIndexIncrement} (action={step.PrevComboAction})");
             _pendingAction = Skills.None;
-            _predictedNextStep = null;
+            _predictedNextStepSucc = _predictedNextStepFail = null;
             CurStep = step;
             CraftAdvanced?.Invoke(CurRecipe!, CurCraft!, CurStep);
             return State.InProgress;
@@ -305,7 +307,7 @@ public static unsafe class Crafting
             if (step.Index != prevIndex)
                 Svc.Log.Error($"Unexpected step index: got {step.Index}, expected {prevIndex} (action={step.PrevComboAction})");
             _pendingAction = Skills.None;
-            _predictedNextStep = null;
+            _predictedNextStepSucc = _predictedNextStepFail = null;
             CurStep = step;
             CraftFinished?.Invoke(CurRecipe!, CurCraft!, CurStep, false);
             return State.WaitFinish;
@@ -324,7 +326,7 @@ public static unsafe class Crafting
 
         ActionManagerEx.ActionUsed -= OnActionUsed;
         _pendingAction = Skills.None;
-        _predictedNextStep = null;
+        _predictedNextStepSucc = _predictedNextStepFail = null;
         CurRecipe = null;
         CurCraft = null;
         CurStep = null;
@@ -432,7 +434,7 @@ public static unsafe class Crafting
     private static bool StatusesUpdated(StepState step)
     {
         // this is a bit of a hack to work around for statuses being updated by a packet that arrives after EventPlay64, which updates the actual crafting state
-        if (StatusesEqual(step, _predictedNextStep!))
+        if (StatusesEqual(step, _predictedNextStepSucc!) || StatusesEqual(step, _predictedNextStepFail!))
             return true; // all good, updated
         if (StatusesEqual(step, CurStep!))
         {
@@ -440,7 +442,7 @@ public static unsafe class Crafting
             return false; // still old ones, waiting...
         }
         // ok, so statuses have changed, just not in the way we expect - complain and consider them to be updated
-        Svc.Log.Error($"Unexpected status update: had {CurStep}, expected {_predictedNextStep}, got {step} - probably there's a bug in simulator");
+        Svc.Log.Error($"Unexpected status update: had {CurStep}, expected {_predictedNextStepSucc} or {_predictedNextStepFail}, got {step} - probably there's a bug in simulator");
         return true;
     }
 

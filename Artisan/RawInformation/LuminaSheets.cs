@@ -140,7 +140,10 @@ namespace Artisan.RawInformation
 
             WorkshopSupplyItemSheet = Svc.Data?.GetExcelSheet<CompanyCraftSupplyItem>()?
                        .ToDictionary(i => i.RowId, i => i);
+
+            Svc.Log.Debug("Lumina sheets initialized");
         }
+
         public static void Dispose()
         {
             var type = typeof(LuminaSheets);
