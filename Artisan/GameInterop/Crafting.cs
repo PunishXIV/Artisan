@@ -300,10 +300,8 @@ public static unsafe class Crafting
         }
         else if (CurStep!.Progress != GetStepProgress(synthWindow) || CurStep!.Durability != GetStepDurability(synthWindow))
         {
-            // action execution finished, craft completes
+            // action execution finished, craft completes - note that we don't really care about statuses here...
             var step = BuildStepState(synthWindow);
-            if (!StatusesUpdated(step))
-                return State.WaitAction;
             if (step.Index != prevIndex)
                 Svc.Log.Error($"Unexpected step index: got {step.Index}, expected {prevIndex} (action={step.PrevComboAction})");
             _pendingAction = Skills.None;

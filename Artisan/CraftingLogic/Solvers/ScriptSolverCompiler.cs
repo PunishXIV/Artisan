@@ -126,22 +126,22 @@ public class ScriptSolverCompiler : IDisposable
         var references = new List<MetadataReference>();
         foreach (var f in Directory.GetFiles(Path.GetDirectoryName(typeof(object).Assembly.Location)!, "*", SearchOption.TopDirectoryOnly).Where(IsValidAssembly))
         {
-            Svc.Log.Debug($"[ArtisanScript] Adding reference: {f}");
+            Svc.Log.Verbose($"[ArtisanScript] Adding reference: {f}");
             references.Add(MetadataReference.CreateFromFile(f));
         }
         //foreach (var f in Directory.GetFiles(Path.GetDirectoryName(typeof(System.Windows.Forms.Form).Assembly.Location), "*", SearchOption.TopDirectoryOnly).Where(IsValidAssembly))
         //{
-        //    Svc.Log.Debug($"[ArtisanScript] Adding reference: {f}");
+        //    Svc.Log.Verbose($"[ArtisanScript] Adding reference: {f}");
         //    references.Add(MetadataReference.CreateFromFile(f));
         //}
         foreach (var f in Directory.GetFiles(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "*", SearchOption.AllDirectories).Where(IsValidAssembly))
         {
-            Svc.Log.Debug($"[ArtisanScript] Adding reference: {f}");
+            Svc.Log.Verbose($"[ArtisanScript] Adding reference: {f}");
             references.Add(MetadataReference.CreateFromFile(f));
         }
         //foreach (var f in Directory.GetFiles(Path.GetDirectoryName(Svc.PluginInterface.GetType().Assembly.Location)!, "*", SearchOption.AllDirectories).Where(IsValidAssembly))
         //{
-        //    Svc.Log.Debug($"[ArtisanScript] Adding reference: {f}");
+        //    Svc.Log.Verbose($"[ArtisanScript] Adding reference: {f}");
         //    references.Add(MetadataReference.CreateFromFile(f));
         //}
         return references.ToImmutableList();

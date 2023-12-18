@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation.Character;
+using System.Text;
 
 namespace Artisan.CraftingLogic;
 
@@ -59,10 +60,22 @@ public class StepState
 
     public override string ToString()
     {
-        return $"Index: {Index}, Progress: {Progress}, Quality: {Quality}, Durability: {Durability}, CP: {RemainingCP}, Condition: {Condition}\n" +
-            $"IQStacks: {IQStacks}, WasteNotLeft: {WasteNotLeft}, ManipulationLeft: {ManipulationLeft}, GreatStridesLeft: {GreatStridesLeft}\n" +
-            $"InnovationLeft: {InnovationLeft}, VenerationLeft: {VenerationLeft}, MuscleMemoryLeft: {MuscleMemoryLeft}, FinalAppraisalLeft: {FinalAppraisalLeft}\n" +
-            $"CarefulObservationLeft: {CarefulObservationLeft}, HeartAndSoulActive: {HeartAndSoulActive}, HeartandSoulAvailable: {HeartAndSoulAvailable}\n" +
-            $"PrevComboAction: {PrevComboAction}";
+        var sb = new StringBuilder($"#{Index} {Condition}: {Progress}/{Quality}/{Durability}/{RemainingCP}; IQ={IQStacks}");
+        if (WasteNotLeft > 0)
+            sb.Append($", WN={WasteNotLeft}");
+        if (ManipulationLeft > 0)
+            sb.Append($", Manip={ManipulationLeft}");
+        if (GreatStridesLeft > 0)
+            sb.Append($", GS={GreatStridesLeft}");
+        if (InnovationLeft > 0)
+            sb.Append($", Inno={InnovationLeft}");
+        if (VenerationLeft > 0)
+            sb.Append($", Vene={VenerationLeft}");
+        if (MuscleMemoryLeft > 0)
+            sb.Append($", MuMe={MuscleMemoryLeft}");
+        if (FinalAppraisalLeft > 0)
+            sb.Append($", FA={FinalAppraisalLeft}");
+        sb.Append($", CO={CarefulObservationLeft}, HS={(HeartAndSoulActive ? "active" : HeartAndSoulAvailable ? "avail" : "none")}; Prev={PrevComboAction}");
+        return sb.ToString();
     }
 }

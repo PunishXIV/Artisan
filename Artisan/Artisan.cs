@@ -53,6 +53,7 @@ public unsafe class Artisan : IDalamudPlugin
         PunishLibMain.Init(pluginInterface, "Artisan", new AboutPlugin() { Sponsor = "https://ko-fi.com/taurenkey" });
         P = this;
 
+        LuminaSheets.Init();
         P.Config = Configuration.Load();
         P.Config.ScriptSolverConfig.Init();
 
@@ -92,7 +93,6 @@ public unsafe class Artisan : IDalamudPlugin
         Svc.ClientState.Logout += DisableEndurance;
         Svc.ClientState.Login += DisableEndurance;
         Svc.Condition.ConditionChange += Condition_ConditionChange;
-        LuminaSheets.Init();
         CraftingProcessor.Setup();
         ConsumableChecker.Init();
         Endurance.Init();
