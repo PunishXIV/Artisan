@@ -291,6 +291,6 @@ public unsafe static class PreCrafting
         var re = rd != null && rd->Recipes != null ? rd->Recipes + rd->SelectedIndex : null;
         var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
         if (recipe != null)
-            StartCrafting(recipe, true);
+            StartCrafting(recipe, false);
     }
 }

@@ -92,13 +92,13 @@ public unsafe class Artisan : IDalamudPlugin
         Svc.ClientState.Logout += DisableEndurance;
         Svc.ClientState.Login += DisableEndurance;
         Svc.Condition.ConditionChange += Condition_ConditionChange;
+        LuminaSheets.Init();
         CraftingProcessor.Setup();
         ConsumableChecker.Init();
         Endurance.Init();
         IPC.IPC.Init();
         RetainerInfo.Init();
         CraftingListContextMenu.Init();
-        LuminaSheets.Init();
         UniversalsisClient = new();
 
         ws.AddWindow(new RecipeWindowUI());
