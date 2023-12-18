@@ -55,6 +55,11 @@ public class ScriptSolverSettings
             _compiler.Recompile(s);
     }
 
+    public void Dispose()
+    {
+        _compiler.Dispose();
+    }
+
     public bool Draw()
     {
         Script? toDel = null;

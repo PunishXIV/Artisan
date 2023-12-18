@@ -205,6 +205,7 @@ public unsafe class Artisan : IDalamudPlugin
         ws.RemoveAllWindows();
         ws = null!;
 
+        Config.ScriptSolverConfig.Dispose();
         EnduranceCraftWatcher.Dispose();
         PreCrafting.Dispose();
         CraftingProcessor.Dispose();
