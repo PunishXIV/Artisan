@@ -97,6 +97,7 @@ public unsafe class Artisan : IDalamudPlugin
         IPC.IPC.Init();
         RetainerInfo.Init();
         CraftingListContextMenu.Init();
+        LuminaSheets.Init();
         UniversalsisClient = new();
 
         ws.AddWindow(new RecipeWindowUI());

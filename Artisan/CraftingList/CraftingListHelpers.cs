@@ -8,14 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 internal static class CraftingListHelpers
-{
-    public static Dictionary<uint, Recipe> FilteredList = LuminaSheets.RecipeSheet.Values
-                .Where(x => x.ItemResult.Row > 0)
-                .DistinctBy(x => x.RowId)
-                .OrderBy(x => x.RecipeLevelTable.Value.ClassJobLevel)
-                .ThenBy(x => x.ItemResult.Value.Name.RawString)
-                .ToDictionary(x => x.RowId, x => x);
-    
+{    
     internal static Dictionary<uint, bool> SelectedRecipesCraftable = new();
 
     public static void AddRecipeIngredientsToList(Recipe? recipe, ref Dictionary<uint, int> ingredientList, bool addSublist = true, CraftingList? selectedList = null)
@@ -38,7 +31,7 @@ internal static class CraftingListHelpers
                     }
 
                     var name = LuminaSheets.ItemSheet[(uint)ing.ItemIngredient].Name.RawString;
-                    SelectedRecipesCraftable[(uint)ing.ItemIngredient] = FilteredList.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
+                    SelectedRecipesCraftable[(uint)ing.ItemIngredient] = LuminaSheets.RecipeSheet.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
 
                     if (GetIngredientRecipe((uint)ing.ItemIngredient) != null && addSublist)
                     {
@@ -61,7 +54,7 @@ internal static class CraftingListHelpers
                     }
 
                     var name = LuminaSheets.ItemSheet[(uint)ing.ItemIngredient].Name.RawString;
-                    SelectedRecipesCraftable[(uint)ing.ItemIngredient] = FilteredList.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
+                    SelectedRecipesCraftable[(uint)ing.ItemIngredient] = LuminaSheets.RecipeSheet.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
 
                     if (GetIngredientRecipe((uint)ing.ItemIngredient) != null && addSublist)
                     {
@@ -89,7 +82,7 @@ internal static class CraftingListHelpers
         var tempMaterialList = new Dictionary<uint, int>();
         foreach (var recipe in list.Items.Distinct())
         {
-            Recipe r = FilteredList[recipe];
+            Recipe r = LuminaSheets.RecipeSheet[recipe];
             AddRecipeIngredientsToList(r, ref tempMaterialList, false, list);
         }
 
@@ -125,7 +118,7 @@ internal static class CraftingListHelpers
         tempMaterialList.Clear();
         foreach (var recipe in list.Items.Distinct())
         {
-            Recipe r = FilteredList[recipe];
+            Recipe r = LuminaSheets.RecipeSheet[recipe];
             AddRecipeIngredientsToList(r, ref tempMaterialList, false, list);
         }
 

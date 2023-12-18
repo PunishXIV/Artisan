@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLists;
+using Artisan.RawInformation;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
@@ -59,7 +60,7 @@ namespace Artisan.UI
                 ImGui.Spacing();
                 if (CraftingListUI.CurrentProcessedItem != 0)
                 {
-                    ImGuiEx.TextV($"Crafting: {CraftingListHelpers.FilteredList[CraftingListUI.CurrentProcessedItem].ItemResult.Value.Name.RawString}");
+                    ImGuiEx.TextV($"Crafting: {LuminaSheets.RecipeSheet[CraftingListUI.CurrentProcessedItem].ItemResult.Value.Name.RawString}");
                     ImGuiEx.TextV($"Overall Progress: {CraftingListFunctions.CurrentIndex + 1} / {CraftingListUI.selectedList.Items.Count}");
                 }
 

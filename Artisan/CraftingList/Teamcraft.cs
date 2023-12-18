@@ -56,7 +56,7 @@ namespace Artisan.CraftingLists
                 if (i >= sublist.Count) break;
 
                 int number = CraftingListUI.selectedList.Items.Count(x => x == sublist[i]);
-                var recipe = CraftingListHelpers.FilteredList[sublist[i]];
+                var recipe = LuminaSheets.RecipeSheet[sublist[i]];
                 var itemID = recipe.ItemResult.Value.RowId;
 
                 Svc.Log.Debug($"{recipe.ItemResult.Value.Name.RawString} {sublist.Count}");
@@ -66,7 +66,7 @@ namespace Artisan.CraftingLists
             foreach (var item in sublist)
             {
                 int number = CraftingListUI.selectedList.Items.Count(x => x == item);
-                var recipe = CraftingListHelpers.FilteredList[item];
+                var recipe = LuminaSheets.RecipeSheet[item];
                 var itemID = recipe.ItemResult.Value.RowId;
 
                 exportItems += $"{itemID},null,{number};";

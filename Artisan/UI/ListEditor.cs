@@ -370,8 +370,8 @@ internal class ListEditor : Window, IDisposable
         if (P.Config.ShowOnlyCraftable && !RetainerInfo.CacheBuilt)
         {
             if (RetainerInfo.ATools)
-                ImGui.TextWrapped($"Building Retainer Cache: {(RetainerInfo.RetainerData.Values.Any() ? RetainerInfo.RetainerData.FirstOrDefault().Value.Count : "0")}/{CraftingListHelpers.FilteredList.Select(x => x.Value).SelectMany(x => x.UnkData5).Where(x => x.ItemIngredient != 0 && x.AmountIngredient > 0).DistinctBy(x => x.ItemIngredient).Count()}");
-            ImGui.TextWrapped($"Building Craftable Items List: {CraftingListUI.CraftableItems.Count}/{CraftingListHelpers.FilteredList.Count}");
+                ImGui.TextWrapped($"Building Retainer Cache: {(RetainerInfo.RetainerData.Values.Any() ? RetainerInfo.RetainerData.FirstOrDefault().Value.Count : "0")}/{LuminaSheets.RecipeSheet.Select(x => x.Value).SelectMany(x => x.UnkData5).Where(x => x.ItemIngredient != 0 && x.AmountIngredient > 0).DistinctBy(x => x.ItemIngredient).Count()}");
+            ImGui.TextWrapped($"Building Craftable Items List: {CraftingListUI.CraftableItems.Count}/{LuminaSheets.RecipeSheet.Count}");
             ImGui.Spacing();
         }
 
@@ -402,7 +402,7 @@ internal class ListEditor : Window, IDisposable
         }
         else if (!P.Config.ShowOnlyCraftable)
         {
-            foreach (var recipe in CollectionsMarshal.AsSpan(CraftingListHelpers.FilteredList.Values.ToList()))
+            foreach (var recipe in CollectionsMarshal.AsSpan(LuminaSheets.RecipeSheet.Values.ToList()))
             {
                 try
                 {
@@ -507,7 +507,7 @@ internal class ListEditor : Window, IDisposable
                     {
                         try
                         {
-                            jobs.AddRange(CraftingListHelpers.FilteredList.Values.Where(x => x.ItemResult == ingredientRecipe.ItemResult).Select(x => x.CraftType.Row + 8));
+                            jobs.AddRange(LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult == ingredientRecipe.ItemResult).Select(x => x.CraftType.Row + 8));
                             string[]? jobstrings = LuminaSheets.ClassJobSheet.Values.Where(x => jobs.Any(y => y == x.RowId)).Select(x => x.Abbreviation.ToString()).ToArray();
                             ImGui.Text(string.Join(", ", jobstrings));
                         }
@@ -737,7 +737,7 @@ internal class ListEditor : Window, IDisposable
     private void DrawRecipeSettings()
     {
         var selectedListItem = RecipeSelector.Items[RecipeSelector.CurrentIdx];
-        var recipe = CraftingListHelpers.FilteredList[RecipeSelector.Current];
+        var recipe = LuminaSheets.RecipeSheet[RecipeSelector.Current];
         var count = SelectedList.Items.Count(x => x == selectedListItem);
 
         ImGui.TextWrapped("Adjust Quantity");

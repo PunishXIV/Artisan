@@ -76,7 +76,7 @@ namespace Artisan.CraftingLists
             var output = new Dictionary<uint, int>();
             foreach (var item in list.Items.Distinct())
             {
-                Recipe r = CraftingListHelpers.FilteredList[item];
+                Recipe r = LuminaSheets.RecipeSheet[item];
                 CraftingListHelpers.AddRecipeIngredientsToList(r, ref output, false, list);
             }
 
@@ -148,7 +148,7 @@ namespace Artisan.CraftingLists
         public static bool HasItemsForRecipe(uint currentProcessedItem)
         {
             if (currentProcessedItem == 0) return false;
-            var recipe = CraftingListHelpers.FilteredList[currentProcessedItem];
+            var recipe = LuminaSheets.RecipeSheet[currentProcessedItem];
             if (recipe.RowId == 0) return false;
 
             return CraftingListUI.CheckForIngredients(recipe, false);
@@ -187,7 +187,7 @@ namespace Artisan.CraftingLists
                 Operations.CloseQuickSynthWindow();
             }
 
-            var recipe = CraftingListHelpers.FilteredList[CraftingListUI.CurrentProcessedItem];
+            var recipe = LuminaSheets.RecipeSheet[CraftingListUI.CurrentProcessedItem];
 
             if (!Throttler.Throttle(0))
             {
@@ -225,7 +225,7 @@ namespace Artisan.CraftingLists
                 // Probably a final craft, treat like before
                 if (Materials!.Count(x => x.Key == recipe.ItemResult.Row) == 0)
                 {
-                    if (CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult)
+                    if (CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= selectedList.Items.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult)
                     {
                         if (Throttler.Throttle(500))
                         {
@@ -503,11 +503,11 @@ namespace Artisan.CraftingLists
                 var inventoryitems = CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId);
                 var expectedNumber = 0;
                 var stillToCraft = 0;
-                var totalToCraft = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult;
+                var totalToCraft = selectedList.Items.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult;
                 if (Materials!.Count(x => x.Key == recipe.ItemResult.Row) == 0)
                 {
-                    // var previousCrafted = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString && selectedList.Items.IndexOf(x) < CurrentIndex) * recipe.AmountResult;
-                    stillToCraft = selectedList.Items.Count(x => CraftingListHelpers.FilteredList[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString && selectedList.Items.IndexOf(x) >= CurrentIndex) * recipe.AmountResult - inventoryitems;
+                    // var previousCrafted = selectedList.Items.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString && selectedList.Items.IndexOf(x) < CurrentIndex) * recipe.AmountResult;
+                    stillToCraft = selectedList.Items.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString && selectedList.Items.IndexOf(x) >= CurrentIndex) * recipe.AmountResult - inventoryitems;
                     expectedNumber = stillToCraft > 0 ? Math.Min(selectedList.Items.Count(x => x == CraftingListUI.CurrentProcessedItem) * recipe.AmountResult, stillToCraft) : selectedList.Items.Count(x => x == CraftingListUI.CurrentProcessedItem);
 
                 }

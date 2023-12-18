@@ -104,7 +104,7 @@ namespace Artisan.IPC
 
             if (P.Config.ShowOnlyCraftable || onLoad)
             {
-                foreach (var recipe in CraftingListHelpers.FilteredList.Values)
+                foreach (var recipe in LuminaSheets.RecipeSheet.Values)
                 {
                     if (ATools && P.Config.ShowOnlyCraftableRetainers || onLoad)
                         await Task.Run(() => Safe(() => CraftingListUI.CheckForIngredients(recipe, false, true)));
