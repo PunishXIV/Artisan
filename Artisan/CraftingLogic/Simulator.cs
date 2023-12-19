@@ -77,6 +77,7 @@ public static class Simulator
         next.CarefulObservationLeft = step.CarefulObservationLeft - (action == Skills.CarefulObservation ? 1 : 0);
         next.HeartAndSoulActive = action == Skills.HeartAndSoul || step.HeartAndSoulActive && (step.Condition is Condition.Good or Condition.Excellent || !ConsumeHeartAndSoul(action));
         next.HeartAndSoulAvailable = step.HeartAndSoulAvailable && action != Skills.HeartAndSoul;
+        next.PrevActionFailed = !success;
         next.PrevComboAction = action; // note: even stuff like final appraisal and h&s break combos
 
         if (step.FinalAppraisalLeft > 0 && next.Progress >= craft.CraftProgress)

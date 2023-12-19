@@ -56,6 +56,7 @@ public class StepState
     public int CarefulObservationLeft;
     public bool HeartAndSoulActive;
     public bool HeartAndSoulAvailable;
+    public bool PrevActionFailed;
     public Skills PrevComboAction;
 
     public override string ToString()
@@ -75,7 +76,7 @@ public class StepState
             sb.Append($", MuMe={MuscleMemoryLeft}");
         if (FinalAppraisalLeft > 0)
             sb.Append($", FA={FinalAppraisalLeft}");
-        sb.Append($", CO={CarefulObservationLeft}, HS={(HeartAndSoulActive ? "active" : HeartAndSoulAvailable ? "avail" : "none")}; Prev={PrevComboAction}");
+        sb.Append($", CO={CarefulObservationLeft}, HS={(HeartAndSoulActive ? "active" : HeartAndSoulAvailable ? "avail" : "none")}; Prev={PrevComboAction}{(PrevActionFailed ? " (failed)" : "")}");
         return sb.ToString();
     }
 }

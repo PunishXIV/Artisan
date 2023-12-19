@@ -284,7 +284,7 @@ namespace Artisan.CraftingLists
                 foreach (var ing in recipe.UnkData5.Where(x => x.AmountIngredient > 0 && x.ItemIngredient != 0))
                 {
                     var name = LuminaSheets.ItemSheet[(uint)ing.ItemIngredient].Name.RawString;
-                    CraftingListHelpers.SelectedRecipesCraftable[(uint)ing.ItemIngredient] = LuminaSheets.RecipeSheet.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
+                    CraftingListHelpers.SelectedRecipesCraftable[(uint)ing.ItemIngredient] = LuminaSheets.RecipeSheet!.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
 
                     for (int i = 1; i <= ing.AmountIngredient; i++)
                     {
