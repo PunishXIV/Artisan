@@ -1,5 +1,4 @@
 ﻿using Artisan.RawInformation;
-using ECommons;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -31,15 +30,15 @@ namespace Artisan.Autocraft
             Usables = Svc.Data.GetExcelSheet<Item>().Where(i => i.ItemAction.Row > 0).ToDictionary(i => i.RowId, i => i.Name.ToString().ToLower())
             .Concat(Svc.Data.GetExcelSheet<EventItem>().Where(i => i.Action.Row > 0).ToDictionary(i => i.RowId, i => i.Name.ToString().ToLower()))
             .ToDictionary(kv => kv.Key, kv => kv.Value);
-            Food = Svc.Data.GetExcelSheet<Item>().Where(x => (x.ItemUICategory.Value.RowId == 46 && IsCraftersAttribute(x)) || x.RowId == 10146).Select(x => (x.RowId, x.Name.ToString())).ToArray();
-            Pots = Svc.Data.GetExcelSheet<Item>().Where(x => x.RowId > 5000 && !x.RowId.EqualsAny<uint>(4570) && x.ItemUICategory.Value.RowId == 44 && (IsCraftersAttribute(x) || IsSpiritBondAttribute(x)) || x.RowId == 7060).Select(x => (x.RowId, x.Name.ToString())).ToArray();
-            Manuals = Svc.Data.GetExcelSheet<Item>().Where(x => !x.RowId.EqualsAny<uint>(4570) && x.ItemUICategory.Value.RowId == 63 && IsManualAttribute(x)).Select(x => (x.RowId, x.Name.ToString())).ToArray();
-            SquadronManuals = Svc.Data.GetExcelSheet<Item>().Where(x => !x.RowId.EqualsAny<uint>(4570) && x.ItemUICategory.Value.RowId == 63 && IsSquadronManualAttribute(x)).Select(x => (x.RowId, x.Name.ToString())).ToArray();
+            Food = Svc.Data.GetExcelSheet<Item>().Where(IsCraftersFood).Select(x => (x.RowId, x.Name.ToString())).ToArray();
+            Pots = Svc.Data.GetExcelSheet<Item>().Where(IsCraftersPot).Select(x => (x.RowId, x.Name.ToString())).ToArray();
+            Manuals = Svc.Data.GetExcelSheet<Item>().Where(IsManual).Select(x => (x.RowId, x.Name.ToString())).ToArray();
+            SquadronManuals = Svc.Data.GetExcelSheet<Item>().Where(IsSquadronManual).Select(x => (x.RowId, x.Name.ToString())).ToArray();
         }
 
         internal static (uint Id, string Name)[] GetFood(bool inventoryOnly = false, bool hq = false)
         {
-            if (inventoryOnly) return Food.Where(x => InventoryManager.Instance()->GetInventoryItemCount(x.Id, hq) > 0).ToArray();
+            if (inventoryOnly) return Food.Where(x => InventoryManager.Instance()->GetInventoryItemCount(x.Id, hq) > 0f).ToArray();
             return Food;
         }
 
@@ -61,64 +60,53 @@ namespace Artisan.Autocraft
             return SquadronManuals;
         }
 
-        internal static bool IsManualAttribute(Item x)
+        internal static ItemFood? GetItemConsumableProperties(Item item, bool hq)
         {
-            try
-            {
-                ushort[] engineeringManuals = { 301, 1751, 5329 };
-                if (x.ItemAction.Value.Type.Equals(816) && x.ItemAction.Value.Data[0].EqualsAny(engineeringManuals))
-                {
-                    return true;
-                }
-            }
-            catch { }
-            return false;
+            var action = item.ItemAction.Value;
+            if (action == null)
+                return null;
+            var actionParams = hq ? action.DataHQ : action.Data; // [0] = status, [1] = extra == ItemFood row, [2] = duration
+            if (actionParams[0] is not 48 and not 49)
+                return null; // not 'well fed' or 'medicated'
+            return Svc.Data.GetExcelSheet<ItemFood>()?.GetRow(actionParams[1]);
         }
 
-        internal static bool IsSquadronManualAttribute(Item x)
+        internal static bool IsCraftersFood(Item item)
         {
-            try
-            {
-                ushort[] squadrantManuals = { 2291, 2292, 2293, 2294 };
-                if (x.ItemAction.Value.Type.Equals(816) && x.ItemAction.Value.Data[0].EqualsAny(squadrantManuals))
-                {
-                   return true;
-                }
-            }
-            catch { }
-            return false;
+            if (item.ItemUICategory.Row != 46)
+                return false; // not a 'meal'
+            var consumable = GetItemConsumableProperties(item, false);
+            return consumable != null && consumable.UnkData1.Any(p => p.BaseParam is 11 or 70 or 71); // cp/craftsmanship/control
+        }
+
+        internal static bool IsCraftersPot(Item item)
+        {
+            if (item.ItemUICategory.Row != 44)
+                return false; // not a 'medicine'
+            var consumable = GetItemConsumableProperties(item, false);
+            return consumable != null && consumable.UnkData1.Any(p => p.BaseParam is 11 or 70 or 71 or 69 or 68); // cp/craftsmanship/control/increased spiritbond/reduced durability loss
+        }
+
+        internal static bool IsManual(Item item)
+        {
+            if (item.ItemUICategory.Row != 63)
+                return false; // not 'other'
+            var action = item.ItemAction.Value;
+            return action != null && action.Type == 816 && action.Data[0] is 301 or 1751 or 5329;
+        }
+
+        internal static bool IsSquadronManual(Item item)
+        {
+            if (item.ItemUICategory.Row != 63)
+                return false; // not 'other'
+            var action = item.ItemAction.Value;
+            return action != null && action.Type == 816 && action.Data[0] is 2291 or 2292 or 2293 or 2294;
         }
 
         internal static bool IsSpiritBondAttribute(Item x)
         {
-            try
-            {
-                foreach (var z in x.ItemAction.Value?.Data)
-                {
-                    if (Svc.Data.GetExcelSheet<ItemFood>().GetRow(z).UnkData1[0].BaseParam.EqualsAny<byte>(69))
-                    {
-                        return true;
-                    }
-                }
-            }
-            catch { }
-            return false;
-        }
-
-        internal static bool IsCraftersAttribute(Item x)
-        {
-            try
-            {
-                foreach (var z in x.ItemAction.Value?.Data)
-                {
-                    if (Svc.Data.GetExcelSheet<ItemFood>().GetRow(z).UnkData1[0].BaseParam.EqualsAny<byte>(11, 70, 71))
-                    {
-                        return true;
-                    }
-                }
-            }
-            catch { }
-            return false;
+            var consumable = GetItemConsumableProperties(x, false);
+            return consumable != null && consumable.UnkData1.Any(p => p.BaseParam == 69);
         }
 
 
