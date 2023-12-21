@@ -205,7 +205,6 @@ namespace Artisan.UI
             ShowRecommendation(recommendation.Action);
             if (P.Config.AutoMode)
             {
-                ActionManagerEx.BlockAction = true;
                 P.CTM.DelayNext(P.Config.AutoDelay);
                 P.CTM.Enqueue(() => ActionManagerEx.UseSkill(recommendation.Action));
             }

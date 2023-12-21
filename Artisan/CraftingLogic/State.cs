@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Artisan.CraftingLogic;
 
-public class CraftState
+public record class CraftState
 {
     // player stats
     public int StatCraftsmanship;
@@ -37,7 +37,7 @@ public class CraftState
     public static float[] EW5StarCraftConditionProbabilities() => [1, 0.04f, 0, 0, 0.12f, 0.12f, 0.10f, 0.10f, 0.12f, 0.12f];
 }
 
-public class StepState
+public record class StepState
 {
     public int Index;
     public int Progress;

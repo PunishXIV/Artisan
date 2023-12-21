@@ -84,7 +84,7 @@ public static class CraftingProcessor
 
     private static void OnCraftStarted(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState initialStep, bool trial)
     {
-        Svc.Log.Debug($"[CProc] OnCraftStarted #{recipe.RowId} (trial={trial})");
+        Svc.Log.Debug($"[CProc] OnCraftStarted #{recipe.RowId} '{recipe.ItemResult.Value?.Name}' (trial={trial})");
         if (_expectedRecipe != null && _expectedRecipe.Value != recipe.RowId)
         {
             Svc.Log.Error($"Unexpected recipe started: expected {_expectedRecipe}, got {recipe.RowId}");
@@ -127,6 +127,8 @@ public static class CraftingProcessor
         Svc.Log.Debug($"[CProc] OnCraftAdvanced #{recipe.RowId} (solver={ActiveSolver.Name}): {step}");
         if (_activeSolver == null)
             return;
+        if (_nextRec.Action != Skills.None && _nextRec.Action != step.PrevComboAction)
+            Svc.Log.Warning($"Previous action was different from recommendation: recommended {_nextRec.Action}, used {step.PrevComboAction}");
 
         _nextRec = _activeSolver.Solve(craft, step);
         if (_nextRec.Action != Skills.None)
@@ -135,9 +137,11 @@ public static class CraftingProcessor
 
     private static void OnCraftFinished(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState finalStep, bool cancelled)
     {
-        Svc.Log.Debug($"[CProc] OnCraftFinished #{recipe.RowId} (cancel={cancelled}, solver={ActiveSolver.Name})");
+        Svc.Log.Debug($"[CProc] OnCraftFinished #{recipe.RowId} (cancel={cancelled}, solver={ActiveSolver.Name}): {finalStep}");
         if (_activeSolver == null)
             return;
+        if (!cancelled && _nextRec.Action != Skills.None && _nextRec.Action != finalStep.PrevComboAction)
+            Svc.Log.Warning($"Previous action was different from recommendation: recommended {_nextRec.Action}, used {finalStep.PrevComboAction}");
 
         SolverFinished?.Invoke(recipe, ActiveSolver, craft, finalStep);
         _activeSolver = null;

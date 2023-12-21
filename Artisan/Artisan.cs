@@ -210,7 +210,6 @@ public unsafe class Artisan : IDalamudPlugin
         PreCrafting.Dispose();
         CraftingProcessor.Dispose();
         Crafting.Dispose();
-        ActionManagerEx.Dispose();
 
         ECommonsMain.Dispose();
         CustomFont = null;
