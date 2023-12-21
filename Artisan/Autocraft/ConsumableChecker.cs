@@ -103,12 +103,6 @@ namespace Artisan.Autocraft
             return action != null && action.Type == 816 && action.Data[0] is 2291 or 2292 or 2293 or 2294;
         }
 
-        internal static bool IsSpiritBondAttribute(Item x)
-        {
-            var consumable = GetItemConsumableProperties(x, false);
-            return consumable != null && consumable.UnkData1.Any(p => p.BaseParam == 69);
-        }
-
 
         internal static bool IsFooded(RecipeConfig? config)
         {
