@@ -63,7 +63,7 @@ public static unsafe class Crafting
 
     static Crafting()
     {
-        _craftingEventHandlerUpdateHook = Svc.Hook.HookFromAddress<CraftingEventHandlerUpdateDelegate>((nint)CraftingEventHandler.Instance()->VTable[35], CraftingEventHandlerUpdateDetour);
+        _craftingEventHandlerUpdateHook = Svc.Hook.HookFromSignature<CraftingEventHandlerUpdateDelegate>("48 89 5C 24 ?? 48 89 7C 24 ?? 41 56 48 83 EC 30 80 A1", CraftingEventHandlerUpdateDetour);
         _craftingEventHandlerUpdateHook.Enable();
     }
 

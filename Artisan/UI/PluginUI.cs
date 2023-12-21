@@ -163,6 +163,11 @@ namespace Artisan.UI
                             OpenWindow = OpenWindow.FCWorkshop;
                         }
                         ImGui.Spacing();
+                        if (ImGui.Selectable("Simulator", OpenWindow == OpenWindow.Simulator))
+                        {
+                            OpenWindow = OpenWindow.Simulator;
+                        }
+                        ImGui.Spacing();
                         if (ImGui.Selectable("About", OpenWindow == OpenWindow.About))
                         {
                             OpenWindow = OpenWindow.About;
@@ -228,6 +233,11 @@ namespace Artisan.UI
                         if (OpenWindow == OpenWindow.Overview)
                         {
                             DrawOverview();
+                        }
+
+                        if (OpenWindow == OpenWindow.Simulator)
+                        {
+                            SimulatorUI.Draw();
                         }
 
                     }
@@ -844,5 +854,6 @@ namespace Artisan.UI
         FCWorkshop = 7,
         SpecialList = 8,
         Overview = 9,
+        Simulator = 10,
     }
 }

@@ -59,9 +59,11 @@ public record class StepState
     public bool PrevActionFailed;
     public Skills PrevComboAction;
 
-    public override string ToString()
+    public override string ToString() => $"#{Index} {Condition}: {Progress}/{Quality}/{Durability}/{RemainingCP}; {BuffsString()}; Prev={PrevComboAction}{(PrevActionFailed ? " (failed)" : "")}";
+
+    public string BuffsString()
     {
-        var sb = new StringBuilder($"#{Index} {Condition}: {Progress}/{Quality}/{Durability}/{RemainingCP}; IQ={IQStacks}");
+        var sb = new StringBuilder($"IQ={IQStacks}");
         if (WasteNotLeft > 0)
             sb.Append($", WN={WasteNotLeft}");
         if (ManipulationLeft > 0)
@@ -76,7 +78,7 @@ public record class StepState
             sb.Append($", MuMe={MuscleMemoryLeft}");
         if (FinalAppraisalLeft > 0)
             sb.Append($", FA={FinalAppraisalLeft}");
-        sb.Append($", CO={CarefulObservationLeft}, HS={(HeartAndSoulActive ? "active" : HeartAndSoulAvailable ? "avail" : "none")}; Prev={PrevComboAction}{(PrevActionFailed ? " (failed)" : "")}");
+        sb.Append($", CO={CarefulObservationLeft}, HS={(HeartAndSoulActive ? "active" : HeartAndSoulAvailable ? "avail" : "none")}");
         return sb.ToString();
     }
 }
