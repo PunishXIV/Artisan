@@ -27,6 +27,7 @@ internal static class SimulatorUI
     private static Recipe? _selectedRecipe;
     private static CraftState? _selectedCraft;
     private static SolverRef _selectedSolver;
+    private static float _startingQualityPct;
 
     // fields for stats
     private static int _statsNumIterations = 100000;
@@ -67,6 +68,7 @@ internal static class SimulatorUI
 
         if (ImGui.Button("Refresh stats"))
             SetSelectedRecipe(r);
+        ImGui.InputFloat("Starting quality percent", ref _startingQualityPct);
         for (int i = 1; i < craft.CraftConditionProbabilities.Length; ++i)
             ImGui.InputFloat($"Transition probability to {(Condition)i}", ref craft.CraftConditionProbabilities[i]);
     }
@@ -88,9 +90,10 @@ internal static class SimulatorUI
         {
             _statsCurrent = null;
             var iterationsPerTask = _statsNumIterations / _statsNumTasks;
+            var startingQuality = (int)(craft.CraftQualityMax * _startingQualityPct / 100.0);
             for (int i = 0; i < _statsNumTasks - 1; ++i)
-                _statsInProgress.Add(Task.Run(() => GatherStats(craft, _selectedSolver, iterationsPerTask)));
-            _statsInProgress.Add(Task.Run(() => GatherStats(craft, _selectedSolver, _statsNumIterations - iterationsPerTask * (_statsNumTasks - 1))));
+                _statsInProgress.Add(Task.Run(() => GatherStats(craft, _selectedSolver, iterationsPerTask, startingQuality)));
+            _statsInProgress.Add(Task.Run(() => GatherStats(craft, _selectedSolver, _statsNumIterations - iterationsPerTask * (_statsNumTasks - 1), startingQuality)));
         }
 
         if (_statsCurrent == null || _statsCurrent.NumExperiments == 0)
@@ -336,18 +339,18 @@ internal static class SimulatorUI
         return false;
     }
 
-    private static Statistics GatherStats(CraftState craft, SolverRef solver, int numIterations)
+    private static Statistics GatherStats(CraftState craft, SolverRef solver, int numIterations, int startingQuality)
     {
         var rng = new Random();
         Statistics res = new();
         for (int i = 0; i < numIterations; ++i)
         {
             var s = solver.Clone();
-            var step = Simulator.CreateInitial(craft, 0); // TODO: initial quality
+            var step = Simulator.CreateInitial(craft, startingQuality);
             while (Simulator.Status(craft, step) == Simulator.CraftStatus.InProgress)
             {
                 var action = s.Solve(craft, step).Action;
-                if (action == RawInformation.Character.Skills.None)
+                if (action == Skills.None)
                     break;
                 var outcome = Simulator.Execute(craft, step, action, rng.NextSingle(), rng.NextSingle());
                 if (outcome.Item1 == Simulator.ExecuteResult.CantUse)
@@ -369,7 +372,7 @@ internal static class SimulatorUI
         _simNextRec = default;
         if (_simCurSolver != null)
         {
-            var initial = Simulator.CreateInitial(craft, 0); // TODO: starting quality
+            var initial = Simulator.CreateInitial(craft, (int)(craft.CraftQualityMax * _startingQualityPct / 100.0));
             _simCurSteps.Add((initial, ""));
             _simNextRec = _simCurSolver.Solve(craft, initial);
         }
