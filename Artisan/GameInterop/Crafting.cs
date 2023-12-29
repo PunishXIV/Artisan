@@ -139,6 +139,10 @@ public static unsafe class Crafting
         {
             res.CraftQualityMin1 = res.CraftQualityMin2 = res.CraftQualityMin3 = res.CraftQualityMax = (int)recipe.RequiredQuality;
         }
+        else if (recipe.CanHq)
+        {
+            res.CraftQualityMin3 = res.CraftQualityMax;
+        }
 
         return res;
     }

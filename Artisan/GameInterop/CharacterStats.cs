@@ -1,4 +1,5 @@
-﻿using Artisan.RawInformation.Character;
+﻿using Artisan.Autocraft;
+using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -125,15 +126,7 @@ public unsafe struct ConsumableStats
         if (Data == null)
             return;
 
-        var action = Data.ItemAction.Value;
-        if (action == null)
-            return;
-
-        var actionParams = hq ? action.DataHQ : action.Data; // [0] = status, [1] = extra == ItemFood row, [2] = duration
-        if (actionParams[0] is not 48 and not 49)
-            return; // not 'well fed' or 'medicated'
-
-        var food = Svc.Data.GetExcelSheet<ItemFood>()?.GetRow(actionParams[1]);
+        var food = ConsumableChecker.GetItemConsumableProperties(Data, hq);
         if (food == null)
             return;
 
