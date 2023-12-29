@@ -2,7 +2,7 @@
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Interface.Colors;
-using Dalamud.Logging;
+using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -324,7 +324,7 @@ namespace Artisan.FCWorkshops
             }
         }
 
-        private static void CreatePartList(CompanyCraftPart value, string partNum, bool includePrecraft, CraftingList existingList = null)
+        private static void CreatePartList(CompanyCraftPart value, string partNum, bool includePrecraft, CraftingList? existingList = null)
         {
             if (existingList == null)
             {
@@ -364,7 +364,7 @@ namespace Artisan.FCWorkshops
 
         }
 
-        public static void CreatePhaseList(CompanyCraftProcess value, string partNum, int phaseNum, bool includePrecraft, CraftingList existingList = null, CompanyCraftSequence projectOverride = null)
+        public static void CreatePhaseList(CompanyCraftProcess value, string partNum, int phaseNum, bool includePrecraft, CraftingList? existingList = null, CompanyCraftSequence? projectOverride = null)
         {
             if (existingList == null)
             {
@@ -390,7 +390,7 @@ namespace Artisan.FCWorkshops
                     var recipeID = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == supplyItemID);
                     if (includePrecraft)
                     {
-                        PluginLog.Debug($"I want to add {recipeID.ItemResult.Value.Name.RawString} {timesToAdd} times");
+                        Svc.Log.Debug($"I want to add {recipeID.ItemResult.Value.Name.RawString} {timesToAdd} times");
                         CraftingListUI.AddAllSubcrafts(recipeID, existingList, timesToAdd);
                     }
 

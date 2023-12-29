@@ -8,7 +8,6 @@ using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.UI;
 using Dalamud.Interface.Colors;
-using Dalamud.Logging;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
@@ -25,7 +24,6 @@ namespace Artisan.CraftingLists
 {
     internal class CraftingListUI
     {
-        internal static Recipe? SelectedRecipe;
         internal static string Search = string.Empty;
         public static unsafe InventoryManager* invManager = InventoryManager.Instance();
         public static Dictionary<Recipe, bool> CraftableItems = new();
@@ -38,19 +36,13 @@ namespace Artisan.CraftingLists
         internal static Dictionary<int, int> subtableList = new();
         internal static List<int> listMaterials = new();
         internal static Dictionary<int, int> listMaterialsNew = new();
-        internal static uint selectedListItem;
         public static bool Processing;
         public static uint CurrentProcessedItem;
-        private static bool renameMode = false;
-        private static string? renameList;
-        public static bool Minimized;
-        private static int timesToAdd = 1;
         private static readonly ListFolders ListsUI = new();
         private static bool GatherBuddy => DalamudReflector.TryGetDalamudPlugin("GatherBuddy", out var gb, false, true);
         private static bool ItemVendor => DalamudReflector.TryGetDalamudPlugin("Item Vendor Location", out var ivl, false, true);
 
         private static bool MonsterLookup => DalamudReflector.TryGetDalamudPlugin("Monster Loot Hunter", out var mlh, false, true);
-        private static bool TidyAfter = false;
 
         internal static void Draw()
         {
@@ -186,16 +178,16 @@ namespace Artisan.CraftingLists
 
         public static void AddAllSubcrafts(Recipe selectedRecipe, CraftingList selectedList, int amounts = 1, int loops = 1)
         {
-            PluginLog.Debug($"Processing: {selectedRecipe.ItemResult.Value.Name.RawString}");
+            Svc.Log.Debug($"Processing: {selectedRecipe.ItemResult.Value.Name.RawString}");
             foreach (var subItem in selectedRecipe.UnkData5.Where(x => x.AmountIngredient > 0))
             {
-                PluginLog.Debug($"Sub-item: {LuminaSheets.ItemSheet[(uint)subItem.ItemIngredient].Name.RawString} * {subItem.AmountIngredient}");
+                Svc.Log.Debug($"Sub-item: {LuminaSheets.ItemSheet[(uint)subItem.ItemIngredient].Name.RawString} * {subItem.AmountIngredient}");
                 var subRecipe = CraftingListHelpers.GetIngredientRecipe((uint)subItem.ItemIngredient);
                 if (subRecipe != null)
                 {
                     AddAllSubcrafts(subRecipe, selectedList, subItem.AmountIngredient * amounts, loops);
 
-                    PluginLog.Debug($"Adding: {subRecipe.ItemResult.Value.Name.RawString} {Math.Ceiling(subItem.AmountIngredient / (double)subRecipe.AmountResult * loops * amounts)} times");
+                    Svc.Log.Debug($"Adding: {subRecipe.ItemResult.Value.Name.RawString} {Math.Ceiling(subItem.AmountIngredient / (double)subRecipe.AmountResult * loops * amounts)} times");
 
                     for (int i = 1; i <= Math.Ceiling(subItem.AmountIngredient / (double)subRecipe.AmountResult * loops * amounts); i++)
                     {
@@ -210,7 +202,7 @@ namespace Artisan.CraftingLists
                         }
                     }
 
-                    PluginLog.Debug($"There are now {selectedList.Items.Count} items on the list");
+                    Svc.Log.Debug($"There are now {selectedList.Items.Count} items on the list");
                 }
             }
         }
@@ -282,14 +274,14 @@ namespace Artisan.CraftingLists
                 }
                 catch (Exception ex)
                 {
-                    PluginLog.Error(ex, "SubTableRender");
+                    Svc.Log.Error(ex, "SubTableRender");
                 }
 
                 ImGui.EndTable();
             }
         }
 
-        private static void AddRecipeIngredientsToList(Recipe? recipe, ref List<int> ingredientList, bool addSubList = true, CraftingList selectedList = null)
+        private static void AddRecipeIngredientsToList(Recipe? recipe, ref List<int> ingredientList, bool addSubList = true, CraftingList? selectedList = null)
         {
             try
             {
@@ -298,7 +290,7 @@ namespace Artisan.CraftingLists
                 foreach (var ing in recipe.UnkData5.Where(x => x.AmountIngredient > 0 && x.ItemIngredient != 0))
                 {
                     var name = LuminaSheets.ItemSheet[(uint)ing.ItemIngredient].Name.RawString;
-                    CraftingListHelpers.SelectedRecipesCraftable[(uint)ing.ItemIngredient] = CraftingListHelpers.FilteredList.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
+                    CraftingListHelpers.SelectedRecipesCraftable[(uint)ing.ItemIngredient] = LuminaSheets.RecipeSheet!.Any(x => x.Value.ItemResult.Value.Name.RawString == name);
 
                     for (int i = 1; i <= ing.AmountIngredient; i++)
                     {
@@ -312,7 +304,7 @@ namespace Artisan.CraftingLists
             }
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "ERROR");
+                Svc.Log.Error(ex, "ERROR");
             }
         }
 
@@ -374,7 +366,7 @@ namespace Artisan.CraftingLists
                 var invNumberNQ = invManager->GetInventoryItemCount(ingredient, false, false);
                 var invNumberHQ = invManager->GetInventoryItemCount(ingredient, true, false, false);
 
-                // PluginLog.Debug($"{invNumberNQ + invNumberHQ}");
+                // Svc.Log.Debug($"{invNumberNQ + invNumberHQ}");
                 if (LuminaSheets.ItemSheet[ingredient].AlwaysCollectable)
                 {
                     var inventories = new List<InventoryType>
@@ -411,7 +403,7 @@ namespace Artisan.CraftingLists
 
         public static Recipe? GetIngredientRecipe(string ingredient)
         {
-            return CraftingListHelpers.FilteredList.Values.Any(x => x.ItemResult.Value.Name.RawString == ingredient) ? CraftingListHelpers.FilteredList.Values.First(x => x.ItemResult.Value.Name.RawString == ingredient) : null;
+            return LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Value.Name.RawString == ingredient) ? LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Value.Name.RawString == ingredient) : null;
         }
     }
 }

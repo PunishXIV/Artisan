@@ -1,19 +1,21 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
-using Artisan.MacroSystem;
-using Artisan.RawInformation;
+using Artisan.CraftingLogic.Solvers;
+using Artisan.GameInterop;
 using Artisan.UI.Tables;
 using Dalamud.Configuration;
 using ECommons.DalamudServices;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Artisan
 {
     [Serializable]
     public class Configuration : IPluginConfiguration
     {
-        public int Version { get; set; } = 0;
+        public int Version { get; set; } = 1;
         public bool AutoMode
         {
             get => autoMode; 
@@ -21,7 +23,7 @@ namespace Artisan
             {
                 if (value)
                 {
-                    Hotbars.ExecuteRecommended(CurrentCraft.CurrentRecommendation);
+                    ActionManagerEx.UseSkill(CraftingProcessor.NextRec.Action);
                 }
                 autoMode = value;
             }
@@ -42,21 +44,17 @@ namespace Artisan
         public bool UseSimulatedStartingQuality { get; set; } = false;
         public bool DisableHighlightedAction { get; set; } = false;
 
-        public CraftingLogic.ExpertSolver.Settings ExpertSolverConfig = new();
+        public CraftingLogic.Solvers.ExpertSolverSettings ExpertSolverConfig = new();
+        public CraftingLogic.Solvers.MacroSolverSettings MacroSolverConfig = new();
+        public CraftingLogic.Solvers.ScriptSolverSettings ScriptSolverConfig = new();
 
-        public List<Macro> UserMacros { get; set; } = new();
+        public Dictionary<uint, RecipeConfig> RecipeConfigs = new();
+
         public List<CraftingList> CraftingLists { get; set; } = new();
-        public Dictionary<uint, int> IRM { get; set; } = new();
 
         public int AutoDelay { get; set; } = 0;
 
-        public uint Food = 0;
-        public uint Potion = 0;
-        public uint Manual = 0;
-        public uint SquadronManual = 0;
         public bool AbortIfNoFoodPot { get; set; } = false;
-        public bool FoodHQ = true;
-        public bool PotHQ = true;
         public bool Repair { get; set; } = false;
         public bool QuickSynthMode = false;
         public bool DisableToasts { get; set; } = false;
@@ -134,11 +132,71 @@ namespace Artisan
 
         public bool ViewedEnduranceMessage = false;
 
-        public bool DisableSTMessage = false;   
-
         public void Save()
         {
             Svc.PluginInterface.SavePluginConfig(this);
+        }
+
+        public static Configuration Load()
+        {
+            try
+            {
+                var contents = File.ReadAllText(Svc.PluginInterface.ConfigFile.FullName);
+                var json = JObject.Parse(contents);
+                var version = (int?)json["Version"] ?? 0;
+                ConvertConfig(json, version);
+                return json.ToObject<Configuration>() ?? new();
+            }
+            catch (Exception e)
+            {
+                Svc.Log.Error($"Failed to load config from {Svc.PluginInterface.ConfigFile.FullName}: {e}");
+                return new();
+            }
+        }
+
+        private static void ConvertConfig(JObject json, int version)
+        {
+            if (version <= 0)
+            {
+                var userMacros = json["UserMacros"] as JArray;
+                if (userMacros != null)
+                {
+                    foreach (var m in userMacros)
+                    {
+                        m["Options"] = m["MacroOptions"];
+                        var actions = m["MacroActions"] as JArray;
+                        if (actions != null)
+                        {
+                            var stepopts = m["MacroStepOptions"] as JArray;
+                            var steps = new JArray();
+                            for (int i = 0; i < actions.Count; ++i)
+                            {
+                                var step = stepopts != null && i < stepopts.Count ? stepopts[i] : new JObject();
+                                step["Action"] = actions[i];
+                                steps.Add(step);
+                            }
+                            m["Steps"] = steps;
+                        }
+                    }
+                    json["MacroSolverConfig"] = new JObject() { { "Macros", userMacros } };
+                }
+
+                var irm = json["IRM"] as JObject;
+                if (irm != null)
+                {
+                    var cvt = new JObject();
+                    foreach (var (k, v) in irm)
+                    {
+                        if (k == "$type")
+                            continue;
+                        var c = new JObject();
+                        c["SolverType"] = typeof(MacroSolverDefinition).FullName;
+                        c["SolverFlavour"] = v;
+                        cvt[k] = c;
+                    }
+                    json["RecipeConfigs"] = cvt;
+                }
+            }
         }
     }
 }

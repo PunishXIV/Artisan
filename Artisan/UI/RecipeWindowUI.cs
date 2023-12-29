@@ -1,6 +1,9 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.CraftingLogic;
 using Artisan.FCWorkshops;
+using Artisan.GameInterop;
+using Artisan.GameInterop.CSExt;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Game.Text.SeStringHandling;
@@ -9,17 +12,16 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
 using ECommons;
-using ECommons.ChatMethods;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using OtterGui;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using static ECommons.GenericHelpers;
@@ -57,56 +59,6 @@ namespace Artisan
             DrawSupplyMissionOverlay();
 
             DrawMacroOptions();
-
-            if (SimpleTweaks.IsEnabled() && !SimpleTweaks.IsImprovedLogEnabled())
-            {
-                TweakMessage();
-            }
-        }
-
-        private unsafe void TweakMessage()
-        {
-            if (TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
-            {
-                if (addon->AtkUnitBase.IsVisible)
-                {
-                    var recipe = RecipeNote.Instance()->RecipeList->SelectedRecipe;
-                    if (Svc.ClientState.LocalPlayer.ClassJob.Id != recipe->CraftType + 8 && !P.Config.DisableSTMessage)
-                    {
-                        var seString = new SeString();
-                        seString.Append(new TextPayload("SimpleTweaks"));
-                        seString.Append(NewLinePayload.Payload);
-                        seString.Append(new TextPayload("Switches Jobs"));
-                        seString.Append(NewLinePayload.Payload);
-                        seString.Append(NewLinePayload.Payload);
-                        seString.Append(new TextPayload("(Disable this message in Artisan UI Settings"));
-                        seString.Append(NewLinePayload.Payload);
-                        seString.Append(new TextPayload("or enable SimpleTweaks Improved Crafting Log)"));
-
-                        float posX, posY = 0;
-                        addon->SynthesizeButton->ButtonTextNode->AtkResNode.GetPositionFloat(&posX, &posY);
-                        addon->SynthesizeButton->ButtonTextNode->AtkResNode.SetPositionFloat(posX, 1f);
-                        addon->SynthesizeButton->ButtonTextNode->FontSize = 12;
-                        addon->SynthesizeButton->ButtonTextNode->CharSpacing = 1;
-                        addon->SynthesizeButton->ButtonTextNode->LineSpacing = 14;
-                        addon->SynthesizeButton->ButtonTextNode->AlignmentType = AlignmentType.Top;
-                        addon->SynthesizeButton->ButtonTextNode->SetText(seString.Encode());
-                        addon->SynthesizeButton->ButtonTextNode->TextFlags |= (byte)TextFlags.MultiLine;
-                    }
-                    else
-                    {
-                        addon->SynthesizeButton->ButtonTextNode->FontSize = 14;
-                        addon->SynthesizeButton->ButtonTextNode->CharSpacing = 0;
-                        addon->SynthesizeButton->ButtonTextNode->LineSpacing = 14;
-                        addon->SynthesizeButton->ButtonTextNode->SetText("Synthesize");
-                        addon->SynthesizeButton->ButtonTextNode->AlignmentType = AlignmentType.Center;
-                        addon->SynthesizeButton->ButtonTextNode->TextFlags = 41;
-                        addon->SynthesizeButton->ButtonTextNode->TextFlags2 = 128;
-                        addon->SynthesizeButton->ButtonTextNode->AtkResNode.SetHeight(24);
-                    }
-
-                }
-            }
         }
 
         private unsafe void DrawSupplyMissionOverlay()
@@ -634,7 +586,7 @@ namespace Artisan
                     ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.FirstUseEver);
                 }
 
-                //Dalamud.Logging.PluginLog.Debug($"{position.X + node->Width + 7}");
+                //Svc.Log.Debug($"{position.X + node->Width + 7}");
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(7f, 7f));
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
                 ImGui.Begin($"###Options{node->NodeID}", ImGuiWindowFlags.NoScrollbar
@@ -646,32 +598,55 @@ namespace Artisan
                 {
                     ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, $@"Warning: You have the ""Auto Focus Recipe Search"" SimpleTweak enabled. This is highly incompatible with Artisan and is recommended to disable it.");
                 }
-                if (P.Config.UserMacros.Count > 0)
+                if (Endurance.RecipeID != 0)
                 {
-                    if (Endurance.RecipeID != 0)
+                    var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
+                    var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
+                    var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.Row);
+                    stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
+                    var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.Row, recipe);
+                    if (config.Draw(craft))
                     {
-                        ImGui.Text($"Use a macro for this recipe ({Endurance.RecipeName})");
-                        string? preview = P.Config.IRM.TryGetValue((uint)Endurance.RecipeID, out var prevMacro) ? P.Config.UserMacros.First(x => x.ID == prevMacro).Name : "";
-                        if (ImGui.BeginCombo("", preview))
-                        {
-                            if (ImGui.Selectable(""))
-                            {
-                                P.Config.IRM.Remove((uint)Endurance.RecipeID);
-                                P.Config.Save();
-                            }
-                            foreach (var macro in P.Config.UserMacros)
-                            {
-                                bool selected = P.Config.IRM.TryGetValue((uint)Endurance.RecipeID, out var selectedMacro);
-                                if (ImGui.Selectable(macro.Name, selected))
-                                {
-                                    P.Config.IRM[(uint)Endurance.RecipeID] = macro.ID;
-                                    P.Config.Save();
-                                }
-                            }
+                        P.Config.RecipeConfigs[recipe.RowId] = config;
+                        P.Config.Save();
+                    }
 
-                            ImGui.EndCombo();
+                    if (recipe.CanHq)
+                    {
+                        var solver = CraftingProcessor.GetSolverForRecipe(config, craft).CreateSolver(craft);
+                        var rd = RecipeNoteRecipeData.Ptr();
+                        var re = rd != null ? rd->FindRecipeById(recipe.RowId) : null;
+                        var startingQuality = re != null ? Calculations.GetStartingQuality(recipe, re->GetAssignedHQIngredients()) : 0;
+                        var progress = SolverUtils.EstimateProgressChance(solver, craft, startingQuality);
+                        var time = SolverUtils.EstimateCraftTime(solver, craft, startingQuality);
+
+                        if (recipe.ItemResult.Value.IsCollectable)
+                        {
+                            var breakpointHit = SolverUtils.EstimateCollectibleThreshold(solver, craft, startingQuality);
+                            if (breakpointHit == "Fail")
+                                ImGuiEx.Text(ImGuiColors.DalamudRed, $"This solver will fail.");
+                            else
+                            {
+                                Vector4 c = progress ? breakpointHit switch
+                                {
+                                    "1st" => new Vector4(0.7f, 0.5f, 0.5f, 1f),
+                                    "2nd" => new Vector4(0.5f, 0.5f, 0.7f, 1f),
+                                    "3rd" => new Vector4(0.5f, 1f, 0.5f, 1f),
+                                    _ => ImGuiColors.DalamudRed
+                                } : ImGuiColors.DalamudRed;
+
+                                ImGuiEx.Text(c, $"This solver will hit the {breakpointHit} threshold {(progress ? "and will complete" : "but will not complete")} the craft in {time.TotalSeconds:f0}s.");
+                            }
+                        }
+                        else
+                        {
+                            var q = SolverUtils.EstimateQualityPercent(solver, craft, startingQuality);
+                            var hq = Calculations.GetHQChance(q);
+                            var c = progress ? new Vector4(1 - (hq / 100f), 0 + (hq / 100f), 1 - (hq / 100f), 255) : ImGuiColors.DalamudRed;
+                            ImGuiEx.Text(c, $"This solver will HQ {hq}% of the time ({q:f0}% quality) {(progress ? "and will complete" : "but will not complete")} the craft in {time.TotalSeconds:f0}s.");
                         }
                     }
+
                 }
 
                 ImGui.End();
@@ -713,7 +688,7 @@ namespace Artisan
                 ImGuiHelpers.ForceNextWindowMainViewport();
                 ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + (4f * scale.X) - 40f, position.Y - 16f - (17f * scale.Y)));
 
-                //Dalamud.Logging.PluginLog.Debug($"Length: {size.Length()}, Width: {node->Width}, Scale: {scale.Y}");
+                //Svc.Log.Debug($"Length: {size.Length()}, Width: {node->Width}, Scale: {scale.Y}");
 
                 ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
                 ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);

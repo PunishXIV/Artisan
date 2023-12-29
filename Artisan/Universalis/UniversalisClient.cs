@@ -1,5 +1,4 @@
-﻿using Dalamud.Logging;
-using ECommons;
+﻿using ECommons;
 using ECommons.DalamudServices;
 using Newtonsoft.Json;
 using System;
@@ -29,7 +28,7 @@ namespace Artisan.Universalis
             return marketBoardFromAPI;
         }
 
-        public MarketboardData GetRegionData(ulong itemId)
+        public MarketboardData? GetRegionData(ulong itemId)
         {
             var world = Svc.ClientState.LocalPlayer?.CurrentWorld.Id;
             if (world == null)
@@ -64,7 +63,7 @@ namespace Artisan.Universalis
 
             if (result.StatusCode != HttpStatusCode.OK)
             {
-                PluginLog.LogError(
+                Svc.Log.Error(
                     "Failed to retrieve data from Universalis for itemId {0} / worldId {1} with HttpStatusCode {2}.",
                     itemId,
                     region,
@@ -75,7 +74,7 @@ namespace Artisan.Universalis
             var json = JsonConvert.DeserializeObject<dynamic>(result.Content.ReadAsStringAsync().Result);
             if (json == null)
             {
-                PluginLog.LogError(
+                Svc.Log.Error(
                     "Failed to deserialize Universalis response for itemId {0} / worldId {1}.",
                     itemId,
                     region);
@@ -123,7 +122,7 @@ namespace Artisan.Universalis
             }
             catch (Exception ex)
             {
-                PluginLog.LogError(
+                Svc.Log.Error(
                     ex,
                     "Failed to parse marketBoard data for itemId {0} / worldId {1}.",
                     itemId,
@@ -135,7 +134,7 @@ namespace Artisan.Universalis
         private async Task<HttpResponseMessage> GetMarketBoardDataAsync(string? worldId, ulong itemId)
         {
             var request = Endpoint + worldId + "/" + itemId;
-            PluginLog.LogDebug($"universalisRequest={request}");
+            Svc.Log.Debug($"universalisRequest={request}");
             return await this.httpClient.GetAsync(new Uri(request));
         }
     }

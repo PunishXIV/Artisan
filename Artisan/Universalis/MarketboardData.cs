@@ -38,7 +38,7 @@ namespace Artisan.Universalis
 
     public class Listing
     {
-        public string World { get; set; }
+        public string World { get; set; } = "";
 
         public double Quantity { get; set; }
 

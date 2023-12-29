@@ -2,7 +2,6 @@
 using Artisan.CraftingLists;
 using Artisan.FCWorkshops;
 using Artisan.IPC;
-using Artisan.MacroSystem;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface;
@@ -164,6 +163,11 @@ namespace Artisan.UI
                             OpenWindow = OpenWindow.FCWorkshop;
                         }
                         ImGui.Spacing();
+                        if (ImGui.Selectable("Simulator", OpenWindow == OpenWindow.Simulator))
+                        {
+                            OpenWindow = OpenWindow.Simulator;
+                        }
+                        ImGui.Spacing();
                         if (ImGui.Selectable("About", OpenWindow == OpenWindow.About))
                         {
                             OpenWindow = OpenWindow.About;
@@ -229,6 +233,11 @@ namespace Artisan.UI
                         if (OpenWindow == OpenWindow.Overview)
                         {
                             DrawOverview();
+                        }
+
+                        if (OpenWindow == OpenWindow.Simulator)
+                        {
+                            SimulatorUI.Draw();
                         }
 
                     }
@@ -461,9 +470,6 @@ namespace Artisan.UI
             {
                 if (ImGui.Checkbox("Automatic Action Execution Mode", ref autoEnabled))
                 {
-                    if (!autoEnabled)
-                        ActionWatching.BlockAction = false;
-
                     P.Config.AutoMode = autoEnabled;
                     P.Config.Save();
                 }
@@ -555,18 +561,18 @@ namespace Artisan.UI
             }
             if (ImGui.CollapsingHeader("Solver Settings"))
             {
-                if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[227].Text.RawString}", ref useTricksGood))
+                if (ImGui.Checkbox($"Use {Skills.TricksOfTrade.NameOfAction()} - {LuminaSheets.AddonSheet[227].Text.RawString}", ref useTricksGood))
                 {
                     P.Config.UseTricksGood = useTricksGood;
                     P.Config.Save();
                 }
                 ImGui.SameLine();
-                if (ImGui.Checkbox($"Use {LuminaSheets.CraftActions[Skills.Tricks].Name} - {LuminaSheets.AddonSheet[228].Text.RawString}", ref useTricksExcellent))
+                if (ImGui.Checkbox($"Use {Skills.TricksOfTrade.NameOfAction()} - {LuminaSheets.AddonSheet[228].Text.RawString}", ref useTricksExcellent))
                 {
                     P.Config.UseTricksExcellent = useTricksExcellent;
                     P.Config.Save();
                 }
-                ImGuiComponents.HelpMarker($"These 2 options allow you to make {Skills.Tricks.NameOfAction()} a priority when condition is {LuminaSheets.AddonSheet[227].Text.RawString} or {LuminaSheets.AddonSheet[228].Text.RawString}.\n\nThis will replace {Skills.PreciseTouch.NameOfAction()} & {Skills.IntensiveSynthesis.NameOfAction()} usage.\n\n{Skills.Tricks.NameOfAction()} will still be used before learning these or under certain circumstances regardless of settings.");
+                ImGuiComponents.HelpMarker($"These 2 options allow you to make {Skills.TricksOfTrade.NameOfAction()} a priority when condition is {LuminaSheets.AddonSheet[227].Text.RawString} or {LuminaSheets.AddonSheet[228].Text.RawString}.\n\nThis will replace {Skills.PreciseTouch.NameOfAction()} & {Skills.IntensiveSynthesis.NameOfAction()} usage.\n\n{Skills.TricksOfTrade.NameOfAction()} will still be used before learning these or under certain circumstances regardless of settings.");
                 if (ImGui.Checkbox("Use Specialist Actions", ref useSpecialist))
                 {
                     P.Config.UseSpecialist = useSpecialist;
@@ -617,6 +623,11 @@ namespace Artisan.UI
             if (ImGui.CollapsingHeader("Expert Solver Settings - EXPERIMENTAL"))
             {
                 if (P.Config.ExpertSolverConfig.Draw())
+                    P.Config.Save();
+            }
+            if (ImGui.CollapsingHeader("Script Solver Settings"))
+            {
+                if (P.Config.ScriptSolverConfig.Draw())
                     P.Config.Save();
             }
             if (ImGui.CollapsingHeader("UI Settings"))
@@ -681,13 +692,6 @@ namespace Artisan.UI
                     P.Config.Save();
 
                 ImGuiComponents.HelpMarker("These are the new options when you right click or press square on a recipe in the recipe list.");
-
-                if (SimpleTweaks.IsEnabled())
-                {
-                    if (ImGui.Checkbox("Disable SimpleTweaks Job Change reminder.", ref P.Config.DisableSTMessage))
-                        P.Config.Save();
-                }
-
             }
             if (ImGui.CollapsingHeader("List Settings"))
             {
@@ -850,5 +854,6 @@ namespace Artisan.UI
         FCWorkshop = 7,
         SpecialList = 8,
         Overview = 9,
+        Simulator = 10,
     }
 }

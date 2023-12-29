@@ -36,7 +36,7 @@ namespace Artisan.RawInformation
 
             if (data != null)
             {
-                JObject file = JsonConvert.DeserializeObject<JObject>(data);
+                JObject? file = JsonConvert.DeserializeObject<JObject>(data);
                 foreach (var item in file)
                 {
                     List<uint> monsters = new();

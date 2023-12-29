@@ -1,6 +1,4 @@
-﻿using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Logging;
-using ECommons.Automation;
+﻿using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.Reflection;
 using ECommons.Throttlers;
@@ -28,10 +26,10 @@ internal unsafe static class TaskInteractWithNearestBell
 
 internal static class YesAlready
 {
-    internal static Version Version => Svc.PluginInterface.InstalledPlugins.FirstOrDefault(x => x.IsLoaded && x.InternalName == "YesAlready")?.Version;
+    internal static Version Version => Svc.PluginInterface.InstalledPlugins.FirstOrDefault(x => x.IsLoaded && x.InternalName == "YesAlready")?.Version ?? new();
     internal static readonly Version NewVersion = new("1.4.0.0");
     internal static bool Reenable = false;
-    internal static HashSet<string> Data = null;
+    internal static HashSet<string>? Data = null;
 
     internal static void GetData()
     {
@@ -50,7 +48,7 @@ internal static class YesAlready
             {
                 if (DalamudReflector.TryGetDalamudPlugin("Yes Already", out var pl, false, true))
                 {
-                    PluginLog.Information("Disabling Yes Already (old)");
+                    Svc.Log.Information("Disabling Yes Already (old)");
                     pl.GetStaticFoP("YesAlready.Service", "Configuration").SetFoP("Enabled", false);
                     Reenable = true;
                 }
@@ -60,7 +58,7 @@ internal static class YesAlready
                 GetData();
                 if (Data != null)
                 {
-                    PluginLog.Information("Disabling Yes Already (new)");
+                    Svc.Log.Information("Disabling Yes Already (new)");
                     Data.Add(Svc.PluginInterface.InternalName);
                     Reenable = true;
                 }
@@ -76,7 +74,7 @@ internal static class YesAlready
             {
                 if (DalamudReflector.TryGetDalamudPlugin("Yes Already", out var pl, false, true))
                 {
-                    PluginLog.Information("Enabling Yes Already");
+                    Svc.Log.Information("Enabling Yes Already");
                     pl.GetStaticFoP("YesAlready.Service", "Configuration").SetFoP("Enabled", true);
                     Reenable = false;
                 }
@@ -86,7 +84,7 @@ internal static class YesAlready
                 GetData();
                 if (Data != null)
                 {
-                    PluginLog.Information("Enabling Yes Already (new)");
+                    Svc.Log.Information("Enabling Yes Already (new)");
                     Data.Remove(Svc.PluginInterface.InternalName);
                     Reenable = false;
                 }
@@ -137,7 +135,7 @@ internal unsafe static class PlayerWorldHandlers
                 if (RetainerInfo.GenericThrottle)
                 {
                     Svc.Targets.Target = x;
-                    PluginLog.Debug($"Set target to {x}");
+                    Svc.Log.Debug($"Set target to {x}");
                     return true;
                 }
             }
@@ -156,7 +154,7 @@ internal unsafe static class PlayerWorldHandlers
                 if (RetainerInfo.GenericThrottle && EzThrottler.Throttle("InteractWithBell", 5000))
                 {
                     TargetSystem.Instance()->InteractWithObject((GameObject*)x.Address, false);
-                    PluginLog.Debug($"Interacted with {x}");
+                    Svc.Log.Debug($"Interacted with {x}");
                     return true;
                 }
             }

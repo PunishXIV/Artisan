@@ -1,23 +1,22 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 using static Artisan.RawInformation.AddonExtensions;
 
-namespace Artisan.CraftingLogic.ExpertSolver;
+namespace Artisan.CraftingLogic.Solvers;
 
-public class Settings
+public class ExpertSolverSettings
 {
     public bool Enabled = true;
     public bool UseReflectOpener;
-    public bool MuMeIntensiveGood = true; // if true, we allow spending {Skills.MuscleMemory.NameOfAction()} on intensive (400p) rather than rapid (500p) if good condition procs
-    public bool MuMeIntensiveMalleable = false; // if true and we have malleable during {Skills.MuscleMemory.NameOfAction()}, use intensive rather than hoping for rapid
-    public bool MuMeIntensiveLastResort = true; // if true and we're on last step of {Skills.MuscleMemory.NameOfAction()}, use intensive (forcing via H&S if needed) rather than hoping for rapid (unless we have centered)
-    public bool MuMePrimedManip = false; // if true, allow using primed manipulation after veneration is up on {Skills.MuscleMemory.NameOfAction()}
+    public bool MuMeIntensiveGood = true; // if true, we allow spending mume on intensive (400p) rather than rapid (500p) if good condition procs
+    public bool MuMeIntensiveMalleable = false; // if true and we have malleable during mume, use intensive rather than hoping for rapid
+    public bool MuMeIntensiveLastResort = true; // if true and we're on last step of mume, use intensive (forcing via H&S if needed) rather than hoping for rapid (unless we have centered)
+    public bool MuMePrimedManip = false; // if true, allow using primed manipulation after veneration is up on mume
     public bool MuMeAllowObserve = false; // if true, observe rather than use actions during unfavourable conditions to conserve durability
-    public int MuMeMinStepsForManip = 2; // if this or less rounds are remaining on {Skills.MuscleMemory.NameOfAction()}, don't use manipulation under favourable conditions
-    public int MuMeMinStepsForVene = 1; // if this or less rounds are remaining on {Skills.MuscleMemory.NameOfAction()}, don't use veneration
+    public int MuMeMinStepsForManip = 2; // if this or less rounds are remaining on mume, don't use manipulation under favourable conditions
+    public int MuMeMinStepsForVene = 1; // if this or less rounds are remaining on mume, don't use veneration
     public int MidMinIQForHSPrecise = 10; // min iq stacks where we use h&s+precise; 10 to disable
     public bool MidBaitPliantWithObservePreQuality = true; // if true, when very low on durability and without manip active during pre-quality phase, we use observe rather than normal manip
     public bool MidBaitPliantWithObserveAfterIQ = true; // if true, when very low on durability and without manip active after iq has 10 stacks, we use observe rather than normal manip or inno+finnesse
@@ -84,11 +83,11 @@ public class Settings
             changed |= ImGui.Checkbox($"Consider {Skills.PreparatoryTouch.NameOfAction()} a good move under {Condition.Sturdy.ToLocalizedString()} {ConditionString} + {Buffs.Innovation.NameOfBuff()}, assuming we have enough {DurabilityString}", ref MidAllowSturdyPrep);
             changed |= ImGui.Checkbox($"Use {Skills.GreatStrides.NameOfAction()} before {Skills.Innovation.NameOfAction()} + {QualityString} combos", ref MidGSBeforeInno);
             changed |= ImGui.Checkbox($"Finish {ProgressString} before starting {QualityString} phase", ref MidFinishProgressBeforeQuality);
-            changed |= ImGui.Checkbox($"{Skills.Observe.NameOfAction()} on {Condition.GoodOmen.ToLocalizedString()} {ConditionString} if we would otherwise use {Skills.Tricks.NameOfAction()} on {Condition.Good.ToLocalizedString()} {ConditionString}", ref MidObserveGoodOmenForTricks);
+            changed |= ImGui.Checkbox($"{Skills.Observe.NameOfAction()} on {Condition.GoodOmen.ToLocalizedString()} {ConditionString} if we would otherwise use {Skills.TricksOfTrade.NameOfAction()} on {Condition.Good.ToLocalizedString()} {ConditionString}", ref MidObserveGoodOmenForTricks);
         }
         ImGui.Unindent();
         changed |= ImGui.Checkbox($"Finisher: use {Skills.CarefulObservation.NameOfAction()} to try baiting {Condition.Good.ToLocalizedString()} {ConditionString} for {Skills.ByregotsBlessing.NameOfAction()}", ref FinisherBaitGoodByregot);
-        changed |= ImGui.Checkbox($"Emergency: use {Skills.CarefulObservation.NameOfAction()} to try baiting {Condition.Good.ToLocalizedString()} {ConditionString} for {Skills.Tricks.NameOfAction()} if really low on CP", ref EmergencyCPBaitGood);
+        changed |= ImGui.Checkbox($"Emergency: use {Skills.CarefulObservation.NameOfAction()} to try baiting {Condition.Good.ToLocalizedString()} {ConditionString} for {Skills.TricksOfTrade.NameOfAction()} if really low on CP", ref EmergencyCPBaitGood);
         return changed;
     }
 }

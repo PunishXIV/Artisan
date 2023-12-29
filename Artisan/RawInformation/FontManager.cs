@@ -8,8 +8,6 @@ using ImGuiNET;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System;
-using Dalamud.Interface;
-using Dalamud.Logging;
 using SharpDX;
 using SharpDX.DirectWrite;
 using System.IO;
@@ -254,7 +252,7 @@ internal class FontManager
 
     unsafe void SetUpRanges()
     {
-        ImVector BuildRange(IReadOnlyList<ushort> chars, params IntPtr[] ranges)
+        ImVector BuildRange(IReadOnlyList<ushort>? chars, params IntPtr[] ranges)
         {
             var builder = new ImFontGlyphRangesBuilderPtr(ImGuiNative.ImFontGlyphRangesBuilder_ImFontGlyphRangesBuilder());
             foreach (var range in ranges)
@@ -320,7 +318,7 @@ internal class FontManager
 
             if (fontData == null)
             {
-                PluginLog.Error($"Font not found: \"Caviar Dreams\"");
+                Svc.Log.Error($"Font not found: \"Caviar Dreams\"");
                 return;
             }
 

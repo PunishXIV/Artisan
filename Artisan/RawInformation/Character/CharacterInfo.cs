@@ -1,14 +1,12 @@
-﻿using Artisan.CraftingLogic;
-using Dalamud.Utility.Signatures;
+﻿using Dalamud.Utility.Signatures;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using static Artisan.CraftingLogic.CurrentCraft;
-using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.RawInformation.Character
 {
@@ -16,98 +14,30 @@ namespace Artisan.RawInformation.Character
     {
         public static byte? CharacterLevel => Svc.ClientState.LocalPlayer?.Level;
 
-        public static uint? JobID => Svc.ClientState.LocalPlayer?.ClassJob.Id;
-
-        public static bool IsCrafting { get; set; }
+        public static Job JobID => (Job)(Svc.ClientState.LocalPlayer?.ClassJob.Id ?? 0);
 
         public static uint CurrentCP => Svc.ClientState.LocalPlayer.CurrentCp;
 
         public static uint MaxCP => Svc.ClientState.LocalPlayer.MaxCp;
 
-        public static ulong Craftsmanship
+        public static unsafe int Craftsmanship => PlayerState.Instance()->Attributes[70];
+
+        public static unsafe int Control => PlayerState.Instance()->Attributes[71];
+
+        public static unsafe int JobLevel(Job job) => PlayerState.Instance()->ClassJobLevelArray[Svc.Data.GetExcelSheet<ClassJob>()?.GetRow((uint)job)?.ExpArrayIndex ?? 0];
+
+        internal static bool IsManipulationUnlocked(Job job) => job switch
         {
-            get
-            {
-                CharacterStats.FetchStats();
-                return CharacterStats.Craftsmanship;
-            }
-        }
-
-        public static ulong Control
-        {
-            get
-            {
-                CharacterStats.FetchStats();
-                return CharacterStats.Control;
-            }
-        }
-
-        public static bool LevelChecked(this uint id)
-        {
-            if (LuminaSheets.ActionSheet.TryGetValue(id, out var act1))
-            {
-                return CharacterLevel >= act1.ClassJobLevel;
-            }
-            if (LuminaSheets.CraftActions.TryGetValue(id, out var act2))
-            {
-                return CharacterLevel >= act2.ClassJobLevel;
-            }
-
-            return false;
-        }
-       
-        public static uint HighestLevelTouch()
-        {
-            bool wasteNots = SolverLogic.GetStatus(Buffs.WasteNot) != null || SolverLogic.GetStatus(Buffs.WasteNot2) != null;
-
-            if (CurrentRecipe.IsExpert)
-            {
-                if (SolverLogic.CanUse(Skills.HastyTouch) && CurrentCondition is Condition.Centered) return Skills.HastyTouch;
-                if (SolverLogic.CanUse(Skills.PreciseTouch) && CurrentCondition is Condition.Good) return Skills.PreciseTouch;
-                if (AdvancedTouchUsed && SolverLogic.CanUse(Skills.PrudentTouch)) return Skills.PrudentTouch;
-                if (SolverLogic.CanUse(Skills.AdvancedTouch) && StandardTouchUsed) return Skills.AdvancedTouch;
-                if (SolverLogic.CanUse(Skills.StandardTouch) && BasicTouchUsed) return Skills.StandardTouch;
-                if (SolverLogic.CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
-            }
-            else
-            {
-                if (SolverLogic.CanUse(Skills.FocusedTouch) && JustUsedObserve) return Skills.FocusedTouch;
-                if (SolverLogic.CanUse(Skills.PreciseTouch) && CurrentCondition is Condition.Good or Condition.Excellent) return Skills.PreciseTouch;
-                if (SolverLogic.CanUse(Skills.PreparatoryTouch) && CurrentDurability > (wasteNots ? 10 : 20) && (SolverLogic.GetStatus(Buffs.InnerQuiet)?.StackCount < 10 || SolverLogic.GetStatus(Buffs.InnerQuiet) is null)) return Skills.PreparatoryTouch;
-                if (SolverLogic.CanUse(Skills.PrudentTouch) && !wasteNots) return Skills.PrudentTouch;
-                if (SolverLogic.CanUse(Skills.BasicTouch)) return Skills.BasicTouch;
-            }
-
-            return 0;
-        }
-
-        public static uint HighestLevelSynth()
-        {
-            if (SolverLogic.CanUse(Skills.IntensiveSynthesis)) return Skills.IntensiveSynthesis;
-            if (SolverLogic.CanUse(Skills.FocusedSynthesis) && JustUsedObserve) return Skills.FocusedSynthesis;
-            if (SolverLogic.CanUse(Skills.Groundwork) && CurrentDurability > 20) return Skills.Groundwork;
-            if (SolverLogic.CanUse(Skills.PrudentSynthesis)) return Skills.PrudentSynthesis;
-            if (SolverLogic.CanUse(Skills.CarefulSynthesis)) return Skills.CarefulSynthesis;
-            if (SolverLogic.CanUse(Skills.BasicSynth)) return Skills.BasicSynth;
-
-            return 0;
-        }
-
-        internal static bool IsManipulationUnlocked()
-        {
-            return JobID switch
-            {
-                8 => QuestUnlocked(67979),
-                9 => QuestUnlocked(68153),
-                10 => QuestUnlocked(68132),
-                11 => QuestUnlocked(67974),
-                12 => QuestUnlocked(68147),
-                13 => QuestUnlocked(67969),
-                14 => QuestUnlocked(67974),
-                15 => QuestUnlocked(68142),
-                _ => false,
-            };
-        }
+            Job.CRP => QuestUnlocked(67979),
+            Job.BSM => QuestUnlocked(68153),
+            Job.ARM => QuestUnlocked(68132),
+            Job.GSM => QuestUnlocked(67974),
+            Job.LTW => QuestUnlocked(68147),
+            Job.WVR => QuestUnlocked(67969),
+            Job.ALC => QuestUnlocked(67974),
+            Job.CUL => QuestUnlocked(68142),
+            _ => false,
+        };
 
         private unsafe static bool QuestUnlocked(int v)
         {
@@ -163,50 +93,11 @@ namespace Artisan.RawInformation.Character
         };
     }
 
-    public unsafe static class CharacterStats
-    {
-        private static nint getBaseParamAddress;
-        private unsafe delegate ulong GetBaseParam(PlayerState* playerAddress, uint baseParamId);
-        private static GetBaseParam? getBaseParam;
-
-        public static ulong Craftsmanship { get; set; }
-        public static ulong Control { get; set; }
-
-        private unsafe static void FetchMemory()
-        {
-            try
-            {
-                if (getBaseParamAddress == nint.Zero)
-                {
-                    getBaseParamAddress = Svc.SigScanner.ScanText("E8 ?? ?? ?? ?? 44 8B C0 33 D2 48 8B CB E8 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8D 0D");
-                    getBaseParam = Marshal.GetDelegateForFunctionPointer<GetBaseParam>(getBaseParamAddress);
-                }
-
-            }
-            catch (Exception ex)
-            {
-                Dalamud.Logging.PluginLog.Error(ex.Message);
-            }
-        }
-
-
-        public unsafe static void FetchStats()
-        {
-            FetchMemory();
-            if (UIState.Instance() is not null)
-            {
-                Craftsmanship = getBaseParam(&UIState.Instance()->PlayerState, 70);
-                Control = getBaseParam(&UIState.Instance()->PlayerState, 71);
-            }
-        }
-
-    }
-
     internal unsafe class RecipeInformation : IDisposable
     {
         delegate byte HasItemBeenCraftedDelegate(uint recipe);
         [Signature("40 53 48 83 EC 20 8B D9 81 F9")]
-        HasItemBeenCraftedDelegate GetIsGatheringItemGathered;
+        HasItemBeenCraftedDelegate GetIsGatheringItemGathered = null!;
 
         private List<uint> Uncompletables = new List<uint>()
         {

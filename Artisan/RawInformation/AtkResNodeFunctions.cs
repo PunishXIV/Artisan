@@ -1,10 +1,5 @@
-﻿using Artisan.Autocraft;
-using ClickLib.Clicks;
-using ClickLib.Enums;
+﻿using ClickLib.Enums;
 using ClickLib.Structures;
-using Dalamud.Interface;
-using ECommons.DalamudServices;
-using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using System;

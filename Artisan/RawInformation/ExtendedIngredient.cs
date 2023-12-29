@@ -43,7 +43,7 @@ namespace Artisan.RawInformation
             if (LuminaSheets.GatheringItemSheet.Values.Any(x => x.Item == itemId)) Sources.Add(2);
             if (Svc.Data.GetExcelSheet<FishingSpot>()!.Any(x => x.Item.Any(y => y.Value.RowId == itemId))) Sources.Add(3);
             if (ItemVendorLocation.ItemHasVendor(itemId)) Sources.Add(4);
-            if (Svc.Data.GetExcelSheet<RetainerTaskNormal>()!.Any(x => x.Item.Row == itemId && x.GatheringLog.Row == 0 && x.FishingLog == 0) || DropSources.Sources.Any(x => x.ItemId == itemId)) Sources.Add(5);
+            if (Svc.Data.GetExcelSheet<RetainerTaskNormal>()!.Any(x => x.Item.Row == itemId && x.GatheringLog.Row == 0 && x.FishingLog == 0) || DropSources.Sources!.Any(x => x.ItemId == itemId)) Sources.Add(5);
 
             if (Sources.Count == 0) Sources.Add(-1);
 

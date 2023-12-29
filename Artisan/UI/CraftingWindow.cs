@@ -1,24 +1,26 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
-using Artisan.CraftingLogic.ExpertSolver;
-using Artisan.MacroSystem;
+using Artisan.CraftingLogic;
+using Artisan.CraftingLogic.Solvers;
+using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Dalamud.Game.Gui.Toast;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Style;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
+using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
 using System;
-using System.Linq;
-using static Artisan.CraftingLogic.CurrentCraft;
 
 namespace Artisan.UI
 {
-    internal class CraftingWindow : Window
+    internal class CraftingWindow : Window, IDisposable
     {
-        public bool repeatTrial = false;
+        public bool RepeatTrial;
+        private DateTime _estimatedCraftEnd;
 
         public CraftingWindow() : base("Artisan Crafting Window###MainCraftWindow", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
         {
@@ -30,6 +32,19 @@ namespace Artisan.UI
                 MinimumSize = new System.Numerics.Vector2(150f, 0f),
                 MaximumSize = new System.Numerics.Vector2(310f, 500f)
             };
+
+            CraftingProcessor.SolverStarted += OnSolverStarted;
+            CraftingProcessor.SolverFailed += OnSolverFailed;
+            CraftingProcessor.SolverFinished += OnSolverFinished;
+            CraftingProcessor.RecommendationReady += OnRecommendationReady;
+        }
+
+        public void Dispose()
+        {
+            CraftingProcessor.SolverStarted -= OnSolverStarted;
+            CraftingProcessor.SolverFailed -= OnSolverFailed;
+            CraftingProcessor.SolverFinished -= OnSolverFinished;
+            CraftingProcessor.RecommendationReady -= OnRecommendationReady;
         }
 
         public override bool DrawConditions()
@@ -57,42 +72,38 @@ namespace Artisan.UI
             }
         }
 
-        public static TimeSpan MacroTime = new();
         public override void Draw()
         {
             if (!P.Config.DisableHighlightedAction)
-                Hotbars.MakeButtonsGlow(CurrentRecommendation);
+                Hotbars.MakeButtonsGlow(CraftingProcessor.NextRec.Action);
 
             if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
             {
                 P.PluginUi.IsOpen = true;
             }
 
-            if (CurrentRecipe is not null && CurrentRecipe.IsExpert && !P.Config.IRM.ContainsKey(CurrentRecipe.RowId))
+            if (Crafting.CurRecipe?.IsExpert ?? false)
             {
-                ImGui.Dummy(new System.Numerics.Vector2(12f));
-                if (!P.Config.ExpertSolverConfig.Enabled)
-                ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, "This is an expert recipe. It is strongly recommended to use an Artisan macro or manually solve this.", this.SizeConstraints.Value.MaximumSize.X);
-                else
-                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is an expert recipe. You are using the experimental solver currently. Your success rate may vary.", this.SizeConstraints.Value.MaximumSize.X);
-            }
-
-            if (CurrentRecipe is not null && CurrentRecipe.SecretRecipeBook.Row > 0 && CurrentRecipe.RecipeLevelTable.Value.ClassJobLevel == CharacterInfo.CharacterLevel && !P.Config.IRM.ContainsKey(CurrentRecipe.RowId))
-            {
-                if (!CurrentRecipe.IsExpert)
+                if (CraftingProcessor.ActiveSolver.IsType<StandardSolver>())
                 {
                     ImGui.Dummy(new System.Numerics.Vector2(12f));
-                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.", this.SizeConstraints.Value.MaximumSize.X);
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, "This is an expert recipe. It is strongly recommended to use an Artisan macro or manually solve this.", this.SizeConstraints?.MaximumSize.X ?? 0);
                 }
+                else if (CraftingProcessor.ActiveSolver.IsType<ExpertSolver>())
+                {
+                    ImGui.Dummy(new System.Numerics.Vector2(12f));
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is an expert recipe. You are using the experimental solver currently. Your success rate may vary.", this.SizeConstraints?.MaximumSize.X ?? 0);
+                }
+            }
+            else if (Crafting.CurRecipe?.SecretRecipeBook.Row > 0 && Crafting.CurCraft?.CraftLevel == Crafting.CurCraft?.StatLevel && !CraftingProcessor.ActiveSolver.IsType<MacroSolver>())
+            {
+                ImGui.Dummy(new System.Numerics.Vector2(12f));
+                ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.", this.SizeConstraints?.MaximumSize.X ?? 0);
             }
 
             bool autoMode = P.Config.AutoMode;
-
             if (ImGui.Checkbox("Auto Action Mode", ref autoMode))
             {
-                if (!autoMode)
-                    ActionWatching.BlockAction = false;
-
                 P.Config.AutoMode = autoMode;
                 P.Config.Save();
             }
@@ -111,7 +122,6 @@ namespace Artisan.UI
                 }
             }
 
-
             if (Endurance.RecipeID != 0 && !CraftingListUI.Processing && Endurance.Enable)
             {
                 if (ImGui.Button("Disable Endurance"))
@@ -120,54 +130,83 @@ namespace Artisan.UI
                 }
             }
 
-            if (!Endurance.Enable && DoingTrial)
-                ImGui.Checkbox("Trial Craft Repeat", ref repeatTrial);
+            if (!Endurance.Enable && Crafting.IsTrial)
+                ImGui.Checkbox("Trial Craft Repeat", ref RepeatTrial);
 
-            if (P.Config.IRM.ContainsKey((uint)Endurance.RecipeID))
+            if (CraftingProcessor.ActiveSolver)
             {
-                var macro = P.Config.UserMacros.FirstOrDefault(x => x.ID == P.Config.IRM[(uint)Endurance.RecipeID]);
-                ImGui.TextWrapped($"Using Macro: {macro.Name} ({(MacroStep >= macro.MacroActions.Count ? macro.MacroActions.Count : MacroStep + 1)}/{macro.MacroActions.Count})");
-
-                if (MacroStep >= macro.MacroActions.Count)
-                {
-                    ImGui.TextWrapped($"Macro has completed. {(!P.Config.DisableMacroArtisanRecommendation ? "Now continuing with solver." : "Please continue to manually craft.")}");
-                }
-            }
-            else
-            {
-                ImGui.TextColored(ImGuiColors.DalamudYellow, "No macro set");
+                var text = $"Using {CraftingProcessor.ActiveSolver.Name}";
+                if (CraftingProcessor.NextRec.Comment.Length > 0)
+                    text += $" ({CraftingProcessor.NextRec.Comment})";
+                ImGui.TextWrapped(text);
             }
 
             if (P.Config.CraftingX && Endurance.Enable)
                 ImGui.Text($"Remaining Crafts: {P.Config.CraftX}");
 
-            if (P.Config.AutoMode)
+            if (_estimatedCraftEnd != default)
             {
-                if (P.Config.IRM.TryGetValue((uint)Endurance.RecipeID, out var prevMacro))
-                {
-                    Macro? macro = P.Config.UserMacros.First(x => x.ID == prevMacro);
-                    if (macro != null)
-                    {
-                        string duration = string.Format("{0:D2}h {1:D2}m {2:D2}s", MacroTime.Hours, MacroTime.Minutes, MacroTime.Seconds);
-
-                        ImGui.Text($"Approximate Remaining Duration: {duration}");
-                    }
-                }
+                var diff = _estimatedCraftEnd - DateTime.Now;
+                string duration = string.Format("{0:D2}h {1:D2}m {2:D2}s", diff.Hours, diff.Minutes, diff.Seconds);
+                ImGui.Text($"Approximate Remaining Duration: {duration}");
             }
 
             if (!P.Config.AutoMode)
             {
                 ImGui.Text("Semi-Manual Mode");
 
+                var action = CraftingProcessor.NextRec.Action;
+                using var disable = ImRaii.Disabled(action == Skills.None);
+
                 if (ImGui.Button("Execute recommended action"))
                 {
-                    Hotbars.ExecuteRecommended(CurrentRecommendation);
+                    ActionManagerEx.UseSkill(action);
                 }
                 if (ImGui.Button("Fetch Recommendation"))
                 {
-                    Artisan.Tasks.Clear();
-                    FetchRecommendation(CurrentStep);
+                    ShowRecommendation(action);
                 }
+            }
+        }
+
+        private void ShowRecommendation(Skills action)
+        {
+            if (!P.Config.DisableToasts)
+            {
+                QuestToastOptions options = new() { IconId = action.IconOfAction(CharacterInfo.JobID) };
+                Svc.Toasts.ShowQuest($"Use {action.NameOfAction()}", options);
+            }
+        }
+
+        private void OnSolverStarted(Lumina.Excel.GeneratedSheets.Recipe recipe, SolverRef solver, CraftState craft, StepState initialStep)
+        {
+            if (P.Config.AutoMode && solver)
+            {
+                var estimatedTime = SolverUtils.EstimateCraftTime(solver.Clone()!, craft, initialStep.Quality);
+                var count = P.Config.CraftingX && Endurance.Enable ? P.Config.CraftX : 1;
+                _estimatedCraftEnd = DateTime.Now + count * estimatedTime;
+            }
+        }
+
+        private void OnSolverFailed(Lumina.Excel.GeneratedSheets.Recipe recipe, string reason)
+        {
+            var text = $"{reason}. Artisan will not continue.";
+            Svc.Toasts.ShowError(text);
+            Svc.Chat.PrintError(text);
+        }
+
+        private void OnSolverFinished(Lumina.Excel.GeneratedSheets.Recipe recipe, SolverRef solver, CraftState craft, StepState finalStep)
+        {
+            _estimatedCraftEnd = default;
+        }
+
+        private void OnRecommendationReady(Lumina.Excel.GeneratedSheets.Recipe recipe, SolverRef solver, CraftState craft, StepState step, Solver.Recommendation recommendation)
+        {
+            ShowRecommendation(recommendation.Action);
+            if (P.Config.AutoMode)
+            {
+                P.CTM.DelayNext(P.Config.AutoDelay);
+                P.CTM.Enqueue(() => ActionManagerEx.UseSkill(recommendation.Action));
             }
         }
     }

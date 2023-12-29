@@ -1,9 +1,8 @@
 ﻿using Artisan.CraftingLists;
-using Artisan.RawInformation;
+using Artisan.GameInterop;
 using Artisan.TemporaryFixes;
 using Artisan.UI;
 using ClickLib.Clicks;
-using Dalamud.Logging;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -55,43 +54,43 @@ namespace Artisan.Autocraft
             int repairPercent = CraftingList != null ? CraftingList.RepairPercent : P.Config.RepairPercent;
             if (GetMinEquippedPercent() >= repairPercent)
             {
-                if (DebugTab.Debug) PluginLog.Verbose("Condition good");
+                if (DebugTab.Debug) Svc.Log.Verbose("Condition good");
                 if (TryGetAddonByName<AddonRepairFixed>("Repair", out var r) && r->AtkUnitBase.IsVisible)
                 {
-                    if (DebugTab.Debug) PluginLog.Verbose("Repair visible");
+                    if (DebugTab.Debug) Svc.Log.Verbose("Repair visible");
                     if (Throttler.Throttle(500))
                     {
-                        if (DebugTab.Debug) PluginLog.Verbose("Closing repair window");
-                        Hotbars.actionManager->UseAction(ActionType.GeneralAction, 6);
+                        if (DebugTab.Debug) Svc.Log.Verbose("Closing repair window");
+                        ActionManagerEx.UseRepair();
                     }
                     return false;
                 }
-                if (DebugTab.Debug) PluginLog.Verbose("return true");
+                if (DebugTab.Debug) Svc.Log.Verbose("return true");
                 return true;
             }
             else
             {
-                if (DebugTab.Debug) PluginLog.Verbose($"Condition bad, condition is {GetMinEquippedPercent()}, config is {P.Config.RepairPercent}");
+                if (DebugTab.Debug) Svc.Log.Verbose($"Condition bad, condition is {GetMinEquippedPercent()}, config is {P.Config.RepairPercent}");
                 if (use)
                 {
-                    if (DebugTab.Debug) PluginLog.Verbose($"Doing repair");
+                    if (DebugTab.Debug) Svc.Log.Verbose($"Doing repair");
                     if (TryGetAddonByName<AddonRepairFixed>("Repair", out var r) && r->AtkUnitBase.IsVisible)
                     {
-                        //PluginLog.Verbose($"Repair visible");
+                        //Svc.Log.Verbose($"Repair visible");
                         ConfirmYesNo();
                         Repair();
                     }
                     else
                     {
-                        if (DebugTab.Debug) PluginLog.Verbose($"Repair not visible");
+                        if (DebugTab.Debug) Svc.Log.Verbose($"Repair not visible");
                         if (Throttler.Throttle(500))
                         {
-                            if (DebugTab.Debug) PluginLog.Verbose($"Opening repair");
-                            Hotbars.actionManager->UseAction(ActionType.GeneralAction, 6);
+                            if (DebugTab.Debug) Svc.Log.Verbose($"Opening repair");
+                            ActionManagerEx.UseRepair();
                         }
                     }
                 }
-                if (DebugTab.Debug) PluginLog.Verbose($"Returning false");
+                if (DebugTab.Debug) Svc.Log.Verbose($"Returning false");
                 return false;
             }
         }

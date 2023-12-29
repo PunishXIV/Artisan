@@ -6,12 +6,14 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using ECommons;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using global::Artisan.CraftingLogic;
+using global::Artisan.GameInterop;
 using global::Artisan.UI.Tables;
 using ImGuiNET;
 using IPC;
@@ -45,8 +47,6 @@ internal class ListEditor : Window, IDisposable
 
     internal List<int> rawIngredientsList = new();
 
-    internal uint selectedListItem;
-
     internal Recipe? SelectedRecipe;
 
     internal Dictionary<uint, int> SelectedRecipeRawIngredients = new();
@@ -54,10 +54,6 @@ internal class ListEditor : Window, IDisposable
     internal Dictionary<int, int> subtableList = new();
 
     private ListFolders ListsUI = new();
-
-    private string? renameList;
-
-    private bool renameMode;
 
     private bool TidyAfter;
 
@@ -75,7 +71,7 @@ internal class ListEditor : Window, IDisposable
 
     public Dictionary<uint, int> SelectedListMateralsNew = new();
 
-    public IngredientTable Table;
+    public IngredientTable? Table;
 
     private bool ColourValidation = false;
 
@@ -336,7 +332,7 @@ internal class ListEditor : Window, IDisposable
 
                 CraftingListUI.AddAllSubcrafts(SelectedRecipe, SelectedList, 1, timesToAdd);
 
-                PluginLog.Debug($"Adding: {SelectedRecipe.ItemResult.Value.Name.RawString} {timesToAdd} times");
+                Svc.Log.Debug($"Adding: {SelectedRecipe.ItemResult.Value.Name.RawString} {timesToAdd} times");
                 for (var i = 1; i <= timesToAdd; i++)
                     if (SelectedList.Items.IndexOf(SelectedRecipe.RowId) == -1)
                     {
@@ -374,8 +370,8 @@ internal class ListEditor : Window, IDisposable
         if (P.Config.ShowOnlyCraftable && !RetainerInfo.CacheBuilt)
         {
             if (RetainerInfo.ATools)
-                ImGui.TextWrapped($"Building Retainer Cache: {(RetainerInfo.RetainerData.Values.Any() ? RetainerInfo.RetainerData.FirstOrDefault().Value.Count : "0")}/{CraftingListHelpers.FilteredList.Select(x => x.Value).SelectMany(x => x.UnkData5).Where(x => x.ItemIngredient != 0 && x.AmountIngredient > 0).DistinctBy(x => x.ItemIngredient).Count()}");
-            ImGui.TextWrapped($"Building Craftable Items List: {CraftingListUI.CraftableItems.Count}/{CraftingListHelpers.FilteredList.Count}");
+                ImGui.TextWrapped($"Building Retainer Cache: {(RetainerInfo.RetainerData.Values.Any() ? RetainerInfo.RetainerData.FirstOrDefault().Value.Count : "0")}/{LuminaSheets.RecipeSheet!.Select(x => x.Value).SelectMany(x => x.UnkData5).Where(x => x.ItemIngredient != 0 && x.AmountIngredient > 0).DistinctBy(x => x.ItemIngredient).Count()}");
+            ImGui.TextWrapped($"Building Craftable Items List: {CraftingListUI.CraftableItems.Count}/{LuminaSheets.RecipeSheet.Count}");
             ImGui.Spacing();
         }
 
@@ -406,7 +402,7 @@ internal class ListEditor : Window, IDisposable
         }
         else if (!P.Config.ShowOnlyCraftable)
         {
-            foreach (var recipe in CollectionsMarshal.AsSpan(CraftingListHelpers.FilteredList.Values.ToList()))
+            foreach (var recipe in CollectionsMarshal.AsSpan(LuminaSheets.RecipeSheet.Values.ToList()))
             {
                 try
                 {
@@ -425,7 +421,7 @@ internal class ListEditor : Window, IDisposable
                 }
                 catch (Exception ex)
                 {
-                    PluginLog.Error(ex, "DrawRecipeList");
+                    Svc.Log.Error(ex, "DrawRecipeList");
                 }
             }
         }
@@ -511,13 +507,13 @@ internal class ListEditor : Window, IDisposable
                     {
                         try
                         {
-                            jobs.AddRange(CraftingListHelpers.FilteredList.Values.Where(x => x.ItemResult == ingredientRecipe.ItemResult).Select(x => x.CraftType.Row + 8));
+                            jobs.AddRange(LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult == ingredientRecipe.ItemResult).Select(x => x.CraftType.Row + 8));
                             string[]? jobstrings = LuminaSheets.ClassJobSheet.Values.Where(x => jobs.Any(y => y == x.RowId)).Select(x => x.Abbreviation.ToString()).ToArray();
                             ImGui.Text(string.Join(", ", jobstrings));
                         }
                         catch (Exception ex)
                         {
-                            PluginLog.Error(ex, "JobStrings");
+                            Svc.Log.Error(ex, "JobStrings");
                         }
 
                     }
@@ -554,14 +550,14 @@ internal class ListEditor : Window, IDisposable
                         }
                         catch (Exception ex)
                         {
-                            PluginLog.Error(ex, "JobStrings");
+                            Svc.Log.Error(ex, "JobStrings");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                PluginLog.Error(ex, "RecipeIngreds");
+                Svc.Log.Error(ex, "RecipeIngreds");
             }
 
             ImGui.EndTable();
@@ -740,9 +736,8 @@ internal class ListEditor : Window, IDisposable
 
     private void DrawRecipeSettings()
     {
-
         var selectedListItem = RecipeSelector.Items[RecipeSelector.CurrentIdx];
-        var recipe = CraftingListHelpers.FilteredList[RecipeSelector.Current];
+        var recipe = LuminaSheets.RecipeSheet[RecipeSelector.Current];
         var count = SelectedList.Items.Count(x => x == selectedListItem);
 
         ImGui.TextWrapped("Adjust Quantity");
@@ -839,39 +834,14 @@ internal class ListEditor : Window, IDisposable
                 ImGui.EndCombo();
             }
         }
+
+        var config = P.Config.RecipeConfigs.GetValueOrDefault(selectedListItem) ?? new();
         var buttonWidth = ImGui.CalcTextSize($"Apply to all");
         {
-            ImGui.TextWrapped("Use a food item for this recipe");
-            ImGuiEx.SetNextItemFullWidth(-30 - (int)buttonWidth.X);
-            if (ImGui.BeginCombo(
-                    "##foodBuff",
-                    ConsumableChecker.Food.TryGetFirst(x => x.Id == options.Food, out var item)
-                        ? $"{(options.FoodHQ ? " " : string.Empty)}{item.Name}"
-                        : $"{(options.Food == 0 ? "Disabled" : $"{(options.FoodHQ ? " " : string.Empty)}{options.Food}")}"))
+            if (config.DrawFood(-30 - (int)buttonWidth.X))
             {
-                if (ImGui.Selectable("Disable"))
-                {
-                    options.Food = 0;
-                    P.Config.Save();
-                }
-
-                foreach (var x in ConsumableChecker.GetFood(true))
-                    if (ImGui.Selectable($"{x.Name}"))
-                    {
-                        options.Food = x.Id;
-                        options.FoodHQ = false;
-                        P.Config.Save();
-                    }
-
-                foreach (var x in ConsumableChecker.GetFood(true, true))
-                    if (ImGui.Selectable($" {x.Name}"))
-                    {
-                        options.Food = x.Id;
-                        options.FoodHQ = true;
-                        P.Config.Save();
-                    }
-
-                ImGui.EndCombo();
+                P.Config.RecipeConfigs[selectedListItem] = config;
+                P.Config.Save();
             }
 
             ImGui.SameLine();
@@ -880,55 +850,19 @@ internal class ListEditor : Window, IDisposable
             {
                 foreach (var r in SelectedList.Items.Distinct())
                 {
-                    if (!SelectedList.ListItemOptions.ContainsKey(r))
-                    {
-                        SelectedList.ListItemOptions.TryAdd(r, new ListItemOptions());
-                        var re = CraftingListHelpers.FilteredList[r];
-                        if (SelectedList.AddAsQuickSynth && re.CanQuickSynth)
-                            SelectedList.ListItemOptions[r].NQOnly = true;
-                    }
-
-                    SelectedList.ListItemOptions.TryGetValue(r, out var o);
-
-                    o.Food = options.Food;
-                    o.FoodHQ = options.FoodHQ;
+                    var o = P.Config.RecipeConfigs.GetValueOrDefault(r) ?? new();
+                    o.RequiredFood = config.RequiredFood;
+                    o.RequiredFoodHQ = config.RequiredFoodHQ;
+                    P.Config.RecipeConfigs[r] = o;
                 }
-
                 P.Config.Save();
             }
         }
         {
-            ImGui.TextWrapped("Use a potion item for this recipe");
-            ImGuiEx.SetNextItemFullWidth(-30 - (int)buttonWidth.X);
-            if (ImGui.BeginCombo(
-                    "##potBuff",
-                    ConsumableChecker.Pots.TryGetFirst(x => x.Id == options.Potion, out var item)
-                        ? $"{(options.PotHQ ? " " : string.Empty)}{item.Name}"
-                        : $"{(options.Potion == 0 ? "Disabled" : $"{(options.PotHQ ? " " : string.Empty)}{options.Potion}")}"))
+            if (config.DrawPotion(-30 - (int)buttonWidth.X))
             {
-                if (ImGui.Selectable("Disabled"))
-                {
-                    options.Potion = 0;
-                    P.Config.Save();
-                }
-
-                foreach (var x in ConsumableChecker.GetPots(true))
-                    if (ImGui.Selectable($"{x.Name}"))
-                    {
-                        options.Potion = x.Id;
-                        options.PotHQ = false;
-                        P.Config.Save();
-                    }
-
-                foreach (var x in ConsumableChecker.GetPots(true, true))
-                    if (ImGui.Selectable($" {x.Name}"))
-                    {
-                        options.Potion = x.Id;
-                        options.PotHQ = true;
-                        P.Config.Save();
-                    }
-
-                ImGui.EndCombo();
+                P.Config.RecipeConfigs[selectedListItem] = config;
+                P.Config.Save();
             }
 
             ImGui.SameLine();
@@ -937,53 +871,22 @@ internal class ListEditor : Window, IDisposable
             {
                 foreach (var r in SelectedList.Items.Distinct())
                 {
-                    if (!SelectedList.ListItemOptions.ContainsKey(r))
-                    {
-                        SelectedList.ListItemOptions.TryAdd(r, new ListItemOptions());
-                        var re = CraftingListHelpers.FilteredList[r];
-                        if (SelectedList.AddAsQuickSynth && re.CanQuickSynth)
-                            SelectedList.ListItemOptions[r].NQOnly = true;
-                    }
-
-                    SelectedList.ListItemOptions.TryGetValue(r, out var o);
-
-                    o.Potion = options.Potion;
-                    o.PotHQ = options.PotHQ;
+                    var o = P.Config.RecipeConfigs.GetValueOrDefault(r) ?? new();
+                    o.RequiredPotion = config.RequiredPotion;
+                    o.RequiredPotionHQ = config.RequiredPotionHQ;
+                    P.Config.RecipeConfigs[r] = o;
                 }
-
                 P.Config.Save();
             }
         }
 
-        if (P.Config.UserMacros.Count > 0)
+        var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.Row);
+        stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
+        var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.Row, recipe);
+        if (config.DrawSolver(craft, -30))
         {
-            ImGui.TextWrapped("Use a macro for this recipe");
-
-            var preview = P.Config.IRM.TryGetValue(selectedListItem, out var prevMacro)
-                              ? P.Config.UserMacros.First(x => x.ID == prevMacro).Name
-                              : string.Empty;
-            ImGuiEx.SetNextItemFullWidth(-30);
-            if (ImGui.BeginCombo(string.Empty, preview))
-            {
-                if (ImGui.Selectable(string.Empty))
-                {
-                    P.Config.IRM.Remove(selectedListItem);
-                    P.Config.Save();
-                }
-
-                foreach (var macro in P.Config.UserMacros)
-                {
-                    var selected = P.Config.IRM.TryGetValue(selectedListItem, out var selectedMacro)
-                                   && macro.ID == selectedMacro;
-                    if (ImGui.Selectable(macro.Name, selected))
-                    {
-                        P.Config.IRM[selectedListItem] = macro.ID;
-                        P.Config.Save();
-                    }
-                }
-
-                ImGui.EndCombo();
-            }
+            P.Config.RecipeConfigs[selectedListItem] = config;
+            P.Config.Save();
         }
     }
 

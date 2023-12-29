@@ -3,6 +3,7 @@ using Artisan.UI;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Utility;
+using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -55,17 +56,17 @@ namespace Artisan.CraftingLists
                 if (i >= sublist.Count) break;
 
                 int number = CraftingListUI.selectedList.Items.Count(x => x == sublist[i]);
-                var recipe = CraftingListHelpers.FilteredList[sublist[i]];
+                var recipe = LuminaSheets.RecipeSheet[sublist[i]];
                 var itemID = recipe.ItemResult.Value.RowId;
 
-                Dalamud.Logging.PluginLog.Debug($"{recipe.ItemResult.Value.Name.RawString} {sublist.Count}");
+                Svc.Log.Debug($"{recipe.ItemResult.Value.Name.RawString} {sublist.Count}");
                 ExtractRecipes(sublist, recipe);
             }
 
             foreach (var item in sublist)
             {
                 int number = CraftingListUI.selectedList.Items.Count(x => x == item);
-                var recipe = CraftingListHelpers.FilteredList[item];
+                var recipe = LuminaSheets.RecipeSheet[item];
                 var itemID = recipe.ItemResult.Value.RowId;
 
                 exportItems += $"{itemID},null,{number};";
@@ -203,7 +204,7 @@ namespace Artisan.CraftingLists
                             builder.Append(" ");
                         }
                         var item = builder.ToString().Trim();
-                        Dalamud.Logging.PluginLog.Debug($"{numberOfItem} x {item}");
+                        Svc.Log.Debug($"{numberOfItem} x {item}");
 
                         var recipe = LuminaSheets.RecipeSheet?.Where(x => x.Value.ItemResult.Row > 0 && x.Value.ItemResult.Value.Name.RawString == item).Select(x => x.Value).FirstOrDefault();
                         if (recipe is not null)
@@ -238,7 +239,7 @@ namespace Artisan.CraftingLists
                             builder.Append(" ");
                         }
                         var item = builder.ToString().Trim();
-                        if (DebugTab.Debug) Dalamud.Logging.PluginLog.Debug($"{numberOfItem} x {item}");
+                        if (DebugTab.Debug) Svc.Log.Debug($"{numberOfItem} x {item}");
 
                         var recipe = LuminaSheets.RecipeSheet?.Where(x => x.Value.ItemResult.Row > 0 && x.Value.ItemResult.Value.Name.RawString == item).Select(x => x.Value).FirstOrDefault();
                         if (recipe is not null)

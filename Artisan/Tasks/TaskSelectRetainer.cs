@@ -7,7 +7,6 @@ using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Logging;
 using Dalamud.Utility;
 using ECommons.Automation;
 using ECommons.DalamudServices;
@@ -126,14 +125,14 @@ internal unsafe static class RetainerListHandlers
             name = obj.Name.ToString();
             return true;
         }
-        name = default;
+        name = "";
         return false;
     }
 }
 
 public unsafe class RetainerManager
 {
-    private static StaticRetainerContainer _address;
+    private static StaticRetainerContainer? _address;
     private static RetainerContainer* _container;
 
     public RetainerManager(ISigScanner sigScanner)
@@ -297,15 +296,15 @@ internal unsafe static class RetainerHandlers
 
         foreach (var inv in inventories)
         {
-            //PluginLog.Debug($"RETAINER PAGE {inv} WITH SIZE {InventoryManager.Instance()->GetInventoryContainer(inv)->Size}");
+            //Svc.Log.Debug($"RETAINER PAGE {inv} WITH SIZE {InventoryManager.Instance()->GetInventoryContainer(inv)->Size}");
             for (int i = 0; i < InventoryManager.Instance()->GetInventoryContainer(inv)->Size; i++)
             {
                 var item = InventoryManager.Instance()->GetInventoryContainer(inv)->GetInventorySlot(i);
-                //PluginLog.Debug($"ITEM {item->ItemID.NameOfItem()} IN {item->Slot}");
+                //Svc.Log.Debug($"ITEM {item->ItemID.NameOfItem()} IN {item->Slot}");
                 if (item->ItemID == itemId && ((lookingForHQ && item->Flags == InventoryItem.ItemFlags.HQ) || (!lookingForHQ)))
                 {
                     quantity = item->Quantity;
-                    PluginLog.Debug($"Found item? {item->Quantity}");
+                    Svc.Log.Debug($"Found item? {item->Quantity}");
                     var ag = AgentInventoryContext.Instance();
                     ag->OpenForItemSlot(inv, i, AgentModule.Instance()->GetAgentByInternalId(AgentId.Retainer)->GetAddonID());
                     var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu", 1);
@@ -352,7 +351,7 @@ internal unsafe static class RetainerHandlers
         var numeric = (AtkUnitBase*)Svc.GameGui.GetAddonByName("InputNumeric", 1);
         if (numeric != null)
         {
-            PluginLog.Debug($"{value}");
+            Svc.Log.Debug($"{value}");
             Callback.Fire(numeric, true, value);
             return true;
         }

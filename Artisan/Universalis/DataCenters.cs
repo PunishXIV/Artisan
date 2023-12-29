@@ -66,7 +66,7 @@ namespace Artisan.Universalis
         public static readonly Dictionary<string, List<uint[]>>[]
             AllRegions = { Japan, NorthAmerica, Europe, Oceania, 中国 };
 
-        public static string GetRegionByWorld(uint world)
+        public static string? GetRegionByWorld(uint world)
         {
             foreach (var region in AllRegions)
             {

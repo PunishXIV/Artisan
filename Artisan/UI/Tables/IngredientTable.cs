@@ -1,6 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
-using Artisan.CraftingLogic;
+using Artisan.GameInterop;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Interface.Colors;
@@ -38,7 +38,6 @@ namespace Artisan.UI.Tables
         private static float _craftItemsColumnWidth = 0;
         private static float _itemCategoryColumnWidth = 0;
         private static float _gatherItemLocationColumWidth = 0;
-        private static float _craftingJobsColumnWidth = 100;
         private static float _cheapestColumnWidth = 100;
         private static float _numberForSaleWidth = 100;
 
@@ -437,7 +436,7 @@ namespace Artisan.UI.Tables
                     var qty = item.MarketboardData.TotalQuantityOfUnits;
                     var listings = item.MarketboardData.TotalNumberOfListings;
 
-                    return $"{listings.Value.ToString("N0")} listings - {qty.Value.ToString("N0")} total items";
+                    return $"{listings:N0} listings - {qty:N0} total items";
                 }
                 return "";
             }
@@ -720,7 +719,7 @@ namespace Artisan.UI.Tables
                 {
                     P.TM.Enqueue(() => CraftingListFunctions.OpenRecipeByID(item.CraftedRecipe.RowId));
                     P.TM.Enqueue(() => CraftingListFunctions.SwitchJobGearset(item.CraftedRecipe.CraftType.Row + 8));
-                    P.TM.Enqueue(() => SolverLogic.QuickSynthItem(item.Required));
+                    P.TM.Enqueue(() => Operations.QuickSynthItem(item.Required));
                 }
 
                 ImGuiComponents.HelpMarker("Quick Synths up to the required amount.");

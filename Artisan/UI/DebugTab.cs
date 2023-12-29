@@ -13,6 +13,13 @@ using System.Linq;
 using static ECommons.GenericHelpers;
 using Artisan.Autocraft;
 using Lumina.Excel.GeneratedSheets;
+using Artisan.CraftingLogic.Solvers;
+using Artisan.GameInterop;
+using Artisan.GameInterop.CSExt;
+using Dalamud.Interface.Utility.Raii;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using System.Runtime.CompilerServices;
+using ECommons.ExcelServices;
 
 namespace Artisan.UI
 {
@@ -117,37 +124,34 @@ namespace Artisan.UI
                     }
                 }
 
-                if (ImGui.CollapsingHeader("Crafting Stats"))
+                if (ImGui.CollapsingHeader("Crafting Stats") && Crafting.CurCraft != null && Crafting.CurStep != null)
                 {
-                    SolverLogic.BestSynthesis(out var act);
-                    ImGui.Text($"Control: {CharacterInfo.Control}");
-                    ImGui.Text($"Craftsmanship: {CharacterInfo.Craftsmanship}");
-                    ImGui.Text($"Current Durability: {CurrentCraft.CurrentDurability}");
-                    ImGui.Text($"Max Durability: {CurrentCraft.MaxDurability}");
-                    ImGui.Text($"Current Progress: {CurrentCraft.CurrentProgress}");
-                    ImGui.Text($"Max Progress: {CurrentCraft.MaxProgress}");
-                    ImGui.Text($"Current Quality: {CurrentCraft.CurrentQuality}");
-                    ImGui.Text($"Max Quality: {CurrentCraft.MaxQuality}");
-                    ImGui.Text($"Quality Percent: {Calculations.GetHQChance()}");
-                    ImGui.Text($"Item name: {CurrentCraft.ItemName}");
-                    ImGui.Text($"Current Condition: {CurrentCraft.CurrentCondition}");
-                    ImGui.Text($"Current Step: {CurrentCraft.CurrentStep}");
-                    ImGui.Text($"Current Quick Synth Step: {CurrentCraft.QuickSynthCurrent}");
-                    ImGui.Text($"Max Quick Synth Step: {CurrentCraft.QuickSynthMax}");
-                    ImGui.Text($"GS+ByregotCombo: {Calculations.GreatStridesByregotCombo()}");
-                    ImGui.Text($"Base Quality: {Calculations.BaseQuality()}");
-                    ImGui.Text($"Predicted Quality: {Calculations.CalculateNewQuality(CurrentCraft.CurrentRecommendation)}");
-                    ImGui.Text($"Predicted Progress: {Calculations.CalculateNewProgress(CurrentCraft.CurrentRecommendation)}");
-                    ImGui.Text($"Macro Step: {CurrentCraft.MacroStep}");
-                    ImGui.Text($"Collectibility Low: {CurrentCraft.CollectabilityLow}");
-                    ImGui.Text($"Collectibility Mid: {CurrentCraft.CollectabilityMid}");
-                    ImGui.Text($"Collectibility High: {CurrentCraft.CollectabilityHigh}");
-                    ImGui.Text($"Crafting State: {CurrentCraft.State}");
-                    ImGui.Text($"Can Finish: {SolverLogic.CanFinishCraft(act)}");
-                    ImGui.Text($"Current Rec: {CurrentCraft.RecommendationName}");
-                    ImGui.Text($"Previous Action: {CurrentCraft.PreviousAction.NameOfAction()}");
-                    ImGui.Text($"Tasks?: {Artisan.Tasks.Count}");
-                    ImGui.Text($"{CurrentCraft.CurrentStep == 1 && Calculations.CalculateNewProgress(Skills.DelicateSynthesis) >= CurrentCraft.MaxProgress && Calculations.CalculateNewQuality(Skills.DelicateSynthesis) >= CurrentCraft.MaxQuality}");
+                    ImGui.Text($"Control: {Crafting.CurCraft.StatControl}");
+                    ImGui.Text($"Craftsmanship: {Crafting.CurCraft.StatCraftsmanship}");
+                    ImGui.Text($"Current Durability: {Crafting.CurStep.Durability}");
+                    ImGui.Text($"Max Durability: {Crafting.CurCraft.CraftDurability}");
+                    ImGui.Text($"Current Progress: {Crafting.CurStep.Progress}");
+                    ImGui.Text($"Max Progress: {Crafting.CurCraft.CraftProgress}");
+                    ImGui.Text($"Current Quality: {Crafting.CurStep.Quality}");
+                    ImGui.Text($"Max Quality: {Crafting.CurCraft.CraftQualityMax}");
+                    ImGui.Text($"Quality Percent: {Calculations.GetHQChance(Crafting.CurStep.Quality * 100.0 / Crafting.CurCraft.CraftQualityMax)}");
+                    ImGui.Text($"Item name: {Crafting.CurRecipe?.ItemResult.Value?.Name}");
+                    ImGui.Text($"Current Condition: {Crafting.CurStep.Condition}");
+                    ImGui.Text($"Current Step: {Crafting.CurStep.Index}");
+                    ImGui.Text($"Quick Synth: {Crafting.QuickSynthState.Cur} / {Crafting.QuickSynthState.Max}");
+                    ImGui.Text($"GS+ByregotCombo: {StandardSolver.GreatStridesByregotCombo(Crafting.CurCraft, Crafting.CurStep)}");
+                    ImGui.Text($"Base Quality: {Simulator.BaseQuality(Crafting.CurCraft)}");
+                    ImGui.Text($"Base Progress: {Simulator.BaseProgress(Crafting.CurCraft)}");
+                    ImGui.Text($"Predicted Quality: {StandardSolver.CalculateNewQuality(Crafting.CurCraft, Crafting.CurStep, CraftingProcessor.NextRec.Action)}");
+                    ImGui.Text($"Predicted Progress: {StandardSolver.CalculateNewProgress(Crafting.CurCraft, Crafting.CurStep, CraftingProcessor.NextRec.Action)}");
+                    ImGui.Text($"Collectibility Low: {Crafting.CurCraft.CraftQualityMin1}");
+                    ImGui.Text($"Collectibility Mid: {Crafting.CurCraft.CraftQualityMin2}");
+                    ImGui.Text($"Collectibility High: {Crafting.CurCraft.CraftQualityMin3}");
+                    ImGui.Text($"Crafting State: {Crafting.CurState}");
+                    ImGui.Text($"Can Finish: {StandardSolver.CanFinishCraft(Crafting.CurCraft, Crafting.CurStep, StandardSolver.BestSynthesis(Crafting.CurCraft, Crafting.CurStep))}");
+                    ImGui.Text($"Current Rec: {CraftingProcessor.NextRec.Action.NameOfAction()}");
+                    ImGui.Text($"Previous Action: {Crafting.CurStep.PrevComboAction.NameOfAction()}");
+                    ImGui.Text($"Can insta delicate: {Crafting.CurStep.Index == 1 && StandardSolver.CanFinishCraft(Crafting.CurCraft, Crafting.CurStep, Skills.DelicateSynthesis) && StandardSolver.CalculateNewQuality(Crafting.CurCraft, Crafting.CurStep, Skills.DelicateSynthesis) >= Crafting.CurCraft.CraftQualityMin3}");
                 }
 
                 if (ImGui.CollapsingHeader("Spiritbonds"))
@@ -232,6 +236,29 @@ namespace Artisan.UI
                     }
                 }
 
+                if (ImGui.CollapsingHeader("RecipeNote"))
+                {
+                    var recipes = RecipeNoteRecipeData.Ptr();
+                    if (recipes != null && recipes->Recipes != null)
+                    {
+                        DrawRecipeEntry($"Selected", recipes->Recipes + recipes->SelectedIndex);
+                        for (int i = 0; i < recipes->RecipesCount; ++i)
+                            DrawRecipeEntry(i.ToString(), recipes->Recipes + i);
+                    }
+                    else
+                    {
+                        ImGui.TextUnformatted($"Null: {(nint)recipes:X}");
+                    }
+                }
+
+                if (ImGui.CollapsingHeader("Gear"))
+                {
+                    ImGui.TextUnformatted($"In-game stats: {CharacterInfo.Craftsmanship}/{CharacterInfo.Control}/{CharacterInfo.MaxCP}");
+                    DrawEquippedGear();
+                    foreach (ref var gs in RaptureGearsetModule.Instance()->EntriesSpan)
+                        DrawGearset(ref gs);
+                }
+
                 ImGui.Separator();
 
                 if (ImGui.Button("Repair all"))
@@ -254,11 +281,11 @@ namespace Artisan.UI
 
                 if (ImGui.Button($"Open And Quick Synth"))
                 {
-                    SolverLogic.QuickSynthItem(DebugValue);
+                    Operations.QuickSynthItem(DebugValue);
                 }
                 if (ImGui.Button($"Close Quick Synth Window"))
                 {
-                    SolverLogic.CloseQuickSynthWindow();
+                    Operations.CloseQuickSynthWindow();
                 }
                 if (ImGui.Button($"Open Materia Window"))
                 {
@@ -273,7 +300,7 @@ namespace Artisan.UI
                 {
                     var state = Svc.PluginInterface.GetIpcSubscriber<string, bool?>($"PandorasBox.GetFeatureEnabled").InvokeFunc("Auto-Fill Numeric Dialogs");
                     Svc.Log.Debug($"State of Auto-Fill Numeric Dialogs: {state}");
-                    Svc.PluginInterface.GetIpcSubscriber<string, bool, object>($"PandorasBox.SetFeatureEnabled").InvokeAction("Auto-Fill Numeric Dialogs", !state.Value);
+                    Svc.PluginInterface.GetIpcSubscriber<string, bool, object>($"PandorasBox.SetFeatureEnabled").InvokeAction("Auto-Fill Numeric Dialogs", !(state ?? false));
                     state = Svc.PluginInterface.GetIpcSubscriber<string, bool?>($"PandorasBox.GetFeatureEnabled").InvokeFunc("Auto-Fill Numeric Dialogs");
                     Svc.Log.Debug($"State of Auto-Fill Numeric Dialogs after setting: {state}");
                 }
@@ -288,13 +315,102 @@ namespace Artisan.UI
                 e.Log();
             }
 
+            ImGui.Text($"{Crafting.CurState}");
+        }
 
+        private static void DrawRecipeEntry(string tag, RecipeNoteRecipeEntry* e)
+        {
+            var recipe = Svc.Data.GetExcelSheet<Recipe>()?.GetRow(e->RecipeId);
+            using var n = ImRaii.TreeNode($"{tag}: {e->RecipeId} '{recipe?.ItemResult.Value?.Name}'###{tag}");
+            if (!n)
+                return;
+
+            int i = 0;
+            foreach (ref var ing in e->IngredientsSpan)
+            {
+                if (ing.NumTotal != 0)
+                {
+                    var item = Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()?.GetRow(ing.ItemId);
+                    using var n1 = ImRaii.TreeNode($"Ingredient {i}: {ing.ItemId} '{item?.Name}' (ilvl={item?.LevelItem.Row}, hq={item?.CanBeHq}), max={ing.NumTotal}, nq={ing.NumAssignedNQ}/{ing.NumAvailableNQ}, hq={ing.NumAssignedHQ}/{ing.NumAvailableHQ}", ImGuiTreeNodeFlags.Leaf);
+                }
+                i++;
+            }
+
+            if (recipe != null)
+            {
+                var startingQuality = Calculations.GetStartingQuality(recipe, e->GetAssignedHQIngredients());
+                using var n2 = ImRaii.TreeNode($"Starting quality: {startingQuality}/{Calculations.RecipeMaxQuality(recipe)}", ImGuiTreeNodeFlags.Leaf);
+            }
+        }
+
+        private static void DrawEquippedGear()
+        {
+            using var nodeEquipped = ImRaii.TreeNode("Equipped gear");
+            if (!nodeEquipped)
+                return;
+
+            var stats = CharacterStats.GetBaseStatsEquipped();
+            ImGui.TextUnformatted($"Total stats: {stats.Craftsmanship}/{stats.Control}/{stats.CP}/{stats.Splendorous}/{stats.Specialist}");
+
+            var inventory = InventoryManager.Instance()->GetInventoryContainer(InventoryType.EquippedItems);
+            if (inventory == null)
+                return;
+
+            for (int i = 0; i < inventory->Size; ++i)
+            {
+                var item = inventory->Items + i;
+                var details = new ItemStats(item);
+                if (details.Data == null)
+                    continue;
+
+                using var n = ImRaii.TreeNode($"{i}: {item->ItemID} '{details.Data.Name}' ({item->Flags}): crs={details.Stats[0].Base}+{details.Stats[0].Melded}/{details.Stats[0].Max}, ctrl={details.Stats[1].Base}+{details.Stats[1].Melded}/{details.Stats[1].Max}, cp={details.Stats[2].Base}+{details.Stats[2].Melded}/{details.Stats[2].Max}");
+                if (n)
+                {
+                    for (int j = 0; j < 5; ++j)
+                    {
+                        using var m = ImRaii.TreeNode($"Materia {j}: {item->Materia[j]} {item->MateriaGrade[j]}", ImGuiTreeNodeFlags.Leaf);
+                    }
+                }
+            }
+        }
+
+        private static void DrawGearset(ref RaptureGearsetModule.GearsetEntry gs)
+        {
+            if (!gs.Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists))
+                return;
+
+            fixed (byte* name = gs.Name)
+            {
+                using var nodeGearset = ImRaii.TreeNode($"Gearset {gs.ID} '{Dalamud.Memory.MemoryHelper.ReadString((nint)name, 48)}' {(Job)gs.ClassJob} ({gs.Flags})");
+                if (!nodeGearset)
+                    return;
+
+                var stats = CharacterStats.GetBaseStatsGearset(ref gs);
+                ImGui.TextUnformatted($"Total stats: {stats.Craftsmanship}/{stats.Control}/{stats.CP}/{stats.Splendorous}/{stats.Specialist}");
+
+                for (int i = 0; i < gs.ItemsSpan.Length; ++i)
+                {
+                    ref var item = ref gs.ItemsSpan[i];
+                    var details = new ItemStats((RaptureGearsetModule.GearsetItem*)Unsafe.AsPointer(ref item));
+                    if (details.Data == null)
+                        continue;
+
+                    using var n = ImRaii.TreeNode($"{i}: {item.ItemID} '{details.Data.Name}' ({item.Flags}): crs={details.Stats[0].Base}+{details.Stats[0].Melded}/{details.Stats[0].Max}, ctrl={details.Stats[1].Base}+{details.Stats[1].Melded}/{details.Stats[1].Max}, cp={details.Stats[2].Base}+{details.Stats[2].Melded}/{details.Stats[2].Max}");
+                    if (n)
+                    {
+                        for (int j = 0; j < 5; ++j)
+                        {
+                            using var m = ImRaii.TreeNode($"Materia {j}: {item.Materia[j]} {item.MateriaGrade[j]}", ImGuiTreeNodeFlags.Leaf);
+                        }
+                    }
+                }
+            }
         }
 
         public class Item
         {
             public uint Key { get; set; }
-            public string Name { get; set; }
+            public string Name { get; set; } = "";
             public ushort CraftingTime { get; set; }
             public uint UIIndex { get; set; }
         }

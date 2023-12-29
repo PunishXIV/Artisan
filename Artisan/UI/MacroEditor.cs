@@ -1,5 +1,4 @@
-﻿using Artisan.MacroSystem;
-using Artisan.RawInformation.Character;
+﻿using Artisan.RawInformation.Character;
 using Dalamud.Interface.Components;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
@@ -11,27 +10,32 @@ using System.Linq;
 using System.Numerics;
 using Artisan.RawInformation;
 using Newtonsoft.Json;
+using Artisan.CraftingLogic.Solvers;
+using Artisan.GameInterop;
+using Artisan.CraftingLogic;
 
 namespace Artisan.UI
 {
     internal class MacroEditor : Window
     {
-
-        private Macro? SelectedMacro;
+        private MacroSolverSettings.Macro SelectedMacro;
         private bool renameMode = false;
         private string renameMacro = "";
-        private int selectedActionIndex = 0;
+        private int selectedStepIndex = -1;
         private bool Raweditor = false;
         private static string _rawMacro = string.Empty;
 
-        public MacroEditor(int macroId) : base($"Macro Editor###{macroId}", ImGuiWindowFlags.None)
+        public MacroEditor(MacroSolverSettings.Macro macro) : base($"Macro Editor###{macro.ID}", ImGuiWindowFlags.None)
         {
-            SelectedMacro = P.Config.UserMacros.FirstOrDefault(x => x.ID == macroId);
+            SelectedMacro = macro;
+            selectedStepIndex = macro.Steps.Count - 1;
             this.IsOpen = true;
             P.ws.AddWindow(this);
             this.Size = new Vector2(600, 600);
             this.SizeCondition = ImGuiCond.Appearing;
             ShowCloseButton = true;
+
+            Crafting.CraftStarted += OnCraftStarted;
         }
 
         public override void PreDraw()
@@ -57,6 +61,7 @@ namespace Artisan.UI
 
         public override void OnClose()
         {
+            Crafting.CraftStarted -= OnCraftStarted;
             base.OnClose();
             P.ws.RemoveWindow(this);
         }
@@ -65,17 +70,9 @@ namespace Artisan.UI
         {
             if (SelectedMacro.ID != 0)
             {
-                if (SelectedMacro.MacroStepOptions.Count == 0 && SelectedMacro.MacroActions.Count > 0)
-                {
-                    for (int i = 0; i < SelectedMacro.MacroActions.Count; i++)
-                    {
-                        SelectedMacro.MacroStepOptions.Add(new());
-                    }
-                }
-
                 if (!renameMode)
                 {
-                    ImGui.Text($"Selected Macro: {SelectedMacro.Name.Replace($"%", "%%")}");
+                    ImGui.TextUnformatted($"Selected Macro: {SelectedMacro.Name}");
                     ImGui.SameLine();
                     if (ImGuiComponents.IconButton(FontAwesomeIcon.Pen))
                     {
@@ -96,18 +93,20 @@ namespace Artisan.UI
                 }
                 if (ImGui.Button("Delete Macro (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                 {
-                    P.Config.UserMacros.Remove(SelectedMacro);
+                    P.Config.MacroSolverConfig.Macros.Remove(SelectedMacro);
+                    foreach (var e in P.Config.RecipeConfigs)
+                        if (e.Value.SolverType == typeof(MacroSolverDefinition).FullName && e.Value.SolverFlavour == SelectedMacro.ID)
+                            P.Config.RecipeConfigs.Remove(e.Key); // TODO: do we want to preserve other configs?..
                     P.Config.Save();
                     SelectedMacro = new();
-                    selectedActionIndex = -1;
+                    selectedStepIndex = -1;
 
-                    CleanUpIndividualMacros();
                     this.IsOpen = false;
                 }
                 ImGui.SameLine();
                 if (ImGui.Button("Raw Editor"))
                 {
-                    _rawMacro = string.Join("\r\n", SelectedMacro.MacroActions.Select(x => $"{x.NameOfAction()}"));
+                    _rawMacro = string.Join("\r\n", SelectedMacro.Steps.Select(x => $"{x.Action.NameOfAction()}"));
                     Raweditor = !Raweditor;
                 }
 
@@ -122,78 +121,58 @@ namespace Artisan.UI
                 }
 
                 ImGui.Spacing();
-                bool skipQuality = SelectedMacro.MacroOptions.SkipQualityIfMet;
-                if (ImGui.Checkbox("Skip quality actions if at 100%", ref skipQuality))
+                if (ImGui.Checkbox("Skip quality actions if at 100%", ref SelectedMacro.Options.SkipQualityIfMet))
                 {
-                    SelectedMacro.MacroOptions.SkipQualityIfMet = skipQuality;
                     P.Config.Save();
                 }
                 ImGuiComponents.HelpMarker("Once you're at 100% quality, the macro will skip over all actions relating to quality, including buffs.");
                 ImGui.SameLine();
-                bool skipObserves = SelectedMacro.MacroOptions.SkipObservesIfNotPoor;
-                if (ImGui.Checkbox("Skip Observes If Not Poor", ref skipObserves))
+                if (ImGui.Checkbox("Skip Observes If Not Poor", ref SelectedMacro.Options.SkipObservesIfNotPoor))
                 {
-                    SelectedMacro.MacroOptions.SkipObservesIfNotPoor = skipObserves;
                     P.Config.Save();
                 }
 
 
-                bool upgradeQualityActions = SelectedMacro.MacroOptions.UpgradeQualityActions;
-                if (ImGui.Checkbox("Upgrade Quality Actions", ref upgradeQualityActions))
-                {
-                    SelectedMacro.MacroOptions.UpgradeQualityActions = upgradeQualityActions;
+                if (ImGui.Checkbox("Upgrade Quality Actions", ref SelectedMacro.Options.UpgradeQualityActions))
                     P.Config.Save();
-                }
                 ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases quality (not including Byregot's Blessing) then it will upgrade the action to Precise Touch.");
                 ImGui.SameLine();
 
-                bool upgradeProgressActions = SelectedMacro.MacroOptions.UpgradeProgressActions;
-                if (ImGui.Checkbox("Upgrade Progress Actions", ref upgradeProgressActions))
-                {
-                    SelectedMacro.MacroOptions.UpgradeProgressActions = upgradeProgressActions;
+                if (ImGui.Checkbox("Upgrade Progress Actions", ref SelectedMacro.Options.UpgradeProgressActions))
                     P.Config.Save();
-                }
                 ImGuiComponents.HelpMarker("If you get a Good or Excellent condition and your macro is on a step that increases progress then it will upgrade the action to Intensive Synthesis.");
 
                 ImGui.PushItemWidth(150f);
-                if (ImGui.InputInt("Minimum Craftsmanship", ref SelectedMacro.MacroOptions.MinCraftsmanship))
+                if (ImGui.InputInt("Minimum Craftsmanship", ref SelectedMacro.Options.MinCraftsmanship))
                     P.Config.Save();
                 ImGuiComponents.HelpMarker("Artisan will not start crafting if you do not meet this minimum craftsmanship with this macro selected.");
 
                 ImGui.PushItemWidth(150f);
-                if (ImGui.InputInt("Minimum Control", ref SelectedMacro.MacroOptions.MinControl))
+                if (ImGui.InputInt("Minimum Control", ref SelectedMacro.Options.MinControl))
                     P.Config.Save();
                 ImGuiComponents.HelpMarker("Artisan will not start crafting if you do not meet this minimum control with this macro selected.");
 
                 ImGui.PushItemWidth(150f);
-                if (ImGui.InputInt("Minimum CP", ref SelectedMacro.MacroOptions.MinCP))
+                if (ImGui.InputInt("Minimum CP", ref SelectedMacro.Options.MinCP))
                     P.Config.Save();
                 ImGuiComponents.HelpMarker("Artisan will not start crafting if you do not meet this minimum CP with this macro selected.");
 
                 if (!Raweditor)
                 {
-                    if (ImGui.Button($"Insert New Action ({Skills.BasicSynth.NameOfAction()})"))
+                    if (ImGui.Button($"Insert New Action ({Skills.BasicSynthesis.NameOfAction()})"))
                     {
-                        if (SelectedMacro.MacroActions.Count == 0)
-                        {
-                            SelectedMacro.MacroActions.Add(Skills.BasicSynth);
-                            SelectedMacro.MacroStepOptions.Add(new());
-                        }
-                        else
-                        {
-                            SelectedMacro.MacroActions.Insert(selectedActionIndex + 1, Skills.BasicSynth);
-                            SelectedMacro.MacroStepOptions.Insert(selectedActionIndex + 1, new());
-                        }
-
+                        SelectedMacro.Steps.Insert(selectedStepIndex + 1, new() { Action = Skills.BasicSynthesis });
+                        ++selectedStepIndex;
                         P.Config.Save();
                     }
 
-                    if (SelectedMacro.MacroActions.Count > 0 && selectedActionIndex != -1)
+                    if (selectedStepIndex >= 0)
                     {
-                        if (ImGui.Button($"Insert New Action - Same As Previous ({SelectedMacro.MacroActions[selectedActionIndex].NameOfAction()})"))
+                        if (ImGui.Button($"Insert New Action - Same As Previous ({SelectedMacro.Steps[selectedStepIndex].Action.NameOfAction()})"))
                         {
-                            SelectedMacro.MacroActions.Insert(selectedActionIndex + 1, SelectedMacro.MacroActions[selectedActionIndex]);
-                            SelectedMacro.MacroStepOptions.Insert(selectedActionIndex + 1, new());
+                            SelectedMacro.Steps.Insert(selectedStepIndex + 1, new() { Action = SelectedMacro.Steps[selectedStepIndex].Action });
+                            ++selectedStepIndex;
+                            P.Config.Save();
                         }
                     }
                     
@@ -202,49 +181,42 @@ namespace Artisan.UI
                     ImGui.SetColumnWidth(0, 220f.Scale());
                     ImGuiEx.ImGuiLineCentered("###MacroActions", () => ImGuiEx.TextUnderlined("Macro Actions"));
                     ImGui.Indent();
-                    for (int i = 0; i < SelectedMacro.MacroActions.Count; i++)
+                    for (int i = 0; i < SelectedMacro.Steps.Count; i++)
                     {
-                        var selectedAction = ImGui.Selectable($"{i + 1}. {(SelectedMacro.MacroActions[i] == 0 ? $"Artisan Recommendation###selectedAction{i}" : $"{SelectedMacro.MacroActions[i].NameOfAction()}###selectedAction{i}")}", i == selectedActionIndex);
-
+                        var step = SelectedMacro.Steps[i];
+                        var selectedAction = ImGui.Selectable($"{i + 1}. {(step.Action == Skills.None ? "Artisan Recommendation" : step.Action.NameOfAction())}###selectedAction{i}", i == selectedStepIndex);
                         if (selectedAction)
-                            selectedActionIndex = i;
+                            selectedStepIndex = i;
                     }
                     ImGui.Unindent();
-                    if (selectedActionIndex != -1)
+                    if (selectedStepIndex >= 0)
                     {
-                        if (selectedActionIndex >= SelectedMacro.MacroActions.Count)
-                            return;
-
-                        var macroStepOpts = SelectedMacro.MacroStepOptions[selectedActionIndex];
+                        var step = SelectedMacro.Steps[selectedStepIndex];
 
                         ImGui.NextColumn();
-                        ImGuiEx.CenterColumnText($"Selected Action: {(SelectedMacro.MacroActions[selectedActionIndex] == 0 ? "Artisan Recommendation" : SelectedMacro.MacroActions[selectedActionIndex].NameOfAction())}", true);
-                        if (selectedActionIndex > 0)
+                        ImGuiEx.CenterColumnText($"Selected Action: {(step.Action == Skills.None ? "Artisan Recommendation" : step.Action.NameOfAction())}", true);
+                        if (selectedStepIndex > 0)
                         {
                             ImGui.SameLine();
                             if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowLeft))
                             {
-                                selectedActionIndex--;
+                                selectedStepIndex--;
                             }
                         }
 
-                        if (selectedActionIndex < SelectedMacro.MacroActions.Count - 1)
+                        if (selectedStepIndex < SelectedMacro.Steps.Count - 1)
                         {
                             ImGui.SameLine();
                             if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowRight))
                             {
-                                selectedActionIndex++;
+                                selectedStepIndex++;
                             }
                         }
 
                         ImGui.Dummy(new Vector2(0, 0));
                         ImGui.SameLine();
-                        bool skip = SelectedMacro.MacroStepOptions[selectedActionIndex].ExcludeFromUpgrade;
-                        if (ImGui.Checkbox($"Skip Upgrades For This Action", ref skip))
-                        {
-                            SelectedMacro.MacroStepOptions[selectedActionIndex].ExcludeFromUpgrade = skip;
+                        if (ImGui.Checkbox($"Skip Upgrades For This Action", ref step.ExcludeFromUpgrade))
                             P.Config.Save();
-                        }
 
                         ImGui.Spacing();
                         ImGuiEx.CenterColumnText($"Skip on these conditions", true);
@@ -252,62 +224,57 @@ namespace Artisan.UI
                         ImGui.BeginChild("ConditionalExcludes", new Vector2(ImGui.GetContentRegionAvail().X, 100f), false, ImGuiWindowFlags.AlwaysAutoResize);
                         ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0, 0));
                         ImGui.Columns(3, null, false);
-                        if (ImGui.Checkbox($"Normal", ref macroStepOpts.ExcludeNormal))
+                        if (ImGui.Checkbox($"Normal", ref step.ExcludeNormal))
                             P.Config.Save();
-                        if (ImGui.Checkbox($"Poor", ref macroStepOpts.ExcludePoor))
+                        if (ImGui.Checkbox($"Poor", ref step.ExcludePoor))
                             P.Config.Save();
-                        if (ImGui.Checkbox($"Good", ref macroStepOpts.ExcludeGood))
+                        if (ImGui.Checkbox($"Good", ref step.ExcludeGood))
                             P.Config.Save();
-                        if (ImGui.Checkbox($"Excellent", ref macroStepOpts.ExcludeExcellent))
-                            P.Config.Save();
-
-                        ImGui.NextColumn();
-
-                        if (ImGui.Checkbox($"Centered", ref macroStepOpts.ExcludeCentered))
-                            P.Config.Save();
-                        if (ImGui.Checkbox($"Sturdy", ref macroStepOpts.ExcludeSturdy))
-                            P.Config.Save();
-                        if (ImGui.Checkbox($"Pliant", ref macroStepOpts.ExcludePliant))
-                            P.Config.Save();
-                        if (ImGui.Checkbox($"Malleable", ref macroStepOpts.ExcludeMalleable))
+                        if (ImGui.Checkbox($"Excellent", ref step.ExcludeExcellent))
                             P.Config.Save();
 
                         ImGui.NextColumn();
 
-                        if (ImGui.Checkbox($"Primed", ref macroStepOpts.ExcludePrimed))
+                        if (ImGui.Checkbox($"Centered", ref step.ExcludeCentered))
                             P.Config.Save();
-                        if (ImGui.Checkbox($"Good Omen", ref macroStepOpts.ExcludeGoodOmen))
+                        if (ImGui.Checkbox($"Sturdy", ref step.ExcludeSturdy))
+                            P.Config.Save();
+                        if (ImGui.Checkbox($"Pliant", ref step.ExcludePliant))
+                            P.Config.Save();
+                        if (ImGui.Checkbox($"Malleable", ref step.ExcludeMalleable))
+                            P.Config.Save();
+
+                        ImGui.NextColumn();
+
+                        if (ImGui.Checkbox($"Primed", ref step.ExcludePrimed))
+                            P.Config.Save();
+                        if (ImGui.Checkbox($"Good Omen", ref step.ExcludeGoodOmen))
                             P.Config.Save();
 
                         ImGui.Columns(1);
                         ImGui.PopStyleVar();
-                        ImGui.EndChild();   
+                        ImGui.EndChild();
                         if (ImGui.Button("Delete Action (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                         {
-                            SelectedMacro.MacroActions.RemoveAt(selectedActionIndex);
-                            SelectedMacro.MacroStepOptions.RemoveAt(selectedActionIndex);
-
+                            SelectedMacro.Steps.RemoveAt(selectedStepIndex);
                             P.Config.Save();
-
-                            if (selectedActionIndex == SelectedMacro.MacroActions.Count)
-                                selectedActionIndex--;
+                            if (selectedStepIndex == SelectedMacro.Steps.Count)
+                                selectedStepIndex--;
                         }
 
                         if (ImGui.BeginCombo("###ReplaceAction", "Replace Action"))
                         {
                             if (ImGui.Selectable($"Artisan Recommendation"))
                             {
-                                SelectedMacro.MacroActions[selectedActionIndex] = 0;
-
+                                step.Action = Skills.None;
                                 P.Config.Save();
                             }
 
-                            foreach (var constant in typeof(Skills).GetFields().OrderBy(x => ((uint)x.GetValue(null)!).NameOfAction()))
+                            foreach (var opt in Enum.GetValues(typeof(Skills)).Cast<Skills>().OrderBy(SheetExtensions.NameOfAction))
                             {
-                                if (ImGui.Selectable($"{((uint)constant.GetValue(null)!).NameOfAction()}"))
+                                if (ImGui.Selectable(opt.NameOfAction()))
                                 {
-                                    SelectedMacro.MacroActions[selectedActionIndex] = (uint)constant.GetValue(null)!;
-
+                                    step.Action = opt;
                                     P.Config.Save();
                                 }
                             }
@@ -316,23 +283,21 @@ namespace Artisan.UI
                         }
 
                         ImGui.Text("Re-order Action");
-                        if (selectedActionIndex > 0)
+                        if (selectedStepIndex > 0)
                         {
                             ImGui.SameLine();
                             if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowUp))
                             {
-                                SelectedMacro.MacroActions.Reverse(selectedActionIndex - 1, 2);
-                                SelectedMacro.MacroStepOptions.Reverse(selectedActionIndex - 1, 2);
-                                selectedActionIndex--;
-
+                                SelectedMacro.Steps.Reverse(selectedStepIndex - 1, 2);
+                                selectedStepIndex--;
                                 P.Config.Save();
                             }
                         }
 
-                        if (selectedActionIndex < SelectedMacro.MacroActions.Count - 1)
+                        if (selectedStepIndex < SelectedMacro.Steps.Count - 1)
                         {
                             ImGui.SameLine();
-                            if (selectedActionIndex == 0)
+                            if (selectedStepIndex == 0)
                             {
                                 ImGui.Dummy(new Vector2(22));
                                 ImGui.SameLine();
@@ -340,10 +305,8 @@ namespace Artisan.UI
 
                             if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowDown))
                             {
-                                SelectedMacro.MacroActions.Reverse(selectedActionIndex, 2);
-                                SelectedMacro.MacroStepOptions.Reverse(selectedActionIndex, 2);
-                                selectedActionIndex++;
-
+                                SelectedMacro.Steps.Reverse(selectedStepIndex, 2);
+                                selectedStepIndex++;
                                 P.Config.Save();
                             }
                         }
@@ -358,26 +321,22 @@ namespace Artisan.UI
                     ImGui.InputTextMultiline("###MacroEditor", ref _rawMacro, 10000000, new Vector2(ImGui.GetContentRegionAvail().X - 30f, ImGui.GetContentRegionAvail().Y - 30f));
                     if (ImGui.Button("Save"))
                     {
-                        MacroUI.ParseMacro(_rawMacro, out Macro updated);
-                        if (updated.ID != 0 && !SelectedMacro.MacroActions.SequenceEqual(updated.MacroActions))
+                        var steps = MacroUI.ParseMacro(_rawMacro);
+                        if (steps.Count > 0 && !SelectedMacro.Steps.SequenceEqual(steps))
                         {
-                            SelectedMacro.MacroActions = updated.MacroActions;
-                            SelectedMacro.MacroStepOptions = updated.MacroStepOptions;
+                            SelectedMacro.Steps = steps;
                             P.Config.Save();
-
                             DuoLog.Information($"Macro Updated");
                         }
                     }
                     ImGui.SameLine();
                     if (ImGui.Button("Save and Close"))
                     {
-                        MacroUI.ParseMacro(_rawMacro, out Macro updated);
-                        if (updated.ID != 0 && !SelectedMacro.MacroActions.SequenceEqual(updated.MacroActions))
+                        var steps = MacroUI.ParseMacro(_rawMacro);
+                        if (steps.Count > 0 && !SelectedMacro.Steps.SequenceEqual(steps))
                         {
-                            SelectedMacro.MacroActions = updated.MacroActions;
-                            SelectedMacro.MacroStepOptions = updated.MacroStepOptions;
+                            SelectedMacro.Steps = steps;
                             P.Config.Save();
-
                             DuoLog.Information($"Macro Updated");
                         }
 
@@ -406,8 +365,10 @@ namespace Artisan.UI
             }
             else
             {
-                selectedActionIndex = -1;
+                selectedStepIndex = -1;
             }
         }
+
+        private void OnCraftStarted(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState initialStep, bool trial) => IsOpen = false;
     }
 }

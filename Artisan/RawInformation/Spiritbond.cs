@@ -1,9 +1,9 @@
 ﻿using Artisan.Autocraft;
+using Artisan.GameInterop;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
 using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Logging;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -65,7 +65,7 @@ namespace Artisan.RawInformation
             {
                 if (Throttler.Throttle(1000))
                 {
-                    ActionManager.Instance()->UseAction(ActionType.GeneralAction, 14);
+                    ActionManagerEx.UseMateriaExtraction();
                 }
             }
         }
@@ -76,7 +76,7 @@ namespace Artisan.RawInformation
             {
                 if (Throttler.Throttle(1000))
                 {
-                    ActionManager.Instance()->UseAction(ActionType.GeneralAction, 14);
+                    ActionManagerEx.UseMateriaExtraction();
                 }
             }
         }
@@ -110,13 +110,13 @@ namespace Artisan.RawInformation
 
             if (option && IsSpiritbondReadyAny())
             {
-                if (DebugTab.Debug) PluginLog.Verbose("Entered materia extraction");
+                if (DebugTab.Debug) Svc.Log.Verbose("Entered materia extraction");
                 if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                 {
-                    if (DebugTab.Debug) PluginLog.Verbose("Crafting");
+                    if (DebugTab.Debug) Svc.Log.Verbose("Crafting");
                     if (Throttler.Throttle(1000))
                     {
-                        if (DebugTab.Debug) PluginLog.Verbose("Closing crafting log");
+                        if (DebugTab.Debug) Svc.Log.Verbose("Closing crafting log");
                         CommandProcessor.ExecuteThrottled("/clog");
                     }
                 }
