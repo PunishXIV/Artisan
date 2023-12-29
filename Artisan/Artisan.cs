@@ -172,6 +172,7 @@ public unsafe class Artisan : IDalamudPlugin
         }
 
         Crafting.Update();
+        SimpleTweaks.DisableImprovedLogTweak();
         PreCrafting.Update();
         Endurance.Update();
 

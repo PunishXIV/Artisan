@@ -30,12 +30,12 @@ namespace Artisan.UI
         private static int quickAssignQuality = 80;
 
         private static List<int> quickAssignPossibleDifficulties = new();
-        private static int quickAssignMaxDifficulty = quickAssignPossibleDifficulties.LastOrDefault();
-        private static int quickAssignMinDifficulty = quickAssignPossibleDifficulties.FirstOrDefault();
+        private static int quickAssignMaxDifficulty => quickAssignPossibleDifficulties.LastOrDefault();
+        private static int quickAssignMinDifficulty => quickAssignPossibleDifficulties.FirstOrDefault();
 
         private static List<int> quickAssignPossibleQualities = new();
-        private static int quickAssignMaxQuality = quickAssignPossibleQualities.LastOrDefault();
-        private static int quickAssignMinQuality = quickAssignPossibleQualities.FirstOrDefault();
+        private static int quickAssignMaxQuality => quickAssignPossibleQualities.LastOrDefault();
+        private static int quickAssignMinQuality => quickAssignPossibleQualities.FirstOrDefault();
 
         private static bool[] quickAssignJobs = new bool[8];
         private static Dictionary<int, bool> quickAssignDurabilities = new();
@@ -46,7 +46,7 @@ namespace Artisan.UI
             ImGui.TextWrapped("This tab will allow you to add macros that Artisan can use instead of its own decisions. Once you create a new macro, click on it from the list below to open up the macro editor window for your macro.");
             ImGui.Separator();
 
-            if (Crafting.CurState is not Crafting.State.IdleNormal and not Crafting.State.IdleBetween)
+            if (Svc.ClientState.IsLoggedIn && Crafting.CurState is not Crafting.State.IdleNormal and not Crafting.State.IdleBetween)
             {
                 ImGui.Text($"Crafting in progress. Macro settings will be unavailable until you stop crafting.");
                 return;
@@ -190,126 +190,134 @@ namespace Artisan.UI
                 }
                 quickAssignPossibleQualities.SortAndRemoveDuplicates();
             }
-            quickAssignQuality = quickAssignPossibleQualities.FindClosest(quickAssignQuality);
+
             if (quickAssignPossibleQualities.Any())
             {
+                quickAssignQuality = quickAssignPossibleQualities.FindClosest(quickAssignQuality);
                 if (ImGui.SliderInt($"{LuminaSheets.AddonSheet[216].Text}###RecipeQuality", ref quickAssignQuality, quickAssignMinQuality, quickAssignMaxQuality))
                 {
                     quickAssignDurabilities.Clear();
                 }
-            }
-            filteredRecipes = filteredRecipes.Where(x => Calculations.RecipeMaxQuality(x) == quickAssignQuality);
 
-            if (ImGui.BeginListBox($"{LuminaSheets.AddonSheet[5400].Text}###AssignJobBox", new Vector2(0, 55)))
-            {
-                ImGui.Columns(4, null, false);
-                for (var job = Job.CRP; job <= Job.CUL; ++job)
+                filteredRecipes = filteredRecipes.Where(x => Calculations.RecipeMaxQuality(x) == quickAssignQuality);
+
+                if (ImGui.BeginListBox($"{LuminaSheets.AddonSheet[5400].Text}###AssignJobBox", new Vector2(0, 55)))
                 {
-                    ImGui.Checkbox(job.ToString(), ref quickAssignJobs[job - Job.CRP]);
-                    ImGui.NextColumn();
-                }
-                ImGui.EndListBox();
-            }
-            filteredRecipes = filteredRecipes.Where(x => quickAssignJobs[x.CraftType.Row]);
-
-            if (ImGui.BeginListBox($"{LuminaSheets.AddonSheet[1430].Text}###AssignDurabilities", new Vector2(0, 55)))
-            {
-                ImGui.Columns(4, null, false);
-
-                foreach (var recipe in filteredRecipes)
-                {
-                    quickAssignDurabilities.TryAdd(Calculations.RecipeDurability(recipe), false);
-                }
-
-                foreach (var dur in quickAssignDurabilities)
-                {
-                    var val = dur.Value;
-                    if (ImGui.Checkbox($"{dur.Key}", ref val))
+                    ImGui.Columns(4, null, false);
+                    for (var job = Job.CRP; job <= Job.CUL; ++job)
                     {
-                        quickAssignDurabilities[dur.Key] = val;
+                        ImGui.Checkbox(job.ToString(), ref quickAssignJobs[job - Job.CRP]);
+                        ImGui.NextColumn();
                     }
-                    ImGui.NextColumn();
+                    ImGui.EndListBox();
                 }
+                filteredRecipes = filteredRecipes.Where(x => quickAssignJobs[x.CraftType.Row]);
 
-                if (quickAssignDurabilities.Count == 1)
+                if (filteredRecipes.Any())
                 {
-                    var key = quickAssignDurabilities.First().Key;
-                    quickAssignDurabilities[key] = true;
-                }
-                ImGui.EndListBox();
-            }
-            filteredRecipes = filteredRecipes.Where(x => quickAssignDurabilities[Calculations.RecipeDurability(x)]);
-
-            if (ImGui.BeginListBox($"{LuminaSheets.AddonSheet[1419].Text}###HQable", new Vector2(0, 28f)))
-            {
-                var anyHQ = filteredRecipes.Any(recipe => recipe.CanHq);
-                var anyNonHQ = filteredRecipes.Any(recipe => !recipe.CanHq);
-
-                ImGui.Columns(2, null, false);
-                if (anyNonHQ)
-                {
-                    if (!anyHQ)
-                        quickAssignCannotHQ = true;
-
-                    if (ImGui.RadioButton($"{LuminaSheets.AddonSheet[3].Text.RawString.Replace(".", "")}", quickAssignCannotHQ))
+                    if (ImGui.BeginListBox($"{LuminaSheets.AddonSheet[1430].Text}###AssignDurabilities", new Vector2(0, 55)))
                     {
-                        quickAssignCannotHQ = true;
-                    }
-                }
-                ImGui.NextColumn();
-                if (anyHQ)
-                {
-                    if (!anyNonHQ)
-                        quickAssignCannotHQ = false;
+                        ImGui.Columns(4, null, false);
 
-                    if (ImGui.RadioButton($"{LuminaSheets.AddonSheet[4].Text.RawString.Replace(".", "")}", !quickAssignCannotHQ))
+                        foreach (var recipe in filteredRecipes)
+                        {
+                            quickAssignDurabilities.TryAdd(Calculations.RecipeDurability(recipe), false);
+                        }
+
+                        foreach (var dur in quickAssignDurabilities)
+                        {
+                            var val = dur.Value;
+                            if (ImGui.Checkbox($"{dur.Key}", ref val))
+                            {
+                                quickAssignDurabilities[dur.Key] = val;
+                            }
+                            ImGui.NextColumn();
+                        }
+
+                        if (quickAssignDurabilities.Count == 1)
+                        {
+                            var key = quickAssignDurabilities.First().Key;
+                            quickAssignDurabilities[key] = true;
+                        }
+                        ImGui.EndListBox();
+                    }
+                    filteredRecipes = filteredRecipes.Where(x => quickAssignDurabilities[Calculations.RecipeDurability(x)]);
+
+                    if (ImGui.BeginListBox($"{LuminaSheets.AddonSheet[1419].Text}###HQable", new Vector2(0, 28f)))
                     {
-                        quickAssignCannotHQ = false;
+                        var anyHQ = filteredRecipes.Any(recipe => recipe.CanHq);
+                        var anyNonHQ = filteredRecipes.Any(recipe => !recipe.CanHq);
+
+                        ImGui.Columns(2, null, false);
+                        if (anyNonHQ)
+                        {
+                            if (!anyHQ)
+                                quickAssignCannotHQ = true;
+
+                            if (ImGui.RadioButton($"{LuminaSheets.AddonSheet[3].Text.RawString.Replace(".", "")}", quickAssignCannotHQ))
+                            {
+                                quickAssignCannotHQ = true;
+                            }
+                        }
+                        ImGui.NextColumn();
+                        if (anyHQ)
+                        {
+                            if (!anyNonHQ)
+                                quickAssignCannotHQ = false;
+
+                            if (ImGui.RadioButton($"{LuminaSheets.AddonSheet[4].Text.RawString.Replace(".", "")}", !quickAssignCannotHQ))
+                            {
+                                quickAssignCannotHQ = false;
+                            }
+                        }
+                        ImGui.Columns(1, null, false);
+                        ImGui.EndListBox();
                     }
-                }
-                ImGui.Columns(1, null, false);
-                ImGui.EndListBox();
-            }
-            filteredRecipes = filteredRecipes.Where(x => x.CanHq != quickAssignCannotHQ);
+                    filteredRecipes = filteredRecipes.Where(x => x.CanHq != quickAssignCannotHQ);
 
-            if (ImGui.Checkbox($"Show All Recipes Assigned To", ref P.Config.ShowMacroAssignResults))
-                P.Config.Save();
+                    if (ImGui.Checkbox($"Show All Recipes Assigned To", ref P.Config.ShowMacroAssignResults))
+                        P.Config.Save();
 
-            if (ImGui.Button($"Assign Macro To Recipes", new Vector2(ImGui.GetContentRegionAvail().X / 2, 24f.Scale())))
-            {
-                int numberFound = 0;
-                foreach (var recipe in filteredRecipes)
-                {
-                    var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId);
-                    if (config == null)
-                        P.Config.RecipeConfigs[recipe.RowId] = config = new();
-                    config.SolverType = typeof(MacroSolverDefinition).FullName!;
-                    config.SolverFlavour = selectedAssignMacro.ID;
-                    if (P.Config.ShowMacroAssignResults)
+                    if (ImGui.Button($"Assign Macro To Recipes", new Vector2(ImGui.GetContentRegionAvail().X / 2, 24f.Scale())))
                     {
-                        P.TM.DelayNext(400);
-                        P.TM.Enqueue(() => Notify.Info($"Macro assigned to {recipe.ItemResult.Value.Name.RawString}."));
-                    }
-                    numberFound++;
-                }
+                        int numberFound = 0;
+                        foreach (var recipe in filteredRecipes)
+                        {
+                            var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId);
+                            if (config == null)
+                                P.Config.RecipeConfigs[recipe.RowId] = config = new();
+                            config.SolverType = typeof(MacroSolverDefinition).FullName!;
+                            config.SolverFlavour = selectedAssignMacro.ID;
+                            if (P.Config.ShowMacroAssignResults)
+                            {
+                                P.TM.DelayNext(400);
+                                P.TM.Enqueue(() => Notify.Info($"Macro assigned to {recipe.ItemResult.Value.Name.RawString}."));
+                            }
+                            numberFound++;
+                        }
 
-                if (numberFound > 0)
-                {
-                    Notify.Success($"Macro assigned to {numberFound} recipes.");
-                    P.Config.Save();
-                }
-                else
-                {
-                    Notify.Error("No recipes match your parameters. No macros assigned.");
+                        if (numberFound > 0)
+                        {
+                            Notify.Success($"Macro assigned to {numberFound} recipes.");
+                            P.Config.Save();
+                        }
+                        else
+                        {
+                            Notify.Error("No recipes match your parameters. No macros assigned.");
+                        }
+                    }
+                    ImGui.SameLine();
                 }
             }
-            ImGui.SameLine();
             if (ImGui.Button($"Unassign Macro From All Recipes (Hold Ctrl)", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())) && ImGui.GetIO().KeyCtrl)
             {
                 int count = 0;
                 foreach (var e in P.Config.RecipeConfigs)
                     if (e.Value.SolverType == typeof(MacroSolverDefinition).FullName && e.Value.SolverFlavour == selectedAssignMacro.ID)
+                    {
                         P.Config.RecipeConfigs.Remove(e.Key); // TODO: do we want to preserve other configs?..
+                        count++;
+                    }
                 P.Config.Save();
                 if (count > 0)
                     Notify.Success($"Removed from {count} recipes.");

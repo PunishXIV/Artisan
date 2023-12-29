@@ -1,6 +1,7 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLogic;
 using Artisan.GameInterop.CSExt;
+using Artisan.IPC;
 using Artisan.RawInformation.Character;
 using Dalamud.Hooking;
 using ECommons;
