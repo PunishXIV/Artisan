@@ -117,27 +117,7 @@ namespace Artisan.Autocraft
 
                 ImGuiEx.Text($"Recipe: {RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.ClassJobSheet[LuminaSheets.RecipeSheet[(uint)RecipeID].CraftType.Row + 8].Abbreviation})" : "")}");
             }
-            bool requireFoodPot = P.Config.AbortIfNoFoodPot;
-            if (ImGui.Checkbox("Use Food, Manuals and/or Medicine", ref requireFoodPot))
-            {
-                P.Config.AbortIfNoFoodPot = requireFoodPot;
-                P.Config.Save();
-            }
-            ImGuiComponents.HelpMarker("Artisan will require the configured food, manuals or medicine and refuse to craft if it cannot be found.");
-            if (requireFoodPot)
-            {
-                var recipe = LuminaSheets.RecipeSheet[RecipeID];
-                var config = P.Config.RecipeConfigs.GetValueOrDefault(RecipeID) ?? new();
-                var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.Row);
-                stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
-                var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.Row, recipe);
-                if (config.Draw(craft))
-                {
-                    P.Config.RecipeConfigs[recipe.RowId] = config;
-                    P.Config.Save();
-                }
-            }
-
+            
             bool repairs = P.Config.Repair;
             if (ImGui.Checkbox("Automatic Repairs", ref repairs))
             {

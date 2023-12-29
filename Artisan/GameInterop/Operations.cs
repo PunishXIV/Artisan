@@ -1,9 +1,9 @@
 ﻿using Artisan.Autocraft;
 using Artisan.RawInformation;
 using ClickLib.Clicks;
+using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
-using ECommons;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
@@ -119,13 +119,10 @@ public static unsafe class Operations
     {
         try
         {
-            if (Throttler.Throttle(500))
+            if (GenericHelpers.TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var recipenote))
             {
-                if (GenericHelpers.TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var recipenote))
-                {
-                    ClickRecipeNote.Using(new nint(&recipenote->AtkUnitBase)).Synthesize();
-                    Endurance.Tasks.Clear();
-                }
+                ClickRecipeNote.Using(new nint(&recipenote->AtkUnitBase)).Synthesize();
+                Endurance.Tasks.Clear();
             }
         }
         catch (Exception ex)

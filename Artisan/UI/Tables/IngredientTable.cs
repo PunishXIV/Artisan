@@ -363,12 +363,13 @@ namespace Artisan.UI.Tables
 
                         foreach (var listing in item.MarketboardData.AllListings.Where(x => x.World == world).OrderBy(x => x.TotalPrice))
                         {
-                            if (qty >= item.Required) break;
+                            Svc.Log.Debug($"{qty} {item.Remaining}");
+                            if (qty >= item.Remaining) break;
                             qty += listing.Quantity;
                             totalCost += listing.TotalPrice;
                         }
 
-                        if ((totalCost < currentWorldCost && qty >= item.Required) || currentWorldCost == 0 || (qty > currentWorldQty && qty < item.Required))
+                        if ((totalCost < currentWorldCost && qty >= item.Remaining) || currentWorldCost == 0 || (qty > currentWorldQty && qty < item.Remaining))
                         {
                             currentWorldCost = totalCost;
                             currentWorld = world;
@@ -385,7 +386,10 @@ namespace Artisan.UI.Tables
                 {
                     var listing = CheapestListings[item.Data.RowId];
 
-                    return $"{listing.World} - Cost {listing.Cost.ToString("N0")}, Qty {listing.Qty}";
+                    if (item.Remaining > 0)
+                        return $"{listing.World} - Cost {listing.Cost.ToString("N0")}, Qty {listing.Qty}";
+                    else
+                        return $"No need to buy";
 
                 }
 
@@ -396,7 +400,7 @@ namespace Artisan.UI.Tables
             {
                 ImGui.Text($"{ToName(item)}");
 
-                if (Lifestream && CheapestListings.ContainsKey(item.Data.RowId))
+                if (Lifestream && CheapestListings.ContainsKey(item.Data.RowId) && item.Remaining > 0)
                 {
                     var server = CheapestListings[item.Data.RowId].World;
                     if (ImGui.IsItemHovered())

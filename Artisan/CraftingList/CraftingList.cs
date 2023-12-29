@@ -58,7 +58,7 @@ namespace Artisan.CraftingLists
 
         public static Dictionary<uint, int>? Materials;
 
-        private static TaskManager CLTM = new();
+        public static TaskManager CLTM = new();
 
         public static void SetID(this CraftingList list)
         {

@@ -79,15 +79,18 @@ namespace Artisan.UI
             DrawMacroNamePopup(MacroNameUse.FromClipboard);
             DrawMacroNamePopup(MacroNameUse.NewMacro);
 
-            ImGui.Checkbox("Reorder Mode (Click and Drag to Reorder)", ref reorderMode);
-
-            if (reorderMode)
-                ImGuiEx.CenterColumnText("Reorder Mode");
-            else
-                ImGuiEx.CenterColumnText("Macro Editor Select");
-
             if (P.Config.MacroSolverConfig.Macros.Count > 0)
             {
+                if (P.Config.MacroSolverConfig.Macros.Count > 1)
+                    ImGui.Checkbox("Reorder Mode (Click and Drag to Reorder)", ref reorderMode);
+                else
+                    reorderMode = false;
+
+                if (reorderMode)
+                    ImGuiEx.CenterColumnText("Reorder Mode");
+                else
+                    ImGuiEx.CenterColumnText("Macro Editor Select");
+
                 if (ImGui.BeginChild("##selector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y / 1.85f), true))
                 {
                     for (int i = 0; i < P.Config.MacroSolverConfig.Macros.Count; i++)

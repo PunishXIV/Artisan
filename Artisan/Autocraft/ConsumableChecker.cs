@@ -268,5 +268,11 @@ namespace Artisan.Autocraft
             }
             return potted && fooded && manualed && squadronManualed;
         }
+
+        internal static bool HasItem(uint requiredItem, bool requiredItemHQ)
+        {
+            if (requiredItem == 0) return true;
+            return InventoryManager.Instance()->GetInventoryItemCount(requiredItem, requiredItemHQ) > 0;
+        }
     }
 }

@@ -3,6 +3,7 @@ using Artisan.CraftingLogic;
 using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
 using Dalamud.Hooking;
+using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
@@ -63,47 +64,55 @@ public unsafe static class PreCrafting
 
     private static void StartCrafting(Recipe recipe, bool trial)
     {
-        Svc.Log.Debug($"Starting {(trial ? "trial" : "real")} crafting: {recipe.RowId} '{recipe.ItemResult.Value?.Name}'");
-
-        var requiredClass = Job.CRP + recipe.CraftType.Row;
-        var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId);
-
-        bool needClassChange = requiredClass != CharacterInfo.JobID;
-        bool needEquipItem = recipe.ItemRequired.Row > 0 && (needClassChange || !IsItemEquipped(recipe.ItemRequired.Row));
-        // TODO: repair & extract materia
-        bool needConsumables = !ConsumableChecker.IsFooded(config) || !ConsumableChecker.IsPotted(config) || !ConsumableChecker.IsManualled(config) || !ConsumableChecker.IsSquadronManualled(config);
-
-        // handle errors when we're forbidden from rectifying them automatically
-        if (P.Config.DontEquipItems && needClassChange)
+        try
         {
-            DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: wrong class, {requiredClass} needed");
-            return;
-        }
-        if (P.Config.DontEquipItems && needEquipItem)
-        {
-            DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: required item {recipe.ItemRequired.Value?.Name} not equipped");
-            return;
-        }
-        if (P.Config.AbortIfNoFoodPot && needConsumables)
-        {
-            DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: required consumables not up");
-            return;
-        }
+            Svc.Log.Debug($"Starting {(trial ? "trial" : "real")} crafting: {recipe.RowId} '{recipe.ItemResult.Value?.Name}'");
 
-        bool needExitCraft = Crafting.CurState == Crafting.State.IdleBetween && (needClassChange || needEquipItem || needConsumables);
+            var requiredClass = Job.CRP + recipe.CraftType.Row;
+            var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId);
 
-        // TODO: pre-setup solver for incoming craft
-        _tasks.Clear();
-        if (needExitCraft)
-            _tasks.Add((TaskExitCraft, default));
-        if (needClassChange)
-            _tasks.Add((() => TaskClassChange(requiredClass), TimeSpan.FromMilliseconds(200))); // TODO: avoid delay and just wait until operation is done
-        if (needEquipItem)
-            _tasks.Add((() => TaskEquipItem(recipe.ItemRequired.Row), default));
-        if (needConsumables)
-            _tasks.Add((() => TaskUseConsumables(config), default));
-        _tasks.Add((() => TaskSelectRecipe(recipe), default));
-        _tasks.Add((() => TaskStartCraft(trial), default));
+            bool needClassChange = requiredClass != CharacterInfo.JobID;
+            bool needEquipItem = recipe.ItemRequired.Row > 0 && (needClassChange || !IsItemEquipped(recipe.ItemRequired.Row));
+            // TODO: repair & extract materia
+            bool needConsumables = !ConsumableChecker.IsFooded(config) || !ConsumableChecker.IsPotted(config) || !ConsumableChecker.IsManualled(config) || !ConsumableChecker.IsSquadronManualled(config);
+            bool hasConsumables = config != default ? ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) && ConsumableChecker.HasItem(config.RequiredManual, false) && ConsumableChecker.HasItem(config.RequiredSquadronManual, false) : true;
+
+            // handle errors when we're forbidden from rectifying them automatically
+            if (P.Config.DontEquipItems && needClassChange)
+            {
+                DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: wrong class, {requiredClass} needed");
+                return;
+            }
+            if (P.Config.DontEquipItems && needEquipItem)
+            {
+                DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: required item {recipe.ItemRequired.Value?.Name} not equipped");
+                return;
+            }
+            if (P.Config.AbortIfNoFoodPot && needConsumables && !hasConsumables)
+            {
+                DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: required consumables not up");
+                return;
+            }
+
+            bool needExitCraft = Crafting.CurState == Crafting.State.IdleBetween && (needClassChange || needEquipItem || needConsumables);
+
+            // TODO: pre-setup solver for incoming craft
+            _tasks.Clear();
+            if (needExitCraft)
+                _tasks.Add((TaskExitCraft, default));
+            if (needClassChange)
+                _tasks.Add((() => TaskClassChange(requiredClass), TimeSpan.FromMilliseconds(200))); // TODO: avoid delay and just wait until operation is done
+            if (needEquipItem)
+                _tasks.Add((() => TaskEquipItem(recipe.ItemRequired.Row), default));
+            if (needConsumables)
+                _tasks.Add((() => TaskUseConsumables(config), default));
+            _tasks.Add((() => TaskSelectRecipe(recipe), default));
+            _tasks.Add((() => TaskStartCraft(trial), default));
+        }
+        catch (Exception ex)
+        {
+            ex.Log();
+        }
     }
 
     private static TaskResult TaskExitCraft()

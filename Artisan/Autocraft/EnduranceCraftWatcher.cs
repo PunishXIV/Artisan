@@ -27,10 +27,18 @@ namespace Artisan.Autocraft
         {
             Svc.Log.Debug($"Craft Finished");
 
-            if (CraftingListUI.Processing && !CraftingListFunctions.Paused)
+            if (CraftingListUI.Processing)
             {
-                Svc.Log.Verbose("Advancing Crafting List");
-                CraftingListFunctions.CurrentIndex++;
+                if (!CraftingListFunctions.Paused && !cancelled)
+                {
+                    Svc.Log.Verbose("Advancing Crafting List");
+                    CraftingListFunctions.CurrentIndex++;
+                }
+                if (cancelled)
+                {
+                    CraftingListFunctions.Paused = true;
+                    CraftingListFunctions.CLTM.Abort();
+                }
             }
 
             if (Endurance.Enable)

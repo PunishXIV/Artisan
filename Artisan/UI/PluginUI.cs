@@ -163,11 +163,11 @@ namespace Artisan.UI
                             OpenWindow = OpenWindow.FCWorkshop;
                         }
                         ImGui.Spacing();
-                        if (ImGui.Selectable("Simulator", OpenWindow == OpenWindow.Simulator))
-                        {
-                            OpenWindow = OpenWindow.Simulator;
-                        }
-                        ImGui.Spacing();
+                        //if (ImGui.Selectable("Simulator", OpenWindow == OpenWindow.Simulator))
+                        //{
+                        //    OpenWindow = OpenWindow.Simulator;
+                        //}
+                        //ImGui.Spacing();
                         if (ImGui.Selectable("About", OpenWindow == OpenWindow.About))
                         {
                             OpenWindow = OpenWindow.About;
@@ -508,6 +508,15 @@ namespace Artisan.UI
                         P.Config.Save();
                     }
                 }
+
+                bool requireFoodPot = P.Config.AbortIfNoFoodPot;
+                if (ImGui.Checkbox("Enforce Consumables", ref requireFoodPot))
+                {
+                    P.Config.AbortIfNoFoodPot = requireFoodPot;
+                    P.Config.Save();
+                }
+                ImGuiComponents.HelpMarker("Artisan will require the configured food, manuals or medicine and refuse to craft if it cannot be found.");
+
 
                 bool requestStop = P.Config.RequestToStopDuty;
                 bool requestResume = P.Config.RequestToResumeDuty;
