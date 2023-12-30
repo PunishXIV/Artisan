@@ -50,22 +50,16 @@ public static unsafe class Operations
             if (addonPtr == null)
                 return;
 
-            try
+            if (Throttler.Throttle(100))
             {
-                if (Throttler.Throttle(100))
+                var quickSynthWindow = (AtkUnitBase*)Svc.GameGui.GetAddonByName("SynthesisSimpleDialog", 1);
+                if (quickSynthWindow == null)
                 {
-                    PreCrafting._clickQuickSynthesisButtonHook?.Disable();
-                    ClickRecipeNote.Using(recipeWindow).QuickSynthesis();
-                    PreCrafting._clickQuickSynthesisButtonHook?.Enable();
-                  
-                    var quickSynthPTR = Svc.GameGui.GetAddonByName("SynthesisSimpleDialog", 1);
-                    if (quickSynthPTR == nint.Zero)
-                        return;
-
-                    var quickSynthWindow = (AtkUnitBase*)quickSynthPTR;
-                    if (quickSynthWindow == null)
-                        return;
-
+                    Svc.Log.Debug($"Starting quick craft");
+                    Callback.Fire(&addon->AtkUnitBase, true, 9);
+                }
+                else
+                {
                     var values = stackalloc AtkValue[2];
                     values[0] = new()
                     {
@@ -77,17 +71,9 @@ public static unsafe class Operations
                         Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool,
                         Byte = 1,
                     };
-
                     Callback.Fire(quickSynthWindow, true, values[0], values[1]);
-
-                    Crafting.Update();
                 }
             }
-            catch (Exception e)
-            {
-                e.Log();
-            }
-
         }
         catch (Exception ex)
         {

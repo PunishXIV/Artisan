@@ -336,6 +336,7 @@ public static unsafe class Crafting
         if (Svc.Condition[ConditionFlag.PreparingToCraft])
         {
             UpdateQuickSynthState((0, 0));
+            CurRecipe = null;
             return State.IdleBetween; // exit quick-craft menu
         }
         else
@@ -528,8 +529,8 @@ public static unsafe class Crafting
                     Svc.Log.Error($"Unexpected state {CurState} when receiving {*payload} message");
                 var quickSynthPayload = (CraftingEventHandler.QuickSynthStart*)payload;
                 Svc.Log.Debug($"Starting quicksynth: recipe #{quickSynthPayload->RecipeId}, count {quickSynthPayload->MaxCount}");
-                //if (CurRecipe != null)
-                //    Svc.Log.Error($"Unexpected non-null recipe when receiving {*payload} message");
+                if (CurRecipe != null)
+                    Svc.Log.Error($"Unexpected non-null recipe when receiving {*payload} message");
                 CurRecipe = Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.Recipe>()?.GetRow(quickSynthPayload->RecipeId);
                 if (CurRecipe == null)
                     Svc.Log.Error($"Failed to find recipe #{quickSynthPayload->RecipeId}");

@@ -30,10 +30,11 @@ public unsafe static class PreCrafting
     public enum CraftType { Normal, Quick, Trial }
 
     private static int equipAttemptLoops = 0;
-    public delegate void ClickSynthesisButton(void* a1, void* a2);
+
+    private delegate void ClickSynthesisButton(void* a1, void* a2);
     private static Hook<ClickSynthesisButton> _clickNormalSynthesisButtonHook;
-    public static Hook<ClickSynthesisButton> _clickQuickSynthesisButtonHook;
-    public static Hook<ClickSynthesisButton> _clickTrialSynthesisButtonHook;
+    private static Hook<ClickSynthesisButton> _clickQuickSynthesisButtonHook;
+    private static Hook<ClickSynthesisButton> _clickTrialSynthesisButtonHook;
 
     private enum TaskResult { Done, Retry, Abort }
     private static List<(Func<TaskResult> task, TimeSpan retryDelay)> _tasks = new();
@@ -122,6 +123,7 @@ public unsafe static class PreCrafting
             
             // TODO: pre-setup solver for incoming craft
             _tasks.Clear();
+            _nextRetry = default;
             if (needExitCraft)
                 _tasks.Add((TaskExitCraft, default));
             if (needClassChange)
@@ -135,7 +137,8 @@ public unsafe static class PreCrafting
                 _tasks.Add((() => TaskUseConsumables(config, type), default));
             _tasks.Add((() => TaskSelectRecipe(recipe), default));
             _tasks.Add((() => TaskStartCraft(type), default));
-            Crafting.Update();
+
+            Update();
         }
         catch (Exception ex)
         {
