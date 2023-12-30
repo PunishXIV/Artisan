@@ -690,61 +690,6 @@ namespace Artisan.UI.Tables
             }
         }
 
-        private void DrawCraftThisItem(Ingredient item)
-        {
-            if (item.Data.RowId == 0 || !item.CanBeCrafted)
-                return;
-
-            if (item.TotalCraftable == 0)
-            {
-                using var disabled = ImRaii.Disabled();
-            }
-
-
-            if (ImGui.GetIO().KeyShift)
-            {
-                if (ImGui.Selectable("Craft this Item (Buffless)"))
-                {
-                    Endurance.RecipeID = item.CraftedRecipe.RowId;
-                }
-
-                ImGuiComponents.HelpMarker("Starts crafting this item skipping applying food/potion buffs.");
-                return;
-            }
-
-            if (ImGui.GetIO().KeyCtrl)
-            {
-                bool disabled = !item.CraftedRecipe.CanQuickSynth;
-
-                if (disabled)
-                    ImGui.BeginDisabled();
-
-                if (ImGui.Selectable("Craft this Item (Quick Synth)"))
-                {
-                    P.TM.Enqueue(() => CraftingListFunctions.OpenRecipeByID(item.CraftedRecipe.RowId));
-                    P.TM.Enqueue(() => CraftingListFunctions.SwitchJobGearset(item.CraftedRecipe.CraftType.Row + 8));
-                    P.TM.Enqueue(() => Operations.QuickSynthItem(item.Required));
-                }
-
-                ImGuiComponents.HelpMarker("Quick Synths up to the required amount.");
-
-                if (disabled)
-                    ImGui.EndDisabled();
-
-                return;
-            }
-
-
-            if (ImGui.Selectable("Craft this Item"))
-            {
-                Endurance.RecipeID = item.CraftedRecipe.RowId;
-            }
-
-            ImGuiComponents.HelpMarker("Hold Shift to craft without applying food/potion buffs.\r\nHold Ctrl to quick synth this item.");
-
-
-        }
-
         private void DrawRestockFromRetainer(Ingredient item)
         {
             if (item.Data.RowId == 0 || item.RetainerCount == 0 || item.Required <= item.Inventory)

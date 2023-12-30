@@ -209,7 +209,7 @@ namespace Artisan.CraftingLists
                         var recipe = LuminaSheets.RecipeSheet?.Where(x => x.Value.ItemResult.Row > 0 && x.Value.ItemResult.Value.Name.RawString == item).Select(x => x.Value).FirstOrDefault();
                         if (recipe is not null)
                         {
-                            for (int i = 1; i <= Math.Ceiling((double)numberOfItem / (double)recipe.AmountResult); i++)
+                            for (int i = 1; i <= Math.Ceiling(numberOfItem / (double)recipe.AmountResult); i++)
                             {
                                 output.Items.Add(recipe.RowId);
                             }
@@ -244,7 +244,7 @@ namespace Artisan.CraftingLists
                         var recipe = LuminaSheets.RecipeSheet?.Where(x => x.Value.ItemResult.Row > 0 && x.Value.ItemResult.Value.Name.RawString == item).Select(x => x.Value).FirstOrDefault();
                         if (recipe is not null)
                         {
-                            for (int i = 1; i <= Math.Ceiling((double)numberOfItem / (double)recipe.AmountResult); i++)
+                            for (int i = 1; i <= Math.Ceiling(numberOfItem / (double)recipe.AmountResult); i++)
                             {
                                 output.Items.Add(recipe.RowId);
                             }

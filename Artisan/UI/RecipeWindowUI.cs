@@ -529,7 +529,7 @@ namespace Artisan
             }
             bool enable = Endurance.Enable;
 
-            if (!CraftingListFunctions.HasItemsForRecipe((uint)Endurance.RecipeID))
+            if (!CraftingListFunctions.HasItemsForRecipe(Endurance.RecipeID))
                 ImGui.BeginDisabled();
 
             if (ImGui.Checkbox("Endurance Mode Toggle", ref enable))
@@ -537,7 +537,7 @@ namespace Artisan
                 Endurance.ToggleEndurance(enable);
             }
 
-            if (!CraftingListFunctions.HasItemsForRecipe((uint)Endurance.RecipeID))
+            if (!CraftingListFunctions.HasItemsForRecipe(Endurance.RecipeID))
             {
                 ImGui.EndDisabled();
 

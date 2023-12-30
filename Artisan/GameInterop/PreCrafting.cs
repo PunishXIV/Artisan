@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.GameInterop.CSExt;
 using Artisan.IPC;
@@ -18,6 +19,8 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
+using static ECommons.GenericHelpers;
 
 namespace Artisan.GameInterop;
 
@@ -26,10 +29,11 @@ public unsafe static class PreCrafting
 {
     public enum CraftType { Normal, Quick, Trial }
 
-    private delegate void ClickSynthesisButton(void* a1, void* a2);
+    private static int equipAttemptLoops = 0;
+    public delegate void ClickSynthesisButton(void* a1, void* a2);
     private static Hook<ClickSynthesisButton> _clickNormalSynthesisButtonHook;
-    private static Hook<ClickSynthesisButton> _clickQuickSynthesisButtonHook;
-    private static Hook<ClickSynthesisButton> _clickTrialSynthesisButtonHook;
+    public static Hook<ClickSynthesisButton> _clickQuickSynthesisButtonHook;
+    public static Hook<ClickSynthesisButton> _clickTrialSynthesisButtonHook;
 
     private enum TaskResult { Done, Retry, Abort }
     private static List<(Func<TaskResult> task, TimeSpan retryDelay)> _tasks = new();
@@ -85,6 +89,7 @@ public unsafe static class PreCrafting
             var requiredClass = Job.CRP + recipe.CraftType.Row;
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId);
 
+            bool hasIngredients = GetNumberCraftable(recipe) > 0;
             bool needClassChange = requiredClass != CharacterInfo.JobID;
             bool needEquipItem = recipe.ItemRequired.Row > 0 && (needClassChange || !IsItemEquipped(recipe.ItemRequired.Row));
             // TODO: repair & extract materia
@@ -92,6 +97,11 @@ public unsafe static class PreCrafting
             bool hasConsumables = config != default ? ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) && ConsumableChecker.HasItem(config.RequiredManual, false) && ConsumableChecker.HasItem(config.RequiredSquadronManual, false) : true;
 
             // handle errors when we're forbidden from rectifying them automatically
+            if (!hasIngredients && type != CraftType.Trial)
+            {
+                DuoLog.Error($"Not all ingredients for {recipe.ItemResult.Value?.Name} found.");
+                return;
+            }
             if (P.Config.DontEquipItems && needClassChange)
             {
                 DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: wrong class, {requiredClass} needed");
@@ -109,7 +119,7 @@ public unsafe static class PreCrafting
             }
 
             bool needExitCraft = Crafting.CurState == Crafting.State.IdleBetween && (needClassChange || needEquipItem || needConsumables);
-
+            
             // TODO: pre-setup solver for incoming craft
             _tasks.Clear();
             if (needExitCraft)
@@ -117,16 +127,31 @@ public unsafe static class PreCrafting
             if (needClassChange)
                 _tasks.Add((() => TaskClassChange(requiredClass), TimeSpan.FromMilliseconds(200))); // TODO: avoid delay and just wait until operation is done
             if (needEquipItem)
+            {
+                equipAttemptLoops = 0;
                 _tasks.Add((() => TaskEquipItem(recipe.ItemRequired.Row), default));
+            }
             if (needConsumables)
-                _tasks.Add((() => TaskUseConsumables(config), default));
+                _tasks.Add((() => TaskUseConsumables(config, type), default));
             _tasks.Add((() => TaskSelectRecipe(recipe), default));
             _tasks.Add((() => TaskStartCraft(type), default));
+            Crafting.Update();
         }
         catch (Exception ex)
         {
             ex.Log();
         }
+    }
+
+    private static int GetNumberCraftable(Recipe recipe)
+    {
+        if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon))
+        {
+            var output = int.Parse(addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory->NodeText.ToString());
+            return output;
+        }
+        Svc.Log.Debug($"Recipe Window not open?");
+        return 0;
     }
 
     private static TaskResult TaskExitCraft()
@@ -195,17 +220,29 @@ public unsafe static class PreCrafting
                 if (firstEntryIsEquip)
                 {
                     Svc.Log.Debug($"Equipping item #{itemId} from {pos.Value.inv} @ {pos.Value.slot}, index {i}");
-                    Callback.Fire(contextMenu, true, 0, firstEntryIsEquip ? i - 7 : -1, 0, 0, 0); // p2=-1 is close, p2=0 is exec first command
+                    Callback.Fire(contextMenu, true, 0, i - 7, 0, 0, 0); // p2=-1 is close, p2=0 is exec first command
                 }
+            }
+            Callback.Fire(contextMenu, true, 0, -1, 0, 0, 0);
+            equipAttemptLoops++;
+
+            if (equipAttemptLoops >= 5)
+            {
+                DuoLog.Error($"Equip option not found after 5 attempts. Aborting.");
+                return TaskResult.Abort;
             }
         }
         return TaskResult.Retry;
     }
 
-    private static TaskResult TaskUseConsumables(RecipeConfig? config)
+    private static TaskResult TaskUseConsumables(RecipeConfig? config, CraftType type)
     {
         if (ActionManagerEx.AnimationLock > 0)
             return TaskResult.Retry; // waiting for animation lock to end
+
+        if ((!P.Config.UseConsumablesQuickSynth && type == CraftType.Quick) ||
+            (!P.Config.UseConsumablesTrial && type == CraftType.Trial))
+            return TaskResult.Done;
 
         if (!ConsumableChecker.IsFooded(config))
         {

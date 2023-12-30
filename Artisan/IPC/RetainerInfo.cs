@@ -415,7 +415,7 @@ namespace Artisan.IPC
 
             foreach (var material in materialList.OrderByDescending(x => x.Key))
             {
-                var invCount = CraftingListUI.NumberOfIngredient((uint)material.Key);
+                var invCount = CraftingListUI.NumberOfIngredient(material.Key);
                 if (invCount < material.Value)
                 {
                     var diffcheck = material.Value - invCount;
@@ -423,7 +423,7 @@ namespace Artisan.IPC
                 }
 
                 //Refresh retainer cache if empty
-                GetRetainerItemCount((uint)material.Key);
+                GetRetainerItemCount(material.Key);
             }
 
             if (RetainerData.SelectMany(x => x.Value).Any(x => requiredItems.Any(y => y.Key == x.Value.ItemID)))

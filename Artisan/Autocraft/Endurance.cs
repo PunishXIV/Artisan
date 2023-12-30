@@ -43,7 +43,7 @@ namespace Artisan.Autocraft
 
         internal static List<int>? HQData = null;
 
-        internal static uint RecipeID = 0;
+        internal static ushort RecipeID = 0;
 
         internal static EnduranceIngredients[] SetIngredients = new EnduranceIngredients[6];
 
@@ -94,7 +94,7 @@ namespace Artisan.Autocraft
             }
             else
             {
-                if (!CraftingListFunctions.HasItemsForRecipe((uint)RecipeID))
+                if (!CraftingListFunctions.HasItemsForRecipe(RecipeID))
                     ImGui.BeginDisabled();
 
                 if (ImGui.Checkbox("Enable Endurance Mode", ref enable))
@@ -102,7 +102,7 @@ namespace Artisan.Autocraft
                     ToggleEndurance(enable);
                 }
 
-                if (!CraftingListFunctions.HasItemsForRecipe((uint)RecipeID))
+                if (!CraftingListFunctions.HasItemsForRecipe(RecipeID))
                 {
                     ImGui.EndDisabled();
 
@@ -116,7 +116,7 @@ namespace Artisan.Autocraft
 
                 ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
 
-                ImGuiEx.Text($"Recipe: {RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.ClassJobSheet[LuminaSheets.RecipeSheet[(uint)RecipeID].CraftType.Row + 8].Abbreviation})" : "")}");
+                ImGuiEx.Text($"Recipe: {RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.ClassJobSheet[LuminaSheets.RecipeSheet[RecipeID].CraftType.Row + 8].Abbreviation})" : "")}");
             }
             
             bool repairs = P.Config.Repair;

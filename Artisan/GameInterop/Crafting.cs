@@ -205,7 +205,9 @@ public static unsafe class Crafting
     private static State TransitionFromIdleNormal()
     {
         if (Svc.Condition[ConditionFlag.Crafting40])
+        {
             return State.WaitStart; // craft started, but we don't yet know details
+        }
 
         if (Svc.Condition[ConditionFlag.PreparingToCraft])
         {
@@ -319,6 +321,7 @@ public static unsafe class Crafting
         if (Svc.Condition[ConditionFlag.Crafting40])
             return State.WaitFinish; // transition still in progress
 
+        Svc.Log.Debug($"Resetting");
         _predictedNextStep = null;
         _predictionDeadline = default;
         CurRecipe = null;
@@ -467,7 +470,7 @@ public static unsafe class Crafting
                 // transition (Crafting40) is set slightly earlier by client when aborting the craft
                 // actual craft state (Crafting) is cleared several seconds later
                 // currently we rely on addon disappearing to detect aborts (for robustness), it can happen either before or after Abort message
-                if (CurState is not State.WaitAction and not State.WaitFinish)
+                if (CurState is not State.WaitAction and not State.WaitFinish and not State.IdleBetween)
                     Svc.Log.Error($"Unexpected state {CurState} when receiving {*payload} message");
                 if (_predictedNextStep != null)
                     Svc.Log.Error($"Unexpected non-null predicted-next when receiving {*payload} message");
@@ -525,8 +528,8 @@ public static unsafe class Crafting
                     Svc.Log.Error($"Unexpected state {CurState} when receiving {*payload} message");
                 var quickSynthPayload = (CraftingEventHandler.QuickSynthStart*)payload;
                 Svc.Log.Debug($"Starting quicksynth: recipe #{quickSynthPayload->RecipeId}, count {quickSynthPayload->MaxCount}");
-                if (CurRecipe != null)
-                    Svc.Log.Error($"Unexpected non-null recipe when receiving {*payload} message");
+                //if (CurRecipe != null)
+                //    Svc.Log.Error($"Unexpected non-null recipe when receiving {*payload} message");
                 CurRecipe = Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.Recipe>()?.GetRow(quickSynthPayload->RecipeId);
                 if (CurRecipe == null)
                     Svc.Log.Error($"Failed to find recipe #{quickSynthPayload->RecipeId}");

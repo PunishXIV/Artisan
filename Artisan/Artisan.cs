@@ -329,7 +329,7 @@ public unsafe class Artisan : IDalamudPlugin
                         DuoLog.Error("Cannot start endurance without setting a recipe.");
                         return;
                     }
-                    if (!CraftingListFunctions.HasItemsForRecipe((uint)Endurance.RecipeID))
+                    if (!CraftingListFunctions.HasItemsForRecipe(Endurance.RecipeID))
                     {
                         DuoLog.Error("Cannot start endurance as you do not possess all ingredients for your recipe in your inventory.");
                         return;

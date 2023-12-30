@@ -52,10 +52,12 @@ public static unsafe class Operations
 
             try
             {
-                if (Throttler.Throttle(500))
+                if (Throttler.Throttle(100))
                 {
+                    PreCrafting._clickQuickSynthesisButtonHook?.Disable();
                     ClickRecipeNote.Using(recipeWindow).QuickSynthesis();
-
+                    PreCrafting._clickQuickSynthesisButtonHook?.Enable();
+                  
                     var quickSynthPTR = Svc.GameGui.GetAddonByName("SynthesisSimpleDialog", 1);
                     if (quickSynthPTR == nint.Zero)
                         return;
@@ -76,11 +78,10 @@ public static unsafe class Operations
                         Byte = 1,
                     };
 
-                    quickSynthWindow->FireCallback(3, values);
+                    Callback.Fire(quickSynthWindow, true, values[0], values[1]);
 
+                    Crafting.Update();
                 }
-
-
             }
             catch (Exception e)
             {

@@ -14,6 +14,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using FFXIVClientStructs.FFXIV.Common.Lua;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
@@ -160,7 +161,7 @@ namespace Artisan.CraftingLists
             var isCrafting = Svc.Condition[ConditionFlag.Crafting];
             var preparing = Svc.Condition[ConditionFlag.PreparingToCraft];
             Materials ??= selectedList.ListMaterials();
-
+           
             if (Paused)
             {
                 return;
@@ -179,7 +180,7 @@ namespace Artisan.CraftingLists
                 CLTM.Enqueue(() => CloseCraftingMenu(), "EndOfListCloseMenu");
 
                 if (P.Config.PlaySoundFinishList)
-                Sounds.SoundPlayer.PlaySound();
+                    Sounds.SoundPlayer.PlaySound();
                 return;
             }
 
@@ -532,9 +533,9 @@ namespace Artisan.CraftingLists
         {
             try
             {
-                if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon) && 
-                    addon->AtkUnitBase.IsVisible && 
-                    AgentRecipeNote.Instance() != null && 
+                if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon) &&
+                    addon->AtkUnitBase.IsVisible &&
+                    AgentRecipeNote.Instance() != null &&
                     RaptureAtkModule.Instance()->AtkModule.IsAddonReady(AgentRecipeNote.Instance()->AgentInterface.AddonId))
                 {
                     if (setIngredients == null)
@@ -562,7 +563,7 @@ namespace Artisan.CraftingLists
                                     {
                                         btn->ClickAddonButton((AtkComponentBase*)addon, 4);
                                     }
-                                    catch(Exception ex)
+                                    catch (Exception ex)
                                     {
                                         ex.Log();
                                     }

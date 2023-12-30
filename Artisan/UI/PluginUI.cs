@@ -517,6 +517,15 @@ namespace Artisan.UI
                 }
                 ImGuiComponents.HelpMarker("Artisan will require the configured food, manuals or medicine and refuse to craft if it cannot be found.");
 
+                if (ImGui.Checkbox("Use Consumables for Trial Crafts", ref P.Config.UseConsumablesTrial))
+                {
+                    P.Config.Save();
+                }
+
+                if (ImGui.Checkbox("Use Consumables for Quick Synth Crafts", ref P.Config.UseConsumablesQuickSynth))
+                {
+                    P.Config.Save();
+                }
 
                 bool requestStop = P.Config.RequestToStopDuty;
                 bool requestResume = P.Config.RequestToResumeDuty;
