@@ -599,14 +599,16 @@ namespace Artisan
                     ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, $@"Warning: You have the ""Auto Focus Recipe Search"" SimpleTweak enabled. This is highly incompatible with Artisan and is recommended to disable it.");
                 }
                 if (Endurance.RecipeID != 0)
-                {
+                { 
                     var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
+                    ImGuiEx.ImGuiLineCentered("###RecipeWindowRecipeName", () => { ImGuiEx.TextUnderlined($"{recipe.ItemResult.Value.Name}"); });
                     var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
                     var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.Row);
                     stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
                     var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.Row, recipe);
                     if (config.Draw(craft))
                     {
+                        Svc.Log.Debug($"Updating config for {recipe.RowId}");
                         P.Config.RecipeConfigs[recipe.RowId] = config;
                         P.Config.Save();
                     }
@@ -624,7 +626,7 @@ namespace Artisan
                         {
                             var breakpointHit = SolverUtils.EstimateCollectibleThreshold(solver, craft, startingQuality);
                             if (breakpointHit == "Fail")
-                                ImGuiEx.Text(ImGuiColors.DalamudRed, $"This solver will fail.");
+                                ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, $"This solver will fail.");
                             else
                             {
                                 Vector4 c = progress ? breakpointHit switch
@@ -635,7 +637,7 @@ namespace Artisan
                                     _ => ImGuiColors.DalamudRed
                                 } : ImGuiColors.DalamudRed;
 
-                                ImGuiEx.Text(c, $"This solver will hit the {breakpointHit} threshold {(progress ? "and will complete" : "but will not complete")} the craft in {time.TotalSeconds:f0}s.");
+                                ImGuiEx.TextWrapped(c, $"This solver will hit the {breakpointHit} threshold {(progress ? "and will complete" : "but will not complete")} the craft in {time.TotalSeconds:f0}s.");
                             }
                         }
                         else
@@ -643,7 +645,7 @@ namespace Artisan
                             var q = SolverUtils.EstimateQualityPercent(solver, craft, startingQuality);
                             var hq = Calculations.GetHQChance(q);
                             var c = progress ? new Vector4(1 - (hq / 100f), 0 + (hq / 100f), 1 - (hq / 100f), 255) : ImGuiColors.DalamudRed;
-                            ImGuiEx.Text(c, $"This solver will HQ {hq}% of the time ({q:f0}% quality) {(progress ? "and will complete" : "but will not complete")} the craft in {time.TotalSeconds:f0}s.");
+                            ImGuiEx.TextWrapped(c, $"This solver will HQ {hq}% of the time ({q:f0}% quality) {(progress ? "and will complete" : "but will not complete")} the craft in {time.TotalSeconds:f0}s.");
                         }
                     }
 

@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
 using System.Linq;
@@ -32,7 +33,7 @@ public class RecipeConfig
         bool changed = false;
         ImGuiEx.TextV("Food Usage:");
         ImGui.SameLine(200f.Scale());
-        ImGuiEx.SetNextItemFullWidth(widthHint);
+        //ImGuiEx.SetNextItemFullWidth(widthHint);
         if (ImGui.BeginCombo("##foodBuff", RequiredFood == 0 ? "Disabled" : $"{(RequiredFoodHQ ? " " : "")}{ConsumableChecker.Food.FirstOrDefault(x => x.Id == RequiredFood).Name}"))
         {
             if (ImGui.Selectable("Disable"))
@@ -69,7 +70,7 @@ public class RecipeConfig
         bool changed = false;
         ImGuiEx.TextV("Medicine Usage:");
         ImGui.SameLine(200f.Scale());
-        ImGuiEx.SetNextItemFullWidth(widthHint);
+        //ImGuiEx.SetNextItemFullWidth(widthHint);
         if (ImGui.BeginCombo("##potBuff", RequiredPotion == 0 ? "Disabled" : $"{(RequiredPotionHQ ? " " : "")}{ConsumableChecker.Pots.FirstOrDefault(x => x.Id == RequiredPotion).Name}"))
         {
             if (ImGui.Selectable("Disable"))
@@ -106,7 +107,7 @@ public class RecipeConfig
         bool changed = false;
         ImGuiEx.TextV("Manual Usage:");
         ImGui.SameLine(200f.Scale());
-        ImGuiEx.SetNextItemFullWidth(widthHint);
+        //ImGuiEx.SetNextItemFullWidth(widthHint);
         if (ImGui.BeginCombo("##manualBuff", RequiredManual == 0 ? "Disabled" : $"{ConsumableChecker.Manuals.FirstOrDefault(x => x.Id == RequiredManual).Name}"))
         {
             if (ImGui.Selectable("Disable"))
@@ -132,7 +133,7 @@ public class RecipeConfig
         bool changed = false;
         ImGuiEx.TextV("Squadron Manual Usage:");
         ImGui.SameLine(200f.Scale());
-        ImGuiEx.SetNextItemFullWidth(widthHint);
+        //ImGuiEx.SetNextItemFullWidth(widthHint);
         if (ImGui.BeginCombo("##squadronManualBuff", RequiredSquadronManual == 0 ? "Disabled" : $"{ConsumableChecker.SquadronManuals.FirstOrDefault(x => x.Id == RequiredSquadronManual).Name}"))
         {
             if (ImGui.Selectable("Disable"))
@@ -158,7 +159,7 @@ public class RecipeConfig
         bool changed = false;
         ImGuiEx.TextV($"Solver:");
         ImGui.SameLine(200f.Scale());
-        ImGuiEx.SetNextItemFullWidth(widthHint);
+        //ImGuiEx.SetNextItemFullWidth(widthHint);
         var solver = CraftingProcessor.GetSolverForRecipe(this, craft);
         if (ImGui.BeginCombo("##solver", solver.Name))
         {
