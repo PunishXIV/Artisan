@@ -23,8 +23,12 @@ namespace Artisan.GameInterop;
 // manages 'outer loop' of crafting (equipping correct items, using consumables, etc, and finally initiating crafting)
 public unsafe static class PreCrafting
 {
+    public enum CraftType { Normal, Quick, Trial }
+
     private delegate void ClickSynthesisButton(void* a1, void* a2);
-    private static Hook<ClickSynthesisButton> _clickSynthesisButtonHook;
+    private static Hook<ClickSynthesisButton> _clickNormalSynthesisButtonHook;
+    private static Hook<ClickSynthesisButton> _clickQuickSynthesisButtonHook;
+    private static Hook<ClickSynthesisButton> _clickTrialSynthesisButtonHook;
 
     private enum TaskResult { Done, Retry, Abort }
     private static List<(Func<TaskResult> task, TimeSpan retryDelay)> _tasks = new();
@@ -32,13 +36,21 @@ public unsafe static class PreCrafting
 
     static PreCrafting()
     {
-        _clickSynthesisButtonHook = Svc.Hook.HookFromSignature<ClickSynthesisButton>("E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 33 D2", ClickSynthesisButtonDetour);
-        _clickSynthesisButtonHook.Enable();
+        _clickNormalSynthesisButtonHook = Svc.Hook.HookFromSignature<ClickSynthesisButton>("E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 33 D2", ClickNormalSynthesisButtonDetour);
+        _clickNormalSynthesisButtonHook.Enable();
+
+        _clickQuickSynthesisButtonHook = Svc.Hook.HookFromSignature<ClickSynthesisButton>("E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 33 D2 49 8B CA E8 ?? ?? ?? ?? 83 CA FF", ClickQuickSynthesisButtonDetour);
+        _clickQuickSynthesisButtonHook.Enable();
+
+        _clickTrialSynthesisButtonHook = Svc.Hook.HookFromSignature<ClickSynthesisButton>("E9 ?? ?? ?? ?? 33 D2 49 8B CA E8 ?? ?? ?? ?? 83 CA FF", ClickTrialSynthesisButtonDetour);
+        _clickTrialSynthesisButtonHook.Enable();
     }
 
     public static void Dispose()
     {
-        _clickSynthesisButtonHook.Dispose();
+        _clickNormalSynthesisButtonHook.Dispose();
+        _clickQuickSynthesisButtonHook.Dispose();
+        _clickTrialSynthesisButtonHook.Dispose();
     }
 
     public static void Update()
@@ -63,11 +75,11 @@ public unsafe static class PreCrafting
         }
     }
 
-    private static void StartCrafting(Recipe recipe, bool trial)
+    private static void StartCrafting(Recipe recipe, CraftType type)
     {
         try
         {
-            Svc.Log.Debug($"Starting {(trial ? "trial" : "real")} crafting: {recipe.RowId} '{recipe.ItemResult.Value?.Name}'");
+            Svc.Log.Debug($"Starting {type} crafting: {recipe.RowId} '{recipe.ItemResult.Value?.Name}'");
 
             var requiredClass = Job.CRP + recipe.CraftType.Row;
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId);
@@ -108,7 +120,7 @@ public unsafe static class PreCrafting
             if (needConsumables)
                 _tasks.Add((() => TaskUseConsumables(config), default));
             _tasks.Add((() => TaskSelectRecipe(recipe), default));
-            _tasks.Add((() => TaskStartCraft(trial), default));
+            _tasks.Add((() => TaskStartCraft(type), default));
         }
         catch (Exception ex)
         {
@@ -266,14 +278,14 @@ public unsafe static class PreCrafting
         return TaskResult.Retry;
     }
 
-    private static TaskResult TaskStartCraft(bool trial)
+    private static TaskResult TaskStartCraft(CraftType type)
     {
         var addon = (AddonRecipeNote*)Svc.GameGui.GetAddonByName("RecipeNote");
         if (addon == null)
             return TaskResult.Retry;
 
-        Svc.Log.Debug($"Starting {(trial ? "trial" : "real")} craft");
-        Callback.Fire(&addon->AtkUnitBase, true, trial ? 10 : 8);
+        Svc.Log.Debug($"Starting {type} craft");
+        Callback.Fire(&addon->AtkUnitBase, true, 8 + (int)type);
         return TaskResult.Done;
     }
 
@@ -295,12 +307,29 @@ public unsafe static class PreCrafting
         return null;
     }
 
-    private static void ClickSynthesisButtonDetour(void* a1, void* a2)
+    private static void ClickNormalSynthesisButtonDetour(void* a1, void* a2)
     {
         var rd = RecipeNoteRecipeData.Ptr();
         var re = rd != null && rd->Recipes != null ? rd->Recipes + rd->SelectedIndex : null;
         var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
         if (recipe != null)
-            StartCrafting(recipe, false);
+            StartCrafting(recipe, CraftType.Normal);
+    }
+
+    private static void ClickQuickSynthesisButtonDetour(void* a1, void* a2)
+    {
+        var rd = RecipeNoteRecipeData.Ptr();
+        var re = rd != null && rd->Recipes != null ? rd->Recipes + rd->SelectedIndex : null;
+        var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
+        if (recipe != null)
+            StartCrafting(recipe, CraftType.Quick);
+    }
+    private static void ClickTrialSynthesisButtonDetour(void* a1, void* a2)
+    {
+        var rd = RecipeNoteRecipeData.Ptr();
+        var re = rd != null && rd->Recipes != null ? rd->Recipes + rd->SelectedIndex : null;
+        var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
+        if (recipe != null)
+            StartCrafting(recipe, CraftType.Trial);
     }
 }

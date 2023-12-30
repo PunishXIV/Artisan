@@ -54,7 +54,7 @@ public static class Simulator
         {
             if (next.Quality != step.Quality)
                 ++next.IQStacks;
-            if (action is Skills.PreciseTouch or Skills.PreparatoryTouch or Skills.Reflect or Skills.TrainedEye)
+            if (action is Skills.PreciseTouch or Skills.PreparatoryTouch or Skills.Reflect)
                 ++next.IQStacks;
             if (next.IQStacks > 10)
                 next.IQStacks = 10;
@@ -82,8 +82,6 @@ public static class Simulator
 
         if (step.FinalAppraisalLeft > 0 && next.Progress >= craft.CraftProgress)
             next.Progress = craft.CraftProgress - 1;
-        if (action == Skills.TrainedEye)
-            next.Quality = craft.CraftQualityMax;
 
         next.RemainingCP = step.RemainingCP - GetCPCost(step, action);
         if (action == Skills.TricksOfTrade) // can't fail
@@ -279,6 +277,9 @@ public static class Simulator
 
     public static int CalculateQuality(CraftState craft, StepState step, Skills action)
     {
+        if (action == Skills.TrainedEye)
+            return craft.CraftQualityMax;
+
         int potency = action switch
         {
             Skills.BasicTouch => 100,
