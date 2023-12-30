@@ -221,7 +221,7 @@ namespace Artisan.Autocraft
                             return;
 
                         var rd = RecipeNoteRecipeData.Ptr();
-                        if (rd == null || rd->Recipes == null)
+                        if (rd == null || rd->Recipes == null || rd->SelectedIndex >= rd->RecipesCount)
                         {
                             RecipeID = 0;
                             return;
