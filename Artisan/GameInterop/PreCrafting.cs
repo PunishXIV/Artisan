@@ -2,6 +2,7 @@
 using Artisan.CraftingLogic;
 using Artisan.GameInterop.CSExt;
 using Artisan.IPC;
+using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Hooking;
 using ECommons;
@@ -176,7 +177,7 @@ public unsafe static class PreCrafting
         var pos = FindItemInInventory(itemId, [InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3, InventoryType.Inventory4, InventoryType.ArmoryMainHand, InventoryType.ArmoryHands]);
         if (pos == null)
         {
-            Svc.Log.Error($"Failed to find item #{itemId} in inventory");
+            DuoLog.Error($"Failed to find item {LuminaSheets.ItemSheet[itemId].Name} (ID: {itemId}) in inventory");
             return TaskResult.Abort;
         }
 
@@ -188,10 +189,15 @@ public unsafe static class PreCrafting
         var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu");
         if (contextMenu != null)
         {
-            var firstEntryIsEquip = ctx->EventIdSpan[7] == 25; // i'th entry will fire eventid 7+i; eventid 25 is 'equip'
-            if (firstEntryIsEquip)
-                Svc.Log.Debug($"Equipping item #{itemId} from {pos.Value.inv} @ {pos.Value.slot}");
-            Callback.Fire(contextMenu, true, 0, firstEntryIsEquip ? 0 : -1, 0, 0, 0); // p2=-1 is close, p2=0 is exec first command
+            for (int i = 0; i < contextMenu->AtkValuesCount; i++)
+            {
+                var firstEntryIsEquip = ctx->EventIdSpan[i] == 25; // i'th entry will fire eventid 7+i; eventid 25 is 'equip'
+                if (firstEntryIsEquip)
+                {
+                    Svc.Log.Debug($"Equipping item #{itemId} from {pos.Value.inv} @ {pos.Value.slot}, index {i}");
+                    Callback.Fire(contextMenu, true, 0, firstEntryIsEquip ? i - 7 : -1, 0, 0, 0); // p2=-1 is close, p2=0 is exec first command
+                }
+            }
         }
         return TaskResult.Retry;
     }

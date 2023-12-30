@@ -20,6 +20,8 @@ using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using System.Runtime.CompilerServices;
 using ECommons.ExcelServices;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace Artisan.UI
 {
