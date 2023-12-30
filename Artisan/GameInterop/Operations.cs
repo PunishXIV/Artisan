@@ -115,19 +115,15 @@ public static unsafe class Operations
         }
     }
 
-    public unsafe static void RepeatActualCraft()
+    public unsafe static bool RepeatActualCraft()
     {
-        try
-        {
-            if (GenericHelpers.TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var recipenote))
-            {
-                ClickRecipeNote.Using(new nint(&recipenote->AtkUnitBase)).Synthesize();
-                Endurance.Tasks.Clear();
-            }
-        }
-        catch (Exception ex)
-        {
-            Svc.Log.Error(ex, "RepeatActualCraft");
-        }
+        var addon = (AddonRecipeNote*)Svc.GameGui.GetAddonByName("RecipeNote");
+        if (addon == null)
+            return false;
+
+        Svc.Log.Debug($"Starting actual craft");
+        Callback.Fire(&addon->AtkUnitBase, true, 8);
+        Endurance.Tasks.Clear();
+        return true;
     }
 }

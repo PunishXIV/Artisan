@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.GameInterop;
+using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.Sounds;
@@ -219,9 +220,16 @@ namespace Artisan.Autocraft
                         if (addon->SelectedRecipeName is null)
                             return;
 
+                        var rd = RecipeNoteRecipeData.Ptr();
+                        if (rd == null || rd->Recipes == null)
+                        {
+                            RecipeID = 0;
+                            return;
+                        }
+
                         if (addon->AtkUnitBase.UldManager.NodeList[49]->IsVisible)
                         {
-                            RecipeID = RecipeNote.Instance()->RecipeList->SelectedRecipe->RecipeId;
+                            RecipeID = rd->Recipes[rd->SelectedIndex].RecipeId;
                         }
                         Array.Clear(SetIngredients);
 
@@ -385,7 +393,7 @@ namespace Artisan.Autocraft
                             P.TM.Enqueue(() => CraftingListFunctions.RecipeWindowOpen(), "EnduranceCheckRecipeWindow");
                             P.TM.DelayNext("EnduranceThrottle", 100);
 
-                            P.TM.Enqueue(() => { if (!CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
+                            P.TM.Enqueue(() => { if (!CraftingListFunctions.HasItemsForRecipe(RecipeID)) { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
                             if (P.Config.CraftingX)
                                 P.TM.Enqueue(() => Operations.QuickSynthItem(P.Config.CraftX));
                             else
@@ -400,7 +408,7 @@ namespace Artisan.Autocraft
                                 P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(SetIngredients), "EnduranceSetIngredients");
 
                             P.TM.DelayNext("EnduranceThrottle", 100);
-                            P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe((uint)RecipeID)) Operations.RepeatActualCraft(); else { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; } }, "EnduranceStartCraft");
+                            P.TM.Enqueue(() => { if (CraftingListFunctions.HasItemsForRecipe(RecipeID)) return Operations.RepeatActualCraft(); else { if (P.Config.PlaySoundFinishEndurance) Sounds.SoundPlayer.PlaySound(); Enable = false; return true; } }, "EnduranceStartCraft");
                         }
                     }
                     else
@@ -418,7 +426,7 @@ namespace Artisan.Autocraft
                                 else
                                 {
                                     if (DebugTab.Debug) Svc.Log.Debug($"Opening recipe {RecipeID}");
-                                    AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal((uint)RecipeID);
+                                    AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal(RecipeID);
                                 }
                             }
                         }

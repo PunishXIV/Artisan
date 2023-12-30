@@ -490,7 +490,7 @@ namespace Artisan.CraftingLists
 
                             CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
                             CLTM.DelayNext("CraftListDelay", (int)(P.Config.ListCraftThrottle * 1000));
-                            CLTM.Enqueue(() => { Operations.RepeatActualCraft(); }, "ListCraft");
+                            CLTM.Enqueue(() => Operations.RepeatActualCraft(), "ListCraft");
 
                             return;
                         }

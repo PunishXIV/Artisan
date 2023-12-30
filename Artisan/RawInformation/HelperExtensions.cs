@@ -30,7 +30,7 @@ namespace Artisan.RawInformation
                 Error = (sender, args) => { success = false; args.ErrorContext.Handled = true; },
                 MissingMemberHandling = MissingMemberHandling.Error
             };
-            result = JsonConvert.DeserializeObject<T>(@this, settings);
+            result = JsonConvert.DeserializeObject<T>(@this, settings)!;
             return success;
         }
     }
