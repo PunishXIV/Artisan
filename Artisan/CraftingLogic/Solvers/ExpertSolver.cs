@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation.Character;
+using ECommons.DalamudServices;
 using System.Collections.Generic;
 
 namespace Artisan.CraftingLogic.Solvers;
@@ -73,7 +74,7 @@ public class ExpertSolver : Solver
         }
 
         if (step.MuscleMemoryLeft > 0) // mume still active - means we have very little progress and want more progress asap
-            return new(SolveOpenerMuMe(cfg, craft, step), "mume");
+            return new(SafeCraftAction(craft, step, SolveOpenerMuMe(cfg, craft, step)), "mume");
 
         // see what we need to finish the craft
         var remainingProgress = craft.CraftProgress - step.Progress;

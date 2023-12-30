@@ -122,9 +122,9 @@ public static unsafe class Crafting
                     if (hwdSheet != null)
                     {
                         var index = hwdSheet.ItemTradeIn.IndexOf(x => x.Row == recipe.ItemResult.Row);
-                        res.CraftQualityMin1 = hwdSheet.BaseCollectableRating[index];
-                        res.CraftQualityMin2 = hwdSheet.MidCollectableRating[index];
-                        res.CraftQualityMin3 = hwdSheet.HighCollectableRating[index];
+                        res.CraftQualityMin1 = hwdSheet.BaseCollectableRating[index] * 10;
+                        res.CraftQualityMin2 = hwdSheet.MidCollectableRating[index] * 10;
+                        res.CraftQualityMin3 = hwdSheet.HighCollectableRating[index] * 10;
                     }
                 }
             }
