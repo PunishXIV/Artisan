@@ -106,18 +106,18 @@ public static class Simulator
 
     public static int BaseProgress(CraftState craft)
     {
-        int res = craft.StatCraftsmanship * 10 / craft.CraftProgressDivider + 2;
+        float res = craft.StatCraftsmanship * 10.0f / craft.CraftProgressDivider + 2;
         if (craft.StatLevel <= craft.CraftLevel) // TODO: verify this condition, teamcraft uses 'rlvl' here
             res = res * craft.CraftProgressModifier / 100;
-        return res;
+        return (int)res;
     }
 
     public static int BaseQuality(CraftState craft)
     {
-        int res = craft.StatControl * 10 / craft.CraftQualityDivider + 35;
+        float res = craft.StatControl * 10.0f / craft.CraftQualityDivider + 35;
         if (craft.StatLevel <= craft.CraftLevel) // TODO: verify this condition, teamcraft uses 'rlvl' here
             res = res * craft.CraftQualityModifier / 100;
-        return res;
+        return (int)res;
     }
 
     public static int MinLevel(Skills action) => action switch
