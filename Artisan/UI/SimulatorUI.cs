@@ -341,6 +341,27 @@ namespace Artisan.UI
 
         private static unsafe void DrawGearSetDropdown()
         {
+            var validGS = RaptureGearsetModule.Instance()->EntriesSpan.ToArray().Count(x => RaptureGearsetModule.Instance()->IsValidGearset(x.ID) && x.ClassJob == SelectedRecipe?.CraftType.Row + 8);
+
+            if (validGS == 0)
+            {
+                ImGuiEx.Text($"Please add a gearset for {(Job)SelectedRecipe?.CraftType.Row + 8}");
+                SimGS = null;
+                return;
+            }
+            if (validGS == 1)
+            {
+                var gs = RaptureGearsetModule.Instance()->EntriesSpan.ToArray().First(x => RaptureGearsetModule.Instance()->IsValidGearset(x.ID) && x.ClassJob == SelectedRecipe?.CraftType.Row + 8);
+                SimGS = gs;
+                string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(gs.Name));
+                ImGuiEx.Text($"Gearset");
+                ImGui.SameLine(120f);
+                ImGuiEx.SetNextItemFullWidth();
+                ImGuiEx.Text($"{name} (ilvl {SimGS?.ItemLevel})");
+                return;
+            }
+
+
             ImGui.Text($"Select Gearset");
             ImGui.SameLine(120f);
             ImGuiEx.SetNextItemFullWidth();
@@ -356,11 +377,12 @@ namespace Artisan.UI
 
             foreach (var gs in RaptureGearsetModule.Instance()->EntriesSpan)
             {
+                if (!RaptureGearsetModule.Instance()->IsValidGearset(gs.ID)) continue;
                 if (gs.ClassJob != SelectedRecipe?.CraftType.Row + 8)
                     continue;
 
                 string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(gs.Name));
-                var selected = ImGui.Selectable($"{name} (ilvl {gs.ItemLevel})");
+                var selected = ImGui.Selectable($"{name} (ilvl {gs.ItemLevel})###GS{gs.ID}");
 
                 if (selected)
                 {
