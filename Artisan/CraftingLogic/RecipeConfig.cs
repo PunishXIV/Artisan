@@ -17,23 +17,23 @@ public class RecipeConfig
     public bool RequiredFoodHQ = true;
     public bool RequiredPotionHQ = true;
 
-    public bool Draw(CraftState craft, int widthHint = 0)
+    public bool Draw(CraftState craft)
     {
         bool changed = false;
-        changed |= DrawFood(widthHint);
-        changed |= DrawPotion(widthHint);
-        changed |= DrawManual(widthHint);
-        changed |= DrawSquadronManual(widthHint);
-        changed |= DrawSolver(craft, widthHint);
+        changed |= DrawFood();
+        changed |= DrawPotion();
+        changed |= DrawManual();
+        changed |= DrawSquadronManual();
+        changed |= DrawSolver(craft);
         return changed;
     }
 
-    public bool DrawFood(int widthHint = 0)
+    public bool DrawFood(bool hasButton = false)
     {
         bool changed = false;
         ImGuiEx.TextV("Food Usage:");
-        ImGui.SameLine(200f.Scale());
-        //ImGuiEx.SetNextItemFullWidth(widthHint);
+        ImGui.SameLine(130f.Scale());
+        if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
         if (ImGui.BeginCombo("##foodBuff", RequiredFood == 0 ? "Disabled" : $"{(RequiredFoodHQ ? " " : "")}{ConsumableChecker.Food.FirstOrDefault(x => x.Id == RequiredFood).Name}"))
         {
             if (ImGui.Selectable("Disable"))
@@ -65,12 +65,12 @@ public class RecipeConfig
         return changed;
     }
 
-    public bool DrawPotion(int widthHint = 0)
+    public bool DrawPotion(bool hasButton = false)
     {
         bool changed = false;
         ImGuiEx.TextV("Medicine Usage:");
-        ImGui.SameLine(200f.Scale());
-        //ImGuiEx.SetNextItemFullWidth(widthHint);
+        ImGui.SameLine(130f.Scale());
+        if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
         if (ImGui.BeginCombo("##potBuff", RequiredPotion == 0 ? "Disabled" : $"{(RequiredPotionHQ ? " " : "")}{ConsumableChecker.Pots.FirstOrDefault(x => x.Id == RequiredPotion).Name}"))
         {
             if (ImGui.Selectable("Disable"))
@@ -102,12 +102,12 @@ public class RecipeConfig
         return changed;
     }
 
-    public bool DrawManual(int widthHint = 0)
+    public bool DrawManual(bool hasButton = false)
     {
         bool changed = false;
         ImGuiEx.TextV("Manual Usage:");
-        ImGui.SameLine(200f.Scale());
-        //ImGuiEx.SetNextItemFullWidth(widthHint);
+        ImGui.SameLine(130f.Scale());
+        if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
         if (ImGui.BeginCombo("##manualBuff", RequiredManual == 0 ? "Disabled" : $"{ConsumableChecker.Manuals.FirstOrDefault(x => x.Id == RequiredManual).Name}"))
         {
             if (ImGui.Selectable("Disable"))
@@ -128,12 +128,12 @@ public class RecipeConfig
         return changed;
     }
 
-    public bool DrawSquadronManual(int widthHint = 0)
+    public bool DrawSquadronManual(bool hasButton = false)
     {
         bool changed = false;
-        ImGuiEx.TextV("Squadron Manual Usage:");
-        ImGui.SameLine(200f.Scale());
-        //ImGuiEx.SetNextItemFullWidth(widthHint);
+        ImGuiEx.TextV("Squadron Manual:");
+        ImGui.SameLine(130f.Scale());
+        if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
         if (ImGui.BeginCombo("##squadronManualBuff", RequiredSquadronManual == 0 ? "Disabled" : $"{ConsumableChecker.SquadronManuals.FirstOrDefault(x => x.Id == RequiredSquadronManual).Name}"))
         {
             if (ImGui.Selectable("Disable"))
@@ -154,12 +154,12 @@ public class RecipeConfig
         return changed;
     }
 
-    public bool DrawSolver(CraftState craft, int widthHint = 0)
+    public bool DrawSolver(CraftState craft, bool hasButton = false)
     {
         bool changed = false;
         ImGuiEx.TextV($"Solver:");
-        ImGui.SameLine(200f.Scale());
-        //ImGuiEx.SetNextItemFullWidth(widthHint);
+        ImGui.SameLine(130f.Scale());
+        if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
         var solver = CraftingProcessor.GetSolverForRecipe(this, craft);
         if (ImGui.BeginCombo("##solver", solver.Name))
         {

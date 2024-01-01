@@ -12,6 +12,8 @@ public class MacroSolverDefinition : ISolverDefinition
     {
         foreach (var m in P.Config.MacroSolverConfig.Macros)
         {
+            if (m.Steps.Count == 0) continue;
+
             var statsOk = m.Options.MinCraftsmanship <= craft.StatCraftsmanship && m.Options.MinControl <= craft.StatControl && m.Options.MinCP <= craft.StatCP;
             yield return new(this, m.ID, 0, $"Macro: {m.Name}", statsOk ? "" : "You do not meet the minimum stats for this macro");
         }

@@ -163,11 +163,11 @@ namespace Artisan.UI
                             OpenWindow = OpenWindow.FCWorkshop;
                         }
                         ImGui.Spacing();
-                        //if (ImGui.Selectable("Simulator", OpenWindow == OpenWindow.Simulator))
-                        //{
-                        //    OpenWindow = OpenWindow.Simulator;
-                        //}
-                        //ImGui.Spacing();
+                        if (ImGui.Selectable("Simulator", OpenWindow == OpenWindow.Simulator))
+                        {
+                            OpenWindow = OpenWindow.Simulator;
+                        }
+                        ImGui.Spacing();
                         if (ImGui.Selectable("About", OpenWindow == OpenWindow.About))
                         {
                             OpenWindow = OpenWindow.About;
@@ -189,57 +189,43 @@ namespace Artisan.UI
                     ImGui.TableNextColumn();
                     if (ImGui.BeginChild($"###ArtisanRightSide", Vector2.Zero, false))
                     {
-
-                        if (OpenWindow == OpenWindow.Main)
+                        switch (OpenWindow)
                         {
-                            DrawMainWindow();
-                        }
-
-                        if (OpenWindow == OpenWindow.Endurance)
-                        {
-                            Endurance.Draw();
-                        }
-
-                        if (OpenWindow == OpenWindow.Lists)
-                        {
-                            CraftingListUI.Draw();
-                        }
-
-                        if (OpenWindow == OpenWindow.About)
-                        {
-                            AboutTab.Draw("Artisan");
-                        }
-
-                        if (OpenWindow == OpenWindow.Debug)
-                        {
-                            DebugTab.Draw();
-                        }
-
-                        if (OpenWindow == OpenWindow.Macro)
-                        {
-                            MacroUI.Draw();
-                        }
-
-                        if (OpenWindow == OpenWindow.FCWorkshop)
-                        {
-                            FCWorkshopUI.Draw();
-                        }
-
-                        if (OpenWindow == OpenWindow.SpecialList)
-                        {
-                            SpecialLists.Draw();
-                        }
-
-                        if (OpenWindow == OpenWindow.Overview)
-                        {
-                            DrawOverview();
-                        }
-
-                        if (OpenWindow == OpenWindow.Simulator)
-                        {
-                            SimulatorUI.Draw();
-                        }
-
+                            case OpenWindow.Main:
+                                DrawMainWindow();
+                                break;
+                            case OpenWindow.Endurance:
+                                Endurance.Draw();
+                                break;
+                            case OpenWindow.Lists:
+                                CraftingListUI.Draw();
+                                break;
+                            case OpenWindow.About:
+                                AboutTab.Draw("Artisan");
+                                break;
+                            case OpenWindow.Debug:
+                                DebugTab.Draw();
+                                break;
+                            case OpenWindow.Macro:
+                                MacroUI.Draw();
+                                break;
+                            case OpenWindow.FCWorkshop:
+                                FCWorkshopUI.Draw();
+                                break;
+                            case OpenWindow.SpecialList:
+                                SpecialLists.Draw();
+                                break;
+                            case OpenWindow.Overview:
+                                DrawOverview();
+                                break;
+                            case OpenWindow.Simulator:
+                                SimulatorUI.Draw();
+                                break;
+                            case OpenWindow.None:
+                                break;
+                            default:
+                                break;
+                        };
                     }
                     ImGui.EndChild();
                     ImGui.EndTable();

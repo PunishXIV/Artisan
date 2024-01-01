@@ -1,415 +1,531 @@
-﻿using Artisan.CraftingLogic;
+﻿using Artisan.Autocraft;
+using Artisan.CraftingLogic;
 using Artisan.GameInterop;
-using Artisan.GameInterop.CSExt;
-using Artisan.RawInformation.Character;
+using Artisan.RawInformation;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
+using Dalamud.Utility;
+using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using ECommons.ImGuiMethods;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using Microsoft.CodeAnalysis;
+using OtterGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Condition = Artisan.CraftingLogic.CraftData.Condition;
+using static FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule;
+using static OtterGui.Widgets.Tutorial;
 
-namespace Artisan.UI;
-
-internal static class SimulatorUI
+namespace Artisan.UI
 {
-    class Statistics
+    public static class SimulatorUI
     {
-        public int NumExperiments;
-        public int[] NumOutcomes = new int[(int)Simulator.CraftStatus.Count];
-    }
+        static Recipe? SelectedRecipe;
+        internal static string Search = string.Empty;
+        private static CraftState? _selectedCraft;
 
-    private static Recipe? _selectedRecipe;
-    private static CraftState? _selectedCraft;
-    private static SolverRef _selectedSolver;
-    private static float _startingQualityPct;
 
-    // fields for stats
-    private static int _statsNumIterations = 100000;
-    private static int _statsNumTasks = 128;
-    private static Statistics? _statsCurrent;
-    private static List<Task<Statistics>> _statsInProgress = new();
+        // fields for simulator
+        private static Random _simRngForSeeds = new();
+        private static int _simCurSeed;
+        private static Random _simRngForSim = new();
+        private static SolverRef? _selectedSolver;
+        private static Solver? _simCurSolver;
+        private static int startingQuality = 0;
+        private static List<(StepState step, string comment)> _simCurSteps = new();
+        private static Solver.Recommendation _simNextRec;
+        private static GearsetEntry? SimGS;
+        private static string SimGSName;
+        private static uint[] SimActionIDs;
+        private static ConsumableChoice? SimFood;
+        private static ConsumableChoice? SimMedicine;
+        private static CharacterStats SimStats;
 
-    // fields for simulator
-    private static Random _simRngForSeeds = new();
-    private static int _simCurSeed;
-    private static Random _simRngForSim = new();
-    private static Solver? _simCurSolver;
-    private static List<(StepState step, string comment)> _simCurSteps = new();
-    private static Solver.Recommendation _simNextRec;
+        // data and other imgui things
+        private static Dictionary<uint, List<IngredientLayouts>> ingredientLayouts = new();
+        private static float layoutWidth = 0;
 
-    public static void Draw()
-    {
-        var curRecipe = GetCurrentRecipe();
-        if (curRecipe != null && curRecipe != _selectedRecipe)
-            SetSelectedRecipe(curRecipe);
-
-        if (_selectedRecipe == null || _selectedCraft == null)
+        private class IngredientLayouts
         {
-            ImGui.TextUnformatted($"Please select a recipe to use simulator");
-            return;
+            public int Idx;
+            public int ID;
+            public int NQ;
+            public int HQ;
         }
 
-        DrawRecipeInfo(_selectedRecipe, _selectedCraft);
-        DrawStatistics(_selectedCraft);
-        DrawSimulator(_selectedCraft);
-    }
-
-    private static void DrawRecipeInfo(Recipe r, CraftState craft)
-    {
-        using var n = ImRaii.TreeNode($"Recipe: #{r.RowId} {r.CraftType.Row + Job.CRP} '{r.ItemResult.Value?.Name}', solver: {_selectedSolver.Name}###recipe");
-        if (!n)
-            return;
-
-        if (ImGui.Button("Refresh stats"))
-            SetSelectedRecipe(r);
-        ImGui.InputFloat("Starting quality percent", ref _startingQualityPct);
-        for (int i = 1; i < craft.CraftConditionProbabilities.Length; ++i)
-            ImGui.InputFloat($"Transition probability to {(Condition)i}", ref craft.CraftConditionProbabilities[i]);
-    }
-
-    private static void DrawStatistics(CraftState craft)
-    {
-        using var n = ImRaii.TreeNode("Statistics");
-        if (!n)
-            return;
-
-        ImGui.InputInt("Num iterations", ref _statsNumIterations);
-        ImGui.SameLine();
-        if (StatisticsInProgress())
+        private class ConsumableChoice
         {
-            using var d = ImRaii.Disabled();
-            ImGui.Button("Please wait...");
-        }
-        else if (ImGui.Button("Run!"))
-        {
-            _statsCurrent = null;
-            var iterationsPerTask = _statsNumIterations / _statsNumTasks;
-            var startingQuality = (int)(craft.CraftQualityMax * _startingQualityPct / 100.0);
-            for (int i = 0; i < _statsNumTasks - 1; ++i)
-                _statsInProgress.Add(Task.Run(() => GatherStats(craft, _selectedSolver, iterationsPerTask, startingQuality)));
-            _statsInProgress.Add(Task.Run(() => GatherStats(craft, _selectedSolver, _statsNumIterations - iterationsPerTask * (_statsNumTasks - 1), startingQuality)));
+            public uint Id;
+            public ConsumableStats Stats;
+            public bool ConsumableHQ;
+            public string ConsumableString => string.Join(", ", Stats.Stats.Where(x => x.Param != 0).Select(x => $"{Svc.Data.Excel.GetSheet<BaseParam>().GetRow((uint)x.Param).Name} +{x.Percent}% - max {x.Max}"));
         }
 
-        if (_statsCurrent == null || _statsCurrent.NumExperiments == 0)
-            return;
-
-        DrawStatistic("Execution errors", _statsCurrent.NumOutcomes[0]);
-        DrawStatistic("Fails (durability)", _statsCurrent.NumOutcomes[1]);
-        DrawStatistic("Fails (quality)", _statsCurrent.NumOutcomes[2]);
-        DrawStatistic("Success Q1", _statsCurrent.NumOutcomes[3]);
-        DrawStatistic("Success Q2", _statsCurrent.NumOutcomes[4]);
-        DrawStatistic("Success Q3", _statsCurrent.NumOutcomes[5]);
-        var yieldQ1 = 1;
-        var yieldQ2 = yieldQ1 + (craft.CraftQualityMin2 > craft.CraftQualityMin1 ? 1 : 0);
-        var yieldQ3 = yieldQ2 + (craft.CraftQualityMin3 > craft.CraftQualityMin2 ? 1 : 0);
-        var yield = _statsCurrent.NumOutcomes[3] * yieldQ1 + _statsCurrent.NumOutcomes[4] * yieldQ2 + _statsCurrent.NumOutcomes[5] * yieldQ3;
-        ImGui.TextUnformatted($"Average yield: {(double)yield / _statsCurrent.NumExperiments:f3}");
-    }
-
-    private static void DrawStatistic(string prompt, int count) => ImGui.TextUnformatted($"{prompt}: {count} ({count * 100.0 / _statsCurrent!.NumExperiments:f2}%)");
-
-    private static void DrawSimulator(CraftState craft)
-    {
-        using var n = ImRaii.TreeNode("Simulator");
-        if (!n)
-            return;
-
-        DrawSimulatorRestartRow(craft);
-        if (_simCurSolver == null || _simCurSteps.Count == 0)
-            return;
-        DrawSimulatorStepRow(craft);
-        DrawSimulatorSteps(craft);
-    }
-
-    private static void DrawSimulatorRestartRow(CraftState craft)
-    {
-        if (ImGui.Button("Restart!"))
+        public static void Draw()
         {
-            RestartSimulator(craft, _simRngForSeeds.Next());
-        }
-        ImGui.SameLine();
-        if (ImGui.Button("Restart and solve"))
-        {
-            RestartSimulator(craft, _simRngForSeeds.Next());
-            SolveRestSimulator(craft);
-        }
-        ImGui.SameLine();
-        if (ImGui.Button("Restart and solve until..."))
-        {
-            ImGui.OpenPopup("SolveUntil");
-        }
-        ImGui.SameLine();
-        if (ImGui.Button($"Restart with seed:"))
-        {
-            RestartSimulator(craft, _simCurSeed);
-        }
-        ImGui.SameLine();
-        ImGui.InputInt("###Seed", ref _simCurSeed);
+            DrawIntro();
+            ImGui.Separator();
+            DrawRecipeSelector();
 
-        using var popup = ImRaii.Popup("SolveUntil");
-        if (popup)
-        {
-            if (ImGui.MenuItem("Solver error"))
+            if (SelectedRecipe != null)
             {
-                RestartSimulatorUntil(craft, Simulator.CraftStatus.InProgress);
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.MenuItem("Failure due to durability running out"))
-            {
-                RestartSimulatorUntil(craft, Simulator.CraftStatus.FailedDurability);
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.MenuItem("Failure due to lack of quality"))
-            {
-                RestartSimulatorUntil(craft, Simulator.CraftStatus.FailedMinQuality);
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.MenuItem("Breakpoint 1 success"))
-            {
-                RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededQ1);
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.MenuItem("Breakpoint 2 success"))
-            {
-                RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededQ2);
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.MenuItem("Breakpoint 3 success"))
-            {
-                RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededQ3);
-                ImGui.CloseCurrentPopup();
-            }
-        }
-    }
+                DrawIngredientLayout();
 
-    private static void DrawSimulatorStepRow(CraftState craft)
-    {
-        if (ImGui.Button("Solve next"))
-            SolveNextSimulator(craft);
-        ImGui.SameLine();
-        if (ImGui.Button("Solve all"))
-            SolveRestSimulator(craft);
-        ImGui.SameLine();
-        if (ImGui.Button("Manual..."))
-            ImGui.OpenPopup("Manual");
-        ImGui.SameLine();
-        ImGui.TextUnformatted($"Status: {Simulator.Status(craft, _simCurSteps.Last().step)}, Suggestion: {_simNextRec.Action} ({_simNextRec.Comment})");
+                DrawRecipeInfo();
 
-        using var popup = ImRaii.Popup("Manual");
-        if (popup)
-        {
-            var step = _simCurSteps.Last().step;
-            foreach (var opt in Enum.GetValues(typeof(Skills)).Cast<Skills>())
-            {
-                if (opt == Skills.None)
-                    continue;
+                DrawGearSetDropdown();
 
-                if (ImGui.MenuItem($"{opt} ({Simulator.GetCPCost(step, opt)}cp, {Simulator.GetDurabilityCost(step, opt)}dur)", Simulator.CanUseAction(craft, step, opt)))
+                DrawConsumablesDropdown();
+
+                DrawStatInfo();
+
+                if (ImGui.BeginTabBar("ModeSelection"))
                 {
-                    var (res, next) = Simulator.Execute(craft, step, opt, _simRngForSim.NextSingle(), _simRngForSim.NextSingle());
-                    if (res != Simulator.ExecuteResult.CantUse)
+                    if (ImGui.BeginTabItem("Preconfigured Mode"))
                     {
-                        _simCurSteps[_simCurSteps.Count - 1] = (step, "manual");
-                        _simCurSteps.Add((next, ""));
-                        _simNextRec = _simCurSolver.Solve(craft, next);
+                        DrawPreconfiguredMode();
+                        ImGui.EndTabItem();
+                    }
+
+                    if (ImGui.BeginTabItem("Solver Mode"))
+                    {
+                        DrawSolverMode();
+                        ImGui.EndTabItem();
+                    }
+                    ImGui.EndTabBar();
+                }
+            }
+
+        }
+
+        private static void DrawIntro()
+        {
+            ImGuiEx.TextWrapped($"In this simulator, you can test out different solvers against recipes and analyze how well they perform. You can set your HQ ingredient layouts, set consumables and even which gearset to use. The simulator assumes all \"Normal\" conditions, so mileage may vary in actual execution.");
+        }
+
+        private static void DrawSolverMode()
+        {
+            ImGui.Text($"Coming soon?");
+        }
+
+        private static void DrawPreconfiguredMode()
+        {
+            DrawSolverCombo();
+            DrawSolverActions();
+        }
+
+        private static void DrawSolverActions()
+        {
+            if (_selectedSolver != null && SimGS != null)
+            {
+                ImGuiEx.SetNextItemFullWidth();
+                if (ImGui.Button($"Solve"))
+                {
+                    _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
+                    _simCurSteps.Clear();
+                    _simCurSolver = _selectedSolver?.Clone();
+                    if (_simCurSolver != null)
+                    {
+                        var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
+                        _simCurSteps.Add((initial, ""));
+                        _simNextRec = _simCurSolver.Solve(_selectedCraft, initial);
+                    }
+
+                    while (SolveNextSimulator(_selectedCraft)) ;
+                }
+
+                if (_simCurSolver != null)
+                {
+                    ImGui.Columns(Math.Min(16, _simCurSteps.Count), null, false);
+                    var job = (Job)SimGS?.ClassJob;
+                    for (int i = 0; i < _simCurSteps.Count; i++)
+                    {
+                        if (i + 1 < _simCurSteps.Count)
+                        {
+                            var currentAction = _simCurSteps[i + 1].step.PrevComboAction;
+                            ImGui.Image(P.Icons.LoadIcon(currentAction.IconOfAction(job)).ImGuiHandle, new System.Numerics.Vector2(40));
+                            var step = _simCurSteps[i + 1].step;
+                            if (ImGui.IsItemHovered())
+                            {
+                                ImGui.BeginTooltip();
+                                ImGuiEx.Text($"{step.Index - 1}. {currentAction.NameOfAction()}");
+                                ImGuiEx.Text($"P: {step.Progress} / {_selectedCraft.CraftProgress} ({Math.Round((float)step.Progress / _selectedCraft.CraftProgress * 100, 0)}%)");
+                                ImGuiEx.Text($"Q: {step.Quality} / {_selectedCraft.CraftQualityMax} ({Math.Round((float)step.Quality / _selectedCraft.CraftQualityMax * 100, 0)}%)");
+                                ImGuiEx.Text($"D: {step.Durability} / {_selectedCraft.CraftDurability} ({Math.Round((float)step.Durability / _selectedCraft.CraftDurability * 100, 0)}%)");
+                                ImGuiEx.Text($"CP: {step.RemainingCP} / {_selectedCraft.StatCP} ({Math.Round((float)step.RemainingCP / _selectedCraft.StatCP * 100, 0)}%)");
+                                ImGui.EndTooltip();
+                            }
+
+                            ImGui.NextColumn();
+                        }
+                    }
+                    ImGui.Columns(1);
+
+                    var successColor = _simCurSteps.Last().step.Progress >= _selectedCraft.CraftProgress && _simCurSteps.Last().step.Quality >= _selectedCraft.CraftQualityMax ? ImGuiColors.HealerGreen : _simCurSteps.Last().step.Progress < _selectedCraft.CraftProgress ? ImGuiColors.DPSRed : ImGuiColors.DalamudOrange;
+
+                    ImGui.PushStyleColor(ImGuiCol.Text, successColor);  
+                    ImGuiEx.ImGuiLineCentered($"SimResults", () => ImGuiEx.TextUnderlined($"Simulator Result"));
+                    ImGui.Columns(3, null, false);
+                    ImGuiEx.TextCentered($"Quality: {_simCurSteps.Last().step.Quality} / {_selectedCraft.CraftQualityMax} ({Calculations.GetHQChance((double)_simCurSteps.Last().step.Quality/ _selectedCraft.CraftQualityMax * 100)}% HQ Chance)");
+                    ImGui.NextColumn();
+                    ImGuiEx.TextCentered($"Progress: {_simCurSteps.Last().step.Progress} / {_selectedCraft.CraftProgress}");
+                    ImGui.NextColumn();
+                    ImGuiEx.TextCentered($"Remaining CP: {_simCurSteps.Last().step.RemainingCP} / {_selectedCraft.StatCP}");
+                    ImGui.Columns(1);
+                    ImGui.PopStyleColor();
+                }
+            }
+        }
+
+        private static bool SolveNextSimulator(CraftState craft)
+        {
+            if (_simCurSolver == null || _simCurSteps.Count == 0)
+                return false;
+            var step = _simCurSteps.Last().step;
+            var (res, next) = Simulator.Execute(craft, step, _simNextRec.Action, _simRngForSim.NextSingle(), _simRngForSim.NextSingle());
+            if (res == Simulator.ExecuteResult.CantUse)
+                return false;
+            _simCurSteps[_simCurSteps.Count - 1] = (step, _simNextRec.Comment);
+            _simCurSteps.Add((next, ""));
+            _simNextRec = _simCurSolver.Solve(craft, next);
+            return true;
+        }
+
+        private static void DrawSolverCombo()
+        {
+            ImGui.Text($"Select Solver");
+            ImGui.SameLine(120f);
+            ImGuiEx.SetNextItemFullWidth();
+            using var solverCombo = ImRaii.Combo("###SolverCombo", _selectedSolver == null ? "" : $"{_selectedSolver?.Name}");
+            if (!solverCombo)
+                return;
+
+            _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
+            foreach (var opt in CraftingProcessor.GetAvailableSolversForRecipe(_selectedCraft, false))
+            {
+                bool selected = ImGui.Selectable(opt.Name);
+                if (selected)
+                {
+                    _selectedSolver = new(opt.Name, opt.CreateSolver(_selectedCraft));
+                }
+            }
+        }
+
+        private static void DrawConsumablesDropdown()
+        {
+            DrawFoodDropdown();
+            DrawMedicineDropdown();
+        }
+
+        private static void DrawFoodDropdown()
+        {
+            ImGui.Text($"Select Food");
+            ImGui.SameLine(120f);
+            ImGuiEx.SetNextItemFullWidth();
+            using var foodCombo = ImRaii.Combo("###SimFood", SimFood is null ? "" : $"{(SimFood.ConsumableHQ ? " " : "")} {LuminaSheets.ItemSheet[SimFood.Id].Name.RawString} ({SimFood.ConsumableString})");
+            if (!foodCombo)
+                return;
+
+            if (ImGui.Selectable($""))
+                SimFood = null;
+
+            foreach (var food in ConsumableChecker.GetFood().OrderBy(x => x.Id))
+            {
+                var consumableStats = new ConsumableStats(food.Id, false);
+                ConsumableChoice choice = new ConsumableChoice() { Id = food.Id, Stats = consumableStats };
+                var selected = ImGui.Selectable($"{food.Name} ({choice.ConsumableString})");
+
+                if (selected)
+                {
+                    choice.ConsumableHQ = false;
+                    SimFood = choice;
+                    continue;
+                }
+
+                consumableStats = new ConsumableStats(food.Id, true);
+                choice.Stats = consumableStats;
+                if (LuminaSheets.ItemSheet[food.Id].CanBeHq)
+                {
+                    selected = ImGui.Selectable($" {food.Name} ({choice.ConsumableString})");
+
+                    if (selected)
+                    {
+                        choice.ConsumableHQ = true;
+                        SimFood = choice;
                     }
                 }
             }
         }
-    }
 
-    private static void DrawSimulatorSteps(CraftState craft)
-    {
-        int restartAt = -1;
-        for (int i = 0; i < _simCurSteps.Count; ++i)
+        private static void DrawMedicineDropdown()
         {
-            var step = _simCurSteps[i].step;
-            if (ImGui.Button($">##{i}"))
-                restartAt = i;
-            ImGui.SameLine();
-            DrawProgress(step.Progress, craft.CraftProgress);
-            ImGui.SameLine();
-            DrawProgress(step.Quality, craft.CraftQualityMax);
-            ImGui.SameLine();
-            DrawProgress(step.Durability, craft.CraftDurability);
-            ImGui.SameLine();
-            DrawProgress(step.RemainingCP, craft.StatCP);
-            ImGui.SameLine();
-
-            var sb = new StringBuilder($"{step.Condition}; {step.BuffsString()}");
-            if (i + 1 < _simCurSteps.Count)
-                sb.Append($"; used {_simCurSteps[i + 1].step.PrevComboAction}{(_simCurSteps[i + 1].step.PrevActionFailed ? " (fail)" : "")} ({_simCurSteps[i].comment})");
-            ImGui.TextUnformatted(sb.ToString());
-        }
-
-        if (restartAt >= 0)
-        {
-            RestartSimulator(craft, _simCurSeed);
-            while (_simCurSteps.Count <= restartAt)
-                SolveNextSimulator(craft);
-        }
-
-    }
-
-    private static void DrawProgress(int a, int b) => ImGui.ProgressBar((float)a / b, new(150, 0), $"{a * 100.0f / b:f2}% ({a}/{b})");
-
-    private static unsafe Recipe? GetCurrentRecipe()
-    {
-        if (Crafting.CurRecipe != null)
-            return Crafting.CurRecipe; // crafting in progress
-
-        var rd = RecipeNoteRecipeData.Ptr();
-        var re = rd != null && rd->Recipes != null ? rd->Recipes + rd->SelectedIndex : null;
-        if (re != null)
-            return Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId); // recipenote opened
-
-        return null;
-    }
-
-    private static void SetSelectedRecipe(Recipe? recipe)
-    {
-        _selectedRecipe = recipe;
-        _selectedCraft = null;
-        _selectedSolver = default;
-        _statsCurrent = null;
-        _statsInProgress.Clear();
-        _simCurSolver = null;
-        _simCurSteps.Clear();
-        _simNextRec = default;
-
-        if (recipe != null)
-        {
-            var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
-            var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.Row);
-            stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
-            _selectedCraft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.Row, recipe);
-            InitDefaultTransitionProbabilities(_selectedCraft, recipe);
-            var solverDesc = CraftingProcessor.GetSolverForRecipe(config, _selectedCraft);
-            _selectedSolver = new(solverDesc.Name, solverDesc.CreateSolver(_selectedCraft));
-        }
-    }
-
-    private static void InitDefaultTransitionProbabilities(CraftState craft, Recipe recipe)
-    {
-        if (recipe.IsExpert)
-        {
-            // TODO: this is all very unconfirmed, we really need a process to gather this data
-            var potentialConditions = recipe.RecipeLevelTable.Value?.ConditionsFlag ?? 0;
-            var manyConditions = (potentialConditions & 0x1F0) == 0x1F0; // it seems that when all conditions are available, each one has slightly lower probability?
-            var haveGoodOmen = (potentialConditions & (1 << (int)Condition.GoodOmen)) != 0; // it seems that when good omen is possible, straight good is quite a bit rarer
-            craft.CraftConditionProbabilities = new float[(int)Condition.Unknown];
-            craft.CraftConditionProbabilities[(int)Condition.Good] = haveGoodOmen ? 0.04f : 0.12f;
-            craft.CraftConditionProbabilities[(int)Condition.Centered] = manyConditions ? 0.12f : 0.15f;
-            craft.CraftConditionProbabilities[(int)Condition.Sturdy] = manyConditions ? 0.12f : 0.15f;
-            craft.CraftConditionProbabilities[(int)Condition.Pliant] = manyConditions ? 0.10f : 0.12f;
-            craft.CraftConditionProbabilities[(int)Condition.Malleable] = manyConditions ? 0.10f : 0.12f;
-            craft.CraftConditionProbabilities[(int)Condition.Primed] = manyConditions ? 0.12f : 0.15f;
-            craft.CraftConditionProbabilities[(int)Condition.GoodOmen] = 0.12f;
-            for (Condition i = Condition.Good; i < Condition.Unknown; ++i)
-                if ((potentialConditions & (1 << (int)i)) == 0)
-                    craft.CraftConditionProbabilities[(int)i] = 0;
-        }
-        else
-        {
-            craft.CraftConditionProbabilities = CraftState.NormalCraftConditionProbabilities(craft.StatLevel);
-        }
-    }
-
-    private static bool StatisticsInProgress()
-    {
-        if (_statsInProgress.Count > 0)
-        {
-            if (!_statsInProgress.All(s => s.IsCompleted))
-                return true;
-
-            _statsCurrent = new();
-            foreach (var s in _statsInProgress.Select(t => t.Result))
-            {
-                _statsCurrent.NumExperiments += s.NumExperiments;
-                for (int i = 0; i < s.NumOutcomes.Length; ++i)
-                    _statsCurrent.NumOutcomes[i] += s.NumOutcomes[i];
-            }
-        }
-        return false;
-    }
-
-    private static Statistics GatherStats(CraftState craft, SolverRef solver, int numIterations, int startingQuality)
-    {
-        var rng = new Random();
-        Statistics res = new();
-        for (int i = 0; i < numIterations; ++i)
-        {
-            var s = solver.Clone();
-            var step = Simulator.CreateInitial(craft, startingQuality);
-            while (Simulator.Status(craft, step) == Simulator.CraftStatus.InProgress)
-            {
-                var action = s.Solve(craft, step).Action;
-                if (action == Skills.None)
-                    break;
-                var outcome = Simulator.Execute(craft, step, action, rng.NextSingle(), rng.NextSingle());
-                if (outcome.Item1 == Simulator.ExecuteResult.CantUse)
-                    break;
-                step = outcome.Item2;
-            }
-            ++res.NumOutcomes[(int)Simulator.Status(craft, step)];
-        }
-        res.NumExperiments = numIterations;
-        return res;
-    }
-
-    private static void RestartSimulator(CraftState craft, int rngSeed)
-    {
-        _simCurSeed = rngSeed;
-        _simRngForSim = new(rngSeed);
-        _simCurSolver = _selectedSolver.Clone();
-        _simCurSteps.Clear();
-        _simNextRec = default;
-        if (_simCurSolver != null)
-        {
-            var initial = Simulator.CreateInitial(craft, (int)(craft.CraftQualityMax * _startingQualityPct / 100.0));
-            _simCurSteps.Add((initial, ""));
-            _simNextRec = _simCurSolver.Solve(craft, initial);
-        }
-    }
-
-    private static void RestartSimulatorUntil(CraftState craft, Simulator.CraftStatus status)
-    {
-        for (int i = 0; i < 100000; ++i)
-        {
-            RestartSimulator(craft, _simRngForSeeds.Next());
-            SolveRestSimulator(craft);
-            if (_simCurSteps.Count == 0 || Simulator.Status(craft, _simCurSteps.Last().step) == status)
+            ImGui.Text($"Select Medicine");
+            ImGui.SameLine(120f);
+            ImGuiEx.SetNextItemFullWidth();
+            using var medicineCombo = ImRaii.Combo("###SimMedicine", SimMedicine is null ? "" : $"{(SimMedicine.ConsumableHQ ? " " : "")} {LuminaSheets.ItemSheet[SimMedicine.Id].Name.RawString} ({SimMedicine.ConsumableString})");
+            if (!medicineCombo)
                 return;
+
+            if (ImGui.Selectable($""))
+                SimMedicine = null;
+
+            foreach (var medicine in ConsumableChecker.GetPots().OrderBy(x => x.Id))
+            {
+                var consumable = ConsumableChecker.GetItemConsumableProperties(LuminaSheets.ItemSheet[medicine.Id], false);
+                if (consumable.UnkData1.Any(x => x.BaseParam is 69 or 68))
+                    continue;
+
+                var consumableStats = new ConsumableStats(medicine.Id, false);
+                ConsumableChoice choice = new ConsumableChoice() { Id = medicine.Id, Stats = consumableStats };
+                var selected = ImGui.Selectable($"{medicine.Name} ({choice.ConsumableString})");
+
+                if (selected)
+                {
+                    choice.ConsumableHQ = false;
+                    SimMedicine = choice;
+                    continue;
+                }
+
+                consumableStats = new ConsumableStats(medicine.Id, true);
+                choice.Stats = consumableStats;
+                if (LuminaSheets.ItemSheet[medicine.Id].CanBeHq)
+                {
+                    selected = ImGui.Selectable($" {medicine.Name} ({choice.ConsumableString})");
+
+                    if (selected)
+                    {
+                        choice.ConsumableHQ = true;
+                        SimMedicine = choice;
+                    }
+                }
+            }
         }
-        // failed to get desired state in a reasonable number of attempts
-        _simCurSolver = null;
-        _simCurSteps.Clear();
-        _simNextRec = default;
-    }
 
-    private static bool SolveNextSimulator(CraftState craft)
-    {
-        if (_simCurSolver == null || _simCurSteps.Count == 0)
-            return false;
-        var step = _simCurSteps.Last().step;
-        var (res, next) = Simulator.Execute(craft, step, _simNextRec.Action, _simRngForSim.NextSingle(), _simRngForSim.NextSingle());
-        if (res == Simulator.ExecuteResult.CantUse)
-            return false;
-        _simCurSteps[_simCurSteps.Count - 1] = (step, _simNextRec.Comment);
-        _simCurSteps.Add((next, ""));
-        _simNextRec = _simCurSolver.Solve(craft, next);
-        return true;
-    }
+        private static void DrawStatInfo()
+        {
+            if (SimGS != null)
+            {
+                ImGuiEx.ImGuiLineCentered("SimulatorStats", () => ImGuiEx.TextUnderlined("Crafter Stats"));
+                var gs = SimGS.Value; //Ugh, can't pass nullable refs
+                var gsStats = CharacterStats.GetBaseStatsGearset(ref gs);
+                var craftsmanshipBoost = (SimFood == null ? 0 : SimFood.Stats.Stats.FirstOrDefault(x => x.Param == 70).Effective(gsStats.Craftsmanship)) + (SimMedicine == null ? 0 : SimMedicine.Stats.Stats.FirstOrDefault(x => x.Param == 70).Effective(gsStats.Craftsmanship));
+                var controlBoost = (SimFood == null ? 0 : SimFood.Stats.Stats.FirstOrDefault(x => x.Param == 71).Effective(gsStats.Control)) + (SimMedicine == null ? 0 : SimMedicine.Stats.Stats.FirstOrDefault(x => x.Param == 71).Effective(gsStats.Control));
+                var cpBoost = (SimFood == null ? 0 : SimFood.Stats.Stats.FirstOrDefault(x => x.Param == 11).Effective(gsStats.CP)) + (SimMedicine == null ? 0 : SimMedicine.Stats.Stats.FirstOrDefault(x => x.Param == 11).Effective(gsStats.CP));
 
-    private static void SolveRestSimulator(CraftState craft)
-    {
-        while (SolveNextSimulator(craft))
-            ;
+                ImGui.Columns(3, null, false);
+                ImGui.TextWrapped($"Craftsmanship: {gsStats.Craftsmanship + craftsmanshipBoost} ({gsStats.Craftsmanship} + {craftsmanshipBoost})");
+                ImGui.NextColumn();
+                ImGui.TextWrapped($"Control: {gsStats.Control + controlBoost} ({gsStats.Control} + {controlBoost})");
+                ImGui.NextColumn();
+                ImGui.TextWrapped($"CP: {gsStats.CP + cpBoost} ({gsStats.CP} + {cpBoost})");
+                ImGui.NextColumn();
+                ImGui.TextWrapped($"Splendorous Tool: {gsStats.Splendorous}");
+                ImGui.NextColumn();
+                ImGui.TextWrapped($"Specialist: {gsStats.Specialist}");
+                ImGui.Columns(1);
+
+                SimStats = new CharacterStats()
+                {
+                    Craftsmanship = gsStats.Craftsmanship + craftsmanshipBoost,
+                    Control = gsStats.Control + controlBoost,
+                    CP = gsStats.CP + cpBoost,
+                    Specialist = gsStats.Specialist,
+                    Splendorous = gsStats.Splendorous,
+                };
+            }
+        }
+
+        private static unsafe void DrawGearSetDropdown()
+        {
+            ImGui.Text($"Select Gearset");
+            ImGui.SameLine(120f);
+            ImGuiEx.SetNextItemFullWidth();
+            using var combo = ImRaii.Combo("###SimGS", SimGS is null ? "" : SimGSName);
+            if (!combo)
+                return;
+
+            if (ImGui.Selectable($""))
+            {
+                SimGSName = "";
+                SimGS = null;
+            }
+
+            foreach (var gs in RaptureGearsetModule.Instance()->EntriesSpan)
+            {
+                if (gs.ClassJob != SelectedRecipe?.CraftType.Row + 8)
+                    continue;
+
+                string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(gs.Name));
+                var selected = ImGui.Selectable($"{name} (ilvl {gs.ItemLevel})");
+
+                if (selected)
+                {
+                    SimGS = gs;
+                    SimGSName = $"{name} (ilvl {gs.ItemLevel})";
+                }
+            }
+        }
+
+        private static void DrawRecipeInfo()
+        {
+            if (ingredientLayouts.TryGetValue(SelectedRecipe.RowId, out var layouts))
+            {
+                startingQuality = Calculations.GetStartingQuality(SelectedRecipe, layouts.OrderBy(x => x.Idx).Select(x => x.HQ).ToArray());
+                var max = Calculations.RecipeMaxQuality(SelectedRecipe);
+                var percentage = Math.Clamp((double)startingQuality / max * 100, 0, 100);
+                var hqChance = Calculations.GetHQChance(percentage);
+
+                ImGuiEx.ImGuiLineCentered("StartingQuality", () => ImGuiEx.Text($"Starting Quality: {startingQuality} / {max} ({hqChance}% HQ chance, {percentage.ToString("N0")}% quality)"));
+            }
+
+        }
+
+        private static void DrawIngredientLayout()
+        {
+            bool hasHQ = false;
+            foreach (var i in SelectedRecipe.UnkData5.Where(x => x.AmountIngredient > 0))
+            {
+                if (LuminaSheets.ItemSheet[(uint)i.ItemIngredient].CanBeHq)
+                    hasHQ = true;
+            }
+            using var group = ImRaii.Group();
+            if (!group)
+                return;
+
+            ImGuiEx.ImGuiLineCentered("###LayoutIngredients", () => ImGuiEx.TextUnderlined("Ingredient Layouts"));
+            using var table = ImRaii.Table("###SimulatorRecipeIngredients", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.NoHostExtendX);
+            if (!table)
+                return;
+
+            ImGui.TableSetupColumn("Material", ImGuiTableColumnFlags.WidthFixed, ImGui.GetContentRegionAvail().X - (hasHQ ? 200f.Scale() : 80f.Scale()));
+            ImGui.TableSetupColumn("NQ", ImGuiTableColumnFlags.WidthFixed);
+            ImGui.TableSetupColumn("HQ", ImGuiTableColumnFlags.WidthFixed);
+
+            ImGui.TableHeadersRow();
+
+            var idx = 0;
+            foreach (var i in SelectedRecipe.UnkData5.Where(x => x.AmountIngredient > 0))
+            {
+                if (ingredientLayouts.TryGetValue(SelectedRecipe.RowId, out var layouts))
+                {
+                    if (layouts.FindFirst(x => x.ID == i.ItemIngredient, out var layout))
+                    {
+                        ImGui.TableNextRow();
+                        var item = LuminaSheets.ItemSheet[(uint)i.ItemIngredient];
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{item.Name}");
+                        ImGui.TableNextColumn();
+                        if (item.CanBeHq)
+                        {
+                            ImGui.SetNextItemWidth(80f.Scale());
+                            if (ImGui.InputInt($"###InputNQ{item.RowId}", ref layout.NQ))
+                            {
+                                if (layout.NQ < 0)
+                                    layout.NQ = 0;
+
+                                if (layout.NQ > i.AmountIngredient)
+                                    layout.NQ = i.AmountIngredient;
+
+                                layout.HQ = i.AmountIngredient - layout.NQ;
+                            }
+                        }
+                        else
+                        {
+                            ImGui.Text($"{layout.NQ}");
+                        }
+                        ImGui.TableNextColumn();
+                        if (item.CanBeHq)
+                        {
+                            ImGui.SetNextItemWidth(80f.Scale());
+                            if (ImGui.InputInt($"###InputHQ{item.RowId}", ref layout.HQ))
+                            {
+                                if (layout.HQ < 0)
+                                    layout.HQ = 0;
+
+                                if (layout.HQ > i.AmountIngredient)
+                                    layout.HQ = i.AmountIngredient;
+
+                                layout.NQ = Math.Min(i.AmountIngredient - layout.HQ, i.AmountIngredient);
+                            }
+                        }
+                        else
+                        {
+                            ImGui.Text($"{layout.HQ}");
+                        }
+
+                    }
+                    else
+                    {
+                        layout = new();
+                        layout.Idx = idx;
+                        layout.ID = i.ItemIngredient;
+                        layout.NQ = i.AmountIngredient;
+                        layout.HQ = 0;
+
+                        layouts.Add(layout);
+                    }
+
+
+
+                }
+                else
+                {
+                    ingredientLayouts.TryAdd(SelectedRecipe.RowId, new List<IngredientLayouts>());
+                }
+                idx++;
+            }
+        }
+
+        private static void DrawRecipeSelector()
+        {
+            var preview = SelectedRecipe is null
+                                      ? string.Empty
+                                      : $"{SelectedRecipe?.ItemResult.Value.Name.RawString} ({LuminaSheets.ClassJobSheet[SelectedRecipe.CraftType.Row + 8].Abbreviation.RawString})";
+
+            if (ImGui.BeginCombo("Select Recipe", preview))
+            {
+                try
+                {
+                    ImGui.Text("Search");
+                    ImGui.SameLine();
+                    ImGui.InputText("###RecipeSearch", ref Search, 100);
+
+                    if (ImGui.Selectable(string.Empty, SelectedRecipe == null))
+                    {
+                        SelectedRecipe = null;
+                    }
+
+
+                    foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.Name.RawString.Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
+                    {
+                        ImGui.PushID($"###simRecipe{recipe.RowId}");
+                        var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.RawString} ({LuminaSheets.ClassJobSheet[recipe.CraftType.Row + 8].Abbreviation.RawString} {recipe.RecipeLevelTable.Value.ClassJobLevel})", recipe.RowId == SelectedRecipe?.RowId);
+
+                        if (selected)
+                        {
+                            SelectedRecipe = recipe;
+                            if (SimGS is not null && recipe.CraftType.Row + 8 != SimGS.Value.ClassJob)
+                                SimGS = null;
+
+                            _selectedCraft = null;
+                            _selectedSolver = null;
+                            _simCurSolver = null;
+                        }
+
+                        ImGui.PopID();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ex.Log();
+                }
+
+                ImGui.EndCombo();
+            }
+        }
     }
 }

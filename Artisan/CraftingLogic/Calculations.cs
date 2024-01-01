@@ -56,7 +56,7 @@ namespace Artisan.CraftingLogic
         public static int GetStartingQuality(Recipe recipe, int[] hqCount)
         {
             var itemSheet = Svc.Data.GetExcelSheet<Item>();
-            int sumLevelHQ = 0, sumLevel = 0, idx = 0;
+            long sumLevelHQ = 0, sumLevel = 0, idx = 0;
             foreach (var i in recipe.UnkData5)
             {
                 var numHQ = idx < hqCount.Length ? hqCount[idx] : 0;
@@ -70,8 +70,11 @@ namespace Artisan.CraftingLogic
                 var ilvl = (int)item.LevelItem.Row;
                 sumLevel += ilvl * i.AmountIngredient;
                 sumLevelHQ += ilvl * Math.Clamp(numHQ, 0, i.AmountIngredient);
+
             }
-            return sumLevel == 0 ? 0 : sumLevelHQ * RecipeMaxQuality(recipe) * recipe.MaterialQualityFactor / (sumLevel * 100);
+            var left = (sumLevelHQ * RecipeMaxQuality(recipe) * recipe.MaterialQualityFactor / 100);
+            var right = (sumLevel);
+            return (int)(sumLevel == 0 ? 0 : left / right);
         }
     }
 }

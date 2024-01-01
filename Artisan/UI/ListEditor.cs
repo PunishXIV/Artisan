@@ -836,9 +836,8 @@ internal class ListEditor : Window, IDisposable
         }
 
         var config = P.Config.RecipeConfigs.GetValueOrDefault(selectedListItem) ?? new();
-        var buttonWidth = ImGui.CalcTextSize($"Apply to all");
         {
-            if (config.DrawFood(-30 - (int)buttonWidth.X))
+            if (config.DrawFood())
             {
                 P.Config.RecipeConfigs[selectedListItem] = config;
                 P.Config.Save();
@@ -859,7 +858,7 @@ internal class ListEditor : Window, IDisposable
             }
         }
         {
-            if (config.DrawPotion(-30 - (int)buttonWidth.X))
+            if (config.DrawPotion())
             {
                 P.Config.RecipeConfigs[selectedListItem] = config;
                 P.Config.Save();
@@ -883,7 +882,7 @@ internal class ListEditor : Window, IDisposable
         var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.Row);
         stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
         var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.Row, recipe);
-        if (config.DrawSolver(craft, -30))
+        if (config.DrawSolver(craft))
         {
             P.Config.RecipeConfigs[selectedListItem] = config;
             P.Config.Save();

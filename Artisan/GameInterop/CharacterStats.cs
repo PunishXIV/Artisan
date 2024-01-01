@@ -106,6 +106,7 @@ public unsafe struct ConsumableStats
     {
         public int Percent;
         public int Max;
+        public int Param;
 
         public int Effective(int baseValue) => Percent <= 0 ? Max : Math.Max(Max, baseValue * Percent / 100);
     }
@@ -139,6 +140,7 @@ public unsafe struct ConsumableStats
                 var max = hq ? p.MaxHQ : p.Max;
                 Stats[stat].Percent = p.IsRelative ? val : 0;
                 Stats[stat].Max = p.IsRelative ? max : val;
+                Stats[stat].Param = p.BaseParam;
             }
         }
     }
