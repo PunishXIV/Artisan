@@ -313,7 +313,7 @@ namespace Artisan.Autocraft
                 var isCrafting = Svc.Condition[ConditionFlag.Crafting];
                 var preparing = Svc.Condition[ConditionFlag.PreparingToCraft];
 
-                if (!Throttler.Throttle(0))
+                if (!Throttler.Throttle(0) || PreCrafting._tasks.Count > 0)
                 {
                     return;
                 }
@@ -339,6 +339,14 @@ namespace Artisan.Autocraft
                     return;
                 }
                 if (DebugTab.Debug) Svc.Log.Verbose("HQ not null");
+
+                if ((Job)LuminaSheets.RecipeSheet[RecipeID].CraftType.Row + 8 != CharacterInfo.JobID)
+                {
+                    PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), default));
+                    PreCrafting._tasks.Add((() => PreCrafting.TaskClassChange((Job)LuminaSheets.RecipeSheet[RecipeID].CraftType.Row + 8), TimeSpan.FromMilliseconds(200)));
+                    return;
+                }
+
 
                 if (!Spiritbond.ExtractMateriaTask(P.Config.Materia, isCrafting, preparing))
                     return;
@@ -380,6 +388,7 @@ namespace Artisan.Autocraft
                     }
                     return;
                 }
+
                 if (DebugTab.Debug) Svc.Log.Verbose("Consumables success");
                 {
                     if (CraftingListFunctions.RecipeWindowOpen())

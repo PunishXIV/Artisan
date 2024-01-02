@@ -1,6 +1,8 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation.Character;
+using Dalamud.Utility;
 using System;
+using System.ComponentModel;
 
 namespace Artisan.CraftingLogic;
 
@@ -8,14 +10,31 @@ public static class Simulator
 {
     public enum CraftStatus
     {
+        [Description("Craft In Progress")]
         InProgress,
+        [Description("Craft Failed Due to Durability")]
         FailedDurability,
+        [Description("Craft Failed Due to Minimum Quality Not Being Met")]
         FailedMinQuality,
+        [Description($"Craft Has Completed First Quality Breakpoint")]
         SucceededQ1,
+        [Description($"Craft Has Completed Second Quality Breakpoint")]
         SucceededQ2,
+        [Description($"Craft Has Completed Third Quality Breakpoint")]
         SucceededQ3,
+        [Description($"Craft Has Completed with Max Quality")]
+        SucceededMaxQuality,
+        [Description($"Craft Has Completed with Some Quality")]
+        SucceededSomeQuality,
+        [Description($"Craft Has Completed, No Quality Required")]
+        SucceededNoQualityReq,
 
         Count
+    }
+
+    public static string ToOutputString(this CraftStatus status)
+    {
+        return status.GetAttribute<DescriptionAttribute>().Description;
     }
 
     public enum ExecuteResult
@@ -26,13 +45,46 @@ public static class Simulator
     }
 
     public static StepState CreateInitial(CraftState craft, int startingQuality)
-        => new() { Index = 1, Durability = craft.CraftDurability, Quality = startingQuality, RemainingCP = craft.StatCP, CarefulObservationLeft = craft.Specialist ? 3 : 0, HeartAndSoulAvailable = craft.Specialist };
+        => new() { Index = 1, Durability = craft.CraftDurability, Quality = startingQuality, RemainingCP = craft.StatCP, CarefulObservationLeft = craft.Specialist ? 3 : 0, HeartAndSoulAvailable = craft.Specialist, Condition = Condition.Normal };
 
     public static CraftStatus Status(CraftState craft, StepState step)
     {
-        return step.Progress < craft.CraftProgress
-            ? step.Durability > 0 ? CraftStatus.InProgress : CraftStatus.FailedDurability
-            : step.Quality < craft.CraftQualityMin1 ? CraftStatus.FailedMinQuality : step.Quality < craft.CraftQualityMin2 ? CraftStatus.SucceededQ1 : step.Quality < craft.CraftQualityMin3 ? CraftStatus.SucceededQ2 : CraftStatus.SucceededQ3;
+        if (step.Progress < craft.CraftProgress)
+        {
+            if (step.Durability > 0)
+                return CraftStatus.InProgress;
+            else
+                return CraftStatus.FailedDurability;
+        }
+
+        if (craft.CraftCollectible)
+        {
+            if (step.Quality >= craft.CraftQualityMin3)
+                return CraftStatus.SucceededQ3;
+
+            if (step.Quality >= craft.CraftQualityMin2)
+                return CraftStatus.SucceededQ2;
+
+            if (step.Quality >= craft.CraftQualityMin1)
+                return CraftStatus.SucceededQ1;
+
+            if (step.Quality < craft.CraftRequiredQuality)
+                return CraftStatus.FailedMinQuality;
+
+        }
+
+        if (craft.CraftHQ && !craft.CraftCollectible)
+        {
+            if (step.Quality >= craft.CraftQualityMax)
+                return CraftStatus.SucceededMaxQuality;
+            else
+                return CraftStatus.SucceededSomeQuality;
+
+        }
+        else
+        {
+            return CraftStatus.SucceededNoQualityReq;
+        }
     }
 
     public static (ExecuteResult, StepState) Execute(CraftState craft, StepState step, Skills action, float actionSuccessRoll, float nextStateRoll)

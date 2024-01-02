@@ -95,6 +95,8 @@ public static unsafe class Crafting
             CraftQualityDivider = lt?.QualityDivider ?? 180,
             CraftQualityModifier = lt?.QualityModifier ?? 180,
             CraftQualityMax = Calculations.RecipeMaxQuality(recipe),
+            CraftRequiredQuality = (int)recipe.RequiredQuality,
+            CraftHQ = recipe.CanHq,
         };
 
         if (res.CraftCollectible)

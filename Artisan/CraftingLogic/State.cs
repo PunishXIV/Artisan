@@ -16,6 +16,7 @@ public record class CraftState
     public bool Splendorous;
 
     // recipe stats
+    public bool CraftHQ;
     public bool CraftCollectible;
     public bool CraftExpert;
     public int CraftLevel; // Recipe.RecipeLevelTable.ClassJobLevel
@@ -29,6 +30,7 @@ public record class CraftState
     public int CraftQualityMin1; // min/first breakpoint
     public int CraftQualityMin2;
     public int CraftQualityMin3;
+    public int CraftRequiredQuality;
     public float[] CraftConditionProbabilities = { }; // TODO: this assumes that new condition does not depend on prev - this is what my preliminary findings suggest (except for forced transitions)
 
     public static float[] NormalCraftConditionProbabilities(int statLevel) => [1, statLevel >= 63 ? 0.25f : 0.2f, 0.04f];

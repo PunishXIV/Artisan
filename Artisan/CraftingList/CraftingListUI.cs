@@ -178,16 +178,12 @@ namespace Artisan.CraftingLists
 
         public static void AddAllSubcrafts(Recipe selectedRecipe, CraftingList selectedList, int amounts = 1, int loops = 1)
         {
-            Svc.Log.Debug($"Processing: {selectedRecipe.ItemResult.Value.Name.RawString}");
             foreach (var subItem in selectedRecipe.UnkData5.Where(x => x.AmountIngredient > 0))
             {
-                Svc.Log.Debug($"Sub-item: {LuminaSheets.ItemSheet[(uint)subItem.ItemIngredient].Name.RawString} * {subItem.AmountIngredient}");
                 var subRecipe = CraftingListHelpers.GetIngredientRecipe((uint)subItem.ItemIngredient);
                 if (subRecipe != null)
                 {
                     AddAllSubcrafts(subRecipe, selectedList, subItem.AmountIngredient * amounts, loops);
-
-                    Svc.Log.Debug($"Adding: {subRecipe.ItemResult.Value.Name.RawString} {Math.Ceiling(subItem.AmountIngredient / (double)subRecipe.AmountResult * loops * amounts)} times");
 
                     for (int i = 1; i <= Math.Ceiling(subItem.AmountIngredient / (double)subRecipe.AmountResult * loops * amounts); i++)
                     {
@@ -201,8 +197,6 @@ namespace Artisan.CraftingLists
                             selectedList.Items.Insert(indexOfLast, subRecipe.RowId);
                         }
                     }
-
-                    Svc.Log.Debug($"There are now {selectedList.Items.Count} items on the list");
                 }
             }
         }

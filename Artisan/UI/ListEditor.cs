@@ -91,7 +91,7 @@ internal class ListEditor : Window, IDisposable
         SizeCondition = ImGuiCond.Appearing;
         ShowCloseButton = true;
         RespectCloseHotkey = false;
-        GenerateTableAsync();
+        NeedsToRefreshTable = true;
 
         if (P.Config.DefaultHQCrafts) HQSubcraftsOnly = true;
         if (P.Config.DefaultColourValidation) ColourValidation = true;
@@ -157,7 +157,7 @@ internal class ListEditor : Window, IDisposable
             {
                 if (NeedsToRefreshTable)
                 {
-                    GenerateTableAsync();
+                    Task.Run(async () => await GenerateTableAsync());
                     NeedsToRefreshTable = false;
                 }
 

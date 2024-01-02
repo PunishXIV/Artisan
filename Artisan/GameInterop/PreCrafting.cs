@@ -36,8 +36,8 @@ public unsafe static class PreCrafting
     private static Hook<ClickSynthesisButton> _clickQuickSynthesisButtonHook;
     private static Hook<ClickSynthesisButton> _clickTrialSynthesisButtonHook;
 
-    private enum TaskResult { Done, Retry, Abort }
-    private static List<(Func<TaskResult> task, TimeSpan retryDelay)> _tasks = new();
+    public enum TaskResult { Done, Retry, Abort }
+    public static List<(Func<TaskResult> task, TimeSpan retryDelay)> _tasks = new();
     private static DateTime _nextRetry;
 
     static PreCrafting()
@@ -157,7 +157,7 @@ public unsafe static class PreCrafting
         return 0;
     }
 
-    private static TaskResult TaskExitCraft()
+    public static TaskResult TaskExitCraft()
     {
         switch (Crafting.CurState)
         {
@@ -177,7 +177,7 @@ public unsafe static class PreCrafting
         }
     }
 
-    private static TaskResult TaskClassChange(Job job)
+    public static TaskResult TaskClassChange(Job job)
     {
         if (job == CharacterInfo.JobID)
             return TaskResult.Done;
@@ -185,6 +185,7 @@ public unsafe static class PreCrafting
         var gearsets = RaptureGearsetModule.Instance();
         foreach (ref var gs in gearsets->EntriesSpan)
         {
+            if (!RaptureGearsetModule.Instance()->IsValidGearset(gs.ID)) continue;
             if ((Job)gs.ClassJob == job)
             {
                 var result = gearsets->EquipGearset(gs.ID);

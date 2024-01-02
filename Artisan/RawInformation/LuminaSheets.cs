@@ -168,6 +168,26 @@ namespace Artisan.RawInformation
             return id == 0 ? default : id < 100000 ? LuminaSheets.ActionSheet[id].Icon : LuminaSheets.CraftActions[id].Icon;
         }
 
+        public static int StandardCPCost(this Skills skill)
+        {
+            var id = skill.ActionId(ECommons.ExcelServices.Job.CRP);
+            return id == 0 ? 0 : id < 100000 ? LuminaSheets.ActionSheet[id].PrimaryCostValue : LuminaSheets.CraftActions[id].Cost;
+        }
+
+        public static string GetSkillDescription(this Skills skill)
+        {
+            var id = skill.ActionId(ECommons.ExcelServices.Job.CRP);
+            string description = id == 0 ? "" : id < 100000 ? Svc.Data.Excel.GetSheet<ActionTransient>().GetRow(id).Description : LuminaSheets.CraftActions[id].Description;
+            description = skill switch
+            {
+                Skills.BasicSynthesis => description.Replace($": %", $": 100%/120%").Replace($"効率：", $"効率：100/120").Replace($"Effizienz: ", $"Effizienz: 100/120"),
+                Skills.CarefulSynthesis => description.Replace($": %", $": 150%/180%").Replace($"効率：", $"効率：150/180").Replace($"Effizienz: ", $"Effizienz: 150/180"),
+                Skills.RapidSynthesis => description.Replace($": %", $": 250%/500%").Replace($"効率：", $"効率：250/500").Replace($"Effizienz: ", "Effizienz: 250/500"),
+                Skills.Groundwork => description.Replace($": %", $": 300%/360%").Replace($"効率：", $"効率：300/360").Replace("Effizienz: ", "Effizienz: 300/360"),
+                _ => description
+            };
+            return description;
+        }
         public static string NameOfBuff(this ushort id)
         {
             if (id == 0) return "";

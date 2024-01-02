@@ -93,7 +93,6 @@ namespace Artisan.RawInformation
             var btnRes = target.AtkComponentBase.OwnerNode->AtkResNode;
             var evt = btnRes.AtkEventManager.Event;
 
-            Svc.Log.Debug($"{evt->Type} {evt->Param}");
             addon->ReceiveEvent(evt->Type, (int)evt->Param, btnRes.AtkEventManager.Event, evt->Flags);
         }
     }

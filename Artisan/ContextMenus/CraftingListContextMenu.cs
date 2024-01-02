@@ -44,8 +44,6 @@ internal static class CraftingListContextMenu
             var itemId = *(uint*)(recipeNoteAgent + 0x398);
             var craftTypeIndex = *(uint*)(recipeNoteAgent + 944);
 
-
-            Svc.Log.Debug($"{RetainerInfo.GetRetainerItemCount(itemId)} {RetainerInfo.GetReachableRetainerBell()}");
             if (RetainerInfo.GetRetainerItemCount(itemId) > 0 && RetainerInfo.GetReachableRetainerBell() != null)
             {
                 int amountToGet = 1;

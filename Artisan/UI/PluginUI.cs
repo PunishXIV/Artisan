@@ -696,6 +696,12 @@ namespace Artisan.UI
                     P.Config.Save();
 
                 ImGuiComponents.HelpMarker("These are the new options when you right click or press square on a recipe in the recipe list.");
+
+                if (ImGui.SliderFloat("Simulator Action Image Size", ref P.Config.SimulatorActionSize, 5f, 70f))
+                {
+                    P.Config.Save();
+                }
+                ImGuiComponents.HelpMarker("Sets the scale of the action images that appear in the simulator tab.");
             }
             if (ImGui.CollapsingHeader("List Settings"))
             {

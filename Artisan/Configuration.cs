@@ -135,6 +135,8 @@ namespace Artisan
 
         public bool ViewedEnduranceMessage = false;
 
+        public float SimulatorActionSize = 40f;
+
         public void Save()
         {
             Svc.PluginInterface.SavePluginConfig(this);

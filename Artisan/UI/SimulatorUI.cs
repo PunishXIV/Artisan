@@ -2,6 +2,7 @@
 using Artisan.CraftingLogic;
 using Artisan.GameInterop;
 using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
@@ -17,8 +18,9 @@ using OtterGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using static FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule;
-using static OtterGui.Widgets.Tutorial;
+using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.UI
 {
@@ -40,14 +42,16 @@ namespace Artisan.UI
         private static Solver.Recommendation _simNextRec;
         private static GearsetEntry? SimGS;
         private static string SimGSName;
-        private static uint[] SimActionIDs;
+        private static List<Skills> SimActionIDs = new();
         private static ConsumableChoice? SimFood;
         private static ConsumableChoice? SimMedicine;
         private static CharacterStats SimStats;
+        private static bool assumeNormalStatus;
 
         // data and other imgui things
         private static Dictionary<uint, List<IngredientLayouts>> ingredientLayouts = new();
         private static float layoutWidth = 0;
+        private static float widgetSize => P.Config.SimulatorActionSize;
 
         private class IngredientLayouts
         {
@@ -109,7 +113,238 @@ namespace Artisan.UI
 
         private static void DrawSolverMode()
         {
-            ImGui.Text($"Coming soon?");
+            if (SimGS != null)
+            {
+                DrawActionWidgets();
+                ImGui.Separator();
+                DrawSimulation();
+            }
+            else
+            {
+                ImGui.Text($"Please have a gearset selected from above to use this feature.");
+            }
+        }
+
+        private static void DrawSimulation()
+        {
+
+            if (ImGui.Button($"Reset"))
+            {
+                _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
+                //InitDefaultTransitionProbabilities(_selectedCraft, SelectedRecipe);
+                SimActionIDs.Clear();
+                _simCurSteps.Clear();
+                var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
+                _simCurSteps.Add((initial, ""));
+            }
+
+            if (_selectedCraft != null && _simCurSteps != null && _simCurSteps.Count > 0)
+            {
+                ImGui.Columns(16, null, false);
+                var job = (Job)SimGS?.ClassJob;
+                for (int i = 0; i < _simCurSteps.Count; i++)
+                {
+                    if (i + 1 < _simCurSteps.Count)
+                    {
+                        var currentAction = _simCurSteps[i + 1].step.PrevComboAction;
+                        ImGui.Image(P.Icons.LoadIcon(currentAction.IconOfAction(job)).ImGuiHandle, new Vector2(widgetSize));
+                        var step = _simCurSteps[i + 1].step;
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.BeginTooltip();
+                            ImGuiEx.Text($"{step.Index - 1}. {currentAction.NameOfAction()}");
+                            ImGuiEx.Text($"P: {step.Progress} / {_selectedCraft.CraftProgress} ({Math.Round((float)step.Progress / _selectedCraft.CraftProgress * 100, 0)}%)");
+                            ImGuiEx.Text($"Q: {step.Quality} / {_selectedCraft.CraftQualityMax} ({Math.Round((float)step.Quality / _selectedCraft.CraftQualityMax * 100, 0)}%)");
+                            ImGuiEx.Text($"D: {step.Durability} / {_selectedCraft.CraftDurability} ({Math.Round((float)step.Durability / _selectedCraft.CraftDurability * 100, 0)}%)");
+                            ImGuiEx.Text($"CP: {step.RemainingCP} / {_selectedCraft.StatCP} ({Math.Round((float)step.RemainingCP / _selectedCraft.StatCP * 100, 0)}%)");
+                            ImGuiEx.Text($"Condition: {_simCurSteps[i].step.Condition} -> {step.Condition}");
+                            ImGui.EndTooltip();
+                        }
+                        if (ImGui.IsItemClicked())
+                        {
+                            SimActionIDs.RemoveAt(i);
+                            ResolveSteps();
+                        }
+
+                        ImGui.NextColumn();
+                    }
+                }
+                ImGui.Columns(1);
+
+                var status = Simulator.Status(_selectedCraft, _simCurSteps.Last().step);
+                var successColor = status == Simulator.CraftStatus.InProgress ? ImGuiColors.DalamudWhite : _simCurSteps.Last().step.Progress >= _selectedCraft.CraftProgress && _simCurSteps.Last().step.Quality >= _selectedCraft.CraftQualityMax ? ImGuiColors.HealerGreen : _simCurSteps.Last().step.Progress < _selectedCraft.CraftProgress ? ImGuiColors.DPSRed : ImGuiColors.DalamudOrange;
+
+                float qualityPercent = (float)(_simCurSteps.Last().step.Quality / _selectedCraft.CraftQualityMax);
+                float progressPercent = (float)(_simCurSteps.Last().step.Progress / _selectedCraft.CraftProgress);
+                float CPPercent = (float)(_simCurSteps.Last().step.RemainingCP / _selectedCraft.StatCP);
+
+                ImGui.PushStyleColor(ImGuiCol.Text, successColor);
+                ImGuiEx.ImGuiLineCentered($"SimResults", () => ImGuiEx.TextUnderlined($"Simulator Result - {status.ToOutputString()}"));
+                ImGui.Columns(4, null, false);
+                ImGuiEx.TextCentered($"Quality");
+                ImGuiEx.SetNextItemFullWidth();
+                DrawProgress(_simCurSteps.Last().step.Quality, _selectedCraft.CraftQualityMax);
+                ImGui.NextColumn();
+                ImGuiEx.TextCentered($"Progress");
+                ImGuiEx.SetNextItemFullWidth();
+                DrawProgress(_simCurSteps.Last().step.Progress, _selectedCraft.CraftProgress);
+                ImGui.NextColumn();
+                ImGuiEx.TextCentered($"CP");
+                ImGuiEx.SetNextItemFullWidth();
+                DrawProgress(_simCurSteps.Last().step.RemainingCP, _selectedCraft.StatCP);
+                ImGui.NextColumn();
+                ImGuiEx.TextCentered($"Durability");
+                ImGuiEx.SetNextItemFullWidth();
+                DrawProgress(_simCurSteps.Last().step.Durability, _selectedCraft.CraftDurability);
+                ImGui.Columns(1);
+                ImGui.PopStyleColor();
+            }
+
+        }
+
+        private static void ResolveSteps()
+        {
+            _simCurSteps.Clear();
+            _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
+            var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
+            _simCurSteps.Add((initial, ""));
+            for (int i = 0; i < SimActionIDs.Count; i++)
+            {
+                var step = Simulator.Execute(_selectedCraft, _simCurSteps.Last().step, SimActionIDs[i], 0, 1);
+                if (step.Item1 == Simulator.ExecuteResult.Succeeded)
+                    _simCurSteps.Add((step.Item2, ""));
+            }
+        }
+
+        private static void DrawProgress(int a, int b) => ImGui.ProgressBar((float)a / b, new(0), $"{a * 100.0f / b:f2}% ({a}/{b})");
+
+        private static bool ActionChild(string label, int itemCount, System.Action func)
+        {
+            Vector2 childSize = new Vector2((widgetSize + ImGui.GetStyle().ItemSpacing.X) * itemCount + ImGui.GetStyle().WindowPadding.X, (ImGui.GetTextLineHeightWithSpacing() + (widgetSize + ImGui.GetStyle().WindowPadding.Y) + 12f));
+            if (ImGui.BeginChild(label, childSize, true))
+            {
+                ImGuiEx.ImGuiLineCentered($"{label}", () => ImGuiEx.TextUnderlined($"{label}"));
+                func();
+                ImGui.EndChild();
+                return true;
+            }
+            return false;
+        }
+        private static void DrawActionWidgets()
+        {
+            ActionChild("Progress Actions", 7, () =>
+            {
+                DrawActionWidget(Skills.BasicSynthesis);
+                DrawActionWidget(Skills.CarefulSynthesis);
+                DrawActionWidget(Skills.PrudentSynthesis);
+                DrawActionWidget(Skills.RapidSynthesis);
+                DrawActionWidget(Skills.Groundwork);
+                DrawActionWidget(Skills.FocusedSynthesis);
+                DrawActionWidget(Skills.IntensiveSynthesis);
+            });
+
+            ImGui.SameLine();
+            ActionChild("Quality Actions", 11, () =>
+            {
+                DrawActionWidget(Skills.BasicTouch);
+                DrawActionWidget(Skills.StandardTouch);
+                DrawActionWidget(Skills.AdvancedTouch);
+                DrawActionWidget(Skills.HastyTouch);
+                DrawActionWidget(Skills.ByregotsBlessing);
+                DrawActionWidget(Skills.PreciseTouch);
+                DrawActionWidget(Skills.FocusedTouch);
+                DrawActionWidget(Skills.PrudentTouch);
+                DrawActionWidget(Skills.TrainedEye);
+                DrawActionWidget(Skills.PreparatoryTouch);
+                DrawActionWidget(Skills.TrainedFinesse);
+
+            });
+
+            ActionChild("Buff Actions", 8, () =>
+            {
+                DrawActionWidget(Skills.WasteNot);
+                DrawActionWidget(Skills.WasteNot2);
+                DrawActionWidget(Skills.GreatStrides);
+                DrawActionWidget(Skills.Innovation);
+                DrawActionWidget(Skills.Veneration);
+                DrawActionWidget(Skills.FinalAppraisal);
+                DrawActionWidget(Skills.MuscleMemory);
+                DrawActionWidget(Skills.Reflect);
+            });
+
+            ImGui.SameLine();
+            ActionChild("Repair", 2, () =>
+            {
+                DrawActionWidget(Skills.Manipulation);
+                DrawActionWidget(Skills.MastersMend);
+            });
+
+            ImGui.SameLine();
+            ActionChild("Other", 5, () =>
+            {
+                DrawActionWidget(Skills.Observe);
+                DrawActionWidget(Skills.HeartAndSoul);
+                DrawActionWidget(Skills.CarefulObservation);
+                DrawActionWidget(Skills.DelicateSynthesis);
+                DrawActionWidget(Skills.TricksOfTrade);
+            });
+        }
+
+        private static void DrawActionWidget(Skills action)
+        {
+            var icon = P.Icons.LoadIcon(action.IconOfAction(Job.CRP + SelectedRecipe.CraftType.Row));
+            ImGui.Image(icon.ImGuiHandle, new Vector2(widgetSize));
+
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.BeginTooltip();
+                ImGuiEx.Text($"{action.NameOfAction()} - {action.StandardCPCost()} CP");
+                ImGuiEx.Text($"{action.GetSkillDescription()}");
+                ImGui.EndTooltip();
+            }
+
+            if (ImGui.IsItemClicked())
+            {
+                if (_simCurSteps.Count == 0)
+                {
+                    _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
+                    var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
+                    _simCurSteps.Add((initial, ""));
+                    var step = Simulator.Execute(_selectedCraft, initial, action, 0, 1);
+                    if (step.Item1 == Simulator.ExecuteResult.CantUse)
+                    {
+                        Notify.Error($"Cannot use {action.NameOfAction()}.");
+                    }
+                    if (step.Item1 == Simulator.ExecuteResult.Failed)
+                    {
+                        Notify.Error($"{action.NameOfAction()} has failed");
+                    }
+                    if (step.Item1 == Simulator.ExecuteResult.Succeeded)
+                    {
+                        SimActionIDs.Add(action);
+                        _simCurSteps.Add((step.Item2, ""));
+                    }
+                }
+                else
+                {
+                    var step = Simulator.Execute(_selectedCraft, _simCurSteps.Last().step, action, 0, 1);
+                    if (step.Item1 == Simulator.ExecuteResult.CantUse)
+                    {
+                        Notify.Error($"Cannot use {action.NameOfAction()}.");
+                    }
+                    if (step.Item1 == Simulator.ExecuteResult.Failed)
+                    {
+                        Notify.Error($"{action.NameOfAction()} has failed");
+                    }
+                    if (step.Item1 == Simulator.ExecuteResult.Succeeded)
+                    {
+                        SimActionIDs.Add(action);
+                        _simCurSteps.Add((step.Item2, ""));
+                    }
+                }
+            }
+
+            ImGui.SameLine();
         }
 
         private static void DrawPreconfiguredMode()
@@ -123,9 +358,10 @@ namespace Artisan.UI
             if (_selectedSolver != null && SimGS != null)
             {
                 ImGuiEx.SetNextItemFullWidth();
-                if (ImGui.Button($"Solve"))
+                if (ImGui.Button($"Run Simulated Solver"))
                 {
                     _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
+                    InitDefaultTransitionProbabilities(_selectedCraft, SelectedRecipe);
                     _simCurSteps.Clear();
                     _simCurSolver = _selectedSolver?.Clone();
                     if (_simCurSolver != null)
@@ -138,6 +374,9 @@ namespace Artisan.UI
                     while (SolveNextSimulator(_selectedCraft)) ;
                 }
 
+                ImGui.SameLine();
+                ImGui.Checkbox($"Assume Normal Condition only", ref assumeNormalStatus);
+
                 if (_simCurSolver != null)
                 {
                     ImGui.Columns(Math.Min(16, _simCurSteps.Count), null, false);
@@ -147,7 +386,7 @@ namespace Artisan.UI
                         if (i + 1 < _simCurSteps.Count)
                         {
                             var currentAction = _simCurSteps[i + 1].step.PrevComboAction;
-                            ImGui.Image(P.Icons.LoadIcon(currentAction.IconOfAction(job)).ImGuiHandle, new System.Numerics.Vector2(40));
+                            ImGui.Image(P.Icons.LoadIcon(currentAction.IconOfAction(job)).ImGuiHandle, new Vector2(widgetSize));
                             var step = _simCurSteps[i + 1].step;
                             if (ImGui.IsItemHovered())
                             {
@@ -157,6 +396,7 @@ namespace Artisan.UI
                                 ImGuiEx.Text($"Q: {step.Quality} / {_selectedCraft.CraftQualityMax} ({Math.Round((float)step.Quality / _selectedCraft.CraftQualityMax * 100, 0)}%)");
                                 ImGuiEx.Text($"D: {step.Durability} / {_selectedCraft.CraftDurability} ({Math.Round((float)step.Durability / _selectedCraft.CraftDurability * 100, 0)}%)");
                                 ImGuiEx.Text($"CP: {step.RemainingCP} / {_selectedCraft.StatCP} ({Math.Round((float)step.RemainingCP / _selectedCraft.StatCP * 100, 0)}%)");
+                                ImGuiEx.Text($"Condition: {_simCurSteps[i].step.Condition} -> {step.Condition}");
                                 ImGui.EndTooltip();
                             }
 
@@ -167,10 +407,10 @@ namespace Artisan.UI
 
                     var successColor = _simCurSteps.Last().step.Progress >= _selectedCraft.CraftProgress && _simCurSteps.Last().step.Quality >= _selectedCraft.CraftQualityMax ? ImGuiColors.HealerGreen : _simCurSteps.Last().step.Progress < _selectedCraft.CraftProgress ? ImGuiColors.DPSRed : ImGuiColors.DalamudOrange;
 
-                    ImGui.PushStyleColor(ImGuiCol.Text, successColor);  
+                    ImGui.PushStyleColor(ImGuiCol.Text, successColor);
                     ImGuiEx.ImGuiLineCentered($"SimResults", () => ImGuiEx.TextUnderlined($"Simulator Result"));
                     ImGui.Columns(3, null, false);
-                    ImGuiEx.TextCentered($"Quality: {_simCurSteps.Last().step.Quality} / {_selectedCraft.CraftQualityMax} ({Calculations.GetHQChance((double)_simCurSteps.Last().step.Quality/ _selectedCraft.CraftQualityMax * 100)}% HQ Chance)");
+                    ImGuiEx.TextCentered($"Quality: {_simCurSteps.Last().step.Quality} / {_selectedCraft.CraftQualityMax} ({Calculations.GetHQChance((double)_simCurSteps.Last().step.Quality / _selectedCraft.CraftQualityMax * 100)}% HQ Chance)");
                     ImGui.NextColumn();
                     ImGuiEx.TextCentered($"Progress: {_simCurSteps.Last().step.Progress} / {_selectedCraft.CraftProgress}");
                     ImGui.NextColumn();
@@ -193,6 +433,33 @@ namespace Artisan.UI
             _simCurSteps.Add((next, ""));
             _simNextRec = _simCurSolver.Solve(craft, next);
             return true;
+        }
+
+        private static void InitDefaultTransitionProbabilities(CraftState craft, Recipe recipe)
+        {
+            if (recipe.IsExpert)
+            {
+                // TODO: this is all very unconfirmed, we really need a process to gather this data
+                var potentialConditions = recipe.RecipeLevelTable.Value?.ConditionsFlag ?? 0;
+                var manyConditions = (potentialConditions & 0x1F0) == 0x1F0; // it seems that when all conditions are available, each one has slightly lower probability?
+                var haveGoodOmen = (potentialConditions & (1 << (int)Condition.GoodOmen)) != 0; // it seems that when good omen is possible, straight good is quite a bit rarer
+                craft.CraftConditionProbabilities = new float[(int)Condition.Unknown];
+                craft.CraftConditionProbabilities[(int)Condition.Good] = haveGoodOmen ? 0.04f : 0.12f;
+                craft.CraftConditionProbabilities[(int)Condition.Centered] = manyConditions ? 0.12f : 0.15f;
+                craft.CraftConditionProbabilities[(int)Condition.Sturdy] = manyConditions ? 0.12f : 0.15f;
+                craft.CraftConditionProbabilities[(int)Condition.Pliant] = manyConditions ? 0.10f : 0.12f;
+                craft.CraftConditionProbabilities[(int)Condition.Malleable] = manyConditions ? 0.10f : 0.12f;
+                craft.CraftConditionProbabilities[(int)Condition.Primed] = manyConditions ? 0.12f : 0.15f;
+                craft.CraftConditionProbabilities[(int)Condition.GoodOmen] = 0.12f;
+                for (Condition i = Condition.Good; i < Condition.Unknown; ++i)
+                    if ((potentialConditions & (1 << (int)i)) == 0)
+                        craft.CraftConditionProbabilities[(int)i] = 0;
+            }
+            else
+            {
+                if (!assumeNormalStatus)
+                    craft.CraftConditionProbabilities = CraftState.NormalCraftConditionProbabilities(craft.StatLevel);
+            }
         }
 
         private static void DrawSolverCombo()
@@ -345,7 +612,7 @@ namespace Artisan.UI
 
             if (validGS == 0)
             {
-                ImGuiEx.Text($"Please add a gearset for {(Job)SelectedRecipe?.CraftType.Row + 8}");
+                ImGuiEx.Text($"Please add a gearset for {LuminaSheets.ClassJobSheet[SelectedRecipe.CraftType.Row + 8].Abbreviation}");
                 SimGS = null;
                 return;
             }
@@ -401,7 +668,15 @@ namespace Artisan.UI
                 var percentage = Math.Clamp((double)startingQuality / max * 100, 0, 100);
                 var hqChance = Calculations.GetHQChance(percentage);
 
-                ImGuiEx.ImGuiLineCentered("StartingQuality", () => ImGuiEx.Text($"Starting Quality: {startingQuality} / {max} ({hqChance}% HQ chance, {percentage.ToString("N0")}% quality)"));
+                ImGuiEx.ImGuiLineCentered("StartingQuality", () =>
+                {
+                    ImGuiEx.Text($"Starting Quality: {startingQuality} / {max} ({hqChance}% HQ chance, {percentage.ToString("N0")}% quality)");
+                });
+                ImGuiEx.ImGuiLineCentered("ExpertInfo", () =>
+                {
+                    ImGuiEx.Text($"{(SelectedRecipe.IsExpert ? "Expert Recipe" : SelectedRecipe.SecretRecipeBook.Row > 0 ? "Master Recipe" : "Normal Recipe")}");
+                });
+
             }
 
         }
@@ -508,7 +783,10 @@ namespace Artisan.UI
                                       ? string.Empty
                                       : $"{SelectedRecipe?.ItemResult.Value.Name.RawString} ({LuminaSheets.ClassJobSheet[SelectedRecipe.CraftType.Row + 8].Abbreviation.RawString})";
 
-            if (ImGui.BeginCombo("Select Recipe", preview))
+            ImGuiEx.Text($"Select Recipe");
+            ImGui.SameLine(120f.Scale());
+            ImGuiEx.SetNextItemFullWidth();
+            if (ImGui.BeginCombo("###SimulatorRecipeSelect", preview))
             {
                 try
                 {
@@ -536,6 +814,8 @@ namespace Artisan.UI
                             _selectedCraft = null;
                             _selectedSolver = null;
                             _simCurSolver = null;
+                            _simCurSteps.Clear();
+                            SimActionIDs.Clear();
                         }
 
                         ImGui.PopID();

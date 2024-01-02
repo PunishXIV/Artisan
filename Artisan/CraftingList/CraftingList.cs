@@ -556,7 +556,6 @@ namespace Artisan.CraftingLists
                                 if (node->Component->UldManager.NodeList[11]->IsVisible)
                                 {
                                     var ingredient = LuminaSheets.RecipeSheet.Values.Where(x => x.RowId == Endurance.RecipeID).FirstOrDefault().UnkData5[i].ItemIngredient;
-                                    Svc.Log.Debug($"{ingredient}");
 
                                     var btn = node->Component->UldManager.NodeList[14]->GetAsAtkComponentButton();
                                     try

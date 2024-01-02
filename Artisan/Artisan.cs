@@ -246,7 +246,6 @@ public unsafe class Artisan : IDalamudPlugin
         }
         if (subcommands.Length >= 2)
         {
-            Svc.Log.Debug($"{subcommands[1]}");
             if (firstArg.ToLower() == "lists")
             {
                 if (!CraftingListUI.Processing)

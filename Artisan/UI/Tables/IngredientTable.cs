@@ -363,7 +363,6 @@ namespace Artisan.UI.Tables
 
                         foreach (var listing in item.MarketboardData.AllListings.Where(x => x.World == world).OrderBy(x => x.TotalPrice))
                         {
-                            Svc.Log.Debug($"{qty} {item.Remaining}");
                             if (qty >= item.Remaining) break;
                             qty += listing.Quantity;
                             totalCost += listing.TotalPrice;
