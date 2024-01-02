@@ -1,5 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLogic;
+using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
@@ -29,7 +30,7 @@ namespace Artisan.UI
         static Recipe? SelectedRecipe;
         internal static string Search = string.Empty;
         private static CraftState? _selectedCraft;
-
+        private static string macroName = string.Empty;
 
         // fields for simulator
         private static Random _simRngForSeeds = new();
@@ -52,6 +53,7 @@ namespace Artisan.UI
         private static Dictionary<uint, List<IngredientLayouts>> ingredientLayouts = new();
         private static float layoutWidth = 0;
         private static float widgetSize => P.Config.SimulatorActionSize;
+        private static bool inManualMode = false;
 
         private class IngredientLayouts
         {
@@ -91,12 +93,14 @@ namespace Artisan.UI
                 {
                     if (ImGui.BeginTabItem("Preconfigured Mode"))
                     {
+                        inManualMode = false;
                         DrawPreconfiguredMode();
                         ImGui.EndTabItem();
                     }
 
-                    if (ImGui.BeginTabItem("Solver Mode"))
+                    if (ImGui.BeginTabItem("Manual Mode"))
                     {
+                        inManualMode = true;
                         DrawSolverMode();
                         ImGui.EndTabItem();
                     }
@@ -108,20 +112,62 @@ namespace Artisan.UI
 
         private static void DrawIntro()
         {
-            ImGuiEx.TextWrapped($"In this simulator, you can test out different solvers against recipes and analyze how well they perform. You can set your HQ ingredient layouts, set consumables and even which gearset to use. The simulator assumes all \"Normal\" conditions, so mileage may vary in actual execution.");
+            ImGuiEx.TextWrapped($"In this simulator, you can test out different solvers against recipes and analyze how well they perform. You can set your HQ ingredient layouts, set consumables and even which gearset to use. The simulator can be configured to randomize conditions or use \"Normal\" condition only, so actual execution mileage may vary.");
         }
 
         private static void DrawSolverMode()
         {
             if (SimGS != null)
             {
+                _selectedCraft ??= Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
+                if (_simCurSteps.Count == 0)
+                {
+                    var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
+                    _simCurSteps.Add((initial, ""));
+                }
+
+                ImGui.BeginChild("###ManualSolver", new Vector2(0), false, ImGuiWindowFlags.HorizontalScrollbar);
                 DrawActionWidgets();
                 ImGui.Separator();
                 DrawSimulation();
+                ImGui.EndChild();
             }
             else
             {
                 ImGui.Text($"Please have a gearset selected from above to use this feature.");
+            }
+        }
+
+        private static void DrawExports()
+        {
+            if (SimActionIDs.Count > 0)
+            {
+                ImGui.SameLine();
+                ImGuiEx.Text($"Macro Name");
+                ImGui.SameLine();
+                ImGui.InputText($"###MacroName", ref macroName, 300, ImGuiInputTextFlags.EnterReturnsTrue);
+                ImGui.SameLine();
+                if (ImGui.Button($"Export As Macro"))
+                {
+                    if (string.IsNullOrEmpty(macroName))
+                    {
+                        Notify.Error("Please provide a name for the macro");
+                        return;
+                    }
+                    MacroSolverSettings.Macro newMacro = new();
+                    foreach (var step in SimActionIDs)
+                    {
+                        newMacro.Steps.Add(new MacroSolverSettings.MacroStep() { Action = step });
+                    }
+                    newMacro.Name = macroName;
+                    P.Config.MacroSolverConfig.AddNewMacro(newMacro);
+
+                    var config = P.Config.RecipeConfigs.GetValueOrDefault(SelectedRecipe.RowId) ?? new();
+                    config.SolverType = typeof(MacroSolverDefinition).FullName!;
+                    config.SolverFlavour = newMacro.ID;
+                    P.Config.RecipeConfigs[SelectedRecipe.RowId] = config;
+                    P.Config.Save();
+                }
             }
         }
 
@@ -137,6 +183,9 @@ namespace Artisan.UI
                 var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
                 _simCurSteps.Add((initial, ""));
             }
+
+            DrawExports();
+
 
             if (_selectedCraft != null && _simCurSteps != null && _simCurSteps.Count > 0)
             {
@@ -172,7 +221,19 @@ namespace Artisan.UI
                 ImGui.Columns(1);
 
                 var status = Simulator.Status(_selectedCraft, _simCurSteps.Last().step);
-                var successColor = status == Simulator.CraftStatus.InProgress ? ImGuiColors.DalamudWhite : _simCurSteps.Last().step.Progress >= _selectedCraft.CraftProgress && _simCurSteps.Last().step.Quality >= _selectedCraft.CraftQualityMax ? ImGuiColors.HealerGreen : _simCurSteps.Last().step.Progress < _selectedCraft.CraftProgress ? ImGuiColors.DPSRed : ImGuiColors.DalamudOrange;
+                Vector4 successColor = status switch
+                {
+                    Simulator.CraftStatus.InProgress => ImGuiColors.DalamudWhite,
+                    Simulator.CraftStatus.FailedDurability => ImGuiColors.DPSRed,
+                    Simulator.CraftStatus.FailedMinQuality => ImGuiColors.DPSRed,
+                    Simulator.CraftStatus.SucceededQ1 => ImGuiColors.DalamudOrange,
+                    Simulator.CraftStatus.SucceededQ2 => ImGuiColors.DalamudOrange,
+                    Simulator.CraftStatus.SucceededQ3 => ImGuiColors.HealerGreen,
+                    Simulator.CraftStatus.SucceededMaxQuality => ImGuiColors.HealerGreen,
+                    Simulator.CraftStatus.SucceededSomeQuality => ImGuiColors.DalamudOrange,
+                    Simulator.CraftStatus.SucceededNoQualityReq => ImGuiColors.HealerGreen,
+                    Simulator.CraftStatus.Count => throw new NotImplementedException(),
+                };
 
                 float qualityPercent = (float)(_simCurSteps.Last().step.Quality / _selectedCraft.CraftQualityMax);
                 float progressPercent = (float)(_simCurSteps.Last().step.Progress / _selectedCraft.CraftProgress);
@@ -196,6 +257,18 @@ namespace Artisan.UI
                 ImGuiEx.TextCentered($"Durability");
                 ImGuiEx.SetNextItemFullWidth();
                 DrawProgress(_simCurSteps.Last().step.Durability, _selectedCraft.CraftDurability);
+                ImGui.NextColumn();
+                ImGuiEx.TextCentered($"{Skills.MuscleMemory.NameOfAction()}: {_simCurSteps.Last().step.MuscleMemoryLeft}");
+                ImGuiEx.TextCentered($"{Skills.FinalAppraisal.NameOfAction()}: {_simCurSteps.Last().step.FinalAppraisalLeft}");
+                ImGui.NextColumn();
+                ImGuiEx.TextCentered($"{Skills.WasteNot.NameOfAction()}: {_simCurSteps.Last().step.WasteNotLeft}");
+                ImGuiEx.TextCentered($"{Skills.Manipulation.NameOfAction()}: {_simCurSteps.Last().step.ManipulationLeft}");
+                ImGui.NextColumn();
+                ImGuiEx.TextCentered($"{Skills.Innovation.NameOfAction()}: {_simCurSteps.Last().step.InnovationLeft}");
+                ImGuiEx.TextCentered($"{Skills.Veneration.NameOfAction()}: {_simCurSteps.Last().step.VenerationLeft}");
+                ImGui.NextColumn();
+                ImGuiEx.TextCentered($"{Skills.GreatStrides.NameOfAction()}: {_simCurSteps.Last().step.GreatStridesLeft}");
+                ImGuiEx.TextCentered($"{Skills.CarefulObservation.NameOfAction()}: {_simCurSteps.Last().step.CarefulObservationLeft}");
                 ImGui.Columns(1);
                 ImGui.PopStyleColor();
             }
@@ -204,6 +277,7 @@ namespace Artisan.UI
 
         private static void ResolveSteps()
         {
+            if (!inManualMode) return;
             _simCurSteps.Clear();
             _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
             var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
@@ -218,17 +292,13 @@ namespace Artisan.UI
 
         private static void DrawProgress(int a, int b) => ImGui.ProgressBar((float)a / b, new(0), $"{a * 100.0f / b:f2}% ({a}/{b})");
 
-        private static bool ActionChild(string label, int itemCount, System.Action func)
+        private static void ActionChild(string label, int itemCount, System.Action func)
         {
             Vector2 childSize = new Vector2((widgetSize + ImGui.GetStyle().ItemSpacing.X) * itemCount + ImGui.GetStyle().WindowPadding.X, (ImGui.GetTextLineHeightWithSpacing() + (widgetSize + ImGui.GetStyle().WindowPadding.Y) + 12f));
-            if (ImGui.BeginChild(label, childSize, true))
-            {
-                ImGuiEx.ImGuiLineCentered($"{label}", () => ImGuiEx.TextUnderlined($"{label}"));
-                func();
-                ImGui.EndChild();
-                return true;
-            }
-            return false;
+            ImGui.BeginChild(label, childSize, true);
+            ImGuiEx.ImGuiLineCentered($"{label}", () => ImGuiEx.TextUnderlined($"{label}"));
+            func();
+            ImGui.EndChild();
         }
         private static void DrawActionWidgets()
         {
@@ -349,6 +419,11 @@ namespace Artisan.UI
 
         private static void DrawPreconfiguredMode()
         {
+            if (SimGS is null)
+            {
+                ImGui.Text($"Please have a gearset selected from above to use this feature.");
+                return;
+            }
             DrawSolverCombo();
             DrawSolverActions();
         }
@@ -603,6 +678,8 @@ namespace Artisan.UI
                     Specialist = gsStats.Specialist,
                     Splendorous = gsStats.Splendorous,
                 };
+
+                ResolveSteps();
             }
         }
 
