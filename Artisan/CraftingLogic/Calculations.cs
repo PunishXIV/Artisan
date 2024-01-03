@@ -47,6 +47,7 @@ namespace Artisan.CraftingLogic
                 case Skills.TrainedFinesse:
                 case Skills.ByregotsBlessing:
                 case Skills.MastersMend:
+                case Skills.TrainedEye:
                     return true;
                 default:
                     return false;

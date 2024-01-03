@@ -73,6 +73,26 @@ namespace Artisan.UI
 
         public static void Draw()
         {
+            if (ImGui.BeginTabBar("Simulator Select"))
+            {
+                if (ImGui.BeginTabItem("GUI Sim"))
+                {
+                    DrawGUISim();
+                    ImGui.EndTabItem();
+                }
+
+                if (ImGui.BeginTabItem("Mass Sim Mode"))
+                {
+                    SimulatorUIVeynVersion.Draw();
+                    ImGui.EndTabItem();
+                }
+            }
+
+
+        }
+
+        private static void DrawGUISim()
+        {
             DrawIntro();
             ImGui.Separator();
             DrawRecipeSelector();
@@ -98,16 +118,28 @@ namespace Artisan.UI
                         ImGui.EndTabItem();
                     }
 
+                    if (ImGui.IsItemClicked())
+                    {
+                        ResetSim();
+                    }
+
                     if (ImGui.BeginTabItem("Manual Mode"))
                     {
                         inManualMode = true;
                         DrawSolverMode();
                         ImGui.EndTabItem();
                     }
+
+                    if (ImGui.IsItemClicked())
+                    {
+                        ResetSim();
+                    }
+
+
+
                     ImGui.EndTabBar();
                 }
             }
-
         }
 
         private static void DrawIntro()
@@ -140,11 +172,12 @@ namespace Artisan.UI
 
         private static void DrawExports()
         {
-            if (SimActionIDs.Count > 0)
+            if (SimActionIDs.Count > 0 && _simCurSolver is not MacroSolver)
             {
                 ImGui.SameLine();
                 ImGuiEx.Text($"Macro Name");
                 ImGui.SameLine();
+                ImGuiEx.SetNextItemFullWidth(-120);
                 ImGui.InputText($"###MacroName", ref macroName, 300, ImGuiInputTextFlags.EnterReturnsTrue);
                 ImGui.SameLine();
                 if (ImGui.Button($"Export As Macro"))
@@ -168,6 +201,13 @@ namespace Artisan.UI
                     P.Config.RecipeConfigs[SelectedRecipe.RowId] = config;
                     P.Config.Save();
                 }
+
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.BeginTooltip();
+                    ImGuiEx.Text($"This will also automatically assign the macro to this recipe.");
+                    ImGui.EndTooltip();
+                }
             }
         }
 
@@ -176,12 +216,7 @@ namespace Artisan.UI
 
             if (ImGui.Button($"Reset"))
             {
-                _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
-                //InitDefaultTransitionProbabilities(_selectedCraft, SelectedRecipe);
-                SimActionIDs.Clear();
-                _simCurSteps.Clear();
-                var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
-                _simCurSteps.Add((initial, ""));
+                ResetSim();
             }
 
             DrawExports();
@@ -220,59 +255,20 @@ namespace Artisan.UI
                 }
                 ImGui.Columns(1);
 
-                var status = Simulator.Status(_selectedCraft, _simCurSteps.Last().step);
-                Vector4 successColor = status switch
-                {
-                    Simulator.CraftStatus.InProgress => ImGuiColors.DalamudWhite,
-                    Simulator.CraftStatus.FailedDurability => ImGuiColors.DPSRed,
-                    Simulator.CraftStatus.FailedMinQuality => ImGuiColors.DPSRed,
-                    Simulator.CraftStatus.SucceededQ1 => ImGuiColors.DalamudOrange,
-                    Simulator.CraftStatus.SucceededQ2 => ImGuiColors.DalamudOrange,
-                    Simulator.CraftStatus.SucceededQ3 => ImGuiColors.HealerGreen,
-                    Simulator.CraftStatus.SucceededMaxQuality => ImGuiColors.HealerGreen,
-                    Simulator.CraftStatus.SucceededSomeQuality => ImGuiColors.DalamudOrange,
-                    Simulator.CraftStatus.SucceededNoQualityReq => ImGuiColors.HealerGreen,
-                    Simulator.CraftStatus.Count => throw new NotImplementedException(),
-                };
-
-                float qualityPercent = (float)(_simCurSteps.Last().step.Quality / _selectedCraft.CraftQualityMax);
-                float progressPercent = (float)(_simCurSteps.Last().step.Progress / _selectedCraft.CraftProgress);
-                float CPPercent = (float)(_simCurSteps.Last().step.RemainingCP / _selectedCraft.StatCP);
-
-                ImGui.PushStyleColor(ImGuiCol.Text, successColor);
-                ImGuiEx.ImGuiLineCentered($"SimResults", () => ImGuiEx.TextUnderlined($"Simulator Result - {status.ToOutputString()}"));
-                ImGui.Columns(4, null, false);
-                ImGuiEx.TextCentered($"Quality");
-                ImGuiEx.SetNextItemFullWidth();
-                DrawProgress(_simCurSteps.Last().step.Quality, _selectedCraft.CraftQualityMax);
-                ImGui.NextColumn();
-                ImGuiEx.TextCentered($"Progress");
-                ImGuiEx.SetNextItemFullWidth();
-                DrawProgress(_simCurSteps.Last().step.Progress, _selectedCraft.CraftProgress);
-                ImGui.NextColumn();
-                ImGuiEx.TextCentered($"CP");
-                ImGuiEx.SetNextItemFullWidth();
-                DrawProgress(_simCurSteps.Last().step.RemainingCP, _selectedCraft.StatCP);
-                ImGui.NextColumn();
-                ImGuiEx.TextCentered($"Durability");
-                ImGuiEx.SetNextItemFullWidth();
-                DrawProgress(_simCurSteps.Last().step.Durability, _selectedCraft.CraftDurability);
-                ImGui.NextColumn();
-                ImGuiEx.TextCentered($"{Skills.MuscleMemory.NameOfAction()}: {_simCurSteps.Last().step.MuscleMemoryLeft}");
-                ImGuiEx.TextCentered($"{Skills.FinalAppraisal.NameOfAction()}: {_simCurSteps.Last().step.FinalAppraisalLeft}");
-                ImGui.NextColumn();
-                ImGuiEx.TextCentered($"{Skills.WasteNot.NameOfAction()}: {_simCurSteps.Last().step.WasteNotLeft}");
-                ImGuiEx.TextCentered($"{Skills.Manipulation.NameOfAction()}: {_simCurSteps.Last().step.ManipulationLeft}");
-                ImGui.NextColumn();
-                ImGuiEx.TextCentered($"{Skills.Innovation.NameOfAction()}: {_simCurSteps.Last().step.InnovationLeft}");
-                ImGuiEx.TextCentered($"{Skills.Veneration.NameOfAction()}: {_simCurSteps.Last().step.VenerationLeft}");
-                ImGui.NextColumn();
-                ImGuiEx.TextCentered($"{Skills.GreatStrides.NameOfAction()}: {_simCurSteps.Last().step.GreatStridesLeft}");
-                ImGuiEx.TextCentered($"{Skills.CarefulObservation.NameOfAction()}: {_simCurSteps.Last().step.CarefulObservationLeft}");
-                ImGui.Columns(1);
-                ImGui.PopStyleColor();
+                DrawSimResult();
             }
 
+        }
+
+        private static void ResetSim()
+        {
+            _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
+            SimActionIDs.Clear();
+            _simCurSteps.Clear();
+            var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
+            _simCurSteps.Add((initial, ""));
+            if (_simCurSolver != null)
+                _simNextRec = _simCurSolver.Solve(_selectedCraft, initial);
         }
 
         private static void ResolveSteps()
@@ -290,7 +286,12 @@ namespace Artisan.UI
             }
         }
 
-        private static void DrawProgress(int a, int b) => ImGui.ProgressBar((float)a / b, new(0), $"{a * 100.0f / b:f2}% ({a}/{b})");
+        private unsafe static void DrawProgress(int a, int b)
+        {
+            ImGui.PushStyleColor(ImGuiCol.PlotHistogram, new Vector4(36f / 255f, 96f / 255f, 144f / 255f, 255f / 255f));
+            ImGui.ProgressBar((float)a / b, new(0), $"{a * 100.0f / b:f2}% ({a}/{b})");
+            ImGui.PopStyleColor();
+        }
 
         private static void ActionChild(string label, int itemCount, System.Action func)
         {
@@ -435,24 +436,22 @@ namespace Artisan.UI
                 ImGuiEx.SetNextItemFullWidth();
                 if (ImGui.Button($"Run Simulated Solver"))
                 {
-                    _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
-                    InitDefaultTransitionProbabilities(_selectedCraft, SelectedRecipe);
-                    _simCurSteps.Clear();
                     _simCurSolver = _selectedSolver?.Clone();
-                    if (_simCurSolver != null)
-                    {
-                        var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
-                        _simCurSteps.Add((initial, ""));
-                        _simNextRec = _simCurSolver.Solve(_selectedCraft, initial);
-                    }
-
+                    ResetSim();
+                    InitDefaultTransitionProbabilities(_selectedCraft, SelectedRecipe);
                     while (SolveNextSimulator(_selectedCraft)) ;
                 }
-
                 ImGui.SameLine();
-                ImGui.Checkbox($"Assume Normal Condition only", ref assumeNormalStatus);
+                if (ImGui.Checkbox($"Assume Normal Condition only", ref assumeNormalStatus))
+                {
+                    _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
+                    _simCurSteps.Clear();
+                }
 
-                if (_simCurSolver != null)
+                if (assumeNormalStatus)
+                    DrawExports();
+
+                if (_simCurSolver != null && _simCurSteps.Count > 0)
                 {
                     ImGui.Columns(Math.Min(16, _simCurSteps.Count), null, false);
                     var job = (Job)SimGS?.ClassJob;
@@ -480,30 +479,75 @@ namespace Artisan.UI
                     }
                     ImGui.Columns(1);
 
-                    var successColor = _simCurSteps.Last().step.Progress >= _selectedCraft.CraftProgress && _simCurSteps.Last().step.Quality >= _selectedCraft.CraftQualityMax ? ImGuiColors.HealerGreen : _simCurSteps.Last().step.Progress < _selectedCraft.CraftProgress ? ImGuiColors.DPSRed : ImGuiColors.DalamudOrange;
-
-                    ImGui.PushStyleColor(ImGuiCol.Text, successColor);
-                    ImGuiEx.ImGuiLineCentered($"SimResults", () => ImGuiEx.TextUnderlined($"Simulator Result"));
-                    ImGui.Columns(3, null, false);
-                    ImGuiEx.TextCentered($"Quality: {_simCurSteps.Last().step.Quality} / {_selectedCraft.CraftQualityMax} ({Calculations.GetHQChance((double)_simCurSteps.Last().step.Quality / _selectedCraft.CraftQualityMax * 100)}% HQ Chance)");
-                    ImGui.NextColumn();
-                    ImGuiEx.TextCentered($"Progress: {_simCurSteps.Last().step.Progress} / {_selectedCraft.CraftProgress}");
-                    ImGui.NextColumn();
-                    ImGuiEx.TextCentered($"Remaining CP: {_simCurSteps.Last().step.RemainingCP} / {_selectedCraft.StatCP}");
-                    ImGui.Columns(1);
-                    ImGui.PopStyleColor();
+                    DrawSimResult();
                 }
             }
         }
 
+        private static void DrawSimResult()
+        {
+            var status = Simulator.Status(_selectedCraft, _simCurSteps.Last().step);
+            Vector4 successColor = status switch
+            {
+                Simulator.CraftStatus.InProgress => ImGuiColors.DalamudWhite,
+                Simulator.CraftStatus.FailedDurability => ImGuiColors.DalamudRed,
+                Simulator.CraftStatus.FailedMinQuality => ImGuiColors.DalamudRed,
+                Simulator.CraftStatus.SucceededQ1 => ImGuiColors.DalamudOrange,
+                Simulator.CraftStatus.SucceededQ2 => ImGuiColors.DalamudOrange,
+                Simulator.CraftStatus.SucceededQ3 => ImGuiColors.ParsedGreen,
+                Simulator.CraftStatus.SucceededMaxQuality => ImGuiColors.ParsedGreen,
+                Simulator.CraftStatus.SucceededSomeQuality => ImGuiColors.DalamudOrange,
+                Simulator.CraftStatus.SucceededNoQualityReq => ImGuiColors.ParsedGreen,
+                Simulator.CraftStatus.Count => throw new NotImplementedException(),
+            };
+
+            float qualityPercent = (float)(_simCurSteps.Last().step.Quality / _selectedCraft.CraftQualityMax);
+            float progressPercent = (float)(_simCurSteps.Last().step.Progress / _selectedCraft.CraftProgress);
+            float CPPercent = (float)(_simCurSteps.Last().step.RemainingCP / _selectedCraft.StatCP);
+
+            ImGui.PushStyleColor(ImGuiCol.Text, successColor);
+            ImGuiEx.ImGuiLineCentered($"SimResults", () => ImGuiEx.TextUnderlined($"Simulator Result - {status.ToOutputString()}"));
+            ImGui.Columns(4, null, false);
+            ImGuiEx.TextCentered($"Quality (IQ: {_simCurSteps.Last().step.IQStacks})");
+            ImGuiEx.SetNextItemFullWidth();
+            DrawProgress(_simCurSteps.Last().step.Quality, _selectedCraft.CraftQualityMax);
+            ImGui.NextColumn();
+            ImGuiEx.TextCentered($"Progress");
+            ImGuiEx.SetNextItemFullWidth();
+            DrawProgress(_simCurSteps.Last().step.Progress, _selectedCraft.CraftProgress);
+            ImGui.NextColumn();
+            ImGuiEx.TextCentered($"CP");
+            ImGuiEx.SetNextItemFullWidth();
+            DrawProgress(_simCurSteps.Last().step.RemainingCP, _selectedCraft.StatCP);
+            ImGui.NextColumn();
+            ImGuiEx.TextCentered($"Durability");
+            ImGuiEx.SetNextItemFullWidth();
+            DrawProgress(_simCurSteps.Last().step.Durability, _selectedCraft.CraftDurability);
+            ImGui.NextColumn();
+            ImGuiEx.TextCentered($"{Skills.MuscleMemory.NameOfAction()}: {_simCurSteps.Last().step.MuscleMemoryLeft}");
+            ImGuiEx.TextCentered($"{Skills.FinalAppraisal.NameOfAction()}: {_simCurSteps.Last().step.FinalAppraisalLeft}");
+            ImGui.NextColumn();
+            ImGuiEx.TextCentered($"{Skills.WasteNot.NameOfAction()}: {_simCurSteps.Last().step.WasteNotLeft}");
+            ImGuiEx.TextCentered($"{Skills.Manipulation.NameOfAction()}: {_simCurSteps.Last().step.ManipulationLeft}");
+            ImGui.NextColumn();
+            ImGuiEx.TextCentered($"{Skills.Innovation.NameOfAction()}: {_simCurSteps.Last().step.InnovationLeft}");
+            ImGuiEx.TextCentered($"{Skills.Veneration.NameOfAction()}: {_simCurSteps.Last().step.VenerationLeft}");
+            ImGui.NextColumn();
+            ImGuiEx.TextCentered($"{Skills.GreatStrides.NameOfAction()}: {_simCurSteps.Last().step.GreatStridesLeft}");
+            ImGuiEx.TextCentered($"{Skills.CarefulObservation.NameOfAction()}: {_simCurSteps.Last().step.CarefulObservationLeft}");
+            ImGui.Columns(1);
+            ImGui.PopStyleColor();
+        }
+
         private static bool SolveNextSimulator(CraftState craft)
         {
-            if (_simCurSolver == null || _simCurSteps.Count == 0)
+            if (_simCurSolver == null || _simCurSteps.Count == 0 || _simNextRec.Action == Skills.None)
                 return false;
             var step = _simCurSteps.Last().step;
             var (res, next) = Simulator.Execute(craft, step, _simNextRec.Action, _simRngForSim.NextSingle(), _simRngForSim.NextSingle());
             if (res == Simulator.ExecuteResult.CantUse)
                 return false;
+            SimActionIDs.Add(_simNextRec.Action);
             _simCurSteps[_simCurSteps.Count - 1] = (step, _simNextRec.Comment);
             _simCurSteps.Add((next, ""));
             _simNextRec = _simCurSolver.Solve(craft, next);
@@ -512,6 +556,9 @@ namespace Artisan.UI
 
         private static void InitDefaultTransitionProbabilities(CraftState craft, Recipe recipe)
         {
+            if (assumeNormalStatus)
+                return;
+
             if (recipe.IsExpert)
             {
                 // TODO: this is all very unconfirmed, we really need a process to gather this data
@@ -532,8 +579,7 @@ namespace Artisan.UI
             }
             else
             {
-                if (!assumeNormalStatus)
-                    craft.CraftConditionProbabilities = CraftState.NormalCraftConditionProbabilities(craft.StatLevel);
+                craft.CraftConditionProbabilities = CraftState.NormalCraftConditionProbabilities(craft.StatLevel);
             }
         }
 
@@ -553,6 +599,7 @@ namespace Artisan.UI
                 if (selected)
                 {
                     _selectedSolver = new(opt.Name, opt.CreateSolver(_selectedCraft));
+
                 }
             }
         }

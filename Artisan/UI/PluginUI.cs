@@ -697,6 +697,9 @@ namespace Artisan.UI
 
                 ImGuiComponents.HelpMarker("These are the new options when you right click or press square on a recipe in the recipe list.");
 
+                if (ImGui.Checkbox("Hide Recipe Window Simulator Result", ref P.Config.HideRecipeWindowSimulator))
+                    P.Config.Save();
+
                 if (ImGui.SliderFloat("Simulator Action Image Size", ref P.Config.SimulatorActionSize, 5f, 70f))
                 {
                     P.Config.Save();

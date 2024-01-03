@@ -613,40 +613,49 @@ namespace Artisan
                         P.Config.Save();
                     }
 
-                    if (recipe.CanHq)
+                    if (recipe.CanHq && !P.Config.HideRecipeWindowSimulator)
                     {
                         var solver = CraftingProcessor.GetSolverForRecipe(config, craft).CreateSolver(craft);
                         var rd = RecipeNoteRecipeData.Ptr();
                         var re = rd != null ? rd->FindRecipeById(recipe.RowId) : null;
                         var startingQuality = re != null ? Calculations.GetStartingQuality(recipe, re->GetAssignedHQIngredients()) : 0;
-                        var progress = SolverUtils.EstimateProgressChance(solver, craft, startingQuality);
                         var time = SolverUtils.EstimateCraftTime(solver, craft, startingQuality);
+                        var result = SolverUtils.SimulateSolverExecution(solver, craft, startingQuality);
+                        var status = Simulator.Status(craft, result);
+                        var hq = Calculations.GetHQChance((float)result.Quality / craft.CraftQualityMax * 100);
 
-                        if (recipe.ItemResult.Value.IsCollectable)
+                        string solverHint = status switch
                         {
-                            var breakpointHit = SolverUtils.EstimateCollectibleThreshold(solver, craft, startingQuality);
-                            if (breakpointHit == "Fail")
-                                ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, $"This solver will fail.");
-                            else
-                            {
-                                Vector4 c = progress ? breakpointHit switch
-                                {
-                                    "1st" => new Vector4(0.7f, 0.5f, 0.5f, 1f),
-                                    "2nd" => new Vector4(0.5f, 0.5f, 0.7f, 1f),
-                                    "3rd" => new Vector4(0.5f, 1f, 0.5f, 1f),
-                                    _ => ImGuiColors.DalamudRed
-                                } : ImGuiColors.DalamudRed;
+                            Simulator.CraftStatus.InProgress => "Craft did not finish (solver failed to return any more steps before finishing).",
+                            Simulator.CraftStatus.FailedDurability => $"Craft failed due to durability shortage. (P: {(float)result.Progress / craft.CraftProgress * 100:f0}%, Q: {(float)result.Quality / craft.CraftQualityMax * 100:f0}%)",
+                            Simulator.CraftStatus.FailedMinQuality => "Craft completed but didn't meet minimum quality.",
+                            Simulator.CraftStatus.SucceededQ1 => $"Craft completed and managed to hit 1st quality threshold in {time.TotalSeconds:f0}s.",
+                            Simulator.CraftStatus.SucceededQ2 => $"Craft completed and managed to hit 2nd quality threshold in {time.TotalSeconds:f0}s.",
+                            Simulator.CraftStatus.SucceededQ3 => $"Craft completed and managed to hit 3rd quality threshold in {time.TotalSeconds:f0}s!",
+                            Simulator.CraftStatus.SucceededMaxQuality => $"Craft completed with full quality in {time.TotalSeconds:f0}s!",
+                            Simulator.CraftStatus.SucceededSomeQuality => $"Craft completed but didn't max out quality ({hq}%) in in {time.TotalSeconds:f0}s",
+                            Simulator.CraftStatus.SucceededNoQualityReq => $"Craft completed, no quality required in in {time.TotalSeconds:f0}s!",
+                            Simulator.CraftStatus.Count => "You shouldn't be able to see this. Report it please.",
+                            _ => "You shouldn't be able to see this. Report it please.",
+                        };
 
-                                ImGuiEx.TextWrapped(c, $"This solver will hit the {breakpointHit} threshold {(progress ? "and will complete" : "but will not complete")} the craft in {time.TotalSeconds:f0}s.");
-                            }
-                        }
-                        else
+
+                        Vector4 hintColor = status switch
                         {
-                            var q = SolverUtils.EstimateQualityPercent(solver, craft, startingQuality);
-                            var hq = Calculations.GetHQChance(q);
-                            var c = progress ? new Vector4(1 - (hq / 100f), 0 + (hq / 100f), 1 - (hq / 100f), 255) : ImGuiColors.DalamudRed;
-                            ImGuiEx.TextWrapped(c, $"This solver will HQ {hq}% of the time ({q:f0}% quality) {(progress ? "and will complete" : "but will not complete")} the craft in {time.TotalSeconds:f0}s.");
-                        }
+                            Simulator.CraftStatus.InProgress => ImGuiColors.DalamudWhite,
+                            Simulator.CraftStatus.FailedDurability => ImGuiColors.DalamudRed,
+                            Simulator.CraftStatus.FailedMinQuality => ImGuiColors.DalamudRed,
+                            Simulator.CraftStatus.SucceededQ1 => new Vector4(0.7f, 0.5f, 0.5f, 1f),
+                            Simulator.CraftStatus.SucceededQ2 => new Vector4(0.5f, 0.5f, 0.7f, 1f),
+                            Simulator.CraftStatus.SucceededQ3 => new Vector4(0.5f, 1f, 0.5f, 1f),
+                            Simulator.CraftStatus.SucceededMaxQuality => ImGuiColors.ParsedGreen,
+                            Simulator.CraftStatus.SucceededSomeQuality => new Vector4(1 - (hq / 100f), 0 + (hq / 100f), 1 - (hq / 100f), 255),
+                            Simulator.CraftStatus.SucceededNoQualityReq => ImGuiColors.ParsedGreen,
+                            Simulator.CraftStatus.Count => ImGuiColors.DalamudWhite,
+                            _ => ImGuiColors.DalamudWhite,
+                        };
+
+                        ImGuiEx.TextWrapped(hintColor, solverHint);
                     }
 
                 }

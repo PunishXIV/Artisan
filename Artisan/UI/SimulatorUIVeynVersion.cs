@@ -47,7 +47,6 @@ internal static class SimulatorUIVeynVersion
 
     public static void Draw()
     {
-        ImGuiEx.TextCentered(ImGuiColors.DalamudRed, "This Simulator is not final. It will be replaced with a more improved version in a future update!");
         var curRecipe = GetCurrentRecipe();
         if (curRecipe != null && curRecipe != _selectedRecipe)
             SetSelectedRecipe(curRecipe);

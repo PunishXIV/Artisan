@@ -1,6 +1,7 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation.Character;
 using Dalamud.Utility;
+using ECommons.DalamudServices;
 using System;
 using System.ComponentModel;
 
@@ -10,23 +11,23 @@ public static class Simulator
 {
     public enum CraftStatus
     {
-        [Description("Craft In Progress")]
+        [Description("Craft in progress")]
         InProgress,
-        [Description("Craft Failed Due to Durability")]
+        [Description("Craft failed due to durability")]
         FailedDurability,
-        [Description("Craft Failed Due to Minimum Quality Not Being Met")]
+        [Description("Craft failed due to minimum quality not being met")]
         FailedMinQuality,
-        [Description($"Craft Has Completed First Quality Breakpoint")]
+        [Description($"Craft has completed 1st quality breakpoint")]
         SucceededQ1,
-        [Description($"Craft Has Completed Second Quality Breakpoint")]
+        [Description($"Craft has completed 2nd quality breakpoint")]
         SucceededQ2,
-        [Description($"Craft Has Completed Third Quality Breakpoint")]
+        [Description($"Craft has completed 3rd quality breakpoint")]
         SucceededQ3,
-        [Description($"Craft Has Completed with Max Quality")]
+        [Description($"Craft has completed with max quality")]
         SucceededMaxQuality,
-        [Description($"Craft Has Completed with Some Quality")]
+        [Description($"Craft has completed withouy max quality")]
         SucceededSomeQuality,
-        [Description($"Craft Has Completed, No Quality Required")]
+        [Description($"Craft has completed, no quality required")]
         SucceededNoQualityReq,
 
         Count
@@ -57,7 +58,7 @@ public static class Simulator
                 return CraftStatus.FailedDurability;
         }
 
-        if (craft.CraftCollectible)
+        if (craft.CraftCollectible || craft.CraftExpert)
         {
             if (step.Quality >= craft.CraftQualityMin3)
                 return CraftStatus.SucceededQ3;
@@ -68,7 +69,7 @@ public static class Simulator
             if (step.Quality >= craft.CraftQualityMin1)
                 return CraftStatus.SucceededQ1;
 
-            if (step.Quality < craft.CraftRequiredQuality)
+            if (step.Quality < craft.CraftRequiredQuality || step.Quality < craft.CraftQualityMin1)
                 return CraftStatus.FailedMinQuality;
 
         }
