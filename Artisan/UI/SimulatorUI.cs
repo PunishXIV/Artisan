@@ -175,7 +175,7 @@ namespace Artisan.UI
 
         private static void DrawExports()
         {
-            if (SimActionIDs.Count > 0 && _simCurSolver is not MacroSolver)
+            if (SimActionIDs.Count > 0 && (_simCurSolver is not MacroSolver || inManualMode) && !hoverMode)
             {
                 ImGui.SameLine();
                 ImGuiEx.Text($"Macro Name");
@@ -377,28 +377,34 @@ namespace Artisan.UI
 
             var nextstep = Simulator.Execute(_selectedCraft, _simCurSteps.Last().step, action, 0, 1);
 
-            if (P.Config.SimulatorHoverMode && ImGui.IsItemHovered())
+            if (ImGui.IsItemHovered())
             {
-                hoverMode = true;
-                ImGui.BeginTooltip();
-                ImGuiEx.Text($"{action.NameOfAction()} - {action.StandardCPCost()} CP");
-                ImGuiEx.Text($"{action.GetSkillDescription()}");
-                ImGui.EndTooltip();
-
-                if (!hoverStepAdded)
+                if (!P.Config.DisableSimulatorActionTooltips)
                 {
-                    if (_simCurSteps.Count == 0)
-                        ResetSim();
+                    ImGui.BeginTooltip();
+                    ImGuiEx.Text($"{action.NameOfAction()} - {action.StandardCPCost()} CP");
+                    ImGuiEx.Text($"{action.GetSkillDescription()}");
+                    ImGui.EndTooltip();
+                }
 
-                    if (nextstep.Item1 == Simulator.ExecuteResult.Succeeded)
+                if (P.Config.SimulatorHoverMode)
+                {
+                    hoverMode = true;
+                    if (!hoverStepAdded)
                     {
-                        _simCurSteps.Add((nextstep.Item2, ""));
-                        hoverStepAdded = true;
-                        SimActionIDs.Add(action);
-                    }
-                    else
-                    {
-                        hoverMode = false;
+                        if (_simCurSteps.Count == 0)
+                            ResetSim();
+
+                        if (nextstep.Item1 == Simulator.ExecuteResult.Succeeded)
+                        {
+                            _simCurSteps.Add((nextstep.Item2, ""));
+                            hoverStepAdded = true;
+                            SimActionIDs.Add(action);
+                        }
+                        else
+                        {
+                            hoverMode = false;
+                        }
                     }
                 }
             }
@@ -416,7 +422,6 @@ namespace Artisan.UI
                         Notify.Error($"{action.NameOfAction()} has failed");
                     }
                     hoverStepAdded = false;
-                    hoverMode = false;
                 }
                 else
                 {

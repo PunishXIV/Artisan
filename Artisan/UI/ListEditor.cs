@@ -51,7 +51,7 @@ internal class ListEditor : Window, IDisposable
 
     internal Dictionary<uint, int> SelectedRecipeRawIngredients = new();
 
-    internal Dictionary<int, int> subtableList = new();
+    internal Dictionary<uint, int> subtableList = new();
 
     private ListFolders ListsUI = new();
 
@@ -222,6 +222,79 @@ internal class ListEditor : Window, IDisposable
 
     }
 
+    public void DrawRecipeSubTable()
+    {
+        int colCount = RetainerInfo.ATools ? 4 : 3;
+        if (ImGui.BeginTable("###SubTableRecipeData", colCount, ImGuiTableFlags.Borders))
+        {
+            ImGui.TableSetupColumn("Ingredient", ImGuiTableColumnFlags.WidthFixed);
+            ImGui.TableSetupColumn("Required", ImGuiTableColumnFlags.WidthFixed);
+            ImGui.TableSetupColumn("Inventory", ImGuiTableColumnFlags.WidthFixed);
+            if (RetainerInfo.ATools)
+                ImGui.TableSetupColumn("Retainers", ImGuiTableColumnFlags.WidthFixed);
+            ImGui.TableHeadersRow();
+
+            if (subtableList.Count == 0)
+                subtableList = SelectedRecipeRawIngredients;
+
+            try
+            {
+                foreach (var item in subtableList)
+                {
+                    if (LuminaSheets.ItemSheet.ContainsKey((uint)item.Key))
+                    {
+                        if (CraftingListHelpers.SelectedRecipesCraftable[(uint)item.Key]) continue;
+                        ImGui.PushID($"###SubTableItem{item}");
+                        var sheetItem = LuminaSheets.ItemSheet[(uint)item.Key];
+                        var name = sheetItem.Name.RawString;
+                        var count = item.Value;
+
+                        ImGui.TableNextRow();
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{name}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{count}");
+                        ImGui.TableNextColumn();
+                        var invcount = CraftingListUI.NumberOfIngredient((uint)item.Key);
+                        if (invcount >= count)
+                        {
+                            var color = ImGuiColors.HealerGreen;
+                            color.W -= 0.3f;
+                            ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                        }
+
+                        ImGui.Text($"{invcount}");
+
+                        if (RetainerInfo.ATools && RetainerInfo.CacheBuilt)
+                        {
+                            ImGui.TableNextColumn();
+                            int retainerCount = 0;
+                            retainerCount = RetainerInfo.GetRetainerItemCount(sheetItem.RowId);
+
+                            ImGuiEx.Text($"{retainerCount}");
+
+                            if (invcount + retainerCount >= count)
+                            {
+                                var color = ImGuiColors.HealerGreen;
+                                color.W -= 0.3f;
+                                ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                            }
+
+                        }
+
+                        ImGui.PopID();
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Svc.Log.Error(ex, "SubTableRender");
+            }
+
+            ImGui.EndTable();
+        }
+    }
     public void DrawRecipeData()
     {
         var showOnlyCraftable = P.Config.ShowOnlyCraftable;
@@ -279,7 +352,7 @@ internal class ListEditor : Window, IDisposable
             if (ImGui.CollapsingHeader("Raw Ingredients"))
             {
                 ImGui.Text("Raw Ingredients Required");
-                CraftingListUI.DrawRecipeSubTable();
+                DrawRecipeSubTable();
             }
 
             ImGui.Spacing();

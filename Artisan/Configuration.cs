@@ -121,6 +121,7 @@ namespace Artisan
         public bool DefaultHQCrafts = false;
 
         public bool UseUniversalis = false;
+        public bool LimitUnversalisToDC = false;
 
         public int SolverCollectibleMode = 3;
         public ItemFilter ShowItemsV1 { get; set; } = ItemFilter.All;
@@ -138,6 +139,7 @@ namespace Artisan
         public float SimulatorActionSize = 40f;
         public bool SimulatorHoverMode = true;
         public bool HideRecipeWindowSimulator = false;
+        public bool DisableSimulatorActionTooltips = false;
 
         public void Save()
         {

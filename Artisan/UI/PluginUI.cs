@@ -700,7 +700,6 @@ namespace Artisan.UI
                 ImGui.Indent();
                 if (ImGui.CollapsingHeader("Simulator Settings"))
                 {
-
                     if (ImGui.Checkbox("Hide Recipe Window Simulator Result", ref P.Config.HideRecipeWindowSimulator))
                         P.Config.Save();
 
@@ -712,6 +711,11 @@ namespace Artisan.UI
 
                     if (ImGui.Checkbox("Enable Manual Mode Hover Preview", ref P.Config.SimulatorHoverMode))
                         P.Config.Save();
+
+                    if (ImGui.Checkbox($"Hide Action Tooltips", ref P.Config.DisableSimulatorActionTooltips))
+                        P.Config.Save();
+
+                    ImGuiComponents.HelpMarker("When hovering over actions in manual mode, the description tooltip will not show.");
                 }
                 ImGui.Unindent();
             }
@@ -813,6 +817,12 @@ namespace Artisan.UI
 
                     if (ImGui.Checkbox($"Fetch Prices from Universalis (Slower Load Time)", ref P.Config.UseUniversalis))
                         P.Config.Save();
+
+                    if (P.Config.UseUniversalis)
+                    {
+                        if (ImGui.Checkbox($"Limit Universalis to current DC", ref P.Config.LimitUnversalisToDC))
+                            P.Config.Save();
+                    }
                 }
 
                 ImGui.Unindent();

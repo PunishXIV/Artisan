@@ -26,21 +26,58 @@ namespace Artisan.Universalis
             猫小胖 = { 1192, 1183, 1180, 1186, 1201, 1068, 1064, 1187 },
             한국 = { 2075, 2076, 2077, 2078, 2080 };
 
+        public static readonly uint[][]
+            AllDCs = { Elemental, Gaia, Mana, Aether, Primal, Chaos, Light, Crystal, Materia, Meteor, Dynamis, 陆行鸟, 莫古力, 猫小胖, 한국 };
+
         public static uint[]? GetDataCenterByWorld(uint world)
         {
-            foreach (var region in Regions.AllRegions)
+            foreach (var dc in AllDCs)
             {
-                foreach (var dc in region.Values)
+                foreach (var worlds in dc)
                 {
-                    foreach (var worlds in dc)
-                    {
-                        if (worlds.Contains(world))
-                            return worlds;
-                    }
+                    if (worlds == world)
+                        return dc;
                 }
             }
 
             return null;
+        }
+
+        public static string GetDataCenterName(uint world)
+        {
+            var dc = GetDataCenterByWorld(world);
+            if (Elemental.ContainsAll(dc))
+                return "Elemental";
+            if (Gaia.ContainsAll(dc))
+                return "Gaia";
+            if (Mana.ContainsAll(dc))
+                return "Mana";
+            if (Aether.ContainsAll(dc))
+                return "Aether";
+            if (Primal.ContainsAll(dc))
+                return "Primal";
+            if (Chaos.ContainsAll(dc))
+                return "Chaos";
+            if (Light.ContainsAll(dc))
+                return "Light";
+            if (Crystal.ContainsAll(dc))
+                return "Crystal";
+            if (Materia.ContainsAll(dc))
+                return "Materia";
+            if (Meteor.ContainsAll(dc))
+                return "Meteor";
+            if (Dynamis.ContainsAll(dc))
+                return "Dynamis";
+            if (陆行鸟.ContainsAll(dc))
+                return "陆行鸟";
+            if (莫古力.ContainsAll(dc))
+                return "莫古力";
+            if (猫小胖.ContainsAll(dc))
+                return "猫小胖";
+            if (한국.ContainsAll(dc))
+                return "한국";
+
+            return "Unknwon DC";
         }
 
         public static string? GetWorldName(uint world)
@@ -48,7 +85,7 @@ namespace Artisan.Universalis
             var name = Svc.Data.GetExcelSheet<World>()?.FirstOrDefault(x => x.RowId == world).Name;
 
             if (name != null)
-            return name;
+                return name;
 
             return null;
         }

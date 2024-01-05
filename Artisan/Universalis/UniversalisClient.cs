@@ -1,5 +1,6 @@
 ﻿using ECommons;
 using ECommons.DalamudServices;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
@@ -35,6 +36,20 @@ namespace Artisan.Universalis
                 return null;
 
             var region = Regions.GetRegionByWorld(world.Value);
+            if (region == null)
+                return null;
+
+
+            return GetMarketBoard(region, itemId);
+        }
+
+        public MarketboardData? GetDCData(ulong itemId)
+        {
+            var world = Svc.ClientState.LocalPlayer?.CurrentWorld.Id;
+            if (world == null)
+                return null;
+
+            var region = DataCenters.GetDataCenterName(world.Value);
             if (region == null)
                 return null;
 
@@ -110,6 +125,7 @@ namespace Artisan.Universalis
                             UnitPrice = item.pricePerUnit.Value
                         };
 
+                        if (listing.World != "Cloudtest01" && listing.World != "Cloudtest02")
                         marketBoardData.AllListings.Add(listing);
                     }
 

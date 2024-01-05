@@ -246,12 +246,19 @@ namespace Artisan.IPC
 
                         if (!retainer->Available)
                         {
-                            if (retainer->RetainerID > 0)
+                            if (retainer->RetainerID > 0 && !P.Config.UnavailableRetainerIDs.Contains(retainer->RetainerID))
+                            {
                                 P.Config.UnavailableRetainerIDs.Add(retainer->RetainerID);
-                            else
+                                P.Config.Save();
+                            }
+                        }
+                        else
+                        {
+                            if (P.Config.UnavailableRetainerIDs.Contains(retainer->RetainerID))
+                            {
                                 P.Config.UnavailableRetainerIDs.RemoveWhere(x => x == retainer->RetainerID);
-
-                            P.Config.Save();
+                                P.Config.Save();
+                            }
                         }
 
                         if (retainerId > 0 && !P.Config.UnavailableRetainerIDs.Any(x => x == retainerId))
