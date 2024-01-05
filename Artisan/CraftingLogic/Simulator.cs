@@ -25,7 +25,7 @@ public static class Simulator
         SucceededQ3,
         [Description($"Craft has completed with max quality")]
         SucceededMaxQuality,
-        [Description($"Craft has completed withouy max quality")]
+        [Description($"Craft has completed without max quality")]
         SucceededSomeQuality,
         [Description($"Craft has completed, no quality required")]
         SucceededNoQualityReq,

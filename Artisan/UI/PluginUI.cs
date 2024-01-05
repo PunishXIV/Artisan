@@ -697,14 +697,23 @@ namespace Artisan.UI
 
                 ImGuiComponents.HelpMarker("These are the new options when you right click or press square on a recipe in the recipe list.");
 
-                if (ImGui.Checkbox("Hide Recipe Window Simulator Result", ref P.Config.HideRecipeWindowSimulator))
-                    P.Config.Save();
-
-                if (ImGui.SliderFloat("Simulator Action Image Size", ref P.Config.SimulatorActionSize, 5f, 70f))
+                ImGui.Indent();
+                if (ImGui.CollapsingHeader("Simulator Settings"))
                 {
-                    P.Config.Save();
+
+                    if (ImGui.Checkbox("Hide Recipe Window Simulator Result", ref P.Config.HideRecipeWindowSimulator))
+                        P.Config.Save();
+
+                    if (ImGui.SliderFloat("Simulator Action Image Size", ref P.Config.SimulatorActionSize, 5f, 70f))
+                    {
+                        P.Config.Save();
+                    }
+                    ImGuiComponents.HelpMarker("Sets the scale of the action images that appear in the simulator tab.");
+
+                    if (ImGui.Checkbox("Enable Manual Mode Hover Preview", ref P.Config.SimulatorHoverMode))
+                        P.Config.Save();
                 }
-                ImGuiComponents.HelpMarker("Sets the scale of the action images that appear in the simulator tab.");
+                ImGui.Unindent();
             }
             if (ImGui.CollapsingHeader("List Settings"))
             {

@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using static FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule;
+using static OtterGui.Widgets.Tutorial;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.UI
@@ -54,6 +55,8 @@ namespace Artisan.UI
         private static float layoutWidth = 0;
         private static float widgetSize => P.Config.SimulatorActionSize;
         private static bool inManualMode = false;
+        private static bool hoverMode = false;
+        private static bool hoverStepAdded = false;
 
         private class IngredientLayouts
         {
@@ -130,13 +133,6 @@ namespace Artisan.UI
                         ImGui.EndTabItem();
                     }
 
-                    if (ImGui.IsItemClicked())
-                    {
-                        ResetSim();
-                    }
-
-
-
                     ImGui.EndTabBar();
                 }
             }
@@ -162,6 +158,13 @@ namespace Artisan.UI
                 DrawActionWidgets();
                 ImGui.Separator();
                 DrawSimulation();
+                if (hoverStepAdded)
+                {
+                    _simCurSteps.RemoveAt(_simCurSteps.Count - 1);
+                    SimActionIDs.RemoveAt(SimActionIDs.Count - 1);
+                }
+                hoverStepAdded = false;
+                hoverMode = false;
                 ImGui.EndChild();
             }
             else
@@ -228,10 +231,16 @@ namespace Artisan.UI
                 var job = (Job)SimGS?.ClassJob;
                 for (int i = 0; i < _simCurSteps.Count; i++)
                 {
+                    if (_simCurSteps.Count == 1)
+                    {
+                        ImGui.Dummy(new Vector2(widgetSize));
+                    }
+
                     if (i + 1 < _simCurSteps.Count)
                     {
+                        bool highlightLast = hoverMode && i + 1 == _simCurSteps.Count - 1;
                         var currentAction = _simCurSteps[i + 1].step.PrevComboAction;
-                        ImGui.Image(P.Icons.LoadIcon(currentAction.IconOfAction(job)).ImGuiHandle, new Vector2(widgetSize));
+                        ImGui.Image(P.Icons.LoadIcon(currentAction.IconOfAction(job)).ImGuiHandle, new Vector2(widgetSize), new Vector2(), new Vector2(1,1), highlightLast ? new Vector4(0f, 0.75f,0.25f,1f) : new Vector4(1f,1f,1f,1f));
                         var step = _simCurSteps[i + 1].step;
                         if (ImGui.IsItemHovered())
                         {
@@ -247,7 +256,6 @@ namespace Artisan.UI
                         if (ImGui.IsItemClicked())
                         {
                             SimActionIDs.RemoveAt(i);
-                            ResolveSteps();
                         }
 
                         ImGui.NextColumn();
@@ -359,6 +367,7 @@ namespace Artisan.UI
                 DrawActionWidget(Skills.DelicateSynthesis);
                 DrawActionWidget(Skills.TricksOfTrade);
             });
+
         }
 
         private static void DrawActionWidget(Skills action)
@@ -366,51 +375,87 @@ namespace Artisan.UI
             var icon = P.Icons.LoadIcon(action.IconOfAction(Job.CRP + SelectedRecipe.CraftType.Row));
             ImGui.Image(icon.ImGuiHandle, new Vector2(widgetSize));
 
-            if (ImGui.IsItemHovered())
+            var nextstep = Simulator.Execute(_selectedCraft, _simCurSteps.Last().step, action, 0, 1);
+
+            if (P.Config.SimulatorHoverMode && ImGui.IsItemHovered())
             {
+                hoverMode = true;
                 ImGui.BeginTooltip();
                 ImGuiEx.Text($"{action.NameOfAction()} - {action.StandardCPCost()} CP");
                 ImGuiEx.Text($"{action.GetSkillDescription()}");
                 ImGui.EndTooltip();
+
+                if (!hoverStepAdded)
+                {
+                    if (_simCurSteps.Count == 0)
+                        ResetSim();
+
+                    if (nextstep.Item1 == Simulator.ExecuteResult.Succeeded)
+                    {
+                        _simCurSteps.Add((nextstep.Item2, ""));
+                        hoverStepAdded = true;
+                        SimActionIDs.Add(action);
+                    }
+                    else
+                    {
+                        hoverMode = false;
+                    }
+                }
             }
 
             if (ImGui.IsItemClicked())
             {
-                if (_simCurSteps.Count == 0)
+                if (P.Config.SimulatorHoverMode)
                 {
-                    _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
-                    var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
-                    _simCurSteps.Add((initial, ""));
-                    var step = Simulator.Execute(_selectedCraft, initial, action, 0, 1);
-                    if (step.Item1 == Simulator.ExecuteResult.CantUse)
+                    if (nextstep.Item1 == Simulator.ExecuteResult.CantUse)
                     {
                         Notify.Error($"Cannot use {action.NameOfAction()}.");
                     }
-                    if (step.Item1 == Simulator.ExecuteResult.Failed)
+                    if (nextstep.Item1 == Simulator.ExecuteResult.Failed)
                     {
                         Notify.Error($"{action.NameOfAction()} has failed");
                     }
-                    if (step.Item1 == Simulator.ExecuteResult.Succeeded)
-                    {
-                        SimActionIDs.Add(action);
-                        _simCurSteps.Add((step.Item2, ""));
-                    }
+                    hoverStepAdded = false;
+                    hoverMode = false;
                 }
                 else
                 {
-                    var step = Simulator.Execute(_selectedCraft, _simCurSteps.Last().step, action, 0, 1);
-                    if (step.Item1 == Simulator.ExecuteResult.CantUse)
+                    if (_simCurSteps.Count == 0)
                     {
-                        Notify.Error($"Cannot use {action.NameOfAction()}.");
+                        _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
+                        var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
+                        _simCurSteps.Add((initial, ""));
+                        var step = Simulator.Execute(_selectedCraft, initial, action, 0, 1);
+                        if (step.Item1 == Simulator.ExecuteResult.CantUse)
+                        {
+                            Notify.Error($"Cannot use {action.NameOfAction()}.");
+                        }
+                        if (step.Item1 == Simulator.ExecuteResult.Failed)
+                        {
+                            Notify.Error($"{action.NameOfAction()} has failed");
+                        }
+                        if (step.Item1 == Simulator.ExecuteResult.Succeeded)
+                        {
+                            SimActionIDs.Add(action);
+                            _simCurSteps.Add((step.Item2, ""));
+                        }
                     }
-                    if (step.Item1 == Simulator.ExecuteResult.Failed)
+                    else
                     {
-                        Notify.Error($"{action.NameOfAction()} has failed");
-                    }
-                    if (step.Item1 == Simulator.ExecuteResult.Succeeded)
-                    {
-                        SimActionIDs.Add(action);
-                        _simCurSteps.Add((step.Item2, ""));
+                        var step = Simulator.Execute(_selectedCraft, _simCurSteps.Last().step, action, 0, 1);
+                        if (step.Item1 == Simulator.ExecuteResult.CantUse)
+                        {
+                            Notify.Error($"Cannot use {action.NameOfAction()}.");
+                        }
+                        if (step.Item1 == Simulator.ExecuteResult.Failed)
+                        {
+                            Notify.Error($"{action.NameOfAction()} has failed");
+                        }
+                        if (step.Item1 == Simulator.ExecuteResult.Succeeded)
+                        {
+                            SimActionIDs.Add(action);
+                            _simCurSteps.Add((step.Item2, ""));
+                        }
                     }
                 }
             }

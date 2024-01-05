@@ -136,6 +136,7 @@ namespace Artisan
         public bool ViewedEnduranceMessage = false;
 
         public float SimulatorActionSize = 40f;
+        public bool SimulatorHoverMode = true;
         public bool HideRecipeWindowSimulator = false;
 
         public void Save()
