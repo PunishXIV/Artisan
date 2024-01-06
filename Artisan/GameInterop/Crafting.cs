@@ -243,9 +243,6 @@ public static unsafe class Crafting
         if (Svc.Condition[ConditionFlag.Crafting40])
             return State.WaitStart; // still waiting
 
-        if (CurRecipe == null)
-            return State.InvalidState; // failed to find recipe, bail out...
-
         // note: addon is normally available on the same frame transition ends
         var synthWindow = GetAddon();
         if (synthWindow == null)
@@ -253,6 +250,9 @@ public static unsafe class Crafting
             Svc.Log.Error($"Unexpected addon state when craft should've been started");
             return State.WaitStart; // try again next frame
         }
+
+        if (CurRecipe == null)
+            return State.InvalidState; // failed to find recipe, bail out...
 
         var canHQ = CurRecipe.CanHq;
         CurCraft = BuildCraftStateForRecipe(CharacterStats.GetCurrentStats(), CharacterInfo.JobID, CurRecipe);
@@ -486,7 +486,11 @@ public static unsafe class Crafting
                 // if there are any status changes (e.g. remaining step updates) and if craft is not complete, these will be updated by the next StatusEffectList packet, which might arrive with a delay
                 // because of that, we wait until statuses match prediction (or too much time passes) before transitioning to InProgress
                 if (CurState != State.WaitAction)
-                    Svc.Log.Error($"Unexpected state {CurState} when receiving {*payload} message");
+                {
+                    Svc.Log.Error($"Unexpected state {CurState} when receiving {*payload} message"); //Probably an invalid state, so most data will not be set causing CTD
+                    _craftingEventHandlerUpdateHook.Original(self, a2, a3, payload);
+                    return;
+                }
                 if (_predictedNextStep != null)
                 {
                     Svc.Log.Error($"Unexpected non-null predicted-next when receiving {*payload} message");
