@@ -21,7 +21,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using static FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule;
-using static OtterGui.Widgets.Tutorial;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.UI
@@ -43,7 +42,7 @@ namespace Artisan.UI
         private static List<(StepState step, string comment)> _simCurSteps = new();
         private static Solver.Recommendation _simNextRec;
         private static GearsetEntry? SimGS;
-        private static string SimGSName;
+        private static string SimGSName = "";
         private static List<Skills> SimActionIDs = new();
         private static ConsumableChoice? SimFood;
         private static ConsumableChoice? SimMedicine;
@@ -228,7 +227,7 @@ namespace Artisan.UI
             if (_selectedCraft != null && _simCurSteps != null && _simCurSteps.Count > 0)
             {
                 ImGui.Columns(16, null, false);
-                var job = (Job)SimGS?.ClassJob;
+                var job = (Job)(SimGS?.ClassJob ?? 0);
                 for (int i = 0; i < _simCurSteps.Count; i++)
                 {
                     if (_simCurSteps.Count == 1)
@@ -504,7 +503,7 @@ namespace Artisan.UI
                 if (_simCurSolver != null && _simCurSteps.Count > 0)
                 {
                     ImGui.Columns(Math.Min(16, _simCurSteps.Count), null, false);
-                    var job = (Job)SimGS?.ClassJob;
+                    var job = (Job)(SimGS?.ClassJob ?? 0);
                     for (int i = 0; i < _simCurSteps.Count; i++)
                     {
                         if (i + 1 < _simCurSteps.Count)
@@ -548,7 +547,7 @@ namespace Artisan.UI
                 Simulator.CraftStatus.SucceededMaxQuality => ImGuiColors.ParsedGreen,
                 Simulator.CraftStatus.SucceededSomeQuality => ImGuiColors.DalamudOrange,
                 Simulator.CraftStatus.SucceededNoQualityReq => ImGuiColors.ParsedGreen,
-                Simulator.CraftStatus.Count => throw new NotImplementedException(),
+                _ => throw new NotImplementedException(),
             };
 
             float qualityPercent = (float)(_simCurSteps.Last().step.Quality / _selectedCraft.CraftQualityMax);

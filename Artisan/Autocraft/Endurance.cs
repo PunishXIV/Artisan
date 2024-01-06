@@ -220,8 +220,8 @@ namespace Artisan.Autocraft
                         if (addon->SelectedRecipeName is null)
                             return;
 
-                        var rd = RecipeNoteRecipeData.Ptr();
-                        if (rd == null || rd->Recipes == null || rd->SelectedIndex >= rd->RecipesCount)
+                        var selectedRecipe = Operations.GetSelectedRecipeEntry();
+                        if (selectedRecipe == null)
                         {
                             RecipeID = 0;
                             return;
@@ -229,7 +229,7 @@ namespace Artisan.Autocraft
 
                         if (addon->AtkUnitBase.UldManager.NodeList[49]->IsVisible)
                         {
-                            RecipeID = rd->Recipes[rd->SelectedIndex].RecipeId;
+                            RecipeID = selectedRecipe->RecipeId;
                         }
                         Array.Clear(SetIngredients);
 

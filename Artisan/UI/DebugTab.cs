@@ -243,7 +243,8 @@ namespace Artisan.UI
                     var recipes = RecipeNoteRecipeData.Ptr();
                     if (recipes != null && recipes->Recipes != null)
                     {
-                        DrawRecipeEntry($"Selected", recipes->Recipes + recipes->SelectedIndex);
+                        if (recipes->SelectedIndex < recipes->RecipesCount)
+                            DrawRecipeEntry($"Selected", recipes->Recipes + recipes->SelectedIndex);
                         for (int i = 0; i < recipes->RecipesCount; ++i)
                             DrawRecipeEntry(i.ToString(), recipes->Recipes + i);
                     }

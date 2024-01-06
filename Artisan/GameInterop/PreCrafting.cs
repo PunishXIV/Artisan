@@ -315,8 +315,7 @@ public unsafe static class PreCrafting
 
     private static TaskResult TaskSelectRecipe(Recipe recipe)
     {
-        var rd = RecipeNoteRecipeData.Ptr();
-        var re = rd != null && rd->Recipes != null ? rd->Recipes + rd->SelectedIndex : null;
+        var re = Operations.GetSelectedRecipeEntry();
         if (re != null && re->RecipeId == recipe.RowId)
             return TaskResult.Done;
 
@@ -356,8 +355,7 @@ public unsafe static class PreCrafting
 
     private static void ClickNormalSynthesisButtonDetour(void* a1, void* a2)
     {
-        var rd = RecipeNoteRecipeData.Ptr();
-        var re = rd != null && rd->Recipes != null ? rd->Recipes + rd->SelectedIndex : null;
+        var re = Operations.GetSelectedRecipeEntry();
         var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
         if (recipe != null)
             StartCrafting(recipe, CraftType.Normal);
@@ -365,16 +363,14 @@ public unsafe static class PreCrafting
 
     private static void ClickQuickSynthesisButtonDetour(void* a1, void* a2)
     {
-        var rd = RecipeNoteRecipeData.Ptr();
-        var re = rd != null && rd->Recipes != null ? rd->Recipes + rd->SelectedIndex : null;
+        var re = Operations.GetSelectedRecipeEntry();
         var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
         if (recipe != null)
             StartCrafting(recipe, CraftType.Quick);
     }
     private static void ClickTrialSynthesisButtonDetour(void* a1, void* a2)
     {
-        var rd = RecipeNoteRecipeData.Ptr();
-        var re = rd != null && rd->Recipes != null ? rd->Recipes + rd->SelectedIndex : null;
+        var re = Operations.GetSelectedRecipeEntry();
         var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
         if (recipe != null)
             StartCrafting(recipe, CraftType.Trial);
