@@ -243,9 +243,6 @@ public static unsafe class Crafting
         if (Svc.Condition[ConditionFlag.Crafting40])
             return State.WaitStart; // still waiting
 
-        if (CurRecipe == null)
-            return State.InvalidState; // failed to find recipe, bail out...
-
         // note: addon is normally available on the same frame transition ends
         var synthWindow = GetAddon();
         if (synthWindow == null)
@@ -253,6 +250,9 @@ public static unsafe class Crafting
             Svc.Log.Error($"Unexpected addon state when craft should've been started");
             return State.WaitStart; // try again next frame
         }
+
+        if (CurRecipe == null)
+            return State.InvalidState; // failed to find recipe, bail out...
 
         var canHQ = CurRecipe.CanHq;
         CurCraft = BuildCraftStateForRecipe(CharacterStats.GetCurrentStats(), CharacterInfo.JobID, CurRecipe);
