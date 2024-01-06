@@ -1,5 +1,4 @@
 ﻿using Artisan.RawInformation.Character;
-using ECommons.DalamudServices;
 using System;
 
 namespace Artisan.CraftingLogic;

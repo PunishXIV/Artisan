@@ -14,7 +14,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using FFXIVClientStructs.FFXIV.Common.Lua;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
@@ -123,7 +122,7 @@ namespace Artisan.CraftingLists
 
         public static unsafe bool RecipeWindowOpen()
         {
-            return TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) && addon->AtkUnitBase.IsVisible && RecipeNote.Instance()->RecipeList is var rl && rl != null && rl->Recipes != null;
+            return TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) && addon->AtkUnitBase.IsVisible && Operations.GetSelectedRecipeEntry() != null;
         }
 
         public static unsafe void CloseCraftingMenu()
@@ -161,7 +160,7 @@ namespace Artisan.CraftingLists
             var isCrafting = Svc.Condition[ConditionFlag.Crafting];
             var preparing = Svc.Condition[ConditionFlag.PreparingToCraft];
             Materials ??= selectedList.ListMaterials();
-           
+
             if (Paused)
             {
                 return;
@@ -533,6 +532,9 @@ namespace Artisan.CraftingLists
         {
             try
             {
+                if (Operations.GetSelectedRecipeEntry() == null)
+                    return false;
+
                 if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon) &&
                     addon->AtkUnitBase.IsVisible &&
                     AgentRecipeNote.Instance() != null &&

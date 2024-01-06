@@ -621,7 +621,7 @@ namespace Artisan
                         var startingQuality = re != null ? Calculations.GetStartingQuality(recipe, re->GetAssignedHQIngredients()) : 0;
                         var time = SolverUtils.EstimateCraftTime(solver, craft, startingQuality);
                         var result = SolverUtils.SimulateSolverExecution(solver, craft, startingQuality);
-                        var status = Simulator.Status(craft, result);
+                        var status = result != null ? Simulator.Status(craft, result) : Simulator.CraftStatus.InProgress;
                         var hq = Calculations.GetHQChance((float)result.Quality / craft.CraftQualityMax * 100);
 
                         string solverHint = status switch

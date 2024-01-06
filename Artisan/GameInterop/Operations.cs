@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation;
 using ClickLib.Clicks;
 using ECommons;
@@ -112,5 +113,13 @@ public static unsafe class Operations
         Callback.Fire(&addon->AtkUnitBase, true, 8);
         Endurance.Tasks.Clear();
         return true;
+    }
+
+    // get recipe currently selected in recipenote, with all the necessary safety checks
+    // returns null if data is not fully ready
+    public unsafe static RecipeNoteRecipeEntry* GetSelectedRecipeEntry()
+    {
+        var rd = RecipeNoteRecipeData.Ptr();
+        return rd != null && rd->Recipes != null && rd->SelectedIndex < rd->RecipesCount ? rd->Recipes + rd->SelectedIndex : null;
     }
 }
