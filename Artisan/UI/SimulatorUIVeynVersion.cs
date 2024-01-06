@@ -1,12 +1,9 @@
 ﻿using Artisan.CraftingLogic;
 using Artisan.GameInterop;
-using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
-using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
-using ECommons.ImGuiMethods;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using System;
@@ -266,8 +263,7 @@ internal static class SimulatorUIVeynVersion
         if (Crafting.CurRecipe != null)
             return Crafting.CurRecipe; // crafting in progress
 
-        var rd = RecipeNoteRecipeData.Ptr();
-        var re = rd != null && rd->Recipes != null ? rd->Recipes + rd->SelectedIndex : null;
+        var re = Operations.GetSelectedRecipeEntry();
         if (re != null)
             return Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId); // recipenote opened
 
