@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLists;
+using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
@@ -75,10 +76,11 @@ namespace Artisan.UI
                 {
                     if (ImGui.Button("Resume"))
                     {
-                        if (CraftingListFunctions.RecipeWindowOpen())
-                            CraftingListFunctions.CloseCraftingMenu();
-
-                        P.TM.Enqueue(() => CraftingListFunctions.OpenRecipeByID(CraftingListUI.CurrentProcessedItem, true));
+                        if (Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
+                        {
+                            var recipe = LuminaSheets.RecipeSheet[CraftingListUI.CurrentProcessedItem];
+                            PreCrafting._tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), default));
+                        }
 
                         CraftingListFunctions.Paused = false;
                     }

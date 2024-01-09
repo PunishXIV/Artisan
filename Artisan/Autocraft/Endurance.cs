@@ -1,6 +1,5 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.GameInterop;
-using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.Sounds;
@@ -15,7 +14,6 @@ using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -118,14 +116,14 @@ namespace Artisan.Autocraft
 
                 ImGuiEx.Text($"Recipe: {RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.ClassJobSheet[LuminaSheets.RecipeSheet[RecipeID].CraftType.Row + 8].Abbreviation})" : "")}");
             }
-            
+
             bool repairs = P.Config.Repair;
             if (ImGui.Checkbox("Automatic Repairs", ref repairs))
             {
                 P.Config.Repair = repairs;
                 P.Config.Save();
             }
-            ImGuiComponents.HelpMarker($"If enabled, Artisan will automatically repair your gear using Dark Matter when any piece reaches the configured repair threshold.\n\nCurrent min gear condition is {RepairManager.GetMinEquippedPercent()}%");
+            ImGuiComponents.HelpMarker($"If enabled, Artisan will automatically repair your gear when any piece reaches the configured repair threshold.\n\nCurrent min gear condition is {RepairManager.GetMinEquippedPercent()}% and cost to repair at a vendor is {RepairManager.GetNPCRepairPrice()} gil.\n\nIf unable to repair with Dark Matter, will try for a nearby repair NPC.");
             if (P.Config.Repair)
             {
                 //ImGui.SameLine();
@@ -351,25 +349,12 @@ namespace Artisan.Autocraft
                 if (!Spiritbond.ExtractMateriaTask(P.Config.Materia, isCrafting, preparing))
                     return;
 
-                if (P.Config.Repair && !RepairManager.ProcessRepair(false) && ((P.Config.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!P.Config.Materia)))
+                if (P.Config.Repair && !RepairManager.ProcessRepair())
                 {
-                    if (DebugTab.Debug) Svc.Log.Verbose("Entered repair check");
-                    if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
-                    {
-                        if (DebugTab.Debug) Svc.Log.Verbose("Crafting");
-                        if (Throttler.Throttle(1000))
-                        {
-                            if (DebugTab.Debug) Svc.Log.Verbose("Closing crafting log");
-                            CommandProcessor.ExecuteThrottled("/clog");
-                        }
-                    }
-                    else
-                    {
-                        if (DebugTab.Debug) Svc.Log.Verbose("Not crafting");
-                        if (!Svc.Condition[ConditionFlag.Crafting]) RepairManager.ProcessRepair(true);
-                    }
+                    PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), default));
                     return;
                 }
+
                 if (DebugTab.Debug) Svc.Log.Verbose("Repair ok");
                 var config = P.Config.RecipeConfigs.GetValueOrDefault(RecipeID) ?? new();
                 if (P.Config.AbortIfNoFoodPot && !ConsumableChecker.CheckConsumables(config, false))
@@ -435,7 +420,7 @@ namespace Artisan.Autocraft
                                 else
                                 {
                                     if (DebugTab.Debug) Svc.Log.Debug($"Opening recipe {RecipeID}");
-                                    AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal(RecipeID);
+                                    AgentRecipeNote.Instance()->OpenRecipeByRecipeId(RecipeID);
                                 }
                             }
                         }

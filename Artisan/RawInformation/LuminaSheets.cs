@@ -205,6 +205,8 @@ namespace Artisan.RawInformation
         public static string NameOfRecipe(this uint id)
         {
             if (id == 0) return "";
+            if (!LuminaSheets.RecipeSheet.ContainsKey(id))
+                return "";
 
             return LuminaSheets.RecipeSheet[id].ItemResult.Value.Name.RawString;
         }

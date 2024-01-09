@@ -1,7 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation;
-using ClickLib.Clicks;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
@@ -42,7 +41,7 @@ public static unsafe class Operations
 
             GenericHelpers.TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon);
 
-            if (!int.TryParse(addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory->NodeText.ToString(), out int trueNumberCraftable) || trueNumberCraftable == 0)
+            if (addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory == null || !int.TryParse(addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory->NodeText.ToString(), out int trueNumberCraftable) || trueNumberCraftable == 0)
             {
                 return;
             }
@@ -51,30 +50,29 @@ public static unsafe class Operations
             if (addonPtr == null)
                 return;
 
-            if (Throttler.Throttle(100))
+
+            var quickSynthWindow = (AtkUnitBase*)Svc.GameGui.GetAddonByName("SynthesisSimpleDialog", 1);
+            if (quickSynthWindow == null)
             {
-                var quickSynthWindow = (AtkUnitBase*)Svc.GameGui.GetAddonByName("SynthesisSimpleDialog", 1);
-                if (quickSynthWindow == null)
-                {
-                    Svc.Log.Debug($"Starting quick craft");
-                    Callback.Fire(&addon->AtkUnitBase, true, 9);
-                }
-                else
-                {
-                    var values = stackalloc AtkValue[2];
-                    values[0] = new()
-                    {
-                        Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int,
-                        Int = Math.Min(trueNumberCraftable, Math.Min(crafts, 99)),
-                    };
-                    values[1] = new()
-                    {
-                        Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool,
-                        Byte = 1,
-                    };
-                    Callback.Fire(quickSynthWindow, true, values[0], values[1]);
-                }
+                Svc.Log.Debug($"Starting quick craft");
+                Callback.Fire(&addon->AtkUnitBase, true, 9);
             }
+            else
+            {
+                var values = stackalloc AtkValue[2];
+                values[0] = new()
+                {
+                    Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int,
+                    Int = Math.Min(trueNumberCraftable, Math.Min(crafts, 99)),
+                };
+                values[1] = new()
+                {
+                    Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool,
+                    Byte = 1,
+                };
+                Callback.Fire(quickSynthWindow, true, values[0], values[1]);
+            }
+
         }
         catch (Exception ex)
         {
@@ -94,8 +92,12 @@ public static unsafe class Operations
             if (quickSynthWindow == null)
                 return;
 
-            var qsynthButton = (AtkComponentButton*)quickSynthWindow->UldManager.NodeList[2];
-            AtkResNodeFunctions.ClickButton(quickSynthWindow, qsynthButton, 0);
+            var qsynthButton = quickSynthWindow->UldManager.NodeList[2]->GetAsAtkComponentButton();
+            if (qsynthButton->IsEnabled)
+            {
+                Svc.Log.Debug("Exiting QS");
+                AtkResNodeFunctions.ClickButton(quickSynthWindow, qsynthButton, 0);
+            }
         }
         catch (Exception e)
         {

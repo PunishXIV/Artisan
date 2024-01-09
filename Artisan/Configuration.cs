@@ -56,6 +56,9 @@ namespace Artisan
 
         public bool AbortIfNoFoodPot { get; set; } = false;
         public bool Repair { get; set; } = false;
+        public bool PrioritizeRepairNPC = false;
+        public bool DisableEnduranceNoRepair = false;
+        public bool DisableListsNoRepair = false;
         public bool QuickSynthMode = false;
         public bool DisableToasts { get; set; } = false;
         public bool ShowOnlyCraftable { get; set; } = false;
@@ -122,6 +125,7 @@ namespace Artisan
 
         public bool UseUniversalis = false;
         public bool LimitUnversalisToDC = false;
+        public bool UniversalisOnDemand = false;
 
         public int SolverCollectibleMode = 3;
         public ItemFilter ShowItemsV1 { get; set; } = ItemFilter.All;

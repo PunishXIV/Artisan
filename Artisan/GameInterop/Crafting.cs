@@ -195,13 +195,20 @@ public static unsafe class Crafting
 
     private static State TransitionFromInvalid()
     {
-        if (Svc.Condition[ConditionFlag.Crafting40] || Svc.Condition[ConditionFlag.Crafting] != Svc.Condition[ConditionFlag.PreparingToCraft])
-            return State.InvalidState; // stay in this state until we get to one of the idle states
+        if (Svc.Condition[ConditionFlag.Crafting] && Svc.Condition[ConditionFlag.PreparingToCraft])
+            return State.IdleBetween;
+
+        if (!Svc.Condition[ConditionFlag.Crafting40] && !Svc.Condition[ConditionFlag.Crafting] && !Svc.Condition[ConditionFlag.PreparingToCraft])
+            return State.IdleNormal;
 
         // wrap up
         if (CurRecipe != null && CurCraft != null && CurStep != null)
+        {
             CraftFinished?.Invoke(CurRecipe, CurCraft, CurStep, true); // emulate cancel (TODO reconsider)
-        return State.WaitFinish;
+            return State.WaitFinish;
+        }
+
+        return State.InvalidState; // stay in this state until we get to one of the idle states
     }
 
     private static State TransitionFromIdleNormal()

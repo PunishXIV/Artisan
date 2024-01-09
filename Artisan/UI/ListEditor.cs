@@ -6,13 +6,11 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
-using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using global::Artisan.CraftingLogic;
 using global::Artisan.GameInterop;
 using global::Artisan.UI.Tables;
 using ImGuiNET;
@@ -780,7 +778,7 @@ internal class ListEditor : Window, IDisposable
             P.Config.Save();
         }
 
-        ImGuiComponents.HelpMarker($"If enabled, Artisan will automatically repair your gear using Dark Matter when any piece reaches the configured repair threshold.\n\nCurrent min gear condition is {RepairManager.GetMinEquippedPercent()}%");
+        ImGuiComponents.HelpMarker($"If enabled, Artisan will automatically repair your gear when any piece reaches the configured repair threshold.\n\nCurrent min gear condition is {RepairManager.GetMinEquippedPercent()}% and cost to repair at a vendor is {RepairManager.GetNPCRepairPrice()} gil.\n\nIf unable to repair with Dark Matter, will try for a nearby repair NPC.");
 
         if (SelectedList.Repair)
         {
@@ -1141,7 +1139,7 @@ internal class ListFolders : ItemSelector<CraftingList>
         P.Config.Save();
 
         if (!CraftingListUI.Processing)
-        CraftingListUI.selectedList = new CraftingList();
+            CraftingListUI.selectedList = new CraftingList();
         return true;
     }
 
@@ -1168,7 +1166,7 @@ internal class ListFolders : ItemSelector<CraftingList>
             }
 
             if (!CraftingListUI.Processing)
-            CraftingListUI.selectedList = P.Config.CraftingLists[idx];
+                CraftingListUI.selectedList = P.Config.CraftingLists[idx];
         }
 
         if (!CraftingListUI.Processing)

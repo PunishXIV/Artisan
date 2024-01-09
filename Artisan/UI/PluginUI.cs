@@ -513,6 +513,23 @@ namespace Artisan.UI
                     P.Config.Save();
                 }
 
+                if (ImGui.Checkbox($"Prioritize NPC repairs above self-repairs", ref P.Config.PrioritizeRepairNPC))
+                {
+                    P.Config.Save();
+                }
+
+                ImGuiComponents.HelpMarker("When repairing, if a repair NPC is nearby it will try to repair with them instead of self-repairs. Will still try to use self-repairs if no NPC is found and you have the required levels to repair.");
+
+                if (ImGui.Checkbox($"Disable Endurance if unable to repair", ref P.Config.DisableEnduranceNoRepair))
+                    P.Config.Save();
+
+                ImGuiComponents.HelpMarker($"Once you hit the repair threshold, if you're unable to repair either yourself or through an NPC, disable Endurance.");
+
+                if (ImGui.Checkbox($"Pause lists if unable to repair", ref P.Config.DisableListsNoRepair))
+                    P.Config.Save();
+
+                ImGuiComponents.HelpMarker($"Once you hit the repair threshold, if you're unable to repair either yourself or through an NPC, pause the current list.");
+
                 bool requestStop = P.Config.RequestToStopDuty;
                 bool requestResume = P.Config.RequestToResumeDuty;
                 int resumeDelay = P.Config.RequestToResumeDelay;
@@ -815,13 +832,18 @@ namespace Artisan.UI
                     if (ImGui.Checkbox($"Default \"Colour Validation\" Enabled", ref P.Config.DefaultColourValidation))
                         P.Config.Save();
 
-                    if (ImGui.Checkbox($"Fetch Prices from Universalis (Slower Load Time)", ref P.Config.UseUniversalis))
+                    if (ImGui.Checkbox($"Fetch Prices from Universalis", ref P.Config.UseUniversalis))
                         P.Config.Save();
 
                     if (P.Config.UseUniversalis)
                     {
                         if (ImGui.Checkbox($"Limit Universalis to current DC", ref P.Config.LimitUnversalisToDC))
                             P.Config.Save();
+
+                        if (ImGui.Checkbox($"Only Fetch Prices on Demand", ref P.Config.UniversalisOnDemand))
+                            P.Config.Save();
+
+                        ImGuiComponents.HelpMarker("You will have to click a button to fetch the price per item.");
                     }
                 }
 

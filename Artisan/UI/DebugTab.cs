@@ -1,27 +1,25 @@
-﻿using Artisan.CraftingLists;
+﻿using Artisan.Autocraft;
+using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
-using Artisan.IPC;
-using Artisan.RawInformation;
-using Artisan.RawInformation.Character;
-using ECommons;
-using ECommons.DalamudServices;
-using ECommons.ImGuiMethods;
-using FFXIVClientStructs.FFXIV.Client.Game;
-using ImGuiNET;
-using System;
-using System.Linq;
-using static ECommons.GenericHelpers;
-using Artisan.Autocraft;
-using Lumina.Excel.GeneratedSheets;
 using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.GameInterop.CSExt;
+using Artisan.IPC;
+using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using Dalamud.Interface.Utility.Raii;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using System.Runtime.CompilerServices;
+using ECommons;
+using ECommons.DalamudServices;
 using ECommons.ExcelServices;
-using FFXIVClientStructs.FFXIV.Component.GUI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using ECommons.ImGuiMethods;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
+using System;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using static ECommons.GenericHelpers;
 
 namespace Artisan.UI
 {
@@ -262,13 +260,28 @@ namespace Artisan.UI
                         DrawGearset(ref gs);
                 }
 
-                ImGui.Separator();
-
-                if (ImGui.Button("Repair all"))
+                if (ImGui.CollapsingHeader("Repairs"))
                 {
-                    RepairManager.ProcessRepair();
+                    if (ImGui.Button("Repair all"))
+                    {
+                        RepairManager.ProcessRepair();
+                    }
+                    ImGuiEx.Text($"Gear condition: {RepairManager.GetMinEquippedPercent()}");
+
+                    ImGui.Text($"Can Repair: {(LuminaSheets.ItemSheet.ContainsKey((uint)DebugValue) ? LuminaSheets.ItemSheet[(uint)DebugValue].Name : "")} {RepairManager.CanRepairItem((uint)DebugValue)}");
+                    ImGui.Text($"Can Repair Any: {RepairManager.CanRepairAny()}");
+                    ImGui.Text($"Repair NPC Nearby: {RepairManager.RepairNPCNearby(out _)}");
+
+                    if (ImGui.Button("Interact with RepairNPC"))
+                    {
+                        P.TM.Enqueue(() => RepairManager.InteractWithRepairNPC(), "RepairManagerDebug");
+                    }
+
+                    ImGui.Text($"Repair Price: {RepairManager.GetNPCRepairPrice()}");
+
                 }
-                ImGuiEx.Text($"Gear condition: {RepairManager.GetMinEquippedPercent()}");
+
+                ImGui.Separator();
 
                 ImGui.Text($"Endurance Item: {Endurance.RecipeID} {Endurance.RecipeName}");
                 if (ImGui.Button($"Open Endurance Item"))
@@ -277,6 +290,7 @@ namespace Artisan.UI
                 }
 
                 ImGui.InputInt("Debug Value", ref DebugValue);
+
 
                 ImGui.Text($"Item Count? {CraftingListUI.NumberOfIngredient((uint)DebugValue)}");
 

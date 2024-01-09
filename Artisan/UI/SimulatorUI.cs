@@ -239,8 +239,9 @@ namespace Artisan.UI
                     {
                         bool highlightLast = hoverMode && i + 1 == _simCurSteps.Count - 1;
                         var currentAction = _simCurSteps[i + 1].step.PrevComboAction;
-                        ImGui.Image(P.Icons.LoadIcon(currentAction.IconOfAction(job)).ImGuiHandle, new Vector2(widgetSize), new Vector2(), new Vector2(1,1), highlightLast ? new Vector4(0f, 0.75f,0.25f,1f) : new Vector4(1f,1f,1f,1f));
                         var step = _simCurSteps[i + 1].step;
+                        var x = ImGui.GetCursorPosX();
+                        ImGui.Image(P.Icons.LoadIcon(currentAction.IconOfAction(job)).ImGuiHandle, new Vector2(widgetSize), new Vector2(), new Vector2(1, 1), highlightLast ? new Vector4(0f, 0.75f, 0.25f, 1f) : new Vector4(1f, 1f, 1f, 1f));
                         if (ImGui.IsItemHovered())
                         {
                             ImGui.BeginTooltip();
@@ -256,7 +257,13 @@ namespace Artisan.UI
                         {
                             SimActionIDs.RemoveAt(i);
                         }
-
+                        ImGui.SameLine();
+                        ImGui.SetCursorPosX(x);
+                        ImGuiEx.Text(new Vector4(0, 0, 0, 1), $"{i + 1}.");
+                        ImGui.SameLine();
+                        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - 1f);
+                        ImGui.SetCursorPosX(x + 2f);
+                        ImGuiEx.Text(new Vector4(1, 1, 1, 1), $"{i + 1}.");
                         ImGui.NextColumn();
                     }
                 }

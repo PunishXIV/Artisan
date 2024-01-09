@@ -9,6 +9,7 @@ using Dalamud.Game.Text.SeStringHandling.Payloads;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -125,24 +126,13 @@ namespace Artisan.CraftingLists
             return TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) && addon->AtkUnitBase.IsVisible && Operations.GetSelectedRecipeEntry() != null;
         }
 
-        public static unsafe void CloseCraftingMenu()
-        {
-            if (TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) && addon->AtkUnitBase.IsVisible)
-            {
-                CommandProcessor.ExecuteThrottled("/clog");
-            }
-        }
-
         public static unsafe void OpenRecipeByID(uint recipeID, bool skipThrottle = false)
         {
             if (Crafting.CurState != Crafting.State.IdleNormal) return;
 
             if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
             {
-                if (Throttler.Throttle(500) || skipThrottle)
-                {
-                    AgentRecipeNote.Instance()->OpenRecipeByRecipeIdInternal(recipeID);
-                }
+                AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipeID);
             }
         }
 
@@ -157,6 +147,7 @@ namespace Artisan.CraftingLists
 
         internal static unsafe void ProcessList(CraftingList selectedList)
         {
+
             var isCrafting = Svc.Condition[ConditionFlag.Crafting];
             var preparing = Svc.Condition[ConditionFlag.PreparingToCraft];
             Materials ??= selectedList.ListMaterials();
@@ -176,21 +167,24 @@ namespace Artisan.CraftingLists
                 CurrentIndex = 0;
                 CraftingListUI.Processing = false;
                 Operations.CloseQuickSynthWindow();
-                CLTM.Enqueue(() => CloseCraftingMenu(), "EndOfListCloseMenu");
+                PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), default));
 
                 if (P.Config.PlaySoundFinishList)
                     Sounds.SoundPlayer.PlaySound();
                 return;
             }
 
-            if (Crafting.QuickSynthState.Max > 0 && (Crafting.QuickSynthCompleted || selectedList.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
+            var recipe = LuminaSheets.RecipeSheet[CraftingListUI.CurrentProcessedItem];
+            var options = selectedList.ListItemOptions.GetValueOrDefault(CraftingListUI.CurrentProcessedItem);
+            var config = /* options?.CustomConfig ?? */ P.Config.RecipeConfigs.GetValueOrDefault(CraftingListUI.CurrentProcessedItem) ?? new();
+            var needToRepair = selectedList.Repair && RepairManager.GetMinEquippedPercent() < selectedList.RepairPercent && (RepairManager.CanRepairAny() || RepairManager.RepairNPCNearby(out _));
+
+            if (Crafting.QuickSynthState.Max > 0 && (needToRepair || Crafting.QuickSynthCompleted || selectedList.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
             {
                 Operations.CloseQuickSynthWindow();
             }
 
-            var recipe = LuminaSheets.RecipeSheet[CraftingListUI.CurrentProcessedItem];
-
-            if (!Throttler.Throttle(0))
+            if (PreCrafting._tasks.Count > 0 || Crafting.CurState is Crafting.State.QuickCraft or Crafting.State.InProgress or Crafting.State.WaitFinish or Crafting.State.WaitStart)
             {
                 return;
             }
@@ -229,27 +223,7 @@ namespace Artisan.CraftingLists
                     if (CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId) >= selectedList.Items.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult)
                     {
                         Svc.Chat.PrintError($"Skipping {recipe.ItemResult.Value.Name} due to having enough in inventory [Skip Items you already have enough of]");
-                        if (Throttler.Throttle(500))
-                        {
-                            var currentRecipe = selectedList.Items[CurrentIndex];
-                            while (currentRecipe == selectedList.Items[CurrentIndex])
-                            {
-                                CurrentIndex++;
-                                if (CurrentIndex == selectedList.Items.Count)
-                                    return;
-                            }
 
-                            return;
-                        }
-
-                    }
-                }
-                else
-                {
-                    Svc.Chat.PrintError($"Skipping {recipe.ItemResult.Value.Name} due to having enough in inventory [Skip Items you already have enough of]");
-                    PluginLog.Debug($"{recipe.RowId.NameOfRecipe()} {CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId)} {Materials.First(x => x.Key == recipe.ItemResult.Row).Value}");
-                    if (Throttler.Throttle(500))
-                    {
                         var currentRecipe = selectedList.Items[CurrentIndex];
                         while (currentRecipe == selectedList.Items[CurrentIndex])
                         {
@@ -259,17 +233,16 @@ namespace Artisan.CraftingLists
                         }
 
                         return;
+
+
                     }
                 }
-            }
-
-            if (!HasItemsForRecipe(CraftingListUI.CurrentProcessedItem) && (preparing || !isCrafting))
-            {
-                if (Throttler.Throttle(500))
+                else
                 {
-                    Svc.Chat.PrintError($"Insufficient materials for {recipe.ItemResult.Value.Name.ExtractText()}. Moving on.");
-                    var currentRecipe = selectedList.Items[CurrentIndex];
+                    Svc.Chat.PrintError($"Skipping {recipe.ItemResult.Value.Name} due to having enough in inventory [Skip Items you already have enough of]");
+                    PluginLog.Debug($"{recipe.RowId.NameOfRecipe()} {CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId)} {Materials.First(x => x.Key == recipe.ItemResult.Row).Value}");
 
+                    var currentRecipe = selectedList.Items[CurrentIndex];
                     while (currentRecipe == selectedList.Items[CurrentIndex])
                     {
                         CurrentIndex++;
@@ -278,6 +251,20 @@ namespace Artisan.CraftingLists
                     }
 
                     return;
+
+                }
+            }
+
+            if (!HasItemsForRecipe(CraftingListUI.CurrentProcessedItem) && (preparing || !isCrafting))
+            {
+                Svc.Chat.PrintError($"Insufficient materials for {recipe.ItemResult.Value.Name.ExtractText()}. Moving on.");
+                var currentRecipe = selectedList.Items[CurrentIndex];
+
+                while (currentRecipe == selectedList.Items[CurrentIndex])
+                {
+                    CurrentIndex++;
+                    if (CurrentIndex == selectedList.Items.Count)
+                        return;
                 }
 
                 return;
@@ -285,34 +272,8 @@ namespace Artisan.CraftingLists
 
             if (Svc.ClientState.LocalPlayer.ClassJob.Id != recipe.CraftType.Value.RowId + 8)
             {
-                if (isCrafting && !preparing)
-                    return;
-
-                if (preparing)
-                {
-                    if (Throttler.Throttle(1000))
-                    {
-                        CloseCraftingMenu();
-                    }
-                }
-
-                if (!isCrafting)
-                {
-                    if (!SwitchJobGearset(recipe.CraftType.Value.RowId + 8))
-                    {
-                        Svc.Chat.PrintError($"Gearset not found for {LuminaSheets.ClassJobSheet[recipe.CraftType.Value.RowId + 8].Name.RawString}. Moving on.");
-                        var currentRecipe = selectedList.Items[CurrentIndex];
-
-                        while (currentRecipe == selectedList.Items[CurrentIndex])
-                        {
-                            CurrentIndex++;
-                            if (CurrentIndex == selectedList.Items.Count)
-                                return;
-                        }
-
-                        return;
-                    }
-                }
+                PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), default));
+                PreCrafting._tasks.Add((() => PreCrafting.TaskClassChange((Job)recipe.CraftType.Value.RowId + 8), default));
 
                 return;
             }
@@ -332,171 +293,87 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if (Svc.Condition[ConditionFlag.Occupied39])
-            {
-                Throttler.Rethrottle(1000);
-            }
-
             if (!Spiritbond.ExtractMateriaTask(selectedList.Materia, isCrafting, preparing))
                 return;
 
-            if (selectedList.Repair && !RepairManager.ProcessRepair(false, selectedList) && ((selectedList.Materia && !Spiritbond.IsSpiritbondReadyAny()) || (!selectedList.Materia) || (!CharacterInfo.MateriaExtractionUnlocked())))
+            if (selectedList.Repair && !RepairManager.ProcessRepair(selectedList))
             {
-                if (RecipeWindowOpen() && Svc.Condition[ConditionFlag.Crafting])
-                {
-                    if (Throttler.Throttle(1000))
-                    {
-                        CloseCraftingMenu();
-                    }
-                }
-                else
-                {
-                    if (!Svc.Condition[ConditionFlag.Crafting]) RepairManager.ProcessRepair(true, selectedList);
-                }
-
+                PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), default));
                 return;
             }
 
             selectedList.ListItemOptions.TryAdd(CraftingListUI.CurrentProcessedItem, new ListItemOptions());
+            PreCrafting.CraftType type = (options?.NQOnly ?? false) && recipe.CanQuickSynth && P.ri.HasRecipeCrafted(recipe.RowId) ? PreCrafting.CraftType.Quick : PreCrafting.CraftType.Normal;
+            bool needConsumables = (type == PreCrafting.CraftType.Normal || (type == PreCrafting.CraftType.Quick && P.Config.UseConsumablesQuickSynth)) && (!ConsumableChecker.IsFooded(config) || !ConsumableChecker.IsPotted(config) || !ConsumableChecker.IsManualled(config) || !ConsumableChecker.IsSquadronManualled(config));
+            bool hasConsumables = config != default ? ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) && ConsumableChecker.HasItem(config.RequiredManual, false) && ConsumableChecker.HasItem(config.RequiredSquadronManual, false) : true;
 
-            var options = selectedList.ListItemOptions.GetValueOrDefault(CraftingListUI.CurrentProcessedItem);
-            var config = /* options?.CustomConfig ?? */ P.Config.RecipeConfigs.GetValueOrDefault(CraftingListUI.CurrentProcessedItem) ?? new();
-            if (!ConsumableChecker.CheckConsumables(config, false))
+            if (P.Config.AbortIfNoFoodPot && needConsumables && !hasConsumables)
             {
-                if (RecipeWindowOpen() && Svc.Condition[ConditionFlag.Crafting])
+                DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: required consumables not up");
+                Paused = true;
+                return;
+            }
+            
+            if (needConsumables)
+            {
+                if (!Occupied())
                 {
-                    if (Throttler.Throttle(1000))
-                    {
-                        CloseCraftingMenu();
-                    }
+                    PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), default));
+                    PreCrafting._tasks.Add((() => PreCrafting.TaskUseConsumables(config, type), default));
                 }
-                else
-                {
-                    if (!isCrafting)
-                        ConsumableChecker.CheckConsumables(config, true);
-                }
-
                 return;
             }
 
-            if (isCrafting && !preparing)
-                return;
-
-            if (!isCrafting)
+            if (Crafting.CurState is Crafting.State.IdleBetween or Crafting.State.IdleNormal)
             {
-                if (!RecipeWindowOpen())
+                if (Endurance.RecipeID != CraftingListUI.CurrentProcessedItem)
                 {
-                    if (Endurance.RecipeID != CraftingListUI.CurrentProcessedItem)
+                    PreCrafting._tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), default));
+                    return;
+                }
+
+                if (!RecipeWindowOpen()) return;
+
+                if (type == PreCrafting.CraftType.Quick)
+                {
+                    var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
+                    var count = lastIndex - CurrentIndex + 1;
+                    count = CheckWhatExpected(selectedList, recipe, count);
+                    if (count >= 99)
                     {
-                        OpenRecipeByID(CraftingListUI.CurrentProcessedItem);
+                        Operations.QuickSynthItem(99);
                         return;
                     }
                     else
                     {
-                        OpenCraftingMenu();
+                        Operations.QuickSynthItem(count);
+                        return;
+                    }
+                }
+                else if (type == PreCrafting.CraftType.Normal)
+                {
+                    if (!CLTM.IsBusy)
+                    {
+                        CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
+                        CLTM.Enqueue(() => Operations.RepeatActualCraft(), "ListCraft");
                         return;
                     }
                 }
 
-                if (RecipeWindowOpen())
-                {
-                    if ((options?.NQOnly ?? false) && recipe.CanQuickSynth && P.ri.HasRecipeCrafted(recipe.RowId))
-                    {
-                        var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
-                        var count = lastIndex - CurrentIndex + 1;
-                        count = CheckWhatExpected(selectedList, recipe, count);
-
-                        if (count >= 99)
-                        {
-                            Operations.QuickSynthItem(99);
-                            return;
-                        }
-                        else
-                        {
-                            Operations.QuickSynthItem(count);
-                            return;
-                        }
-
-                    }
-                    else
-                    {
-                        if (!CLTM.IsBusy)
-                        {
-                            CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
-                            CLTM.Enqueue(() => Operations.RepeatActualCraft(), "ListCraft");
-                            return;
-                        }
-                    }
-                }
-
             }
+        }
 
-            if ((CurrentIndex == 0 && CraftingListUI.CurrentProcessedItem != Endurance.RecipeID)
-                || (CurrentIndex > 0 && CraftingListUI.CurrentProcessedItem != selectedList.Items[CurrentIndex - 1] && Endurance.RecipeID != CraftingListUI.CurrentProcessedItem)
-                || Crafting.QuickSynthCompleted)
-            {
-                if (RecipeWindowOpen())
-                {
-                    if (isCrafting)
-                    {
-                        CloseCraftingMenu();
-                        return;
-                    }
-
-                    if (Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
-                    {
-                        CloseCraftingMenu();
-                        return;
-                    }
-                }
-            }
-
-            if (isCrafting)
-            {
-                if (RecipeWindowOpen())
-                {
-                    if ((options?.NQOnly ?? false) && recipe.CanQuickSynth && P.ri.HasRecipeCrafted(recipe.RowId))
-                    {
-                        var lastIndex = selectedList.Items.LastIndexOf(CraftingListUI.CurrentProcessedItem);
-                        var count = lastIndex - CurrentIndex + 1;
-                        count = CheckWhatExpected(selectedList, recipe, count);
-
-                        if (count >= 99)
-                        {
-                            Operations.QuickSynthItem(99);
-                            return;
-                        }
-                        else
-                        {
-                            Operations.QuickSynthItem(count);
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        if (!CLTM.IsBusy)
-                        {
-                            if (P.Config.ListCraftThrottle < 0.2f)
-                            {
-                                CraftingListUI.Processing = false;
-                                return;
-                            }
-
-                            if (P.Config.ListCraftThrottle > 2)
-                            {
-                                P.Config.ListCraftThrottle = 2;
-                                P.Config.Save();
-                            }
-
-                            CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
-                            CLTM.DelayNext("CraftListDelay", (int)(P.Config.ListCraftThrottle * 1000));
-                            CLTM.Enqueue(() => Operations.RepeatActualCraft(), "ListCraft");
-
-                            return;
-                        }
-                    }
-                }
-            }
+        private static bool Occupied()
+        {
+            return Svc.Condition[ConditionFlag.Occupied]
+               || Svc.Condition[ConditionFlag.Occupied30]
+               || Svc.Condition[ConditionFlag.Occupied33]
+               || Svc.Condition[ConditionFlag.Occupied38]
+               || Svc.Condition[ConditionFlag.Occupied39]
+               || Svc.Condition[ConditionFlag.OccupiedInCutSceneEvent]
+               || Svc.Condition[ConditionFlag.OccupiedInEvent]
+               || Svc.Condition[ConditionFlag.OccupiedInQuestEvent]
+               || Svc.Condition[ConditionFlag.OccupiedSummoningBell];
         }
 
         private static int CheckWhatExpected(CraftingList selectedList, Recipe recipe, int count)

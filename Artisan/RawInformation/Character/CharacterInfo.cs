@@ -121,6 +121,7 @@ namespace Artisan.RawInformation.Character
         public bool HasRecipeCrafted(uint recipe)
         {
             if (Uncompletables.Any(x => x == recipe)) return true;
+            if (!LuminaSheets.RecipeSheet.ContainsKey(recipe)) return false;
             if (LuminaSheets.RecipeSheet[recipe].SecretRecipeBook.Row > 0) return true;
 
             return GetIsGatheringItemGathered(recipe) != 0;

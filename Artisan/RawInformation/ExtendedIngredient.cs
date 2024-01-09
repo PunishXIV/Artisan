@@ -90,8 +90,13 @@ namespace Artisan.RawInformation
             }
             UsedInMaterialsList = materials.Where(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == x.Key && y.UnkData5.Any(z => z.ItemIngredient == Data.RowId))).ToDictionary(x => x.Key, x => x.Value);
 
-            if (P.Config.UseUniversalis)
-            MarketboardData =  P.Config.LimitUnversalisToDC ? P.UniversalsisClient.GetDCData(itemId) : P.UniversalsisClient.GetRegionData(itemId);
+            if (P.Config.UseUniversalis && !P.Config.UniversalisOnDemand)
+            {
+                if (P.Config.LimitUnversalisToDC)
+                    Task.Run(() => P.UniversalsisClient.GetDCData(itemId, ref MarketboardData));
+                else
+                    Task.Run(() => P.UniversalsisClient.GetRegionData(itemId, ref MarketboardData));
+            }
         }
 
         public virtual event EventHandler<bool>? OnRemainingChange;

@@ -161,6 +161,10 @@ public unsafe static class PreCrafting
     {
         switch (Crafting.CurState)
         {
+            case Crafting.State.WaitFinish:
+                return TaskResult.Retry;
+            case Crafting.State.QuickCraft:
+                return TaskResult.Retry;
             case Crafting.State.IdleNormal:
                 return TaskResult.Done;
             case Crafting.State.IdleBetween:
@@ -239,7 +243,7 @@ public unsafe static class PreCrafting
         return TaskResult.Retry;
     }
 
-    private static TaskResult TaskUseConsumables(RecipeConfig? config, CraftType type)
+    public static TaskResult TaskUseConsumables(RecipeConfig? config, CraftType type)
     {
         if (ActionManagerEx.AnimationLock > 0)
             return TaskResult.Retry; // waiting for animation lock to end
@@ -313,7 +317,7 @@ public unsafe static class PreCrafting
         return TaskResult.Done;
     }
 
-    private static TaskResult TaskSelectRecipe(Recipe recipe)
+    public static TaskResult TaskSelectRecipe(Recipe recipe)
     {
         var re = Operations.GetSelectedRecipeEntry();
         if (re != null && re->RecipeId == recipe.RowId)
@@ -324,7 +328,7 @@ public unsafe static class PreCrafting
         return TaskResult.Retry;
     }
 
-    private static TaskResult TaskStartCraft(CraftType type)
+    public static TaskResult TaskStartCraft(CraftType type)
     {
         var addon = (AddonRecipeNote*)Svc.GameGui.GetAddonByName("RecipeNote");
         if (addon == null)

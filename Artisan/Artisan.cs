@@ -157,7 +157,11 @@ public unsafe class Artisan : IDalamudPlugin
 
         if (Svc.Condition[ConditionFlag.PreparingToCraft] && IPC.IPC.StopCraftingRequest)
         {
-            Svc.Framework.RunOnTick(CraftingListFunctions.CloseCraftingMenu, TimeSpan.FromSeconds(1));
+            if (Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
+            {
+                var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
+                PreCrafting._tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), default));
+            }
         }
     }
 

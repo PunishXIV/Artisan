@@ -1,6 +1,5 @@
 ﻿using ECommons;
 using ECommons.DalamudServices;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
@@ -29,7 +28,7 @@ namespace Artisan.Universalis
             return marketBoardFromAPI;
         }
 
-        public MarketboardData? GetRegionData(ulong itemId)
+        public MarketboardData? GetRegionData(ulong itemId, ref MarketboardData output)
         {
             var world = Svc.ClientState.LocalPlayer?.CurrentWorld.Id;
             if (world == null)
@@ -40,10 +39,10 @@ namespace Artisan.Universalis
                 return null;
 
 
-            return GetMarketBoard(region, itemId);
+            return output = GetMarketBoard(region, itemId);
         }
 
-        public MarketboardData? GetDCData(ulong itemId)
+        public MarketboardData? GetDCData(ulong itemId, ref MarketboardData output)
         {
             var world = Svc.ClientState.LocalPlayer?.CurrentWorld.Id;
             if (world == null)
@@ -53,8 +52,7 @@ namespace Artisan.Universalis
             if (region == null)
                 return null;
 
-
-            return GetMarketBoard(region, itemId);
+            return output = GetMarketBoard(region, itemId);
         }
 
         public void Dispose()
@@ -126,7 +124,7 @@ namespace Artisan.Universalis
                         };
 
                         if (listing.World != "Cloudtest01" && listing.World != "Cloudtest02")
-                        marketBoardData.AllListings.Add(listing);
+                            marketBoardData.AllListings.Add(listing);
                     }
 
                     marketBoardData.CurrentMinimumPrice = marketBoardData.AllListings.First().TotalPrice;

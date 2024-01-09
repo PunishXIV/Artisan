@@ -114,11 +114,10 @@ namespace Artisan.RawInformation
                 if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
                 {
                     if (DebugTab.Debug) Svc.Log.Verbose("Crafting");
-                    if (Throttler.Throttle(1000))
-                    {
-                        if (DebugTab.Debug) Svc.Log.Verbose("Closing crafting log");
-                        CommandProcessor.ExecuteThrottled("/clog");
-                    }
+
+                    if (DebugTab.Debug) Svc.Log.Verbose("Closing crafting log");
+                    CommandProcessor.ExecuteThrottled("/clog");
+
                 }
                 if (!IsMateriaMenuOpen() && !isCrafting && !preparing)
                 {

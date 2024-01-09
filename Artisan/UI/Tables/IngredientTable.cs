@@ -1,10 +1,7 @@
-﻿using Artisan.Autocraft;
-using Artisan.CraftingLists;
-using Artisan.GameInterop;
+﻿using Artisan.CraftingLists;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Components;
 using Dalamud.Utility;
 using ECommons;
 using ECommons.Automation;
@@ -22,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Artisan.UI.Tables
 {
@@ -346,11 +344,11 @@ namespace Artisan.UI.Tables
 
             public override string ToName(Ingredient item)
             {
+                if (item.Remaining == 0) return $"No need to buy";
                 if (item.MarketboardData != null && !CheapestListings.ContainsKey(item.Data.RowId))
                 {
                     double totalCost = 0;
                     double qty = 0;
-
 
                     double currentWorldCost = 0;
                     string currentWorld = "";
@@ -385,10 +383,7 @@ namespace Artisan.UI.Tables
                 {
                     var listing = CheapestListings[item.Data.RowId];
 
-                    if (item.Remaining > 0)
-                        return $"{listing.World} - Cost {listing.Cost.ToString("N0")}, Qty {listing.Qty}";
-                    else
-                        return $"No need to buy";
+                    return $"{listing.World} - Cost {listing.Cost.ToString("N0")}, Qty {listing.Qty}";
 
                 }
 
@@ -397,21 +392,38 @@ namespace Artisan.UI.Tables
 
             public override void DrawColumn(Ingredient item, int _)
             {
-                ImGui.Text($"{ToName(item)}");
-
-                if (Lifestream && CheapestListings.ContainsKey(item.Data.RowId) && item.Remaining > 0)
+                if (item.MarketboardData != null)
                 {
-                    var server = CheapestListings[item.Data.RowId].World;
-                    if (ImGui.IsItemHovered())
+                    ImGui.Text($"{ToName(item)}");
+                    if (Lifestream && CheapestListings.ContainsKey(item.Data.RowId) && item.Remaining > 0)
                     {
-                        ImGui.BeginTooltip();
-                        ImGui.Text($"Click to travel to {server}.");
-                        ImGui.EndTooltip();
-                    }
+                        var server = CheapestListings[item.Data.RowId].World;
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.BeginTooltip();
+                            ImGui.Text($"Click to travel to {server}.");
+                            ImGui.EndTooltip();
+                        }
 
-                    if (ImGui.IsItemClicked())
+                        if (ImGui.IsItemClicked())
+                        {
+                            Chat.Instance.SendMessage($"/li {server}");
+                        }
+                    }
+                }
+                else if (P.Config.UniversalisOnDemand && P.Config.UseUniversalis)
+                {
+                    if (item.Remaining == 0)
                     {
-                        Chat.Instance.SendMessage($"/li {server}");
+                        ImGui.Text($"No need to buy");
+                        return;
+                    }
+                    if (ImGui.Button("Fetch Prices"))
+                    {
+                        if (P.Config.LimitUnversalisToDC)
+                            Task.Run(() => P.UniversalsisClient.GetDCData(item.Data.RowId, ref item.MarketboardData));
+                        else
+                            Task.Run(() => P.UniversalsisClient.GetRegionData(item.Data.RowId, ref item.MarketboardData));
                     }
                 }
             }

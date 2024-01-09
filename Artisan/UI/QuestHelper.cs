@@ -1,5 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.GameInterop;
 using Artisan.QuestSync;
 using Artisan.RawInformation;
 using Dalamud.Interface.Windowing;
@@ -62,14 +63,11 @@ namespace Artisan.UI
                         {
                             if (ImGui.Button($"{((ushort)quest.Key).NameOfQuest()}"))
                             {
-                                if (CraftingListFunctions.RecipeWindowOpen())
+
+                                if (Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
                                 {
-                                    CraftingListFunctions.CloseCraftingMenu();
-                                    Svc.Framework.RunOnTick(() => CraftingListFunctions.OpenRecipeByID(QuestList.GetRecipeForQuest((ushort)quest.Key), true), TimeSpan.FromSeconds(0.5));
-                                }
-                                else
-                                {
-                                    CraftingListFunctions.OpenRecipeByID(QuestList.GetRecipeForQuest((ushort)quest.Key));
+                                    var recipe = LuminaSheets.RecipeSheet[QuestList.GetRecipeForQuest((ushort)quest.Key)];
+                                    PreCrafting._tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), default));
                                 }
                             }
                         }
