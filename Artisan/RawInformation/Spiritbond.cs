@@ -1,9 +1,6 @@
-﻿using Artisan.Autocraft;
-using Artisan.GameInterop;
+﻿using Artisan.GameInterop;
 using Artisan.RawInformation.Character;
-using Artisan.UI;
 using ClickLib.Clicks;
-using Dalamud.Game.ClientState.Conditions;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -63,10 +60,7 @@ namespace Artisan.RawInformation
         {
             if (Svc.GameGui.GetAddonByName("Materialize", 1) == IntPtr.Zero)
             {
-                if (Throttler.Throttle(1000))
-                {
-                    ActionManagerEx.UseMateriaExtraction();
-                }
+                ActionManagerEx.UseMateriaExtraction();
             }
         }
 
@@ -74,10 +68,7 @@ namespace Artisan.RawInformation
         {
             if (Svc.GameGui.GetAddonByName("Materialize", 1) != IntPtr.Zero)
             {
-                if (Throttler.Throttle(1000))
-                {
-                    ActionManagerEx.UseMateriaExtraction();
-                }
+                ActionManagerEx.UseMateriaExtraction();
             }
         }
 
@@ -85,18 +76,15 @@ namespace Artisan.RawInformation
         {
             try
             {
-                if (Throttler.Throttle(500))
-                {
-                    var materializePTR = Svc.GameGui.GetAddonByName("MaterializeDialog", 1);
-                    if (materializePTR == IntPtr.Zero)
-                        return;
+                var materializePTR = Svc.GameGui.GetAddonByName("MaterializeDialog", 1);
+                if (materializePTR == IntPtr.Zero)
+                    return;
 
-                    var materalizeWindow = (AtkUnitBase*)materializePTR;
-                    if (materalizeWindow == null)
-                        return;
+                var materalizeWindow = (AtkUnitBase*)materializePTR;
+                if (materalizeWindow == null)
+                    return;
 
-                    ClickMaterializeDialog.Using(materializePTR).Materialize();
-                }
+                ClickMaterializeDialog.Using(materializePTR).Materialize();
             }
             catch
             {
@@ -104,39 +92,32 @@ namespace Artisan.RawInformation
             }
         }
 
-        public unsafe static bool ExtractMateriaTask(bool option, bool isCrafting, bool preparing)
+        public unsafe static bool ExtractMateriaTask(bool option)
         {
             if (!CharacterInfo.MateriaExtractionUnlocked()) return true;
 
-            if (option && IsSpiritbondReadyAny())
+            if (option)
             {
-                if (DebugTab.Debug) Svc.Log.Verbose("Entered materia extraction");
-                if (TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon) && addon->IsVisible && Svc.Condition[ConditionFlag.Crafting])
-                {
-                    if (DebugTab.Debug) Svc.Log.Verbose("Crafting");
-
-                    if (DebugTab.Debug) Svc.Log.Verbose("Closing crafting log");
-                    CommandProcessor.ExecuteThrottled("/clog");
-
-                }
-                if (!IsMateriaMenuOpen() && !isCrafting && !preparing)
-                {
-                    OpenMateriaMenu();
-                    return false;
-                }
-                if (IsMateriaMenuOpen() && !isCrafting && !preparing)
-                {
-                    ExtractFirstMateria();
-                    return false;
-                }
-
-                return false;
-            }
-            else
-            {
-                if (IsMateriaMenuOpen())
+                if (IsMateriaMenuOpen() && !IsSpiritbondReadyAny())
                 {
                     CloseMateriaMenu();
+                    return false;
+                }
+
+                if (IsSpiritbondReadyAny())
+                {
+                    if (!IsMateriaMenuOpen())
+                    {
+                        OpenMateriaMenu();
+                        return false;
+                    }
+
+                    if (IsMateriaMenuOpen() && !PreCrafting.Occupied())
+                    {
+                        ExtractFirstMateria();
+                        return false;
+                    }
+
                     return false;
                 }
             }
@@ -156,34 +137,32 @@ namespace Artisan.RawInformation
                     }
                     else
                     {
-                        if (Throttler.Throttle(500))
+                        var materializePTR = Svc.GameGui.GetAddonByName("Materialize", 1);
+                        if (materializePTR == IntPtr.Zero)
+                            return;
+
+                        var materalizeWindow = (AtkUnitBase*)materializePTR;
+                        if (materalizeWindow == null)
+                            return;
+
+                        var list = (AtkComponentList*)materalizeWindow->UldManager.NodeList[5];
+
+                        var values = stackalloc AtkValue[2];
+                        values[0] = new()
                         {
-                            var materializePTR = Svc.GameGui.GetAddonByName("Materialize", 1);
-                            if (materializePTR == IntPtr.Zero)
-                                return;
+                            Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int,
+                            Int = 2,
+                        };
+                        values[1] = new()
+                        {
+                            Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.UInt,
+                            UInt = 0,
+                        };
 
-                            var materalizeWindow = (AtkUnitBase*)materializePTR;
-                            if (materalizeWindow == null)
-                                return;
-
-                            var list = (AtkComponentList*)materalizeWindow->UldManager.NodeList[5];
-
-                            var values = stackalloc AtkValue[2];
-                            values[0] = new()
-                            {
-                                Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int,
-                                Int = 2,
-                            };
-                            values[1] = new()
-                            {
-                                Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.UInt,
-                                UInt = 0,
-                            };
-
-                            materalizeWindow->FireCallback(1, values);
+                        materalizeWindow->FireCallback(1, values);
 
 
-                        }
+
                     }
                 }
 

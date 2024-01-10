@@ -5,6 +5,7 @@ using Artisan.GameInterop.CSExt;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using ECommons;
 using ECommons.Automation;
@@ -30,6 +31,8 @@ public unsafe static class PreCrafting
     public enum CraftType { Normal, Quick, Trial }
 
     private static int equipAttemptLoops = 0;
+
+    private static long NextTaskAt = 0;
 
     private delegate void ClickSynthesisButton(void* a1, void* a2);
     private static Hook<ClickSynthesisButton> _clickNormalSynthesisButtonHook;
@@ -146,7 +149,7 @@ public unsafe static class PreCrafting
         }
     }
 
-    private static int GetNumberCraftable(Recipe recipe)
+    public static int GetNumberCraftable(Recipe recipe)
     {
         if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon))
         {
@@ -154,7 +157,7 @@ public unsafe static class PreCrafting
             return output;
         }
         Svc.Log.Debug($"Recipe Window not open?");
-        return 0;
+        return -1;
     }
 
     public static TaskResult TaskExitCraft()
@@ -355,6 +358,19 @@ public unsafe static class PreCrafting
             }
         }
         return null;
+    }
+
+    public static bool Occupied()
+    {
+        return Svc.Condition[ConditionFlag.Occupied]
+           || Svc.Condition[ConditionFlag.Occupied30]
+           || Svc.Condition[ConditionFlag.Occupied33]
+           || Svc.Condition[ConditionFlag.Occupied38]
+           || Svc.Condition[ConditionFlag.Occupied39]
+           || Svc.Condition[ConditionFlag.OccupiedInCutSceneEvent]
+           || Svc.Condition[ConditionFlag.OccupiedInEvent]
+           || Svc.Condition[ConditionFlag.OccupiedInQuestEvent]
+           || Svc.Condition[ConditionFlag.OccupiedSummoningBell];
     }
 
     private static void ClickNormalSynthesisButtonDetour(void* a1, void* a2)

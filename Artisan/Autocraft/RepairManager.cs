@@ -185,18 +185,14 @@ namespace Artisan.Autocraft
             int repairPercent = CraftingList != null ? CraftingList.RepairPercent : P.Config.RepairPercent;
             if (GetMinEquippedPercent() >= repairPercent)
             {
-                if (DebugTab.Debug) Svc.Log.Verbose("Condition good");
-                if (Throttler.Throttle(300))
+                if (TryGetAddonByName<AddonRepairFixed>("Repair", out var r) && r->AtkUnitBase.IsVisible)
                 {
-                    if (TryGetAddonByName<AddonRepairFixed>("Repair", out var r) && r->AtkUnitBase.IsVisible)
-                    {
-                        if (DebugTab.Debug) Svc.Log.Verbose("Repair visible");
-                        if (DebugTab.Debug) Svc.Log.Verbose("Closing repair window");
-                        ActionManagerEx.UseRepair();
-                        return false;
-                    }
+                    if (DebugTab.Debug) Svc.Log.Verbose("Repair visible");
+                    if (DebugTab.Debug) Svc.Log.Verbose("Closing repair window");
+                    ActionManagerEx.UseRepair();
+                    return false;
                 }
-                if (DebugTab.Debug) Svc.Log.Verbose("return true");
+
                 return true;
             }
 
@@ -218,7 +214,10 @@ namespace Artisan.Autocraft
 
             if (CanRepairAny())
             {
-                ActionManagerEx.UseRepair();
+                if (!PreCrafting.Occupied())
+                {
+                    ActionManagerEx.UseRepair();
+                }
                 return false;
             }
 
@@ -226,12 +225,14 @@ namespace Artisan.Autocraft
             {
                 Endurance.ToggleEndurance(false);
                 DuoLog.Warning($"Endurance has stopped due to being unable to repair.");
+                return false;
             }
 
             if (CraftingListUI.Processing && P.Config.DisableListsNoRepair)
             {
                 CraftingListFunctions.Paused = true;
                 DuoLog.Warning($"List has been paused due to being unable to repair.");
+                return false;
             }
 
             return true;

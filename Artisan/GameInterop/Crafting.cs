@@ -254,6 +254,12 @@ public static unsafe class Crafting
         var synthWindow = GetAddon();
         if (synthWindow == null)
         {
+            if (Svc.Condition[ConditionFlag.NormalConditions])
+                return State.IdleNormal;
+
+            if (Svc.Condition[ConditionFlag.PreparingToCraft])
+                return State.IdleBetween;
+
             Svc.Log.Error($"Unexpected addon state when craft should've been started");
             return State.WaitStart; // try again next frame
         }

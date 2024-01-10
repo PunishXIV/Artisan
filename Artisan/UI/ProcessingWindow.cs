@@ -4,6 +4,7 @@ using Artisan.RawInformation;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
+using System;
 
 namespace Artisan.UI
 {
@@ -79,7 +80,7 @@ namespace Artisan.UI
                         if (Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
                         {
                             var recipe = LuminaSheets.RecipeSheet[CraftingListUI.CurrentProcessedItem];
-                            PreCrafting._tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), default));
+                            PreCrafting._tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromSeconds(5)));
                         }
 
                         CraftingListFunctions.Paused = false;

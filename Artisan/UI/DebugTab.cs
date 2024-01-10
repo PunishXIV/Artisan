@@ -13,6 +13,7 @@ using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -290,7 +291,10 @@ namespace Artisan.UI
                 }
 
                 ImGui.InputInt("Debug Value", ref DebugValue);
-
+                if (ImGui.Button($"Open Recipe"))
+                {
+                    AgentRecipeNote.Instance()->OpenRecipeByRecipeId((uint)DebugValue);
+                }
 
                 ImGui.Text($"Item Count? {CraftingListUI.NumberOfIngredient((uint)DebugValue)}");
 
@@ -333,6 +337,7 @@ namespace Artisan.UI
             }
 
             ImGui.Text($"{Crafting.CurState}");
+            ImGui.Text($"{PreCrafting._tasks.Count()}");
         }
 
         private static void DrawRecipeEntry(string tag, RecipeNoteRecipeEntry* e)

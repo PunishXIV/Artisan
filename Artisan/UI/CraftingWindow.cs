@@ -97,7 +97,6 @@ namespace Artisan.UI
             }
             else if (Crafting.CurCraft != null && Crafting.CurRecipe?.SecretRecipeBook.Row > 0 && Crafting.CurCraft?.CraftLevel == Crafting.CurCraft?.StatLevel && !CraftingProcessor.ActiveSolver.IsType<MacroSolver>())
             {
-                Svc.Log.Debug($"{Crafting.CurCraft?.CraftLevel} {Crafting.CurCraft?.StatLevel}");
                 ImGui.Dummy(new System.Numerics.Vector2(12f));
                 ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.", this.SizeConstraints?.MaximumSize.X ?? 0);
             }

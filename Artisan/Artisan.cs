@@ -160,7 +160,7 @@ public unsafe class Artisan : IDalamudPlugin
             if (Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
             {
                 var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
-                PreCrafting._tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), default));
+                PreCrafting._tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromSeconds(5)));
             }
         }
     }

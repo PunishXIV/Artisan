@@ -33,6 +33,9 @@ public static unsafe class Operations
 
     public unsafe static void QuickSynthItem(int crafts)
     {
+        if (Crafting.CurState is not Crafting.State.IdleBetween and not Crafting.State.IdleNormal)
+            return;
+
         try
         {
             var recipeWindow = Svc.GameGui.GetAddonByName("RecipeNote", 1);
@@ -107,6 +110,9 @@ public static unsafe class Operations
 
     public unsafe static bool RepeatActualCraft()
     {
+        if (Crafting.CurState is not Crafting.State.IdleBetween and not Crafting.State.IdleNormal)
+            return false;
+
         var addon = (AddonRecipeNote*)Svc.GameGui.GetAddonByName("RecipeNote");
         if (addon == null)
             return false;
@@ -114,6 +120,7 @@ public static unsafe class Operations
         Svc.Log.Debug($"Starting actual craft");
         Callback.Fire(&addon->AtkUnitBase, true, 8);
         Endurance.Tasks.Clear();
+        PreCrafting._tasks.Clear();
         return true;
     }
 
