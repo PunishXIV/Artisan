@@ -53,14 +53,12 @@ public static unsafe class Operations
             if (addonPtr == null)
                 return;
 
+            Svc.Log.Debug($"Starting quick craft");
+            Callback.Fire(&addon->AtkUnitBase, true, 9);
 
             var quickSynthWindow = (AtkUnitBase*)Svc.GameGui.GetAddonByName("SynthesisSimpleDialog", 1);
-            if (quickSynthWindow == null)
-            {
-                Svc.Log.Debug($"Starting quick craft");
-                Callback.Fire(&addon->AtkUnitBase, true, 9);
-            }
-            else
+
+            if (quickSynthWindow != null)
             {
                 var values = stackalloc AtkValue[2];
                 values[0] = new()

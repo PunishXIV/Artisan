@@ -498,7 +498,7 @@ public static unsafe class Crafting
                 // transition (Crafting40) will be cleared in a few frames, if this action did not complete the craft
                 // if there are any status changes (e.g. remaining step updates) and if craft is not complete, these will be updated by the next StatusEffectList packet, which might arrive with a delay
                 // because of that, we wait until statuses match prediction (or too much time passes) before transitioning to InProgress
-                if (CurState != State.WaitAction)
+                if (CurState is not State.WaitAction or State.InProgress)
                 {
                     Svc.Log.Error($"Unexpected state {CurState} when receiving {*payload} message"); //Probably an invalid state, so most data will not be set causing CTD
                     _craftingEventHandlerUpdateHook.Original(self, a2, a3, payload);
@@ -511,6 +511,7 @@ public static unsafe class Crafting
                 }
                 var advancePayload = (CraftingEventHandler.AdvanceStep*)payload;
                 bool complete = advancePayload->Flags.HasFlag(CraftingEventHandler.StepFlags.CompleteSuccess) || advancePayload->Flags.HasFlag(CraftingEventHandler.StepFlags.CompleteFail);
+                Svc.Log.Debug($"AdvanceActionComplete: {complete}");
                 _predictedNextStep = Simulator.Execute(CurCraft!, CurStep!, SkillActionMap.ActionToSkill(advancePayload->LastActionId), advancePayload->Flags.HasFlag(CraftingEventHandler.StepFlags.LastActionSucceeded) ? 0 : 1, 1).Item2;
                 _predictedNextStep.Condition = (Condition)(advancePayload->ConditionPlus1 - 1);
                 // fix up predicted state to match what game sends

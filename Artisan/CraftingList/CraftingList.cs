@@ -319,10 +319,11 @@ namespace Artisan.CraftingLists
 
             if (needConsumables)
             {
-                if (!PreCrafting.Occupied())
+                if (!CLTM.IsBusy && !PreCrafting.Occupied())
                 {
-                    PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
-                    PreCrafting._tasks.Add((() => PreCrafting.TaskUseConsumables(config, type), TimeSpan.FromMilliseconds(200)));
+                    CLTM.Enqueue(() => PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200))));
+                    CLTM.Enqueue(() => PreCrafting._tasks.Add((() => PreCrafting.TaskUseConsumables(config, type), TimeSpan.FromMilliseconds(200))));
+                    CLTM.DelayNext(100);
                 }
                 return;
             }
@@ -343,13 +344,13 @@ namespace Artisan.CraftingLists
                         if (count >= 99)
                         {
                             CLTM.Enqueue(() => Operations.QuickSynthItem(99));
-                            CLTM.Enqueue(() => Crafting.CurState == Crafting.State.WaitAction);
+                            CLTM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 5000, "ListQS99WaitStart");
                             return;
                         }
                         else
                         {
                             CLTM.Enqueue(() => Operations.QuickSynthItem(count));
-                            CLTM.Enqueue(() => Crafting.CurState == Crafting.State.WaitAction);
+                            CLTM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 5000, "ListQSCountWaitStart");
                             return;
                         }
                     }
@@ -357,7 +358,7 @@ namespace Artisan.CraftingLists
                     {
                         CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
                         CLTM.Enqueue(() => Operations.RepeatActualCraft(), "ListCraft");
-                        CLTM.Enqueue(() => Crafting.CurState == Crafting.State.WaitAction);
+                        CLTM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 5000, "ListNormalWaitStart");
                         return;
 
                     }

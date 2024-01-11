@@ -622,7 +622,7 @@ namespace Artisan
                         var time = SolverUtils.EstimateCraftTime(solver, craft, startingQuality);
                         var result = SolverUtils.SimulateSolverExecution(solver, craft, startingQuality);
                         var status = result != null ? Simulator.Status(craft, result) : Simulator.CraftStatus.InProgress;
-                        var hq = Calculations.GetHQChance((float)result.Quality / craft.CraftQualityMax * 100);
+                        var hq = result != null ? Calculations.GetHQChance((float)result.Quality / craft.CraftQualityMax * 100) : 0;
 
                         string solverHint = status switch
                         {

@@ -367,10 +367,11 @@ namespace Artisan.Autocraft
 
                 if (needConsumables)
                 {
-                    if (!PreCrafting.Occupied())
+                    if (!P.TM.IsBusy && !PreCrafting.Occupied())
                     {
-                        PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
-                        PreCrafting._tasks.Add((() => PreCrafting.TaskUseConsumables(config, type), TimeSpan.FromMilliseconds(200)));
+                        P.TM.Enqueue(() => PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200))));
+                        P.TM.Enqueue(() => PreCrafting._tasks.Add((() => PreCrafting.TaskUseConsumables(config, type), TimeSpan.FromMilliseconds(200))));
+                        P.TM.DelayNext(100);
                     }
                     return;
                 }
@@ -385,18 +386,18 @@ namespace Artisan.Autocraft
 
                         if (type == PreCrafting.CraftType.Quick)
                         {
-                            P.TM.Enqueue(() => Operations.QuickSynthItem(99));
-                            P.TM.Enqueue(() => Crafting.CurState == Crafting.State.WaitAction);
+                            P.TM.Enqueue(() => Operations.QuickSynthItem(99), "EnduranceQSStart");
+                            P.TM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 5000, "EnduranceQSWaitStart");
                         }
                         else if (type == PreCrafting.CraftType.Normal)
                         {
                             if (P.Config.MaxQuantityMode)
-                                P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredients");
+                                P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredientsNonLayout");
                             else
-                                P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(SetIngredients), "EnduranceSetIngredients");
+                                P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(SetIngredients), "EnduranceSetIngredientsLayout");
 
-                            P.TM.Enqueue(() => Operations.RepeatActualCraft(), "ListCraft");
-                            P.TM.Enqueue(() => Crafting.CurState == Crafting.State.WaitAction);
+                            P.TM.Enqueue(() => Operations.RepeatActualCraft(), "EnduranceNormalStart");
+                            P.TM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 5000, "EnduranceNormalWaitStart");
                         }
                     }
 

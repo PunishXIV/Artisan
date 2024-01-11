@@ -156,7 +156,6 @@ public unsafe static class PreCrafting
             var output = int.Parse(addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory->NodeText.ToString());
             return output;
         }
-        Svc.Log.Debug($"Recipe Window not open?");
         return -1;
     }
 
@@ -254,6 +253,9 @@ public unsafe static class PreCrafting
         if ((!P.Config.UseConsumablesQuickSynth && type == CraftType.Quick) ||
             (!P.Config.UseConsumablesTrial && type == CraftType.Trial))
             return TaskResult.Done;
+
+        if (Occupied())
+            return TaskResult.Retry;
 
         if (!ConsumableChecker.IsFooded(config))
         {
