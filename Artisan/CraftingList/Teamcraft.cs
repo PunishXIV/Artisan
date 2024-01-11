@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Windows.Forms;
 
 namespace Artisan.CraftingLists
 {
@@ -77,7 +78,8 @@ namespace Artisan.CraftingLists
             var plainTextBytes = Encoding.UTF8.GetBytes(exportItems);
             string base64 = Convert.ToBase64String(plainTextBytes);
 
-            ImGui.SetClipboardText($"{baseUrl}{base64}");
+            Svc.Log.Debug($"{baseUrl}{base64}");
+            Clipboard.SetText($"{baseUrl}{base64}");
             Notify.Success("Link copied to clipboard");
         }
 

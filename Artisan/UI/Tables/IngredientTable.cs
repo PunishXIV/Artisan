@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Artisan.UI.Tables
 {
@@ -186,7 +187,7 @@ namespace Artisan.UI.Tables
 
                 if (selected)
                 {
-                    ImGui.SetClipboardText(item.Data.Name.RawString);
+                    Clipboard.SetText(item.Data.Name.RawString);
                     Notify.Success("Name copied to clipboard");
                 }
 

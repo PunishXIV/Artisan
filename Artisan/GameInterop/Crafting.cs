@@ -321,7 +321,11 @@ public static unsafe class Crafting
                     return State.WaitAction; // wait for a bit...
                 }
                 // ok, we've been waiting too long - complain and consider current state to be correct
-                Svc.Log.Error($"Unexpected status update - probably a simulator bug:\n     had {CurStep}\nexpected {_predictedNextStep}\n     got {step}");
+                Svc.Log.Error($"Unexpected status update - probably a simulator bug:\n" +
+                    $"     had {CurStep}\n" +
+                    $"expected {_predictedNextStep}\n" +
+                    $"     got {step}\n" +
+                    $"   stats Craft:{CharacterInfo.Craftsmanship}, Control:{CharacterInfo.Control}, CP:{CharacterInfo.CurrentCP}/{CharacterInfo.MaxCP}");
             }
             CurStep = step;
             _predictedNextStep = null;

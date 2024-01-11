@@ -27,11 +27,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 internal class ListEditor : Window, IDisposable
 {
     public bool Minimized = false;
+
+    private Task RegenerateTask = null;
+    private CancellationTokenSource source = new CancellationTokenSource();
+    private CancellationToken token;
 
     public bool Processing = false;
 
@@ -104,7 +110,23 @@ internal class ListEditor : Window, IDisposable
 
     private async void RefreshTable(object? sender, bool e)
     {
-        await GenerateTableAsync();
+        token = source.Token;
+        Table = null;
+        if (RegenerateTask == null || RegenerateTask.IsCompleted)
+        {
+            Svc.Log.Debug($"Starting regeneration");
+            RegenerateTask = Task.Run(() => GenerateTableAsync(), token);
+        }
+        else
+        {
+            Svc.Log.Debug($"Stopping and restarting regeneration");
+            if (source != null)
+                source.Cancel();
+
+            source = new();
+            token = source.Token;
+            RegenerateTask = Task.Run(() => GenerateTableAsync(), token);
+        }
     }
 
     public override void PreDraw()
@@ -195,7 +217,7 @@ internal class ListEditor : Window, IDisposable
 
         if (ImGui.Button("Export List"))
         {
-            ImGui.SetClipboardText(JsonConvert.SerializeObject(P.Config.CraftingLists.Where(x => x.ID == SelectedList.ID).First()));
+            Clipboard.SetText(JsonConvert.SerializeObject(P.Config.CraftingLists.Where(x => x.ID == SelectedList.ID).First()));
             Notify.Success("List exported to clipboard.");
         }
 
