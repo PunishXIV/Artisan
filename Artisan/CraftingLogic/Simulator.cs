@@ -352,7 +352,7 @@ public static class Simulator
         if (potency == 0)
             return 0;
 
-        float buffMod = (1 + 0.1f * step.IQStacks) * (1 + (step.GreatStridesLeft > 0 ? 1 : 0) + (step.InnovationLeft > 0 ? 0.5f : 0));
+        float buffMod = (1 + (step.GreatStridesLeft > 0 ? 1 : 0) + (step.InnovationLeft > 0 ? 0.5f : 0)) * (100 + 10 * step.IQStacks) / 100;
         float effPotency = potency * buffMod;
 
         float condMod = step.Condition switch
