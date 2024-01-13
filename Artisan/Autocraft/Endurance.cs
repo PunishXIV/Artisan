@@ -42,6 +42,11 @@ namespace Artisan.Autocraft
 
         internal static EnduranceIngredients[] SetIngredients = new EnduranceIngredients[6];
 
+        internal static readonly List<uint> UnableToCraftErrors = new List<uint>()
+        {
+            1134,1135,1136,1137,1138,1139,1140,1141,1142,1143,1144,1145,1146,1147,1148,1149,1198,1199,1222,1223,1224,
+        };
+
         internal static bool Enable
         {
             get => enable;
@@ -405,17 +410,41 @@ namespace Artisan.Autocraft
             }
         }
 
-        private static void Toasts_ErrorToast(ref Dalamud.Game.Text.SeStringHandling.SeString message, ref bool isHandled)
+        private static void Toasts_ErrorToast(ref SeString message, ref bool isHandled)
         {
-            if (Enable)
+            if (Enable || CraftingListUI.Processing)
             {
+                foreach (uint errorId in UnableToCraftErrors)
+                {
+                    if (message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == errorId).Text.ExtractText())
+                    {
+                        Svc.Toasts.ShowError($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to unable to craft error.");
+                        DuoLog.Error($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to unable to craft error.");
+                        if (enable)
+                            Enable = false;
+                        if (CraftingListUI.Processing)
+                            CraftingListFunctions.Paused = true;
+                        PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), default));
+
+                        P.TM.Abort();
+                        CraftingListFunctions.CLTM.Abort();
+                    }
+                }
+
                 Errors.PushBack(Environment.TickCount64);
                 if (Errors.Count() >= 5 && Errors.All(x => x > Environment.TickCount64 - 10 * 1000))
                 {
-                    Svc.Toasts.ShowError("Endurance has been disabled due to too many errors in succession.");
-                    DuoLog.Error("Endurance has been disabled due to too many errors in succession.");
-                    Enable = false;
+                    Svc.Toasts.ShowError($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to too many errors in succession.");
+                    DuoLog.Error($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to too many errors in succession.");
+                    if (enable)
+                        Enable = false;
+                    if (CraftingListUI.Processing)
+                        CraftingListFunctions.Paused = true;
                     Errors.Clear();
+                    PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), default));
+
+                    P.TM.Abort();
+                    CraftingListFunctions.CLTM.Abort();
                 }
             }
         }

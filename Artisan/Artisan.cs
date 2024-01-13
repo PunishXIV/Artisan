@@ -153,16 +153,6 @@ public unsafe class Artisan : IDalamudPlugin
                 Svc.Framework.RunOnTick(() => { IPC.IPC.StopCraftingRequest = false; }, TimeSpan.FromSeconds(resumeDelay));
             }
         }
-
-
-        if (Svc.Condition[ConditionFlag.PreparingToCraft] && IPC.IPC.StopCraftingRequest)
-        {
-            if (Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
-            {
-                var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
-                PreCrafting._tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromSeconds(5)));
-            }
-        }
     }
 
     private void DisableEndurance()
@@ -399,6 +389,7 @@ public unsafe class Artisan : IDalamudPlugin
                 break;
         }
 
+        PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), default));
 
     }
 

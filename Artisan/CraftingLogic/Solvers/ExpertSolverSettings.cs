@@ -8,7 +8,6 @@ namespace Artisan.CraftingLogic.Solvers;
 
 public class ExpertSolverSettings
 {
-    public bool Enabled = true;
     public bool UseReflectOpener;
     public bool MuMeIntensiveGood = true; // if true, we allow spending mume on intensive (400p) rather than rapid (500p) if good condition procs
     public bool MuMeIntensiveMalleable = false; // if true and we have malleable during mume, use intensive rather than hoping for rapid
@@ -43,7 +42,6 @@ public class ExpertSolverSettings
     public bool Draw()
     {
         bool changed = false;
-        changed |= ImGui.Checkbox("Enable experimental expert solver", ref Enabled);
         ImGui.Indent();
         if (ImGui.CollapsingHeader("Opener Settings"))
         {

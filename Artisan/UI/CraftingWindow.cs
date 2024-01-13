@@ -82,20 +82,7 @@ namespace Artisan.UI
                 P.PluginUi.IsOpen = true;
             }
 
-            if (Crafting.CurRecipe?.IsExpert ?? false)
-            {
-                if (CraftingProcessor.ActiveSolver.IsType<StandardSolver>())
-                {
-                    ImGui.Dummy(new System.Numerics.Vector2(12f));
-                    ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, "This is an expert recipe. It is strongly recommended to use an Artisan macro or manually solve this.", this.SizeConstraints?.MaximumSize.X ?? 0);
-                }
-                else if (CraftingProcessor.ActiveSolver.IsType<ExpertSolver>())
-                {
-                    ImGui.Dummy(new System.Numerics.Vector2(12f));
-                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is an expert recipe. You are using the experimental solver currently. Your success rate may vary.", this.SizeConstraints?.MaximumSize.X ?? 0);
-                }
-            }
-            else if (Crafting.CurCraft != null && Crafting.CurRecipe?.SecretRecipeBook.Row > 0 && Crafting.CurCraft?.CraftLevel == Crafting.CurCraft?.StatLevel && !CraftingProcessor.ActiveSolver.IsType<MacroSolver>())
+            if (Crafting.CurCraft != null && !Crafting.CurCraft.CraftExpert && Crafting.CurRecipe?.SecretRecipeBook.Row > 0 && Crafting.CurCraft?.CraftLevel == Crafting.CurCraft?.StatLevel && !CraftingProcessor.ActiveSolver.IsType<MacroSolver>())
             {
                 ImGui.Dummy(new System.Numerics.Vector2(12f));
                 ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.", this.SizeConstraints?.MaximumSize.X ?? 0);

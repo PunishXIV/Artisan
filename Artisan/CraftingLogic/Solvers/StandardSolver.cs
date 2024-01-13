@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
-using Skills = Artisan.RawInformation.Character.Skills;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
+using Skills = Artisan.RawInformation.Character.Skills;
 
 namespace Artisan.CraftingLogic.Solvers
 {
@@ -8,10 +8,8 @@ namespace Artisan.CraftingLogic.Solvers
     {
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
-            if (craft.CraftExpert)
-                yield return new(this, 1, 1, "Standard expert solver");
-            else
-                yield return new(this, 0, 1, "Standard normal solver");
+            if (!craft.CraftExpert)
+            yield return new(this, 0, 1, "Standard Recipe Solver");
         }
 
         public Solver Create(CraftState craft, int flavour) => new StandardSolver(flavour != 0);
@@ -30,7 +28,7 @@ namespace Artisan.CraftingLogic.Solvers
             _expert = expert;
         }
 
-        public override Recommendation Solve(CraftState craft, StepState step) => _expert ? GetExpertRecommendation(craft, step) : GetRecommendation(craft, step);
+        public override Recommendation Solve(CraftState craft, StepState step) => GetRecommendation(craft, step);
 
         private static bool InTouchRotation(CraftState craft, StepState step)
             => step.PrevComboAction == Skills.BasicTouch && craft.StatLevel >= Simulator.MinLevel(Skills.StandardTouch) || step.PrevComboAction == Skills.StandardTouch && craft.StatLevel >= Simulator.MinLevel(Skills.AdvancedTouch);
@@ -100,39 +98,6 @@ namespace Artisan.CraftingLogic.Solvers
                     return step.Progress >= craft.CraftProgress;
                 step = next;
             }
-        }
-
-        public Recommendation GetExpertRecommendation(CraftState craft, StepState step)
-        {
-            var goingForQuality = GoingForQuality(craft, step, out var maxQuality);
-
-            if (step.Durability <= 10 && Simulator.CanUseAction(craft, step, Skills.MastersMend)) return new(Skills.MastersMend);
-            if (step.Index == 1 || step.MuscleMemoryLeft != 0 || !Simulator.CanUseAction(craft, step, Skills.Innovation))
-            {
-                if (Simulator.CanUseAction(craft, step, Skills.MuscleMemory)) return new(Skills.MuscleMemory);
-                if (step.Index == 2 && Simulator.CanUseAction(craft, step, Skills.Veneration)) return new(Skills.Veneration);
-                if (step.WasteNotLeft == 0 && Simulator.CanUseAction(craft, step, Skills.WasteNot2)) return new(Skills.WasteNot2);
-                if (step.Condition is Condition.Good && Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis)) return new(Skills.IntensiveSynthesis);
-                if (step.Condition is Condition.Centered && Simulator.CanUseAction(craft, step, Skills.RapidSynthesis)) return new(Skills.RapidSynthesis);
-                if (step.Condition is Condition.Sturdy or Condition.Primed or Condition.Normal && Simulator.CanUseAction(craft, step, Skills.Groundwork)) return new(Skills.Groundwork);
-                if (step.Condition is Condition.Malleable && Simulator.WillFinishCraft(craft, step, Skills.Groundwork) && Simulator.CanUseAction(craft, step, Skills.FinalAppraisal)) return new(Skills.FinalAppraisal);
-                if (step.Condition is Condition.Malleable && !Simulator.WillFinishCraft(craft, step, Skills.Groundwork) && Simulator.CanUseAction(craft, step, Skills.Groundwork)) return new(Skills.Groundwork);
-                if (step.Condition is Condition.Pliant && step.ManipulationLeft == 0 && step.MuscleMemoryLeft == 0 && Simulator.CanUseAction(craft, step, Skills.Manipulation)) return new(Skills.Manipulation);
-            }
-            if (goingForQuality)
-            {
-                if (GreatStridesByregotCombo(craft, step) >= maxQuality && step.GreatStridesLeft == 0 && Simulator.CanUseAction(craft, step, Skills.GreatStrides)) return new(Skills.GreatStrides);
-                if (step.GreatStridesLeft > 0 && Simulator.CanUseAction(craft, step, Skills.ByregotsBlessing)) return new(Skills.ByregotsBlessing);
-                if (step.Condition == Condition.Pliant && step.WasteNotLeft == 0 && Simulator.CanUseAction(craft, step, Skills.WasteNot2)) return new(Skills.WasteNot2);
-                if (Simulator.CanUseAction(craft, step, Skills.Manipulation) && (step.ManipulationLeft == 0 || step.ManipulationLeft <= 3 && step.Condition == Condition.Pliant)) return new(Skills.Manipulation);
-                if (step.Condition == Condition.Pliant && step.Durability < craft.CraftDurability - 20 && Simulator.CanUseAction(craft, step, Skills.MastersMend)) return new(Skills.MastersMend);
-                if (Simulator.CanUseAction(craft, step, Skills.Innovation) && step.InnovationLeft == 0) return new(Skills.Innovation);
-                var touch = HighestLevelTouch(craft, step);
-                return new(touch != Skills.None ? touch : HighestLevelSynth(craft, step));
-            }
-
-            if (Simulator.CanUseAction(craft, step, Skills.CarefulSynthesis)) return new(Skills.CarefulSynthesis);
-            return new(HighestLevelSynth(craft, step));
         }
 
         public Recommendation GetRecommendation(CraftState craft, StepState step)
@@ -248,6 +213,11 @@ namespace Artisan.CraftingLogic.Solvers
 
         private static bool GoingForQuality(CraftState craft, StepState step, out int maxQuality)
         {
+            if (!craft.CraftHQ)
+            {
+                maxQuality = 0;
+                return false;
+            }
             bool wantMoreQuality;
             if (craft.CraftQualityMin1 == 0)
             {

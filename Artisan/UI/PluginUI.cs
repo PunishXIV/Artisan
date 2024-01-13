@@ -581,7 +581,7 @@ namespace Artisan.UI
                 if (ImGui.Checkbox($"Prevent Artisan from Continuing After Macro Finishes", ref P.Config.DisableMacroArtisanRecommendation))
                     P.Config.Save();
             }
-            if (ImGui.CollapsingHeader("Solver Settings"))
+            if (ImGui.CollapsingHeader("Standard Recipe Solver Settings"))
             {
                 if (ImGui.Checkbox($"Use {Skills.TricksOfTrade.NameOfAction()} - {LuminaSheets.AddonSheet[227].Text.RawString}", ref useTricksGood))
                 {
@@ -642,7 +642,7 @@ namespace Artisan.UI
 
 
             }
-            if (ImGui.CollapsingHeader("Expert Solver Settings - EXPERIMENTAL"))
+            if (ImGui.CollapsingHeader("Expert Recipe Solver Settings"))
             {
                 if (P.Config.ExpertSolverConfig.Draw())
                     P.Config.Save();

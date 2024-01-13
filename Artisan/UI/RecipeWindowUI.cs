@@ -613,7 +613,7 @@ namespace Artisan
                         P.Config.Save();
                     }
 
-                    if (recipe.CanHq && !P.Config.HideRecipeWindowSimulator)
+                    if (!P.Config.HideRecipeWindowSimulator)
                     {
                         var solver = CraftingProcessor.GetSolverForRecipe(config, craft).CreateSolver(craft);
                         var rd = RecipeNoteRecipeData.Ptr();
