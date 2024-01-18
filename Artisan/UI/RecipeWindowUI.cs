@@ -46,6 +46,8 @@ namespace Artisan
 
         public override void Draw()
         {
+            if (Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.BetweenAreas]) return;
+
             if (!P.Config.DisableMiniMenu)
             {
                 if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] || Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])

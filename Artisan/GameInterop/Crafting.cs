@@ -38,6 +38,8 @@ public static unsafe class Crafting
     public static StepState? CurStep { get; private set; }
     public static bool IsTrial { get; private set; }
 
+    public static bool CanCancelQS = false;
+
     public static (int Cur, int Max) QuickSynthState { get; private set; }
     public static bool QuickSynthCompleted => QuickSynthState.Cur == QuickSynthState.Max && QuickSynthState.Max > 0;
 
@@ -127,6 +129,7 @@ public static unsafe class Crafting
                         res.CraftQualityMin1 = hwdSheet.BaseCollectableRating[index] * 10;
                         res.CraftQualityMin2 = hwdSheet.MidCollectableRating[index] * 10;
                         res.CraftQualityMin3 = hwdSheet.HighCollectableRating[index] * 10;
+                        res.IshgardExpert = res.CraftExpert;
                     }
                 }
             }
@@ -245,7 +248,10 @@ public static unsafe class Crafting
     {
         var quickSynth = GetQuickSynthAddon(); // TODO: consider updating quicksynth state to 0/max in CEH update hook and checking that here instead
         if (quickSynth != null)
+        {
+            CanCancelQS = true;
             return State.QuickCraft; // we've actually started quick synth
+        }
 
         if (Svc.Condition[ConditionFlag.Crafting40])
             return State.WaitStart; // still waiting
@@ -354,6 +360,7 @@ public static unsafe class Crafting
     {
         if (Svc.Condition[ConditionFlag.PreparingToCraft])
         {
+            CanCancelQS = false;
             UpdateQuickSynthState((0, 0));
             CurRecipe = null;
             return State.IdleBetween; // exit quick-craft menu

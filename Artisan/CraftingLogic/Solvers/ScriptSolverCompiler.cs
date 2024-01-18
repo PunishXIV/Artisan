@@ -13,6 +13,7 @@ using System.Runtime.Loader;
 using System.Threading;
 using System.Linq;
 using ECommons.Logging;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Artisan.CraftingLogic.Solvers;
 
@@ -64,6 +65,7 @@ public class ScriptSolverCompiler : IDisposable
             if (script.CompilationState() == ScriptSolverSettings.CompilationState.Deleted)
                 continue; // script was deleted before we got around to compiling it
 
+            if (!File.Exists(script.SourcePath)) return;
             var compiled = Compile(script.SourcePath, referenceList);
             try
             {

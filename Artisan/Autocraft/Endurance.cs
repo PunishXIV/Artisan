@@ -44,7 +44,7 @@ namespace Artisan.Autocraft
 
         internal static readonly List<uint> UnableToCraftErrors = new List<uint>()
         {
-            1134,1135,1136,1137,1138,1139,1140,1141,1142,1143,1144,1145,1146,1147,1148,1149,1198,1199,1222,1223,1224,
+            1134,1135,1136,1137,1138,1139,1140,1141,1142,1143,1144,1145,1146,1148,1149,1198,1199,1222,1223,1224,
         };
 
         internal static bool Enable
@@ -302,19 +302,20 @@ namespace Artisan.Autocraft
 
         public static void Update()
         {
+            if (!Enable) return;
             var needToRepair = P.Config.Repair && RepairManager.GetMinEquippedPercent() < P.Config.RepairPercent && (RepairManager.CanRepairAny() || RepairManager.RepairNPCNearby(out _));
-            if ((Enable && P.Config.QuickSynthMode && Crafting.QuickSynthCompleted) || needToRepair || IPC.IPC.StopCraftingRequest ||
-                (Enable && P.Config.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
+            if ((Crafting.CurState == Crafting.State.QuickCraft && Crafting.QuickSynthCompleted) || needToRepair || IPC.IPC.StopCraftingRequest ||
+                (P.Config.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
             {
                 Operations.CloseQuickSynthWindow();
             }
 
-            if (Enable && !P.TM.IsBusy && Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
+            if (!P.TM.IsBusy && Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
             {
                 var isCrafting = Svc.Condition[ConditionFlag.Crafting];
                 var preparing = Svc.Condition[ConditionFlag.PreparingToCraft];
                 var recipe = LuminaSheets.RecipeSheet[RecipeID];
-                if (PreCrafting._tasks.Count > 0)
+                if (PreCrafting.Tasks.Count > 0)
                 {
                     return;
                 }
@@ -326,6 +327,8 @@ namespace Artisan.Autocraft
                     DuoLog.Information("Craft X has completed.");
                     if (P.Config.PlaySoundFinishEndurance)
                         Sounds.SoundPlayer.PlaySound();
+
+                    PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), default));
                     return;
                 }
 
@@ -339,21 +342,21 @@ namespace Artisan.Autocraft
 
                 if ((Job)LuminaSheets.RecipeSheet[RecipeID].CraftType.Row + 8 != CharacterInfo.JobID)
                 {
-                    PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
-                    PreCrafting._tasks.Add((() => PreCrafting.TaskClassChange((Job)LuminaSheets.RecipeSheet[RecipeID].CraftType.Row + 8), TimeSpan.FromMilliseconds(200)));
+                    PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
+                    PreCrafting.Tasks.Add((() => PreCrafting.TaskClassChange((Job)LuminaSheets.RecipeSheet[RecipeID].CraftType.Row + 8), TimeSpan.FromMilliseconds(200)));
                     return;
                 }
 
 
                 if (!Spiritbond.ExtractMateriaTask(P.Config.Materia))
                 {
-                    PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
+                    PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
                     return;
                 }
 
                 if (P.Config.Repair && !RepairManager.ProcessRepair())
                 {
-                    PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
+                    PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
                     return;
                 }
 
@@ -361,7 +364,6 @@ namespace Artisan.Autocraft
                 PreCrafting.CraftType type = P.Config.QuickSynthMode && recipe.CanQuickSynth && P.ri.HasRecipeCrafted(recipe.RowId) ? PreCrafting.CraftType.Quick : PreCrafting.CraftType.Normal;
                 bool needConsumables = (type == PreCrafting.CraftType.Normal || (type == PreCrafting.CraftType.Quick && P.Config.UseConsumablesQuickSynth)) && (!ConsumableChecker.IsFooded(config) || !ConsumableChecker.IsPotted(config) || !ConsumableChecker.IsManualled(config) || !ConsumableChecker.IsSquadronManualled(config));
                 bool hasConsumables = config != default ? ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) && ConsumableChecker.HasItem(config.RequiredManual, false) && ConsumableChecker.HasItem(config.RequiredSquadronManual, false) : true;
-
 
                 if (P.Config.AbortIfNoFoodPot && needConsumables && !hasConsumables)
                 {
@@ -374,8 +376,8 @@ namespace Artisan.Autocraft
                 {
                     if (!P.TM.IsBusy && !PreCrafting.Occupied())
                     {
-                        P.TM.Enqueue(() => PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200))));
-                        P.TM.Enqueue(() => PreCrafting._tasks.Add((() => PreCrafting.TaskUseConsumables(config, type), TimeSpan.FromMilliseconds(200))));
+                        P.TM.Enqueue(() => PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200))));
+                        P.TM.Enqueue(() => PreCrafting.Tasks.Add((() => PreCrafting.TaskUseConsumables(config, type), TimeSpan.FromMilliseconds(200))));
                         P.TM.DelayNext(100);
                     }
                     return;
@@ -385,14 +387,14 @@ namespace Artisan.Autocraft
                 {
                     if (!P.TM.IsBusy)
                     {
-                        PreCrafting._tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromMilliseconds(200)));
+                        PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromMilliseconds(200)));
 
                         if (!CraftingListFunctions.RecipeWindowOpen()) return;
 
                         if (type == PreCrafting.CraftType.Quick)
                         {
-                            P.TM.Enqueue(() => Operations.QuickSynthItem(99), "EnduranceQSStart");
-                            P.TM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 5000, "EnduranceQSWaitStart");
+                            P.TM.Enqueue(() => Operations.QuickSynthItem(P.Config.CraftingX ? P.Config.CraftX : 99), "EnduranceQSStart");
+                            P.TM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 1000, "EnduranceQSWaitStart");
                         }
                         else if (type == PreCrafting.CraftType.Normal)
                         {
@@ -402,7 +404,7 @@ namespace Artisan.Autocraft
                                 P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(SetIngredients), "EnduranceSetIngredientsLayout");
 
                             P.TM.Enqueue(() => Operations.RepeatActualCraft(), "EnduranceNormalStart");
-                            P.TM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 5000, "EnduranceNormalWaitStart");
+                            P.TM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 1000, "EnduranceNormalWaitStart");
                         }
                     }
 
@@ -424,7 +426,7 @@ namespace Artisan.Autocraft
                             Enable = false;
                         if (CraftingListUI.Processing)
                             CraftingListFunctions.Paused = true;
-                        PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), default));
+                        PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), default));
 
                         P.TM.Abort();
                         CraftingListFunctions.CLTM.Abort();
@@ -441,7 +443,7 @@ namespace Artisan.Autocraft
                     if (CraftingListUI.Processing)
                         CraftingListFunctions.Paused = true;
                     Errors.Clear();
-                    PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), default));
+                    PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), default));
 
                     P.TM.Abort();
                     CraftingListFunctions.CLTM.Abort();

@@ -19,6 +19,7 @@ public record class CraftState
     public bool CraftHQ;
     public bool CraftCollectible;
     public bool CraftExpert;
+    public bool IshgardExpert;
     public int CraftLevel; // Recipe.RecipeLevelTable.ClassJobLevel
     public int CraftDurability; // Recipe.RecipeLevelTable.Durability * Recipe.DurabilityFactor / 100
     public int CraftProgress; // Recipe.RecipeLevelTable.Difficulty * Recipe.DifficultyFactor / 100

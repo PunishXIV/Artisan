@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using ECommons.DalamudServices;
+using System.Collections.Generic;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 using Skills = Artisan.RawInformation.Character.Skills;
 

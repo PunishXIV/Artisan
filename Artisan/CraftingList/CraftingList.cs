@@ -167,7 +167,7 @@ namespace Artisan.CraftingLists
                 CurrentIndex = 0;
                 CraftingListUI.Processing = false;
                 Operations.CloseQuickSynthWindow();
-                PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromSeconds(5)));
+                PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromSeconds(5)));
 
                 if (P.Config.PlaySoundFinishList)
                     Sounds.SoundPlayer.PlaySound();
@@ -184,7 +184,7 @@ namespace Artisan.CraftingLists
                 Operations.CloseQuickSynthWindow();
             }
 
-            if (PreCrafting._tasks.Count > 0 || Crafting.CurState is not Crafting.State.IdleNormal and not Crafting.State.IdleBetween)
+            if (PreCrafting.Tasks.Count > 0 || Crafting.CurState is not Crafting.State.IdleNormal and not Crafting.State.IdleBetween)
             {
                 return;
             }
@@ -272,8 +272,8 @@ namespace Artisan.CraftingLists
 
             if (Svc.ClientState.LocalPlayer.ClassJob.Id != recipe.CraftType.Value.RowId + 8)
             {
-                PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
-                PreCrafting._tasks.Add((() => PreCrafting.TaskClassChange((Job)recipe.CraftType.Value.RowId + 8), TimeSpan.FromMilliseconds(200)));
+                PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
+                PreCrafting.Tasks.Add((() => PreCrafting.TaskClassChange((Job)recipe.CraftType.Value.RowId + 8), TimeSpan.FromMilliseconds(200)));
 
                 return;
             }
@@ -295,13 +295,13 @@ namespace Artisan.CraftingLists
 
             if (!Spiritbond.ExtractMateriaTask(selectedList.Materia))
             {
-                PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
+                PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
                 return;
             }
 
             if (selectedList.Repair && !RepairManager.ProcessRepair(selectedList))
             {
-                PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
+                PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
                 return;
             }
 
@@ -321,8 +321,8 @@ namespace Artisan.CraftingLists
             {
                 if (!CLTM.IsBusy && !PreCrafting.Occupied())
                 {
-                    CLTM.Enqueue(() => PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200))));
-                    CLTM.Enqueue(() => PreCrafting._tasks.Add((() => PreCrafting.TaskUseConsumables(config, type), TimeSpan.FromMilliseconds(200))));
+                    CLTM.Enqueue(() => PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200))));
+                    CLTM.Enqueue(() => PreCrafting.Tasks.Add((() => PreCrafting.TaskUseConsumables(config, type), TimeSpan.FromMilliseconds(200))));
                     CLTM.DelayNext(100);
                 }
                 return;
@@ -332,7 +332,7 @@ namespace Artisan.CraftingLists
             {
                 if (!CLTM.IsBusy)
                 {
-                    CLTM.Enqueue(() => PreCrafting._tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromMilliseconds(200))));
+                    CLTM.Enqueue(() => PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromMilliseconds(200))));
 
                     if (!RecipeWindowOpen()) return;
 
@@ -444,21 +444,12 @@ namespace Artisan.CraftingLists
                                 }
                                 else
                                 {
-                                    var nqNodeText = node->Component->UldManager.NodeList[8]->GetAsAtkTextNode();
-                                    var hqNodeText = node->Component->UldManager.NodeList[5]->GetAsAtkTextNode();
-                                    var required = node->Component->UldManager.NodeList[15]->GetAsAtkTextNode();
-
-                                    int nqMaterials = Convert.ToInt32(nqNodeText->NodeText.ToString().GetNumbers());
-                                    int hqMaterials = Convert.ToInt32(hqNodeText->NodeText.ToString().GetNumbers());
-                                    int requiredMaterials = Convert.ToInt32(required->NodeText.ToString().GetNumbers());
-
-                                    // if ((setHQint + setNQint) == requiredMaterials) continue;
-                                    for (int m = 0; m <= requiredMaterials && m <= nqMaterials; m++)
+                                    for (int m = 0; m <= 100; m++)
                                     {
                                         ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
                                     }
 
-                                    for (int m = 0; m <= requiredMaterials && m <= hqMaterials; m++)
+                                    for (int m = 0; m <= 100; m++)
                                     {
                                         ClickRecipeNote.Using((IntPtr)addon).Material(i, true);
                                     }

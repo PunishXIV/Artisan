@@ -1,6 +1,7 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Dalamud.Interface.Components;
 using ImGuiNET;
 using static Artisan.RawInformation.AddonExtensions;
 
@@ -8,6 +9,7 @@ namespace Artisan.CraftingLogic.Solvers;
 
 public class ExpertSolverSettings
 {
+    public bool MaxIshgardRecipes;
     public bool UseReflectOpener;
     public bool MuMeIntensiveGood = true; // if true, we allow spending mume on intensive (400p) rather than rapid (500p) if good condition procs
     public bool MuMeIntensiveMalleable = false; // if true and we have malleable during mume, use intensive rather than hoping for rapid
@@ -84,6 +86,8 @@ public class ExpertSolverSettings
             changed |= ImGui.Checkbox($"{Skills.Observe.NameOfAction()} on {Condition.GoodOmen.ToLocalizedString()} {ConditionString} if we would otherwise use {Skills.TricksOfTrade.NameOfAction()} on {Condition.Good.ToLocalizedString()} {ConditionString}", ref MidObserveGoodOmenForTricks);
         }
         ImGui.Unindent();
+        changed |= ImGui.Checkbox("Max out Ishgard Restoration recipes instead of just hitting max breakpoint", ref MaxIshgardRecipes);
+        ImGuiComponents.HelpMarker("This will try to maximise quality to earn more Skyward points.");
         changed |= ImGui.Checkbox($"Finisher: use {Skills.CarefulObservation.NameOfAction()} to try baiting {Condition.Good.ToLocalizedString()} {ConditionString} for {Skills.ByregotsBlessing.NameOfAction()}", ref FinisherBaitGoodByregot);
         changed |= ImGui.Checkbox($"Emergency: use {Skills.CarefulObservation.NameOfAction()} to try baiting {Condition.Good.ToLocalizedString()} {ConditionString} for {Skills.TricksOfTrade.NameOfAction()} if really low on CP", ref EmergencyCPBaitGood);
         return changed;

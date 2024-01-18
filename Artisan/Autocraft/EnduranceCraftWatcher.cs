@@ -2,9 +2,14 @@
 using Artisan.CraftingLogic;
 using Artisan.GameInterop;
 using Artisan.Sounds;
+using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Game.Text;
 using ECommons.DalamudServices;
 using ECommons.Logging;
 using Lumina.Excel.GeneratedSheets;
+using Dalamud.Game.Text.SeStringHandling;
+using System.Linq;
 
 namespace Artisan.Autocraft
 {
@@ -15,12 +20,34 @@ namespace Artisan.Autocraft
         {
             Crafting.CraftFinished += OnCraftFinished;
             Crafting.QuickSynthProgress += OnQuickSynthProgress;
+            Svc.Chat.ChatMessage += ScanForHQItems;
         }
 
         public static void Dispose()
         {
             Crafting.CraftFinished -= OnCraftFinished;
             Crafting.QuickSynthProgress -= OnQuickSynthProgress;
+            Svc.Chat.ChatMessage -= ScanForHQItems;
+        }
+
+        private static void ScanForHQItems(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+        {
+            if (type == (XivChatType)2242 && Svc.Condition[ConditionFlag.Crafting])
+            {
+                if (message.Payloads.Any(x => x.Type == PayloadType.Item))
+                {
+                    var item = (ItemPayload)message.Payloads.First(x => x.Type == PayloadType.Item);
+                    if (item.Item.CanBeHq)
+                    {
+                        if (Endurance.Enable && P.Config.EnduranceStopNQ && !item.IsHQ)
+                        {
+                            Endurance.Enable = false;
+                            Svc.Toasts.ShowError("You crafted a non-HQ item. Disabling Endurance.");
+                            DuoLog.Error("You crafted a non-HQ item. Disabling Endurance.");
+                        }
+                    }
+                }
+            }
         }
 
         private static void OnCraftFinished(Recipe recipe, CraftState craft, StepState finalStep, bool cancelled)
@@ -55,12 +82,6 @@ namespace Artisan.Autocraft
                     Svc.Toasts.ShowError("You failed a craft. Disabling Endurance.");
                     DuoLog.Error("You failed a craft. Disabling Endurance.");
                 }
-                else if (P.Config.EnduranceStopNQ && recipe.CanHq && !craft.CraftCollectible && finalStep.Quality < craft.CraftQualityMax)
-                {
-                    Endurance.Enable = false;
-                    Svc.Toasts.ShowError("You crafted a non-HQ item. Disabling Endurance.");
-                    DuoLog.Error("You crafted a non-HQ item. Disabling Endurance.");
-                }
                 else if (P.Config.CraftingX && P.Config.CraftX > 0)
                 {
                     P.Config.CraftX -= 1;
@@ -71,6 +92,8 @@ namespace Artisan.Autocraft
                         if (P.Config.PlaySoundFinishEndurance)
                             SoundPlayer.PlaySound();
                         DuoLog.Information("Craft X has completed.");
+
+                        PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), default));
                     }
                 }
             }
@@ -84,6 +107,11 @@ namespace Artisan.Autocraft
             CraftingListFunctions.CurrentIndex++;
             if (P.Config.QuickSynthMode && Endurance.Enable && P.Config.CraftX > 0)
                 P.Config.CraftX--;
+
+            if (cur == max)
+            {
+                Operations.CloseQuickSynthWindow();
+            }
         }
     }
 }

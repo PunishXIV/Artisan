@@ -6,11 +6,13 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
+using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using global::Artisan.CraftingLogic;
 using global::Artisan.GameInterop;
 using global::Artisan.UI.Tables;
 using ImGuiNET;
@@ -138,6 +140,10 @@ internal class ListEditor : Window, IDisposable
             P.StylePushed = true;
         }
 
+        var styleColor = ImGui.GetStyle().Colors[(int)ImGuiCol.WindowBg];
+        var newColor = new Vector4(styleColor.X, styleColor.Y, styleColor.Z, (float)P.Config.ListOpacity / 100);
+        ImGui.PushStyleColor(ImGuiCol.WindowBg, newColor);
+
     }
 
     public override void PostDraw()
@@ -148,6 +154,8 @@ internal class ListEditor : Window, IDisposable
             ImGui.PopFont();
             P.StylePushed = false;
         }
+
+        ImGui.PopStyleColor();
     }
 
     private static bool GatherBuddy =>
@@ -161,6 +169,12 @@ internal class ListEditor : Window, IDisposable
 
     private static unsafe void SearchItem(uint item) => ItemFinderModule.Instance()->SearchForItem(item);
 
+    public class ListOrderCheck
+    {
+        public uint RecID;
+        public int RecipeDepth = 0;
+        public int RecipeDiff => Calculations.RecipeDifficulty(LuminaSheets.RecipeSheet[RecID]);
+    }
 
     public async override void Draw()
     {
@@ -220,11 +234,10 @@ internal class ListEditor : Window, IDisposable
             Clipboard.SetText(JsonConvert.SerializeObject(P.Config.CraftingLists.Where(x => x.ID == SelectedList.ID).First()));
             Notify.Success("List exported to clipboard.");
         }
-
+        var restock = ImGuiHelpers.GetButtonSize("Restock From Retainers");
         if (RetainerInfo.ATools)
         {
             ImGui.SameLine();
-            var restock = ImGuiHelpers.GetButtonSize("Restock From Retainers");
             ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - restock.X - export.X - btn.X - 6f);
 
             if (Endurance.Enable || CraftingListUI.Processing)
@@ -239,7 +252,19 @@ internal class ListEditor : Window, IDisposable
                 ImGui.EndDisabled();
         }
 
+        ImGui.SameLine();
+        var opacityWidth = ImGui.CalcTextSize("Window Opacity");
+        ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - restock.X - export.X - btn.X - 6f - 128f - opacityWidth.X);
+        ImGui.SetNextItemWidth(120);
+        if (ImGui.SliderInt("Window Opacity###WindowOpacity", ref P.Config.ListOpacity, 1, 100, $"%d%%"))
+        {
+            P.Config.Save();
+        }
 
+        if (ImGui.IsItemHovered())
+        {
+            ImGuiEx.Tooltip("This will only affect the primary monitor if using multi-monitor support (This is a limiation of ImGUI I'm afraid).");
+        }
     }
 
     public void DrawRecipeSubTable()
@@ -456,8 +481,68 @@ internal class ListEditor : Window, IDisposable
 
             ImGui.Checkbox("Remove all unnecessary subcrafts after adding", ref TidyAfter);
         }
+
+        if (ImGui.Button($"Sort Recipes"))
+        {
+            List<uint> newList = new();
+            List<ListOrderCheck> order = new();
+            foreach (var item in SelectedList.Items.Distinct())
+            {
+                var orderCheck = new ListOrderCheck();
+                var r = LuminaSheets.RecipeSheet[item];
+                orderCheck.RecID = r.RowId;
+                int maxDepth = 0;
+                foreach (var ing in r.UnkData5.Where(x => x.AmountIngredient > 0).Select(x => x.ItemIngredient))
+                {
+                    CheckIngredientRecipe(ing, orderCheck);
+                    if (orderCheck.RecipeDepth > maxDepth)
+                    {
+                        maxDepth = orderCheck.RecipeDepth;
+                    }
+                    orderCheck.RecipeDepth = 0;
+                }
+                orderCheck.RecipeDepth = maxDepth;
+                order.Add(orderCheck);
+            }
+
+            foreach (var ord in order.OrderBy(x => x.RecipeDepth).ThenBy(x => x.RecipeDiff))
+            {
+                var count = SelectedList.Items.Count(x => x == ord.RecID);
+                for (int i = 1; i <= count; i++)
+                {
+                    newList.Add(ord.RecID);
+                }
+            }
+
+            SelectedList.Items = newList;
+            RecipeSelector.Items = SelectedList.Items.Distinct().ToList();
+            P.Config.Save();
+        }
+
+        if (ImGui.IsItemHovered())
+        {
+            ImGuiEx.Tooltip($"This will sort your list by recipe depth, then difficulty. Recipe depth is defined by how many of the ingredients depend on other recipes on the list.\n\n" +
+                $"For example: {LuminaSheets.RecipeSheet[35508].ItemResult.Value.Name} requires {LuminaSheets.ItemSheet[36186].Name}, which in turn requires {LuminaSheets.ItemSheet[36189].Name}, giving this recipe a depth of 3 if all these items are on the list.\n" +
+                $"Items that do not have other recipe dependencies have a depth of 1, so go to the top of the list, e.g {LuminaSheets.RecipeSheet[5299].ItemResult.Value.Name}\n\n" +
+                $"Finally, this is sorted by the in-game difficulty of the crafts, hopefully grouping together similar crafts.");
+        }
     }
 
+    private void CheckIngredientRecipe(int ing, ListOrderCheck orderCheck)
+    {
+        foreach (var result in SelectedList.Items.Distinct().Select(x => LuminaSheets.RecipeSheet[x]))
+        {
+            if (result.ItemResult.Row == ing)
+            {
+                orderCheck.RecipeDepth += 1;
+                foreach (var subIng in result.UnkData5.Where(x => x.AmountIngredient > 0).Select(x => x.ItemIngredient))
+                {
+                    CheckIngredientRecipe(subIng, orderCheck);
+                }
+                return;
+            }
+        }
+    }
     private void DrawRecipeList()
     {
         if (P.Config.ShowOnlyCraftable && !RetainerInfo.CacheBuilt)

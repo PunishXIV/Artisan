@@ -6,8 +6,10 @@ using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Artisan.CraftingLists
 {
@@ -36,6 +38,7 @@ namespace Artisan.CraftingLists
         private static Dictionary<int, bool> Stats = LuminaSheets.RecipeSheet.Values.SelectMany(x => x.ItemResult.Value.UnkData59).DistinctBy(x => x.BaseParam).Where(x => x.BaseParam > 0).OrderBy(x => x.BaseParam).ToDictionary(x => (int)x.BaseParam, x => false);
 
         private static float DurY = 0f;
+
         public static void Draw()
         {
             ImGui.TextWrapped($@"This section is for building lists based on certain criteria rather than individually. Give your list a name and select your criteria from below then select ""Build List"" and a new list will be created with all items that match the criteria. If you do not select any checkboxes then that category will be treated as ""Any"" or ""All"" except for which job crafts it.");
@@ -66,7 +69,7 @@ namespace Artisan.CraftingLists
                 ImGui.EndListBox();
             }
 
-            
+
             ImGui.TextWrapped($"Already Crafted Recipe");
             if (ImGui.BeginListBox("###AlreadyCraftedRecipes", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 32f.Scale())))
             {
@@ -171,7 +174,7 @@ namespace Artisan.CraftingLists
                 ImGui.EndListBox();
             }
 
-            
+
             ImGui.NextColumn();
 
             ImGui.TextWrapped("Max Level");
@@ -291,10 +294,8 @@ namespace Artisan.CraftingLists
                     return;
                 }
 
-                if (CreateList(false))
-                {
-                    Notify.Success($"{listName} has been created.");
-                }
+                Notify.Info("Your list is being created. Please wait.");
+                Task.Run(() => CreateList(false)).ContinueWith(result => NotifySuccess(result));
             }
             if (ImGui.Button("Build List (with subcrafts)", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 0)))
             {
@@ -304,11 +305,19 @@ namespace Artisan.CraftingLists
                     return;
                 }
 
-                if (CreateList(true))
-                {
-                    Notify.Success($"{listName} has been created.");
-                }
+                Notify.Info("Your list is being created. Please wait.");
+                Task.Run(() => CreateList(true)).ContinueWith(result => NotifySuccess(result));
             }
+        }
+
+        private static bool NotifySuccess(Task<bool> result)
+        {
+            if (result.Result)
+            {
+                Notify.Success($"{listName} has been created.");
+                return true;
+            }
+            return false;
         }
 
         private static bool CreateList(bool withSubcrafts)

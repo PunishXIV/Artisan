@@ -85,19 +85,18 @@ public static unsafe class Operations
     {
         try
         {
-            var quickSynthPTR = Svc.GameGui.GetAddonByName("SynthesisSimple", 1);
-            if (quickSynthPTR == nint.Zero)
-                return;
-
-            var quickSynthWindow = (AtkUnitBase*)quickSynthPTR;
-            if (quickSynthWindow == null)
-                return;
-
-            var qsynthButton = quickSynthWindow->UldManager.NodeList[2]->GetAsAtkComponentButton();
-            if (qsynthButton->IsEnabled)
+            if (Crafting.CanCancelQS)
             {
-                Svc.Log.Debug("Exiting QS");
-                AtkResNodeFunctions.ClickButton(quickSynthWindow, qsynthButton, 0);
+                var quickSynthPTR = Svc.GameGui.GetAddonByName("SynthesisSimple", 1);
+                if (quickSynthPTR == nint.Zero)
+                    return;
+
+                var quickSynthWindow = (AtkUnitBase*)quickSynthPTR;
+                if (quickSynthWindow == null)
+                    return;
+
+                Callback.Fire(quickSynthWindow, true, -1);
+                Crafting.CanCancelQS = false;
             }
         }
         catch (Exception e)
@@ -111,6 +110,19 @@ public static unsafe class Operations
         if (Crafting.CurState is not Crafting.State.IdleBetween and not Crafting.State.IdleNormal)
             return false;
 
+        if (PreCrafting.Occupied())
+            return false;
+
+        var recipe = GetSelectedRecipeEntry();
+        if (recipe == null)
+            return false;
+
+        foreach (var ing in recipe->IngredientsSpan)
+        {
+            if (ing.NumAssignedNQ + ing.NumAssignedHQ != ing.NumTotal)
+                return false;
+        }
+
         var addon = (AddonRecipeNote*)Svc.GameGui.GetAddonByName("RecipeNote");
         if (addon == null)
             return false;
@@ -118,7 +130,7 @@ public static unsafe class Operations
         Svc.Log.Debug($"Starting actual craft");
         Callback.Fire(&addon->AtkUnitBase, true, 8);
         Endurance.Tasks.Clear();
-        PreCrafting._tasks.Clear();
+        PreCrafting.Tasks.Clear();
         return true;
     }
 

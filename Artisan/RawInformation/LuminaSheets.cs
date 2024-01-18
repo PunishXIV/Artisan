@@ -263,6 +263,11 @@ namespace Artisan.RawInformation
             return "";
         }
 
+        public static bool ItemHasRecipe(this int id)
+        {
+            return LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == id);
+        }
+
         public static string GetToDoInfo(this ushort id)
         {
             if (id > 0)

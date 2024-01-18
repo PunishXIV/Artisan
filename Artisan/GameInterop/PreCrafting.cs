@@ -40,7 +40,7 @@ public unsafe static class PreCrafting
     private static Hook<ClickSynthesisButton> _clickTrialSynthesisButtonHook;
 
     public enum TaskResult { Done, Retry, Abort }
-    public static List<(Func<TaskResult> task, TimeSpan retryDelay)> _tasks = new();
+    public static List<(Func<TaskResult> task, TimeSpan retryDelay)> Tasks = new();
     private static DateTime _nextRetry;
 
     static PreCrafting()
@@ -67,18 +67,18 @@ public unsafe static class PreCrafting
         if (DateTime.Now < _nextRetry)
             return;
 
-        while (_tasks.Count > 0)
+        while (Tasks.Count > 0)
         {
-            switch (_tasks[0].task())
+            switch (Tasks[0].task())
             {
                 case TaskResult.Done:
-                    _tasks.RemoveAt(0);
+                    Tasks.RemoveAt(0);
                     break;
                 case TaskResult.Retry:
-                    _nextRetry = DateTime.Now.Add(_tasks[0].retryDelay);
+                    _nextRetry = DateTime.Now.Add(Tasks[0].retryDelay);
                     return;
-                default:
-                    _tasks.Clear();
+                case TaskResult.Abort:
+                    Tasks.Clear();
                     return;
             }
         }
@@ -125,21 +125,21 @@ public unsafe static class PreCrafting
             bool needExitCraft = Crafting.CurState == Crafting.State.IdleBetween && (needClassChange || needEquipItem || needConsumables);
             
             // TODO: pre-setup solver for incoming craft
-            _tasks.Clear();
+            Tasks.Clear();
             _nextRetry = default;
             if (needExitCraft)
-                _tasks.Add((TaskExitCraft, default));
+                Tasks.Add((TaskExitCraft, default));
             if (needClassChange)
-                _tasks.Add((() => TaskClassChange(requiredClass), TimeSpan.FromMilliseconds(200))); // TODO: avoid delay and just wait until operation is done
+                Tasks.Add((() => TaskClassChange(requiredClass), TimeSpan.FromMilliseconds(200))); // TODO: avoid delay and just wait until operation is done
             if (needEquipItem)
             {
                 equipAttemptLoops = 0;
-                _tasks.Add((() => TaskEquipItem(recipe.ItemRequired.Row), default));
+                Tasks.Add((() => TaskEquipItem(recipe.ItemRequired.Row), default));
             }
             if (needConsumables)
-                _tasks.Add((() => TaskUseConsumables(config, type), default));
-            _tasks.Add((() => TaskSelectRecipe(recipe), default));
-            _tasks.Add((() => TaskStartCraft(type), default));
+                Tasks.Add((() => TaskUseConsumables(config, type), default));
+            Tasks.Add((() => TaskSelectRecipe(recipe), default));
+            Tasks.Add((() => TaskStartCraft(type), default));
 
             Update();
         }
@@ -151,9 +151,9 @@ public unsafe static class PreCrafting
 
     public static int GetNumberCraftable(Recipe recipe)
     {
-        if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon))
+        if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon) && addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory != null)
         {
-            var output = int.Parse(addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory->NodeText.ToString());
+            if (int.TryParse(addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory->NodeText.ToString(), out int output))
             return output;
         }
         return -1;
@@ -164,8 +164,9 @@ public unsafe static class PreCrafting
         switch (Crafting.CurState)
         {
             case Crafting.State.WaitFinish:
-                return TaskResult.Retry;
             case Crafting.State.QuickCraft:
+            case Crafting.State.WaitAction:
+            case Crafting.State.InProgress:
                 return TaskResult.Retry;
             case Crafting.State.IdleNormal:
                 return TaskResult.Done;
@@ -177,10 +178,9 @@ public unsafe static class PreCrafting
                     Callback.Fire(&addon->AtkUnitBase, true, -1);
                 }
                 return TaskResult.Retry;
-            default:
-                Svc.Log.Error($"Unexpected state {Crafting.CurState} while trying to exit crafting mode");
-                return TaskResult.Abort;
         }
+
+        return TaskResult.Retry;
     }
 
     public static TaskResult TaskClassChange(Job job)
@@ -257,55 +257,9 @@ public unsafe static class PreCrafting
         if (Occupied())
             return TaskResult.Retry;
 
-        if (!ConsumableChecker.IsFooded(config))
-        {
-            var foodId = config.RequiredFood + (config.RequiredFoodHQ ? 1000000u : 0);
-            if (ActionManagerEx.CanUseAction(ActionType.Item, foodId))
-            {
-                Svc.Log.Debug($"Using food: {foodId}");
-                ActionManagerEx.UseItem(foodId);
-                return TaskResult.Retry;
-            }
-            else
-            {
-                DuoLog.Error("Can't use food required for crafting");
-                return TaskResult.Abort;
-            }
-        }
-
-        if (!ConsumableChecker.IsPotted(config))
-        {
-            var potId = config.RequiredPotion + (config.RequiredPotionHQ ? 1000000u : 0);
-            if (ActionManagerEx.CanUseAction(ActionType.Item, potId))
-            {
-                Svc.Log.Debug($"Using pot: {potId}");
-                ActionManagerEx.UseItem(potId);
-                return TaskResult.Retry;
-            }
-            else
-            {
-                DuoLog.Error("Can't use medicine required for crafting");
-                return TaskResult.Abort;
-            }
-        }
-
-        if (!ConsumableChecker.IsManualled(config))
-        {
-            if (ActionManagerEx.CanUseAction(ActionType.Item, config.RequiredManual))
-            {
-                Svc.Log.Debug($"Using manual: {config.RequiredManual}");
-                ActionManagerEx.UseItem(config.RequiredManual);
-                return TaskResult.Retry;
-            }
-            else
-            {
-                DuoLog.Error("Can't use manual required for crafting");
-                return TaskResult.Abort;
-            }
-        }
-
         if (!ConsumableChecker.IsSquadronManualled(config))
         {
+            if (InventoryManager.Instance()->GetInventoryItemCount(config.RequiredSquadronManual) == 0) return TaskResult.Abort;
             if (ActionManagerEx.CanUseAction(ActionType.Item, config.RequiredSquadronManual))
             {
                 Svc.Log.Debug($"Using squadron manual: {config.RequiredSquadronManual}");
@@ -314,8 +268,54 @@ public unsafe static class PreCrafting
             }
             else
             {
-                DuoLog.Error("Can't use squadron manual required for crafting");
-                return TaskResult.Abort;
+                return TaskResult.Retry;
+            }
+        }
+
+        if (!ConsumableChecker.IsManualled(config))
+        {
+            if (InventoryManager.Instance()->GetInventoryItemCount(config.RequiredManual) == 0) return TaskResult.Abort;
+            if (ActionManagerEx.CanUseAction(ActionType.Item, config.RequiredManual))
+            {
+                Svc.Log.Debug($"Using manual: {config.RequiredManual}");
+                ActionManagerEx.UseItem(config.RequiredManual);
+                return TaskResult.Retry;
+            }
+            else
+            {
+                return TaskResult.Retry;
+            }
+        }
+
+        if (!ConsumableChecker.IsFooded(config))
+        {
+            var foodId = config.RequiredFood + (config.RequiredFoodHQ ? 1000000u : 0);
+            if (InventoryManager.Instance()->GetInventoryItemCount(config.RequiredFood, config.RequiredFoodHQ) == 0) return TaskResult.Abort;
+            if (ActionManagerEx.CanUseAction(ActionType.Item, foodId))
+            {
+                Svc.Log.Debug($"Using food: {foodId}");
+                ActionManagerEx.UseItem(foodId);
+                return TaskResult.Retry;
+            }
+            else
+            {
+                return TaskResult.Retry;
+            }
+        }
+
+        if (!ConsumableChecker.IsPotted(config))
+        {
+            var potId = config.RequiredPotion + (config.RequiredPotionHQ ? 1000000u : 0);
+            if (InventoryManager.Instance()->GetInventoryItemCount(config.RequiredPotion, config.RequiredPotionHQ) == 0) return TaskResult.Abort;
+            if (ActionManagerEx.CanUseAction(ActionType.Item, potId))
+            {
+                Svc.Log.Debug($"Using pot: {potId}");
+                ActionManagerEx.UseItem(potId);
+                return TaskResult.Retry;
+            }
+            else
+            {
+                return TaskResult.Retry;
             }
         }
 

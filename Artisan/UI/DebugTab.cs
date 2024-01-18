@@ -337,7 +337,9 @@ namespace Artisan.UI
             }
 
             ImGui.Text($"{Crafting.CurState}");
-            ImGui.Text($"{PreCrafting._tasks.Count()}");
+            ImGui.Text($"{PreCrafting.Tasks.Count()}");
+            ImGui.Text($"{P.TM.IsBusy}");
+            ImGui.Text($"{CraftingListFunctions.CLTM.IsBusy}");
         }
 
         private static void DrawRecipeEntry(string tag, RecipeNoteRecipeEntry* e)

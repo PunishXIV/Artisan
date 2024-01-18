@@ -63,6 +63,7 @@ public class ExpertSolver : Solver
 
     public static Recommendation SolveNextStep(ExpertSolverSettings cfg, CraftState craft, StepState step)
     {
+        if (craft.IshgardExpert && cfg.MaxIshgardRecipes) craft.CraftQualityMin3 = craft.CraftQualityMax;
         if (step.Index == 1)
         {
             // always open with special action

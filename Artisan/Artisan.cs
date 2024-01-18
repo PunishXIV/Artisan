@@ -19,6 +19,8 @@ using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.Logging;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
+using OtterGui;
 using OtterGui.Classes;
 using PunishLib;
 using System;
@@ -114,7 +116,7 @@ public unsafe class Artisan : IDalamudPlugin
 
 #if DEBUG
         P.PluginUi.IsOpen = true;
-        P.PluginUi.OpenWindow = OpenWindow.Simulator;
+        P.PluginUi.OpenWindow = OpenWindow.Lists;
 #endif
     }
 
@@ -140,6 +142,7 @@ public unsafe class Artisan : IDalamudPlugin
             if (flag == ConditionFlag.WaitingForDutyFinder && value)
             {
                 IPC.IPC.StopCraftingRequest = true;
+                PreCrafting.Tasks.Clear();
             }
 
             if (flag == ConditionFlag.WaitingForDutyFinder && !value)
@@ -389,7 +392,10 @@ public unsafe class Artisan : IDalamudPlugin
                 break;
         }
 
-        PreCrafting._tasks.Add((() => PreCrafting.TaskExitCraft(), default));
+        if (Crafting.CurState == Crafting.State.QuickCraft)
+            Operations.CloseQuickSynthWindow();
+
+        PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), default));
 
     }
 

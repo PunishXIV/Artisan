@@ -1,6 +1,5 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.GameInterop;
-using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.TemporaryFixes;
@@ -10,6 +9,7 @@ using Dalamud.Game.ClientState.Objects.Types;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using ECommons.GameFunctions;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
@@ -38,9 +38,9 @@ namespace Artisan.Autocraft
             if (TryGetAddonByName<AddonRepairFixed>("Repair", out var r) &&
                 r->AtkUnitBase.IsVisible && TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) &&
                 addon->AtkUnitBase.IsVisible &&
+                addon->YesButton is not null &&
                 addon->YesButton->IsEnabled &&
-                addon->AtkUnitBase.UldManager.NodeList[15]->IsVisible &&
-                Throttler.Throttle(500))
+                addon->AtkUnitBase.UldManager.NodeList[15]->IsVisible)
             {
                 new ClickSelectYesNo((IntPtr)addon).Yes();
             }
@@ -160,6 +160,13 @@ namespace Artisan.Autocraft
             return false;
         }
 
+        internal static bool RepairWindowOpen()
+        {
+            if (TryGetAddonByName<AddonRepairFixed>("Repair", out var repairAddon))
+                return true;
+
+            return false;
+        }
         internal static bool InteractWithRepairNPC()
         {
             if (RepairNPCNearby(out GameObject npc))
@@ -180,6 +187,8 @@ namespace Artisan.Autocraft
             return false;
         }
 
+        private static DateTime _nextRetry;
+
         internal static bool ProcessRepair(CraftingList? CraftingList = null)
         {
             int repairPercent = CraftingList != null ? CraftingList.RepairPercent : P.Config.RepairPercent;
@@ -187,37 +196,57 @@ namespace Artisan.Autocraft
             {
                 if (TryGetAddonByName<AddonRepairFixed>("Repair", out var r) && r->AtkUnitBase.IsVisible)
                 {
-                    if (DebugTab.Debug) Svc.Log.Verbose("Repair visible");
-                    if (DebugTab.Debug) Svc.Log.Verbose("Closing repair window");
-                    ActionManagerEx.UseRepair();
+                    if (DateTime.Now < _nextRetry) return false;
+                    if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Occupied39])
+                    {
+                        if (DebugTab.Debug) Svc.Log.Verbose("Repair visible");
+                        if (DebugTab.Debug) Svc.Log.Verbose("Closing repair window");
+                        ActionManagerEx.UseRepair();
+                    }
+                    _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
                     return false;
                 }
-
                 return true;
             }
 
+            if (DateTime.Now < _nextRetry) return false;
+
             if (TryGetAddonByName<AddonRepairFixed>("Repair", out var repairAddon) && repairAddon->AtkUnitBase.IsVisible && repairAddon->RepairAllButton != null)
             {
-                ConfirmYesNo();
-                Repair();
+                if (!repairAddon->RepairAllButton->IsEnabled)
+                {
+                    ActionManagerEx.UseRepair();
+                    _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
+                    return false;
+                }
+
+                if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Occupied39])
+                {
+                    ConfirmYesNo();
+                    Repair();
+                }
+                _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
                 return false;
             }
 
             if (P.Config.PrioritizeRepairNPC || !CanRepairAny())
             {
-                if (RepairNPCNearby(out var npc) && InventoryManager.Instance()->GetInventoryItemCount(1) >= GetNPCRepairPrice())
+                if (RepairNPCNearby(out var npc) && InventoryManager.Instance()->GetInventoryItemCount(1) >= GetNPCRepairPrice() && !RepairWindowOpen())
                 {
+                    Svc.Log.Debug($"Repair???");
                     InteractWithRepairNPC();
+                    _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
                     return false;
                 }
             }
 
             if (CanRepairAny())
             {
-                if (!PreCrafting.Occupied())
+                if (!PreCrafting.Occupied() && !RepairWindowOpen())
                 {
                     ActionManagerEx.UseRepair();
                 }
+                _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
                 return false;
             }
 
@@ -225,6 +254,7 @@ namespace Artisan.Autocraft
             {
                 Endurance.ToggleEndurance(false);
                 DuoLog.Warning($"Endurance has stopped due to being unable to repair.");
+                _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
                 return false;
             }
 
@@ -232,36 +262,11 @@ namespace Artisan.Autocraft
             {
                 CraftingListFunctions.Paused = true;
                 DuoLog.Warning($"List has been paused due to being unable to repair.");
+                _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
                 return false;
             }
 
             return true;
-
-            //else
-            //{
-            //    if (DebugTab.Debug) Svc.Log.Verbose($"Condition bad, condition is {GetMinEquippedPercent()}, config is {P.Config.RepairPercent}");
-            //    if (use)
-            //    {
-            //        if (DebugTab.Debug) Svc.Log.Verbose($"Doing repair");
-            //        if (TryGetAddonByName<AddonRepairFixed>("Repair", out var r) && r->AtkUnitBase.IsVisible)
-            //        {
-            //            //Svc.Log.Verbose($"Repair visible");
-            //            ConfirmYesNo();
-            //            Repair();
-            //        }
-            //        else
-            //        {
-            //            if (DebugTab.Debug) Svc.Log.Verbose($"Repair not visible");
-            //            if (Throttler.Throttle(500))
-            //            {
-            //                if (DebugTab.Debug) Svc.Log.Verbose($"Opening repair");
-            //                ActionManagerEx.UseRepair();
-            //            }
-            //        }
-            //    }
-            //    if (DebugTab.Debug) Svc.Log.Verbose($"Returning false");
-            //    return false;
-            //}
         }
     }
 }

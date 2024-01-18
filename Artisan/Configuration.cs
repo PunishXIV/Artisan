@@ -123,6 +123,8 @@ namespace Artisan
         public bool DefaultColourValidation = false;
         public bool DefaultHQCrafts = false;
 
+        public int ListOpacity = 100;
+
         public bool UseUniversalis = false;
         public bool LimitUnversalisToDC = false;
         public bool UniversalisOnDemand = false;
