@@ -13,7 +13,6 @@ using System.Runtime.Loader;
 using System.Threading;
 using System.Linq;
 using ECommons.Logging;
-using System.Reflection.Metadata.Ecma335;
 
 namespace Artisan.CraftingLogic.Solvers;
 
@@ -65,10 +64,11 @@ public class ScriptSolverCompiler : IDisposable
             if (script.CompilationState() == ScriptSolverSettings.CompilationState.Deleted)
                 continue; // script was deleted before we got around to compiling it
 
-            if (!File.Exists(script.SourcePath)) return;
-            var compiled = Compile(script.SourcePath, referenceList);
+            string diagnostics = "";
             try
             {
+                var compiled = Compile(script.SourcePath, referenceList);
+                diagnostics = compiled.diagnostics;
                 if (compiled.binary == null)
                     throw new Exception($"Compilation failed:\n{compiled.diagnostics}");
                 var asm = Load(compiled.binary);
@@ -81,7 +81,7 @@ public class ScriptSolverCompiler : IDisposable
             {
                 DuoLog.Error($"Failed to compile {script.SourcePath}, see log for details.");
                 Svc.Log.Error(ex, $"[ArtisanScript] Error compiling {script.SourcePath}");
-                script.UpdateCompilation(ScriptSolverSettings.CompilationState.Failed, compiled.diagnostics, null);
+                script.UpdateCompilation(ScriptSolverSettings.CompilationState.Failed, diagnostics, null);
             }
         }
     }

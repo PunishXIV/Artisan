@@ -63,7 +63,7 @@ public class ExpertSolver : Solver
 
     public static Recommendation SolveNextStep(ExpertSolverSettings cfg, CraftState craft, StepState step)
     {
-        if (craft.IshgardExpert && cfg.MaxIshgardRecipes) craft.CraftQualityMin3 = craft.CraftQualityMax;
+        var qualityTarget = craft.IshgardExpert && cfg.MaxIshgardRecipes ? craft.CraftQualityMax : craft.CraftQualityMin3; // TODO: reconsider, this is a bit of a hack
         if (step.Index == 1)
         {
             // always open with special action
@@ -86,11 +86,11 @@ public class ExpertSolver : Solver
         var cpAvailableForQuality = step.RemainingCP - reservedCPForProgress;
 
         // see if we can do byregot right now and top up quality
-        var finishQualityAction = SolveFinishQuality(craft, step, cpAvailableForQuality);
+        var finishQualityAction = SolveFinishQuality(craft, step, cpAvailableForQuality, qualityTarget);
         if (finishQualityAction.Action != Skills.None)
             return finishQualityAction;
 
-        var isMid = step.Quality < craft.CraftQualityMin3 && (step.Quality < craft.CraftQualityMin1 || cpAvailableForQuality >= 24);
+        var isMid = step.Quality < qualityTarget && (step.Quality < craft.CraftQualityMin1 || cpAvailableForQuality >= 24);
         if (isMid)
         {
             // we still need quality and have cp available - we're mid craft
@@ -608,12 +608,12 @@ public class ExpertSolver : Solver
     }
 
     // see if we can do gs+inno+byregot right now to get to the quality goal
-    private static Recommendation SolveFinishQuality(CraftState craft, StepState step, int availableCP)
+    private static Recommendation SolveFinishQuality(CraftState craft, StepState step, int availableCP, int qualityTarget)
     {
         if (step.IQStacks == 0)
             return new(Skills.None, "fq: no iq"); // we can't even byregot now...
 
-        var missingQuality = craft.CraftQualityMin3 - step.Quality;
+        var missingQuality = qualityTarget - step.Quality;
         if (missingQuality <= 0)
             return new(Skills.None, "fq: at cap"); // we're already at cap
 
