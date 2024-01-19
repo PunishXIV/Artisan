@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -174,6 +175,7 @@ internal class ListEditor : Window, IDisposable
         public uint RecID;
         public int RecipeDepth = 0;
         public int RecipeDiff => Calculations.RecipeDifficulty(LuminaSheets.RecipeSheet[RecID]);
+        public uint CraftType => LuminaSheets.RecipeSheet[RecID].CraftType.Row;
     }
 
     public async override void Draw()
@@ -505,7 +507,7 @@ internal class ListEditor : Window, IDisposable
                 order.Add(orderCheck);
             }
 
-            foreach (var ord in order.OrderBy(x => x.RecipeDepth).ThenBy(x => x.RecipeDiff))
+            foreach (var ord in order.OrderBy(x => x.RecipeDepth).ThenBy(x => x.RecipeDiff).ThenBy(x => x.CraftType))
             {
                 var count = SelectedList.Items.Count(x => x == ord.RecID);
                 for (int i = 1; i <= count; i++)
@@ -818,6 +820,25 @@ internal class ListEditor : Window, IDisposable
             ImGui.SameLine();
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
             ImGui.Text($" - Combination of Inventory & Craftable has all required items.");
+        }
+        ImGui.SameLine();
+        if (ImGui.Button($"Export Remaining Ingredients as Plain Text"))
+        {
+            StringBuilder sb = new();
+            foreach (var item in Table.ListItems.Where(x => x.Remaining > 0))
+            {
+                sb.AppendLine($"{item.Remaining}x {item.Data.Name}");
+            }
+
+            if (!string.IsNullOrEmpty(sb.ToString()))
+            {
+                Clipboard.SetText(sb.ToString());
+                Notify.Success($"Remaining items copied to clipboard.");
+            }
+            else
+            {
+                Notify.Error($"No items remaing to be copied.");
+            }
         }
 
         ImGui.SameLine();
