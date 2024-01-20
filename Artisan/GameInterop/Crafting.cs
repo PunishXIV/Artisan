@@ -98,6 +98,8 @@ public static unsafe class Crafting
             CraftQualityModifier = lt?.QualityModifier ?? 180,
             CraftQualityMax = Calculations.RecipeMaxQuality(recipe),
             CraftRequiredQuality = (int)recipe.RequiredQuality,
+            CraftRecommendedCraftsmanship = lt?.SuggestedCraftsmanship ?? 0,
+            CraftRecommendedControl = lt?.SuggestedControl ?? 0,
             CraftHQ = recipe.CanHq,
         };
 

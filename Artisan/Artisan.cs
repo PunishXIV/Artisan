@@ -116,7 +116,8 @@ public unsafe class Artisan : IDalamudPlugin
 
 #if DEBUG
         P.PluginUi.IsOpen = true;
-        P.PluginUi.OpenWindow = OpenWindow.Lists;
+        P.PluginUi.OpenWindow = OpenWindow.Simulator;
+        SimulatorUI.SelectedRecipe = LuminaSheets.RecipeSheet[35037];
 #endif
     }
 

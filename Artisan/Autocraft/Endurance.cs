@@ -398,6 +398,7 @@ namespace Artisan.Autocraft
                         }
                         else if (type == PreCrafting.CraftType.Normal)
                         {
+                            P.TM.DelayNext(200);
                             if (P.Config.MaxQuantityMode)
                                 P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredientsNonLayout");
                             else

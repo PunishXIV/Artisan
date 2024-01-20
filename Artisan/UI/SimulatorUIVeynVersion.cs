@@ -87,6 +87,7 @@ internal static class SimulatorUIVeynVersion
         }
         else if (ImGui.Button("Run!"))
         {
+            SetSelectedRecipe(_selectedRecipe);
             _statsCurrent = null;
             var iterationsPerTask = _statsNumIterations / _statsNumTasks;
             var startingQuality = (int)(craft.CraftQualityMax * _startingQualityPct / 100.0);
@@ -104,6 +105,7 @@ internal static class SimulatorUIVeynVersion
         DrawStatistic("Success Q1", _statsCurrent.NumOutcomes[3]);
         DrawStatistic("Success Q2", _statsCurrent.NumOutcomes[4]);
         DrawStatistic("Success Q3", _statsCurrent.NumOutcomes[5]);
+        DrawStatistic("Success Max Quality", _statsCurrent.NumOutcomes[6]);
         var yieldQ1 = 1;
         var yieldQ2 = yieldQ1 + (craft.CraftQualityMin2 > craft.CraftQualityMin1 ? 1 : 0);
         var yieldQ3 = yieldQ2 + (craft.CraftQualityMin3 > craft.CraftQualityMin2 ? 1 : 0);

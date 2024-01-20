@@ -11,6 +11,7 @@ using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.Logging;
+using FFXIVClientStructs.FFXIV.Client.Game.MJI;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -356,6 +357,7 @@ namespace Artisan.CraftingLists
                     }
                     else if (type == PreCrafting.CraftType.Normal)
                     {
+                        CLTM.DelayNext(400);
                         CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
                         CLTM.Enqueue(() => Operations.RepeatActualCraft(), "ListCraft");
                         CLTM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 5000, "ListNormalWaitStart");
@@ -398,125 +400,117 @@ namespace Artisan.CraftingLists
 
         public static unsafe bool SetIngredients(EnduranceIngredients[]? setIngredients = null)
         {
-            try
+            var recipe = Operations.GetSelectedRecipeEntry();
+            if (recipe == null)
+                return false;
+
+            if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon) &&
+                addon->AtkUnitBase.IsVisible &&
+                AgentRecipeNote.Instance() != null &&
+                RaptureAtkModule.Instance()->AtkModule.IsAddonReady(AgentRecipeNote.Instance()->AgentInterface.AddonId))
             {
-                if (Operations.GetSelectedRecipeEntry() == null)
-                    return false;
-
-                if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon) &&
-                    addon->AtkUnitBase.IsVisible &&
-                    AgentRecipeNote.Instance() != null &&
-                    RaptureAtkModule.Instance()->AtkModule.IsAddonReady(AgentRecipeNote.Instance()->AgentInterface.AddonId))
+                if (setIngredients == null)
                 {
-                    if (setIngredients == null)
+                    for (var i = 0; i <= 5; i++)
                     {
-                        for (var i = 0; i <= 5; i++)
+                        try
                         {
-                            try
+                            var node = addon->AtkUnitBase.UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
+
+                            if (node is null || !node->AtkResNode.IsVisible)
                             {
-                                var node = addon->AtkUnitBase.UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
-                                if (node->Component->UldManager.NodeListCount < 16)
-                                    return false;
-
-                                if (node is null || !node->AtkResNode.IsVisible)
-                                {
-                                    return true;
-                                }
-
-                                if (node->Component->UldManager.NodeList[11]->IsVisible)
-                                {
-                                    var ingredient = LuminaSheets.RecipeSheet.Values.Where(x => x.RowId == Endurance.RecipeID).FirstOrDefault().UnkData5[i].ItemIngredient;
-
-                                    var btn = node->Component->UldManager.NodeList[14]->GetAsAtkComponentButton();
-                                    try
-                                    {
-                                        btn->ClickAddonButton((AtkComponentBase*)addon, 4);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        ex.Log();
-                                    }
-                                    var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextIconMenu");
-                                    if (contextMenu != null)
-                                    {
-                                        Callback.Fire(contextMenu, true, 0, 0, 0, ingredient, 0);
-                                    }
-                                }
-                                else
-                                {
-                                    for (int m = 0; m <= 100; m++)
-                                    {
-                                        ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
-                                    }
-
-                                    for (int m = 0; m <= 100; m++)
-                                    {
-                                        ClickRecipeNote.Using((IntPtr)addon).Material(i, true);
-                                    }
-                                }
-
+                                continue;
                             }
-                            catch
+
+                            if (node->Component->UldManager.NodeList[11]->IsVisible)
                             {
-                                return false;
+                                var ingredient = LuminaSheets.RecipeSheet.Values.Where(x => x.RowId == Endurance.RecipeID).FirstOrDefault().UnkData5[i].ItemIngredient;
+
+                                var btn = node->Component->UldManager.NodeList[14]->GetAsAtkComponentButton();
+                                try
+                                {
+                                    btn->ClickAddonButton((AtkComponentBase*)addon, 4);
+                                }
+                                catch (Exception ex)
+                                {
+                                    ex.Log();
+                                }
+                                var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextIconMenu");
+                                if (contextMenu != null)
+                                {
+                                    Callback.Fire(contextMenu, true, 0, 0, 0, ingredient, 0);
+                                }
                             }
+                            else
+                            {
+                                for (int m = 0; m <= 100; m++)
+                                {
+                                    ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
+                                }
+
+                                for (int m = 0; m <= 100; m++)
+                                {
+                                    ClickRecipeNote.Using((IntPtr)addon).Material(i, true);
+                                }
+                            }
+
                         }
-
-                        return true;
-                    }
-                    else
-                    {
-                        for (var i = 0; i <= 5; i++)
+                        catch
                         {
-                            try
-                            {
-                                var node = addon->AtkUnitBase.UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
-                                if (node->Component->UldManager.NodeListCount < 16)
-                                    return false;
-
-                                if (node is null || !node->AtkResNode.IsVisible)
-                                {
-                                    return true;
-                                }
-
-                                var hqSetButton = node->Component->UldManager.NodeList[6]->GetAsAtkComponentNode();
-                                var nqSetButton = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode();
-
-                                var hqSetText = hqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
-                                var nqSetText = nqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
-
-                                int hqSet = Convert.ToInt32(hqSetText.ToString().GetNumbers());
-                                int nqSet = Convert.ToInt32(nqSetText.ToString().GetNumbers());
-
-                                if (setIngredients.Any(y => y.IngredientSlot == i))
-                                {
-                                    for (int h = hqSet; h < setIngredients.First(x => x.IngredientSlot == i).HQSet; h++)
-                                    {
-                                        ClickRecipeNote.Using((IntPtr)addon).Material(i, true);
-                                    }
-
-                                    for (int h = nqSet; h < setIngredients.First(x => x.IngredientSlot == i).NQSet; h++)
-                                    {
-                                        ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
-                                    }
-                                }
-                            }
-                            catch
-                            {
-                                return false;
-                            }
+                            return false;
                         }
-
-                        return true;
                     }
                 }
+                else
+                {
+                    for (var i = 0; i <= 5; i++)
+                    {
+                        try
+                        {
+                            var node = addon->AtkUnitBase.UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
+                            if (node->Component->UldManager.NodeListCount < 16)
+                                return false;
 
-                return false;
+                            if (node is null || !node->AtkResNode.IsVisible)
+                            {
+                                continue;
+                            }
+
+                            var hqSetButton = node->Component->UldManager.NodeList[6]->GetAsAtkComponentNode();
+                            var nqSetButton = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode();
+
+                            var hqSetText = hqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
+                            var nqSetText = nqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
+
+                            int hqSet = Convert.ToInt32(hqSetText.ToString().GetNumbers());
+                            int nqSet = Convert.ToInt32(nqSetText.ToString().GetNumbers());
+
+                            if (setIngredients.Any(y => y.IngredientSlot == i))
+                            {
+                                for (int h = hqSet; h < setIngredients.First(x => x.IngredientSlot == i).HQSet; h++)
+                                {
+                                    ClickRecipeNote.Using((IntPtr)addon).Material(i, true);
+                                }
+
+                                for (int h = nqSet; h < setIngredients.First(x => x.IngredientSlot == i).NQSet; h++)
+                                {
+                                    ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    }
+                }
             }
-            catch
+            else
             {
                 return false;
             }
+
+            return true;
         }
 
         public static bool SwitchJobGearset(uint cjID)

@@ -609,13 +609,6 @@ namespace Artisan.UI
                     P.Config.Save();
                 }
 
-                ImGui.TextWrapped($"Progress Priority CP Threshold");
-                ImGuiComponents.HelpMarker($"Regardless of quality, once your CP is at or below this value, prioritise finishing the craft.");
-                if (ImGui.SliderInt("###ProgressModeCP", ref P.Config.PriorityProgress, 0, 1000))
-                {
-                    P.Config.Save();
-                }
-
                 ImGui.Text($"Collectible Threshold Breakpoint");
                 ImGuiComponents.HelpMarker("The solver will stop going for quality once a collectible has hit a certain breakpoint.");
 

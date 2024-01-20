@@ -27,7 +27,7 @@ namespace Artisan.UI
 {
     public static class SimulatorUI
     {
-        static Recipe? SelectedRecipe;
+        public static Recipe? SelectedRecipe;
         internal static string Search = string.Empty;
         private static CraftState? _selectedCraft;
         private static string macroName = string.Empty;

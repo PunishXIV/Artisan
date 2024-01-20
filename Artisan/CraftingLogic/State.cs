@@ -32,6 +32,8 @@ public record class CraftState
     public int CraftQualityMin2;
     public int CraftQualityMin3;
     public int CraftRequiredQuality;
+    public int CraftRecommendedCraftsmanship;
+    public int CraftRecommendedControl;
     public float[] CraftConditionProbabilities = { }; // TODO: this assumes that new condition does not depend on prev - this is what my preliminary findings suggest (except for forced transitions)
 
     public static float[] NormalCraftConditionProbabilities(int statLevel) => [1, statLevel >= 63 ? 0.25f : 0.2f, 0.04f];

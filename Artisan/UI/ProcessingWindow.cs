@@ -4,6 +4,7 @@ using Artisan.RawInformation;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using System;
 
 namespace Artisan.UI
@@ -71,6 +72,9 @@ namespace Artisan.UI
                     if (ImGui.Button("Pause"))
                     {
                         CraftingListFunctions.Paused = true;
+                        P.TM.Abort();
+                        CraftingListFunctions.CLTM.Abort();
+                        PreCrafting.Tasks.Clear();
                     }
                 }
                 else
@@ -93,6 +97,7 @@ namespace Artisan.UI
                     CraftingListUI.Processing = false;
                     CraftingListFunctions.Paused = false;
                     P.TM.Abort();
+                    CraftingListFunctions.CLTM.Abort();
                 }
             }
         }
