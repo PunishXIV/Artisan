@@ -33,6 +33,7 @@ namespace Artisan.RawInformation
         public Dictionary<uint, int> UsedInMaterialsList;
         public Dictionary<uint, int> UsedInMaterialsListCount = new();
         public MarketboardData? MarketboardData;
+        public bool RecipeOnList;
 
         public Ingredient(uint itemId, int required, CraftingList originList, Dictionary<uint, int> materials)
         {
@@ -89,7 +90,7 @@ namespace Artisan.RawInformation
                     UsedInCrafts.Add(recipe);
             }
             UsedInMaterialsList = materials.Where(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == x.Key && y.UnkData5.Any(z => z.ItemIngredient == Data.RowId))).ToDictionary(x => x.Key, x => x.Value);
-
+            RecipeOnList = originList.Items.Any(x => LuminaSheets.RecipeSheet[x].ItemResult.Row == itemId);
             if (P.Config.UseUniversalis && !P.Config.UniversalisOnDemand)
             {
                 if (P.Config.LimitUnversalisToDC)
