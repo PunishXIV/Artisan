@@ -138,7 +138,7 @@ public unsafe static class PreCrafting
             }
             if (needConsumables)
                 Tasks.Add((() => TaskUseConsumables(config, type), default));
-            Tasks.Add((() => TaskSelectRecipe(recipe), default));
+            Tasks.Add((() => TaskSelectRecipe(recipe), TimeSpan.FromMilliseconds(500)));
             Tasks.Add((() => TaskStartCraft(type), default));
 
             Update();

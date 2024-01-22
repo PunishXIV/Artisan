@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Xml.Linq;
 using static FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
@@ -36,17 +37,36 @@ namespace Artisan.UI
         private static Random _simRngForSeeds = new();
         private static int _simCurSeed;
         private static Random _simRngForSim = new();
-        private static SolverRef? _selectedSolver;
+        public static SolverRef? _selectedSolver;
         private static Solver? _simCurSolver;
         private static int startingQuality = 0;
         private static List<(StepState step, string comment)> _simCurSteps = new();
         private static Solver.Recommendation _simNextRec;
-        private static GearsetEntry? SimGS;
-        private static string SimGSName = "";
+        public static GearsetEntry? SimGS;
+        public static string SimGSName
+        {
+            get
+            {
+                if (SimGS is null)
+                    return "";
+
+                unsafe
+                {
+                    fixed (GearsetEntry?* gs = &SimGS)
+                    {
+                        var val = gs->Value;
+                        string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(val.Name));
+
+                        return $"{name} (ilvl {val.ItemLevel})";
+                    }
+                }
+            }
+        }
+
         private static List<Skills> SimActionIDs = new();
-        private static ConsumableChoice? SimFood;
-        private static ConsumableChoice? SimMedicine;
-        private static CharacterStats SimStats;
+        public static ConsumableChoice? SimFood;
+        public static ConsumableChoice? SimMedicine;
+        public static CharacterStats SimStats;
         private static bool assumeNormalStatus;
 
         // data and other imgui things
@@ -56,6 +76,7 @@ namespace Artisan.UI
         private static bool inManualMode = false;
         private static bool hoverMode = false;
         private static bool hoverStepAdded = false;
+        private static string simGSName;
 
         private class IngredientLayouts
         {
@@ -65,7 +86,7 @@ namespace Artisan.UI
             public int HQ;
         }
 
-        private class ConsumableChoice
+        public class ConsumableChoice
         {
             public uint Id;
             public ConsumableStats Stats;
@@ -274,7 +295,7 @@ namespace Artisan.UI
 
         }
 
-        private static void ResetSim()
+        public static void ResetSim()
         {
             _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
             SimActionIDs.Clear();
@@ -542,6 +563,8 @@ namespace Artisan.UI
 
         private static void DrawSimResult()
         {
+            if (_simCurSteps.Count == 1) return;
+
             var status = Simulator.Status(_selectedCraft, _simCurSteps.Last().step);
             Vector4 successColor = status switch
             {
@@ -818,7 +841,6 @@ namespace Artisan.UI
 
             if (ImGui.Selectable($""))
             {
-                SimGSName = "";
                 SimGS = null;
             }
 
@@ -834,7 +856,6 @@ namespace Artisan.UI
                 if (selected)
                 {
                     SimGS = gs;
-                    SimGSName = $"{name} (ilvl {gs.ItemLevel})";
                 }
             }
         }

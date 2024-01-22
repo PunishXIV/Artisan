@@ -93,7 +93,6 @@ namespace Artisan.Autocraft
                             SoundPlayer.PlaySound();
                         DuoLog.Information("Craft X has completed.");
 
-                        PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), default));
                     }
                 }
             }

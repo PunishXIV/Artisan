@@ -345,13 +345,13 @@ namespace Artisan.CraftingLists
                         if (count >= 99)
                         {
                             CLTM.Enqueue(() => Operations.QuickSynthItem(99));
-                            CLTM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 5000, "ListQS99WaitStart");
+                            CLTM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 2000, "ListQS99WaitStart");
                             return;
                         }
                         else
                         {
                             CLTM.Enqueue(() => Operations.QuickSynthItem(count));
-                            CLTM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 5000, "ListQSCountWaitStart");
+                            CLTM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 2000, "ListQSCountWaitStart");
                             return;
                         }
                     }
@@ -360,7 +360,7 @@ namespace Artisan.CraftingLists
                         CLTM.DelayNext(400);
                         CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
                         CLTM.Enqueue(() => Operations.RepeatActualCraft(), "ListCraft");
-                        CLTM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 5000, "ListNormalWaitStart");
+                        CLTM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 2000, "ListNormalWaitStart");
                         return;
 
                     }

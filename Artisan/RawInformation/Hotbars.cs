@@ -1,4 +1,6 @@
-﻿using Artisan.RawInformation.Character;
+﻿using Artisan.CraftingLogic;
+using Artisan.GameInterop;
+using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -68,7 +70,10 @@ namespace Artisan.RawInformation
 
         internal unsafe static void MakeButtonsGlow(Skills rec)
         {
-            if (rec == Skills.None) return;
+            if (rec == Skills.None || Crafting.CurCraft == null) return;
+
+            if (!Simulator.CanUseAction(Crafting.CurCraft, Crafting.CurStep, CraftingProcessor.NextRec.Action))
+                return;
 
             PopulateHotbarDict();
             for (int i = 0; i < HotBarSkills.Length; ++i)

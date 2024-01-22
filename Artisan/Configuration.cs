@@ -28,20 +28,16 @@ namespace Artisan
                 autoMode = value;
             }
         }
-        public bool DisableFailurePrediction { get; set; } = false;
-        public int MaxPercentage { get; set; } = 100;
-
-        public bool UseTricksGood { get; set; } = false;
-
-        public bool UseTricksExcellent { get; set; } = false;
-        public bool UseSpecialist { get; set; } = false;
-
-        public bool ShowEHQ { get; set; } = true;
-
-        public int CurrentSimulated { get; set; } = 0;
-
-        public bool UseSimulatedStartingQuality { get; set; } = false;
-        public bool DisableHighlightedAction { get; set; } = false;
+        public bool DisableFailurePrediction = false;
+        public int MaxPercentage = 100;
+        public bool UseTricksGood = false;
+        public int MaxIQPrepTouch = 10;
+        public bool UseTricksExcellent = false;
+        public bool UseSpecialist = false;
+        public bool ShowEHQ = true;
+        public int CurrentSimulated = 0;
+        public bool UseSimulatedStartingQuality = false;
+        public bool DisableHighlightedAction = false;
 
         public CraftingLogic.Solvers.ExpertSolverSettings ExpertSolverConfig = new();
         public CraftingLogic.Solvers.MacroSolverSettings MacroSolverConfig = new();
@@ -51,25 +47,24 @@ namespace Artisan
 
         public List<CraftingList> CraftingLists { get; set; } = new();
 
-        public int AutoDelay { get; set; } = 0;
-
-        public bool AbortIfNoFoodPot { get; set; } = false;
-        public bool Repair { get; set; } = false;
+        public int AutoDelay = 0;
+        public bool DelayRecommendation = false;
+        public int RecommendationDelay = 0;
+        public bool AbortIfNoFoodPot = false;
+        public bool Repair = false;
         public bool PrioritizeRepairNPC = false;
         public bool DisableEnduranceNoRepair = false;
         public bool DisableListsNoRepair = false;
         public bool QuickSynthMode = false;
-        public bool DisableToasts { get; set; } = false;
-        public bool ShowOnlyCraftable { get; set; } = false;
-        public bool ShowOnlyCraftableRetainers { get;set; } = false;
-        public bool DisableMiniMenu { get; set; } = false;
-        public bool Materia { get; set; } = false;
-        public bool LockMiniMenu { get; set; } = false;
-        public bool DelayRecommendation { get; set; }
+        public bool DisableToasts = false;
+        public bool ShowOnlyCraftable = false;
+        public bool ShowOnlyCraftableRetainers = false;
+        public bool DisableMiniMenu = false;
+        public bool Materia = false;
+        public bool LockMiniMenu = false;
 
-        public int RecommendationDelay { get; set; } = 0;
-        public bool EnduranceStopFail { get; set; } = false;
-        public bool EnduranceStopNQ { get; set; } = false;
+        public bool EnduranceStopFail = false;
+        public bool EnduranceStopNQ = false;
 
         public int RepairPercent = 50;
 
@@ -80,11 +75,11 @@ namespace Artisan
         public bool CraftingX = false;
 
         public bool MaxQuantityMode = false;
-        public bool HideQuestHelper { get; set; } = false;
-        public bool DisableTheme { get; set; } = true;
-        public bool RequestToStopDuty { get; set; } = false;
-        public bool RequestToResumeDuty { get; set; } = false;
-        public int RequestToResumeDelay { get; set; } = 5;
+        public bool HideQuestHelper = false;
+        public bool DisableTheme = true;
+        public bool RequestToStopDuty = false;
+        public bool RequestToResumeDuty = false;
+        public int RequestToResumeDelay = 5;
 
         public bool UseConsumablesTrial = false;
         public bool UseConsumablesQuickSynth = false;
@@ -145,6 +140,8 @@ namespace Artisan
         public bool SimulatorHoverMode = true;
         public bool HideRecipeWindowSimulator = false;
         public bool DisableSimulatorActionTooltips = false;
+
+        public bool ReplaceSearch = true;
 
         public void Save()
         {

@@ -189,10 +189,15 @@ namespace Artisan.UI
 
         private void OnRecommendationReady(Lumina.Excel.GeneratedSheets.Recipe recipe, SolverRef solver, CraftState craft, StepState step, Solver.Recommendation recommendation)
         {
+            if (!Simulator.CanUseAction(craft, step, recommendation.Action))
+            {
+                return;
+            }
             ShowRecommendation(recommendation.Action);
             if (P.Config.AutoMode)
             {
                 P.CTM.DelayNext(P.Config.AutoDelay);
+                P.CTM.Enqueue(() => Crafting.CurState == Crafting.State.InProgress, 3000, true, "WaitForStateToUseAction");
                 P.CTM.Enqueue(() => ActionManagerEx.UseSkill(recommendation.Action));
             }
         }

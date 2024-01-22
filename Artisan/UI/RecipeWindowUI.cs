@@ -6,8 +6,7 @@ using Artisan.GameInterop;
 using Artisan.GameInterop.CSExt;
 using Artisan.IPC;
 using Artisan.RawInformation;
-using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Artisan.UI;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
@@ -15,21 +14,39 @@ using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using OtterGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using static ECommons.GenericHelpers;
 
 namespace Artisan
 {
     internal class RecipeWindowUI : Window
     {
+        private static string search = string.Empty;
+        private static bool searched = false;
+        internal static string Search
+        {
+            get => search;
+            set
+            {
+                if (search != value)
+                {
+                    search = value;
+                    searched = false;
+                }
+            }
+        }
         public RecipeWindowUI() : base($"###RecipeWindow", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoNavInputs)
         {
             this.Size = new Vector2(0, 0);
@@ -54,6 +71,8 @@ namespace Artisan
                     DrawOptions();
             }
 
+            DrawSearchReplace();
+
             DrawEnduranceCounter();
 
             DrawWorkshopOverlay();
@@ -61,6 +80,106 @@ namespace Artisan
             DrawSupplyMissionOverlay();
 
             DrawMacroOptions();
+        }
+
+        private unsafe void DrawSearchReplace()
+        {
+            if (TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
+            {
+                if (!addon->AtkUnitBase.IsVisible)
+                {
+                    Search = "";
+                    return;
+                }
+                var searchNode = addon->AtkUnitBase.GetNodeById(26);
+                var searchLabel = addon->AtkUnitBase.GetNodeById(25);
+                if (searchNode == null || searchLabel == null) return;
+
+                if (P.Config.ReplaceSearch)
+                {
+                    //searchNode->ToggleVisibility(false);
+                    searchLabel->GetAsAtkTextNode()->SetText("Artisan Search");
+                }
+                else
+                {
+                    //searchNode->ToggleVisibility(true);
+                    string searchText = Svc.Data.Excel.GetSheet<Addon>().GetRow(1412).Text;
+                    searchLabel->GetAsAtkTextNode()->SetText(searchText);
+                    return;
+                }
+
+                var textInput = (AtkComponentTextInput*)searchNode->GetComponent();
+                Search = Marshal.PtrToStringAnsi(new IntPtr(textInput->AtkComponentInputBase.UnkText1.StringPtr));
+                var textSize = ImGui.CalcTextSize(Search);
+
+                var position = AtkResNodeFunctions.GetNodePosition(searchNode);
+                var scale = AtkResNodeFunctions.GetNodeScale(searchNode);
+                var size = new Vector2(searchNode->Width, searchNode->Height) * scale;
+                var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
+
+                ImGuiHelpers.ForceNextWindowMainViewport();
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y + size.Y));
+
+                //ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0.1f, 0.1f, 0.1f, 1f));
+                ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
+                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(5f, 2.5f));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f, 3f));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
+                ImGui.GetFont().Scale = scale.X;
+                var oldScale = ImGui.GetIO().FontGlobalScale;
+                ImGui.GetIO().FontGlobalScale = 1f;
+                ImGui.PushFont(ImGui.GetFont());
+
+                var compNode = (AtkComponentNode*)searchNode;
+                searched = !compNode->Component->UldManager.SearchNodeById(18)->IsVisible;
+                try
+                {
+                    if (Search.Length > 0 && !searched)
+                    {
+                        if (LuminaSheets.RecipeSheet.Values.Count(x => Regex.Match(x.ItemResult.Value.Name.RawString, Search, RegexOptions.IgnoreCase).Success) > 0)
+                        {
+                            ImGui.Begin($"###Search{searchNode->NodeID}", ImGuiWindowFlags.NoScrollbar
+                                | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
+                                | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
+
+                            ImGui.AlignTextToFramePadding();
+                            ImGui.SetNextItemWidth(size.Length() - 12f);
+
+                            int results = 0;
+                            foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => Regex.Match(x.ItemResult.Value.Name.RawString, Search, RegexOptions.IgnoreCase).Success))
+                            {
+                                if (results >= 24) continue;
+                                var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name} ({(Job)recipe.CraftType.Row + 8})###{recipe.RowId}");
+                                if (selected)
+                                {
+                                    var orid = Operations.GetSelectedRecipeEntry();
+                                    if (orid == null || (orid != null && orid->RecipeId != recipe.RowId))
+                                    {
+                                        AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipe.RowId);
+                                    }
+
+                                    searched = true;
+                                }
+                                results++;
+                            }
+                            ImGui.End();
+                        }
+                    }
+                }
+                catch(Exception ex)
+                {
+                    if (ex is not RegexParseException)
+                        ex.Log();
+                }
+
+
+                ImGui.GetFont().Scale = 1;
+                ImGui.GetIO().FontGlobalScale = oldScale;
+                ImGui.PopFont();
+                ImGui.PopStyleVar(5);
+                //ImGui.PopStyleColor();
+            }
         }
 
         private unsafe void DrawSupplyMissionOverlay()
@@ -601,7 +720,7 @@ namespace Artisan
                     ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, $@"Warning: You have the ""Auto Focus Recipe Search"" SimpleTweak enabled. This is highly incompatible with Artisan and is recommended to disable it.");
                 }
                 if (Endurance.RecipeID != 0)
-                { 
+                {
                     var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
                     ImGuiEx.ImGuiLineCentered("###RecipeWindowRecipeName", () => { ImGuiEx.TextUnderlined($"{recipe.ItemResult.Value.Name}"); });
                     var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
@@ -635,8 +754,8 @@ namespace Artisan
                             Simulator.CraftStatus.SucceededQ2 => $"Craft completed and managed to hit 2nd quality threshold in {time.TotalSeconds:f0}s.",
                             Simulator.CraftStatus.SucceededQ3 => $"Craft completed and managed to hit 3rd quality threshold in {time.TotalSeconds:f0}s!",
                             Simulator.CraftStatus.SucceededMaxQuality => $"Craft completed with full quality in {time.TotalSeconds:f0}s!",
-                            Simulator.CraftStatus.SucceededSomeQuality => $"Craft completed but didn't max out quality ({hq}%) in in {time.TotalSeconds:f0}s",
-                            Simulator.CraftStatus.SucceededNoQualityReq => $"Craft completed, no quality required in in {time.TotalSeconds:f0}s!",
+                            Simulator.CraftStatus.SucceededSomeQuality => $"Craft completed but didn't max out quality ({hq}%) in {time.TotalSeconds:f0}s",
+                            Simulator.CraftStatus.SucceededNoQualityReq => $"Craft completed, no quality required in {time.TotalSeconds:f0}s!",
                             Simulator.CraftStatus.Count => "You shouldn't be able to see this. Report it please.",
                             _ => "You shouldn't be able to see this. Report it please.",
                         };
@@ -657,7 +776,56 @@ namespace Artisan
                             _ => ImGuiColors.DalamudWhite,
                         };
 
-                        ImGuiEx.TextWrapped(hintColor, solverHint);
+                        if (!recipe.IsExpert)
+                            ImGuiEx.TextWrapped(hintColor, solverHint);
+                        else
+                            ImGuiEx.TextWrapped($"Please run this recipe in the simulator for results.");
+
+                        if (ImGui.IsItemClicked())
+                        {
+                            P.PluginUi.OpenWindow = UI.OpenWindow.Simulator;
+                            P.PluginUi.IsOpen = true;
+                            SimulatorUI.SelectedRecipe = recipe;
+                            SimulatorUI.ResetSim();
+                            if (config.RequiredPotion > 0)
+                            {
+                                SimulatorUI.SimMedicine ??= new();
+                                SimulatorUI.SimMedicine.Id = config.RequiredPotion;
+                                SimulatorUI.SimMedicine.ConsumableHQ = config.RequiredPotionHQ;
+                                SimulatorUI.SimMedicine.Stats = new ConsumableStats(config.RequiredPotion, config.RequiredPotionHQ);
+                            }
+                            if (config.RequiredFood > 0)
+                            {
+                                SimulatorUI.SimFood ??= new();
+                                SimulatorUI.SimFood.Id = config.RequiredFood;
+                                SimulatorUI.SimFood.ConsumableHQ = config.RequiredFoodHQ;
+                                SimulatorUI.SimFood.Stats = new ConsumableStats(config.RequiredFood, config.RequiredFoodHQ);
+                            }
+
+                            foreach (ref var gs in RaptureGearsetModule.Instance()->EntriesSpan)
+                            {
+                                if ((Job)gs.ClassJob == Job.CRP + recipe.CraftType.Row)
+                                {
+                                    if (SimulatorUI.SimGS is null || (Job)SimulatorUI.SimGS.Value.ClassJob != Job.CRP + recipe.CraftType.Row)
+                                    {
+                                        SimulatorUI.SimGS = gs;
+                                    }
+
+                                    if (SimulatorUI.SimGS.Value.ItemLevel < gs.ItemLevel)
+                                        SimulatorUI.SimGS = gs;
+                                }
+                            }
+
+                            var rawSolver = CraftingProcessor.GetSolverForRecipe(config, craft);
+                            SimulatorUI._selectedSolver = new(rawSolver.Name, rawSolver.Def.Create(craft, rawSolver.Flavour));
+                        }
+
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGuiEx.Tooltip($"Click to open in simulator");
+                        }
+
+
                     }
 
                 }

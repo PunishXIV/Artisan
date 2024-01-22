@@ -15,6 +15,7 @@ using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using System;
@@ -149,7 +150,7 @@ namespace Artisan.UI
                     ImGui.Text($"Collectibility Mid: {Crafting.CurCraft.CraftQualityMin2}");
                     ImGui.Text($"Collectibility High: {Crafting.CurCraft.CraftQualityMin3}");
                     ImGui.Text($"Crafting State: {Crafting.CurState}");
-                    ImGui.Text($"Can Finish: {StandardSolver.CanFinishCraft(Crafting.CurCraft, Crafting.CurStep, StandardSolver.BestSynthesis(Crafting.CurCraft, Crafting.CurStep))}");
+                    ImGui.Text($"Can Finish: {StandardSolver.CanFinishCraft(Crafting.CurCraft, Crafting.CurStep, CraftingProcessor.NextRec.Action)}");
                     ImGui.Text($"Current Rec: {CraftingProcessor.NextRec.Action.NameOfAction()}");
                     ImGui.Text($"Previous Action: {Crafting.CurStep.PrevComboAction.NameOfAction()}");
                     ImGui.Text($"Can insta delicate: {Crafting.CurStep.Index == 1 && StandardSolver.CanFinishCraft(Crafting.CurCraft, Crafting.CurStep, Skills.DelicateSynthesis) && StandardSolver.CalculateNewQuality(Crafting.CurCraft, Crafting.CurStep, Skills.DelicateSynthesis) >= Crafting.CurCraft.CraftQualityMin3}");
@@ -329,6 +330,12 @@ namespace Artisan.UI
                 if (ImGui.Button("Set Ingredients"))
                 {
                     CraftingListFunctions.SetIngredients();
+                }
+
+                if (TryGetAddonByName<AtkUnitBase>("RetainerHistory", out var addon))
+                {
+                    var list = addon->UldManager.SearchNodeById(10)->GetAsAtkComponentList();
+                    ImGui.Text($"{list->ListLength}");
                 }
             }
             catch (Exception e)

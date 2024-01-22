@@ -18,6 +18,8 @@ using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.Logging;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using OtterGui;
@@ -114,11 +116,6 @@ public unsafe class Artisan : IDalamudPlugin
 
         Svc.PluginInterface.UiBuilder.RebuildFonts();
 
-#if DEBUG
-        P.PluginUi.IsOpen = true;
-        P.PluginUi.OpenWindow = OpenWindow.Simulator;
-        SimulatorUI.SelectedRecipe = LuminaSheets.RecipeSheet[35037];
-#endif
     }
 
     private void AddCustomFont()
