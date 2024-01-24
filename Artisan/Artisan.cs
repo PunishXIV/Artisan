@@ -79,6 +79,7 @@ public unsafe class Artisan : IDalamudPlugin
             "/artisan lists → Open Lists.\n" +
             "/artisan lists <ID> → Opens specific list by ID.\n" +
             "/artisan lists <ID> start → Starts specific list by ID.\n" +
+            "/artisan lists cancel → Cancels current crafting list.\n" +
             "/artisan macros → Open Macros.\n" +
             "/artisan macros <ID> → Opens specific macro by ID.\n" +
             "/artisan endurance → Open Endurance.\n" +
@@ -275,6 +276,13 @@ public unsafe class Artisan : IDalamudPlugin
                         DuoLog.Error("Unable to parse ID as a number.");
                         return;
                     }
+                }
+                if (subcommands[1].ToLower() is "cancel")
+                {
+                    CraftingListUI.Processing = false;
+                    CraftingListFunctions.Paused = false;
+                    P.TM.Abort();
+                    return;
                 }
                 else
                 {
