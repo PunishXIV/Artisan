@@ -622,6 +622,7 @@ namespace Artisan.UI
         {
             if (_simCurSolver == null || _simCurSteps.Count == 0 || _simNextRec.Action == Skills.None)
                 return false;
+
             var step = _simCurSteps.Last().step;
             var (res, next) = Simulator.Execute(craft, step, _simNextRec.Action, _simRngForSim.NextSingle(), _simRngForSim.NextSingle());
             if (res == Simulator.ExecuteResult.CantUse)
@@ -630,6 +631,7 @@ namespace Artisan.UI
             _simCurSteps[_simCurSteps.Count - 1] = (step, _simNextRec.Comment);
             _simCurSteps.Add((next, ""));
             _simNextRec = _simCurSolver.Solve(craft, next);
+
             return true;
         }
 
@@ -794,6 +796,8 @@ namespace Artisan.UI
                 ImGui.TextWrapped($"Splendorous Tool: {gsStats.Splendorous}");
                 ImGui.NextColumn();
                 ImGui.TextWrapped($"Specialist: {gsStats.Specialist}");
+                ImGui.NextColumn();
+                ImGui.TextWrapped($"Manipulation Unlocked: {gsStats.Manipulation}");
                 ImGui.Columns(1);
 
                 SimStats = new CharacterStats()

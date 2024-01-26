@@ -12,6 +12,7 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
+using ECommons.Logging;
 using ImGuiNET;
 using System;
 
@@ -179,7 +180,7 @@ namespace Artisan.UI
         {
             var text = $"{reason}. Artisan will not continue.";
             Svc.Toasts.ShowError(text);
-            Svc.Chat.PrintError(text);
+            DuoLog.Error(text);
         }
 
         private void OnSolverFinished(Lumina.Excel.GeneratedSheets.Recipe recipe, SolverRef solver, CraftState craft, StepState finalStep)
@@ -191,6 +192,7 @@ namespace Artisan.UI
         {
             if (!Simulator.CanUseAction(craft, step, recommendation.Action))
             {
+                Svc.Log.Debug($"???");
                 return;
             }
             ShowRecommendation(recommendation.Action);

@@ -186,6 +186,16 @@ internal static class SimulatorUIVeynVersion
                 RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededQ3);
                 ImGui.CloseCurrentPopup();
             }
+            if (ImGui.MenuItem("Max quality"))
+            {
+                RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededMaxQuality);
+                ImGui.CloseCurrentPopup();
+            }
+            if (ImGui.MenuItem("Success, some quality"))
+            {
+                RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededSomeQuality);
+                ImGui.CloseCurrentPopup();
+            }
         }
     }
 

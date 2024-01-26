@@ -282,7 +282,7 @@ namespace Artisan.CraftingLists
         {
             try
             {
-                var invNumberNQ = invManager->GetInventoryItemCount(ingredient, false, false);
+                var invNumberNQ = invManager->GetInventoryItemCount(ingredient, false, false, false);
                 var invNumberHQ = invManager->GetInventoryItemCount(ingredient, true, false, false);
 
                 // Svc.Log.Debug($"{invNumberNQ + invNumberHQ}");

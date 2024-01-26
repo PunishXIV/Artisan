@@ -92,32 +92,41 @@ namespace Artisan.RawInformation
             }
         }
 
+        private static DateTime _nextRetry;
+
         public unsafe static bool ExtractMateriaTask(bool option)
         {
             if (!CharacterInfo.MateriaExtractionUnlocked()) return true;
+
 
             if (option)
             {
                 if (IsMateriaMenuOpen() && !IsSpiritbondReadyAny())
                 {
+                    if (DateTime.Now < _nextRetry) return false;
                     CloseMateriaMenu();
+                    _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(500));
                     return false;
                 }
 
                 if (IsSpiritbondReadyAny())
                 {
+                    if (DateTime.Now < _nextRetry) return false;
                     if (!IsMateriaMenuOpen())
                     {
                         OpenMateriaMenu();
+                        _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(500));
                         return false;
                     }
 
                     if (IsMateriaMenuOpen() && !PreCrafting.Occupied())
                     {
                         ExtractFirstMateria();
+                        _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(500));
                         return false;
                     }
 
+                    _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(500));
                     return false;
                 }
             }

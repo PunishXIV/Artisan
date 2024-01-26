@@ -91,6 +91,7 @@ namespace Artisan
 
         public bool DefaultListMateria = false;   
         public bool DefaultListSkip = false;
+        public bool DefaultListSkipLiteral = false;
         public bool DefaultListRepair = false;
         public int DefaultListRepairPercent = 50;
         public bool DefaultListQuickSynth = false;

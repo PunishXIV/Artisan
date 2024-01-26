@@ -143,11 +143,6 @@ public unsafe class Artisan : IDalamudPlugin
                 PreCrafting.Tasks.Clear();
             }
 
-            if (flag == ConditionFlag.WaitingForDutyFinder && !value)
-            {
-                IPC.IPC.StopCraftingRequest = false;
-            }
-
             if (flag == ConditionFlag.BoundByDuty && !value && IPC.IPC.StopCraftingRequest && P.Config.RequestToResumeDuty)
             {
                 var resumeDelay = P.Config.RequestToResumeDelay;

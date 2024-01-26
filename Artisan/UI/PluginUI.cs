@@ -600,7 +600,7 @@ namespace Artisan.UI
                     P.Config.UseSpecialist = useSpecialist;
                     P.Config.Save();
                 }
-                ImGuiComponents.HelpMarker("If the current job is a specialist, spends any Crafter's Delineation you may have.\nCareful Observation replaces Observe.");
+                ImGuiComponents.HelpMarker("If the current job is a specialist, spends any Crafter's Delineation you may have.\nCareful Observation replaces Observe.\nHeart and Soul will be used for an early Precise Touch.");
                 ImGui.TextWrapped("Max Quality%%");
                 ImGuiComponents.HelpMarker($"Once quality has reached the below percentage, Artisan will focus on progress only.");
                 if (ImGui.SliderInt("###SliderMaxQuality", ref maxQuality, 0, 100, $"%d%%"))
@@ -632,6 +632,7 @@ namespace Artisan.UI
 
                 if (ImGui.Checkbox($"Use Quality Starter ({Skills.Reflect.NameOfAction()})", ref P.Config.UseQualityStarter))
                     P.Config.Save();
+                ImGuiComponents.HelpMarker($"This tends to be more favourable at lower durability crafts.");
 
                 ImGui.TextWrapped($"{Skills.PreparatoryTouch.NameOfAction()} - Max {Buffs.InnerQuiet.NameOfBuff()} stacks");
                 ImGui.SameLine();

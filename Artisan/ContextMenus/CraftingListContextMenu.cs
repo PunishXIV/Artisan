@@ -9,6 +9,7 @@ using System.Linq;
 using OtterGui;
 using Artisan.IPC;
 using Artisan.Autocraft;
+using Artisan.UI;
 
 namespace Artisan.ContextMenus;
 
@@ -118,6 +119,14 @@ internal static class CraftingListContextMenu
         }
 
         CraftingListHelpers.TidyUpList(CraftingListUI.selectedList);
+        foreach (var w in P.ws.Windows)
+        {
+            if (w.WindowName == $"List Editor###{CraftingListUI.selectedList.ID}")
+            {
+                (w as ListEditor).RecipeSelector.Items = CraftingListUI.selectedList.Items.Distinct().ToList();
+                (w as ListEditor).RefreshTable(null, true);
+            }
+        }
 
         P.Config.Save();
     }

@@ -153,6 +153,7 @@ public unsafe struct CharacterStats
     public int CP;
     public bool Splendorous;
     public bool Specialist;
+    public bool Manipulation;
 
     // current in-game stats
     public static CharacterStats GetCurrentStats() => new()
@@ -161,7 +162,8 @@ public unsafe struct CharacterStats
         Control = CharacterInfo.Control,
         CP = (int)CharacterInfo.MaxCP,
         Specialist = InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 13)->ItemID != 0, // specialist == job crystal equipped
-        Splendorous = Svc.Data.GetExcelSheet<Item>()?.GetRow(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemID) is { LevelEquip: 90, Rarity: >= 4 }
+        Splendorous = Svc.Data.GetExcelSheet<Item>()?.GetRow(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemID) is { LevelEquip: 90, Rarity: >= 4 },
+        Manipulation = CharacterInfo.IsManipulationUnlocked(CharacterInfo.JobID)
     };
 
     // base naked stats
@@ -181,6 +183,7 @@ public unsafe struct CharacterStats
             if (details.Data != null)
                 res.AddItem(i, ref details);
         }
+        res.Manipulation = CharacterInfo.IsManipulationUnlocked(CharacterInfo.JobID);
         return res;
     }
 
@@ -197,6 +200,7 @@ public unsafe struct CharacterStats
             if (details.Data != null)
                 res.AddItem(i, ref details);
         }
+        res.Manipulation = CharacterInfo.IsManipulationUnlocked((Job)gs.ClassJob);
         return res;
     }
 

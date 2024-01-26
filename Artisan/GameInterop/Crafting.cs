@@ -447,9 +447,9 @@ public static unsafe class Crafting
         VenerationLeft = GetStatus(Buffs.Veneration)?.Param ?? 0,
         MuscleMemoryLeft = GetStatus(Buffs.MuscleMemory)?.Param ?? 0,
         FinalAppraisalLeft = GetStatus(Buffs.FinalAppraisal)?.Param ?? 0,
-        CarefulObservationLeft = P.Config.UseSpecialist && ActionManagerEx.CanUseSkill(Skills.CarefulObservation) ? 1 : 0,
+        CarefulObservationLeft = ActionManagerEx.CanUseSkill(Skills.CarefulObservation) ? 1 : 0,
         HeartAndSoulActive = GetStatus(Buffs.HeartAndSoul) != null,
-        HeartAndSoulAvailable = P.Config.UseSpecialist && ActionManagerEx.CanUseSkill(Skills.HeartAndSoul),
+        HeartAndSoulAvailable = ActionManagerEx.CanUseSkill(Skills.HeartAndSoul),
         PrevActionFailed = prevActionFailed,
         PrevComboAction = prevAction,
     };

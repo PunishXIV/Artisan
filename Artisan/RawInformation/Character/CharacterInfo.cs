@@ -31,7 +31,7 @@ namespace Artisan.RawInformation.Character
             Job.CRP => QuestUnlocked(67979),
             Job.BSM => QuestUnlocked(68153),
             Job.ARM => QuestUnlocked(68132),
-            Job.GSM => QuestUnlocked(67974),
+            Job.GSM => QuestUnlocked(68137),
             Job.LTW => QuestUnlocked(68147),
             Job.WVR => QuestUnlocked(67969),
             Job.ALC => QuestUnlocked(67974),

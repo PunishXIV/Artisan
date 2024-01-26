@@ -7,6 +7,7 @@ using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
+using ECommons.Logging;
 using ImGuiNET;
 using Newtonsoft.Json;
 using System;
@@ -450,11 +451,11 @@ namespace Artisan.UI
                                     macro.Steps = steps;
                                     P.Config.MacroSolverConfig.AddNewMacro(macro);
                                     P.Config.Save();
-                                    Svc.Chat.Print($"{macro.Name} has been saved.");
+                                    DuoLog.Information($"{macro.Name} has been saved.");
                                 }
                                 else
                                 {
-                                    Svc.Chat.PrintError("Unable to parse clipboard. Please check your clipboard contains a working macro with actions.");
+                                    DuoLog.Error("Unable to parse clipboard. Please check your clipboard contains a working macro with actions.");
                                 }
                             }
                             catch (Exception e)
@@ -515,7 +516,7 @@ namespace Artisan.UI
                     var act = Enum.GetValues(typeof(Skills)).Cast<Skills>().FirstOrDefault(s => s.NameOfAction().Equals(action, StringComparison.CurrentCultureIgnoreCase));
                     if (act == default)
                     {
-                        Svc.Chat.PrintError($"Unable to parse action: {action}");
+                        DuoLog.Error($"Unable to parse action: {action}");
                         continue;
                     }
                     res.Add(new() { Action = act });

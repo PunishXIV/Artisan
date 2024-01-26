@@ -66,9 +66,9 @@ internal class ListEditor : Window, IDisposable
 
     private int timesToAdd = 1;
 
-    private readonly RecipeSelector RecipeSelector;
+    public readonly RecipeSelector RecipeSelector;
 
-    private readonly CraftingList SelectedList;
+    public readonly CraftingList SelectedList;
 
     private string newName = string.Empty;
 
@@ -104,14 +104,14 @@ internal class ListEditor : Window, IDisposable
         if (P.Config.DefaultColourValidation) ColourValidation = true;
     }
 
-    private async Task GenerateTableAsync()
+    public async Task GenerateTableAsync()
     {
         Table?.Dispose();
         var list = await Ingredient.GenerateList(SelectedList);
         Table = new IngredientTable(list);
     }
 
-    private async void RefreshTable(object? sender, bool e)
+    public async void RefreshTable(object? sender, bool e)
     {
         token = source.Token;
         Table = null;
@@ -140,11 +140,6 @@ internal class ListEditor : Window, IDisposable
             ImGui.PushFont(P.CustomFont);
             P.StylePushed = true;
         }
-
-        var styleColor = ImGui.GetStyle().Colors[(int)ImGuiCol.WindowBg];
-        var newColor = new Vector4(styleColor.X, styleColor.Y, styleColor.Z, (float)P.Config.ListOpacity / 100);
-        ImGui.PushStyleColor(ImGuiCol.WindowBg, newColor);
-
     }
 
     public override void PostDraw()
@@ -155,8 +150,6 @@ internal class ListEditor : Window, IDisposable
             ImGui.PopFont();
             P.StylePushed = false;
         }
-
-        ImGui.PopStyleColor();
     }
 
     private static bool GatherBuddy =>
@@ -180,7 +173,46 @@ internal class ListEditor : Window, IDisposable
 
     public async override void Draw()
     {
-        var topRowY = ImGui.GetCursorPosY();
+        var btn = ImGuiHelpers.GetButtonSize("Begin Crafting List");
+      
+        if (Endurance.Enable || CraftingListUI.Processing)
+            ImGui.BeginDisabled();
+
+        if (ImGui.Button("Begin Crafting List"))
+        {
+            CraftingListUI.selectedList = this.SelectedList;
+            CraftingListUI.StartList();
+            this.IsOpen = false;
+        }
+
+        if (Endurance.Enable || CraftingListUI.Processing)
+            ImGui.EndDisabled();
+
+        ImGui.SameLine();
+        var export = ImGuiHelpers.GetButtonSize("Export List");
+
+        if (ImGui.Button("Export List"))
+        {
+            Clipboard.SetText(JsonConvert.SerializeObject(P.Config.CraftingLists.Where(x => x.ID == SelectedList.ID).First()));
+            Notify.Success("List exported to clipboard.");
+        }
+        var restock = ImGuiHelpers.GetButtonSize("Restock From Retainers");
+        if (RetainerInfo.ATools)
+        {
+            ImGui.SameLine();
+
+            if (Endurance.Enable || CraftingListUI.Processing)
+                ImGui.BeginDisabled();
+
+            if (ImGui.Button($"Restock From Retainers"))
+            {
+                RetainerInfo.RestockFromRetainers(SelectedList);
+            }
+
+            if (Endurance.Enable || CraftingListUI.Processing)
+                ImGui.EndDisabled();
+        }
+
         if (ImGui.BeginTabBar("CraftingListEditor", ImGuiTabBarFlags.None))
         {
             if (ImGui.BeginTabItem("Recipes"))
@@ -207,65 +239,76 @@ internal class ListEditor : Window, IDisposable
                 ImGui.EndTabItem();
             }
 
-            ImGui.EndTabBar();
-        }
-
-        var btn = ImGuiHelpers.GetButtonSize("Begin Crafting List");
-        ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - btn.X);
-        ImGui.SetCursorPosY(topRowY - 5f);
-
-        if (Endurance.Enable || CraftingListUI.Processing)
-            ImGui.BeginDisabled();
-
-        if (ImGui.Button("Begin Crafting List"))
-        {
-            CraftingListUI.selectedList = this.SelectedList;
-            CraftingListUI.StartList();
-            this.IsOpen = false;
-        }
-
-        if (Endurance.Enable || CraftingListUI.Processing)
-            ImGui.EndDisabled();
-
-        ImGui.SameLine();
-        var export = ImGuiHelpers.GetButtonSize("Export List");
-        ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - export.X - btn.X - 3f);
-
-        if (ImGui.Button("Export List"))
-        {
-            Clipboard.SetText(JsonConvert.SerializeObject(P.Config.CraftingLists.Where(x => x.ID == SelectedList.ID).First()));
-            Notify.Success("List exported to clipboard.");
-        }
-        var restock = ImGuiHelpers.GetButtonSize("Restock From Retainers");
-        if (RetainerInfo.ATools)
-        {
-            ImGui.SameLine();
-            ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - restock.X - export.X - btn.X - 6f);
-
-            if (Endurance.Enable || CraftingListUI.Processing)
-                ImGui.BeginDisabled();
-
-            if (ImGui.Button($"Restock From Retainers"))
+            if (ImGui.BeginTabItem("Copy From Other List"))
             {
-                RetainerInfo.RestockFromRetainers(SelectedList);
+                DrawCopyFromList();
+                ImGui.EndTabItem();
             }
 
-            if (Endurance.Enable || CraftingListUI.Processing)
-                ImGui.EndDisabled();
+            ImGui.EndTabBar();
+        }
+    }
+
+    CraftingList copyList;
+    private void DrawCopyFromList()
+    {
+        if (P.Config.CraftingLists.Count > 1)
+        {
+            ImGuiEx.TextWrapped($"Select List");
+            ImGuiEx.SetNextItemFullWidth();
+            if (ImGui.BeginCombo("###ListCopyCombo", copyList is null ? "" : copyList.Name))
+            {
+                if (ImGui.Selectable($""))
+                {
+                    copyList = null;
+                }
+                foreach (var list in P.Config.CraftingLists.Where(x => x.ID != SelectedList.ID))
+                {
+                    if (ImGui.Selectable($"{list.Name}###CopyList{list.ID}"))
+                    {
+                        copyList = list.JSONClone();
+                    }
+                }
+
+                ImGui.EndCombo();
+            }
+        }
+        else
+        {
+            ImGui.Text($"Please add other lists to copy from");
         }
 
-        ImGui.SameLine();
-        var opacityWidth = ImGui.CalcTextSize("Window Opacity");
-        ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - restock.X - export.X - btn.X - 6f - 128f - opacityWidth.X);
-        ImGui.SetNextItemWidth(120);
-        if (ImGui.SliderInt("Window Opacity###WindowOpacity", ref P.Config.ListOpacity, 1, 100, $"%d%%"))
+        if (copyList != null)
         {
-            P.Config.Save();
-        }
+            ImGui.Text($"This will copy:");
+            ImGui.Indent();
+            if (ImGui.BeginListBox("###ItemList", new (ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 30f)))
+            {
+                foreach (var rec in copyList.Items.Distinct())
+                {
+                    ImGui.Text($"- {LuminaSheets.RecipeSheet[rec].ItemResult.Value.Name} x{copyList.Items.Count(x => x == rec)}");
+                }
 
-        if (ImGui.IsItemHovered())
-        {
-            ImGuiEx.Tooltip("This will only affect the primary monitor if using multi-monitor support (This is a limiation of ImGUI I'm afraid).");
+                ImGui.EndListBox();
+            }
+            ImGui.Unindent();
+            if (ImGui.Button($"Copy Items"))
+            {
+                foreach (var recipe in copyList.Items)
+                {
+                    if (SelectedList.Items.Contains(recipe))
+                    {
+                        var index = SelectedList.Items.IndexOf(recipe);
+                        SelectedList.Items.Insert(index, recipe);
+                    }
+                    else
+                        SelectedList.Items.Add(recipe);
+                }
+                Notify.Success($"All items copied from {copyList.Name} to {SelectedList.Name}.");
+                RecipeSelector.Items = SelectedList.Items.Distinct().ToList();
+                RefreshTable(null, true);
+                P.Config.Save();
+            }
         }
     }
 
@@ -822,24 +865,56 @@ internal class ListEditor : Window, IDisposable
             ImGui.Text($" - Combination of Inventory & Craftable has all required items.");
         }
         ImGui.SameLine();
-        if (ImGui.Button($"Export Remaining Ingredients as Plain Text"))
-        {
-            StringBuilder sb = new();
-            foreach (var item in Table.ListItems.Where(x => x.Remaining > 0))
-            {
-                sb.AppendLine($"{item.Remaining}x {item.Data.Name}");
-            }
 
-            if (!string.IsNullOrEmpty(sb.ToString()))
+        if (ImGui.GetIO().KeyShift)
+        {
+            if (ImGui.Button($"Export Required Ingredients as Plain Text"))
             {
-                Clipboard.SetText(sb.ToString());
-                Notify.Success($"Remaining items copied to clipboard.");
-            }
-            else
-            {
-                Notify.Error($"No items remaing to be copied.");
+                StringBuilder sb = new();
+                foreach (var item in Table.ListItems.Where(x => x.Required > 0))
+                {
+                    sb.AppendLine($"{item.Required}x {item.Data.Name}");
+                }
+
+                if (!string.IsNullOrEmpty(sb.ToString()))
+                {
+                    Clipboard.SetText(sb.ToString());
+                    Notify.Success($"Required items copied to clipboard.");
+                }
+                else
+                {
+                    Notify.Error($"No items required to be copied.");
+                }
             }
         }
+        else
+        {
+            if (ImGui.Button($"Export Remaining Ingredients as Plain Text"))
+            {
+                StringBuilder sb = new();
+                foreach (var item in Table.ListItems.Where(x => x.Remaining > 0))
+                {
+                    sb.AppendLine($"{item.Remaining}x {item.Data.Name}");
+                }
+
+                if (!string.IsNullOrEmpty(sb.ToString()))
+                {
+                    Clipboard.SetText(sb.ToString());
+                    Notify.Success($"Remaining items copied to clipboard.");
+                }
+                else
+                {
+                    Notify.Error($"No items remaining to be copied.");
+                }
+            }
+
+            if (ImGui.IsItemHovered())
+            {
+                ImGuiEx.Tooltip($"Hold shift to change from remaining to required.");
+            }
+
+        }
+
 
         ImGui.SameLine();
         if (ImGui.Button("Need Help?"))
@@ -874,10 +949,25 @@ internal class ListEditor : Window, IDisposable
     {
         ImGui.BeginChild("ListSettings", ImGui.GetContentRegionAvail(), false);
         var skipIfEnough = SelectedList.SkipIfEnough;
-        if (ImGui.Checkbox("Skip items you already have enough of", ref skipIfEnough))
+        if (ImGui.Checkbox("Skip Crafting Unnecessary Materials", ref skipIfEnough))
         {
             SelectedList.SkipIfEnough = skipIfEnough;
             P.Config.Save();
+        }
+        ImGuiComponents.HelpMarker($"Will skip crafting any unnecessary materials required for your list.");
+
+        if (skipIfEnough)
+        {
+            ImGui.Indent();
+            if (ImGui.Checkbox("Skip Up To List Amount", ref SelectedList.SkipLiteral))
+            {
+                P.Config.Save();
+            }
+
+            ImGuiComponents.HelpMarker("Will continue to craft materials whilst your inventory has less of a material up to the amount the list would craft if starting from zero.\n\n" +
+                "[Recipe Amount Result] x [Number of Crafts] is less than [Inventory Amount].\n\n" +
+                "Use this when crafting materials for items not on your list (eg FC workshop projects)");
+            ImGui.Unindent();
         }
 
         if (!RawInformation.Character.CharacterInfo.MateriaExtractionUnlocked())
