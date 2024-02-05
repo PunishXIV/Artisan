@@ -27,6 +27,7 @@ using RawInformation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -174,7 +175,7 @@ internal class ListEditor : Window, IDisposable
     public async override void Draw()
     {
         var btn = ImGuiHelpers.GetButtonSize("Begin Crafting List");
-      
+
         if (Endurance.Enable || CraftingListUI.Processing)
             ImGui.BeginDisabled();
 
@@ -206,7 +207,7 @@ internal class ListEditor : Window, IDisposable
 
             if (ImGui.Button($"Restock From Retainers"))
             {
-                RetainerInfo.RestockFromRetainers(SelectedList);
+                Task.Run(() => RetainerInfo.RestockFromRetainers(SelectedList));
             }
 
             if (Endurance.Enable || CraftingListUI.Processing)
@@ -282,7 +283,7 @@ internal class ListEditor : Window, IDisposable
         {
             ImGui.Text($"This will copy:");
             ImGui.Indent();
-            if (ImGui.BeginListBox("###ItemList", new (ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 30f)))
+            if (ImGui.BeginListBox("###ItemList", new(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 30f)))
             {
                 foreach (var rec in copyList.Items.Distinct())
                 {
@@ -571,7 +572,17 @@ internal class ListEditor : Window, IDisposable
                 $"Items that do not have other recipe dependencies have a depth of 1, so go to the top of the list, e.g {LuminaSheets.RecipeSheet[5299].ItemResult.Value.Name}\n\n" +
                 $"Finally, this is sorted by the in-game difficulty of the crafts, hopefully grouping together similar crafts.");
         }
+
+        Task.Run(() =>
+        {
+            listTime = CraftingListUI.GetListTimer(SelectedList);
+        });
+        string duration = string.Format("{0:D2}d {1:D2}h {2:D2}m {3:D2}s",listTime.Days, listTime.Hours, listTime.Minutes, listTime.Seconds);
+        ImGui.SameLine();
+        ImGui.Text($"Approximate List Time: {duration}");
     }
+
+    TimeSpan listTime;
 
     private void CheckIngredientRecipe(int ing, ListOrderCheck orderCheck)
     {
@@ -1074,6 +1085,16 @@ internal class ListEditor : Window, IDisposable
                 options.NQOnly = NQOnly;
                 P.Config.Save();
             }
+
+            ImGui.SameLine();
+            if (ImGui.Button("Apply To all###QuickSynthAll"))
+            {
+                foreach (var option in SelectedList.ListItemOptions)
+                {
+                    option.Value.NQOnly = options.NQOnly;
+                }
+                P.Config.Save();
+            }
         }
         else
         {
@@ -1414,9 +1435,9 @@ internal class ListFolders : ItemSelector<CraftingList>
     {
         var baseList = P.Config.CraftingLists[idx];
         CraftingList newList = new CraftingList();
+        newList = baseList.JSONClone();
         newList.Name = name;
         newList.SetID();
-        newList.Items = baseList.Items.ToList();
         newList.Save();
         return true;
     }

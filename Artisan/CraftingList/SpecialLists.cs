@@ -1,15 +1,17 @@
 ﻿using Artisan.QuestSync;
 using Artisan.RawInformation;
+using Dalamud.Interface.Components;
 using Dalamud.Utility;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Artisan.CraftingLists
 {
@@ -31,7 +33,10 @@ namespace Artisan.CraftingLists
         private static Dictionary<int, bool> isSecondary = new Dictionary<int, bool>() { [1] = false, [2] = false };
         private static Dictionary<int, bool> alreadyCrafted = new Dictionary<int, bool>() { [1] = false, [2] = false };
         private static Dictionary<int, bool> countsToLog = new Dictionary<int, bool>() { [1] = false, [2] = false };
+        private static Dictionary<int, bool> isCollectable = new Dictionary<int, bool>() { [1] = false, [2] = false };
+        private static Dictionary<int, bool> isHQAble = new Dictionary<int, bool>() { [1] = false, [2] = false };
 
+        private static string Contains = string.Empty;
 
         private static Dictionary<int, bool> Yields = LuminaSheets.RecipeSheet.Values.DistinctBy(x => x.AmountResult).OrderBy(x => x.AmountResult).ToDictionary(x => (int)x.AmountResult, x => false);
         private static Dictionary<string, bool> Stars = LuminaSheets.RecipeLevelTableSheet.Values.DistinctBy(x => x.Stars).ToDictionary(x => "★".Repeat(x.Stars), x => false);
@@ -85,10 +90,27 @@ namespace Artisan.CraftingLists
                 {
                     alreadyCrafted[2] = no;
                 }
-                ImGui.Columns(6, null, false);
                 ImGui.EndListBox();
             }
-            ImGui.Columns(6, null, false);
+
+            ImGui.TextWrapped($"Collectable Recipe");
+            if (ImGui.BeginListBox("###CollectableRecipes", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 32f.Scale())))
+            {
+                ImGui.Columns(2, null, false);
+                bool yes = isCollectable[1];
+                if (ImGui.Checkbox("Yes", ref yes))
+                {
+                    isCollectable[1] = yes;
+                }
+                ImGui.NextColumn();
+                bool no = isCollectable[2];
+                if (ImGui.Checkbox("No", ref no))
+                {
+                    isCollectable[2] = no;
+                }
+
+                ImGui.EndListBox();
+            }
             ImGui.NextColumn();
 
             ImGui.TextWrapped($"Max Durability");
@@ -124,16 +146,36 @@ namespace Artisan.CraftingLists
                 {
                     countsToLog[2] = no;
                 }
-                ImGui.Columns(6, null, false);
+                
                 ImGui.EndListBox();
             }
 
 
-            ImGui.Columns(6, null, false);
+            ImGui.TextWrapped($"HQable Recipe");
+            if (ImGui.BeginListBox("###HQRecipes", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 32f.Scale())))
+            {
+                ImGui.Columns(2, null, false);
+                bool yes = isHQAble[1];
+                if (ImGui.Checkbox("Yes", ref yes))
+                {
+                    isHQAble[1] = yes;
+                }
+                ImGui.NextColumn();
+                bool no = isHQAble[2];
+                if (ImGui.Checkbox("No", ref no))
+                {
+                    isHQAble[2] = no;
+                }
+
+                ImGui.EndListBox();
+            }
+
             ImGui.NextColumn();
             ImGui.TextWrapped("Minimum Level");
             ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
+            ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, ImGui.GetStyle().FramePadding with { Y = 5 });
             ImGui.SliderInt("###SpecialListMinLevel", ref minLevel, 1, 90);
+            ImGui.PopStyleVar();
 
             ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
             ImGui.TextWrapped($"Recipe from a Book");
@@ -151,7 +193,6 @@ namespace Artisan.CraftingLists
                 {
                     hasToBeUnlocked[2] = no;
                 }
-                ImGui.Columns(6, null, false);
                 ImGui.EndListBox();
             }
 
@@ -170,17 +211,24 @@ namespace Artisan.CraftingLists
                 {
                     questRecipe[2] = no;
                 }
-                ImGui.Columns(6, null, false);
                 ImGui.EndListBox();
             }
 
 
+            ImGui.TextWrapped($"Name Contains");
+            ImGuiComponents.HelpMarker("Supports RegEx.");
+            ImGuiEx.SetNextItemFullWidth();
+            ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, ImGui.GetStyle().FramePadding with { Y = 5 });
+            ImGui.InputText($"###NameContains", ref Contains, 100);
+           
+            ImGui.PopStyleVar();
             ImGui.NextColumn();
 
             ImGui.TextWrapped("Max Level");
             ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
+            ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, ImGui.GetStyle().FramePadding with { Y = 5});
             ImGui.SliderInt("###SpecialListMaxLevel", ref maxLevel, 1, 90);
-
+            ImGui.PopStyleVar();
             ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
             ImGui.TextWrapped($"Expert Recipe");
             if (ImGui.BeginListBox("###ExpertRecipe", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 32f.Scale())))
@@ -197,7 +245,6 @@ namespace Artisan.CraftingLists
                 {
                     isExpert[2] = no;
                 }
-                ImGui.Columns(6, null, false);
                 ImGui.EndListBox();
             }
 
@@ -216,7 +263,6 @@ namespace Artisan.CraftingLists
                 {
                     isSecondary[2] = no;
                 }
-                ImGui.Columns(6, null, false);
                 ImGui.EndListBox();
             }
 
@@ -224,8 +270,9 @@ namespace Artisan.CraftingLists
 
             ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
             ImGui.TextWrapped($"Min. Craftsmanship");
+            ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, ImGui.GetStyle().FramePadding with { Y = 5 });
             ImGui.SliderInt($"###MinCraftsmanship", ref minCraftsmanship, LuminaSheets.RecipeSheet.Values.Min(x => x.RequiredCraftsmanship), LuminaSheets.RecipeSheet.Values.Max(x => x.RequiredCraftsmanship));
-
+            ImGui.PopStyleVar();
             ImGui.TextWrapped("Amount Result");
             if (ImGui.BeginListBox("###Yields", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 120f.Scale())))
             {
@@ -241,12 +288,13 @@ namespace Artisan.CraftingLists
                 }
                 ImGui.EndListBox();
             }
-            ImGui.Columns(6, null, false);
+
             ImGui.NextColumn();
             ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
             ImGui.TextWrapped($"Min. Control");
+            ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, ImGui.GetStyle().FramePadding with { Y = 5 });
             ImGui.SliderInt($"###MinControl", ref minControl, LuminaSheets.RecipeSheet.Values.Min(x => x.RequiredControl), LuminaSheets.RecipeSheet.Values.Max(x => x.RequiredControl));
-
+            ImGui.PopStyleVar();
             ImGui.TextWrapped("Stars");
             if (ImGui.BeginListBox("###Stars", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 120f.Scale())))
             {
@@ -260,6 +308,9 @@ namespace Artisan.CraftingLists
                 }
                 ImGui.EndListBox();
             }
+
+            ImGui.NextColumn();
+            
 
             ImGui.Columns(1);
             //ImGui.SetCursorPosY(DurY + 10);
@@ -325,6 +376,7 @@ namespace Artisan.CraftingLists
             var craftingList = new CraftingList();
             craftingList.Name = listName;
             var recipes = new List<Recipe>();
+
             foreach (var job in JobSelected)
             {
                 if (job.Value)
@@ -487,6 +539,42 @@ namespace Artisan.CraftingLists
                 }
             }
 
+            if (isCollectable.Any(x => x.Value))
+            {
+                foreach (var v in isCollectable)
+                {
+                    if (!v.Value)
+                    {
+                        if (v.Key == 1)
+                        {
+                            recipes.RemoveAll(x => x.ItemResult.Value.AlwaysCollectable);
+                        }
+                        if (v.Key == 2)
+                        {
+                            recipes.RemoveAll(x => !x.ItemResult.Value.AlwaysCollectable);
+                        }
+                    }
+                }
+            }
+
+            if (isHQAble.Any(x => x.Value))
+            {
+                foreach (var v in isHQAble)
+                {
+                    if (!v.Value)
+                    {
+                        if (v.Key == 1)
+                        {
+                            recipes.RemoveAll(x => x.CanHq);
+                        }
+                        if (v.Key == 2)
+                        {
+                            recipes.RemoveAll(x => !x.CanHq);
+                        }
+                    }
+                }
+            }
+
             if (Yields.Any(x => x.Value))
             {
                 foreach (var v in Yields)
@@ -507,6 +595,12 @@ namespace Artisan.CraftingLists
                         recipes.RemoveAll(x => x.RecipeLevelTable.Value.Stars == v.Key.Length);
                     }
                 }
+            }
+
+            if (!string.IsNullOrEmpty(Contains))
+            {
+                Regex regex = new Regex(Contains);
+                recipes.RemoveAll(x => !regex.IsMatch(x.ItemResult.Value.Name.RawString));
             }
 
             if (recipes.Count == 0)

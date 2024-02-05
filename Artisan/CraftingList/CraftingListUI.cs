@@ -1,24 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Windows.Forms;
-using Artisan.Autocraft;
+﻿using Artisan.Autocraft;
+using Artisan.CraftingLogic;
+using Artisan.GameInterop;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.UI;
-using Dalamud.Interface.Colors;
+using Dalamud.Utility;
 using ECommons;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.Game;
-
 using ImGuiNET;
-
 using Lumina.Excel.GeneratedSheets;
-using Newtonsoft.Json;
 using OtterGui;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Artisan.CraftingLists
 {
@@ -88,7 +89,7 @@ namespace Artisan.CraftingLists
                     {
                         if (ImGui.Button("Restock Inventory From Retainers", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
                         {
-                            RetainerInfo.RestockFromRetainers(selectedList);
+                            Task.Run(() => RetainerInfo.RestockFromRetainers(selectedList));
                         }
                     }
                 }
@@ -119,7 +120,7 @@ namespace Artisan.CraftingLists
                         Notify.Error("Clipboard is empty.");
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     ex.Log();
                 }
@@ -127,7 +128,7 @@ namespace Artisan.CraftingLists
 
 
             ImGui.EndChild();
-
+            
             ImGui.BeginChild("TeamCraftSection", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 5f), false);
             Teamcraft.DrawTeamCraftListButtons();
             ImGui.EndChild();
@@ -141,11 +142,65 @@ namespace Artisan.CraftingLists
             if (P.ws.Windows.FindFirst(x => x.WindowName.Contains(selectedList.ID.ToString(), StringComparison.CurrentCultureIgnoreCase), out var window))
                 window.IsOpen = false;
 
+
+            CraftingListFunctions.ListEndTime = GetListTimer(selectedList);
+            Crafting.CraftFinished += UpdateListTimer;
             Processing = true;
             Endurance.Enable = false;
         }
 
-        
+        public static void UpdateListTimer(Recipe recipe, CraftState craft, StepState finalStep, bool cancelled)
+        {
+            Task.Run(() =>
+            {
+                TimeSpan output = new();
+                for (int i = CraftingListFunctions.CurrentIndex; i < selectedList.Items.Count; i++)
+                {
+                    var item = selectedList.Items[i];
+                    var options = selectedList.ListItemOptions.GetValueOrDefault(item);
+                    output = output.Add(GetCraftDuration(item, (options?.NQOnly ?? false))).Add(TimeSpan.FromSeconds(1));
+                }
+
+                CraftingListFunctions.ListEndTime = output;
+            });
+        }
+
+        public static TimeSpan GetListTimer(CraftingList selectedList)
+        {
+            TimeSpan output = new();
+            try
+            {
+                if (selectedList is null) return output;
+                foreach (var item in selectedList.Items.Distinct())
+                {
+                    var count = selectedList.Items.Count(x => x == item);
+                    var options = selectedList.ListItemOptions.GetValueOrDefault(item);
+                    output = output.Add(GetCraftDuration(item, (options?.NQOnly ?? false)) * count).Add(TimeSpan.FromSeconds(1 * count));
+                }
+
+                return output;
+            }
+            catch (Exception ex)
+            {
+                return output;
+            }
+        }
+
+        public static TimeSpan GetCraftDuration(uint recipeId, bool qs)
+        {
+            if (qs)
+                return TimeSpan.FromSeconds(3);
+
+            var recipe = LuminaSheets.RecipeSheet[recipeId];
+            var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
+            var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.Row);
+            stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
+            var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.Row, recipe);
+            var solver = CraftingProcessor.GetSolverForRecipe(config, craft).CreateSolver(craft);
+            var time = SolverUtils.EstimateCraftTime(solver, craft, 0);
+
+            return time;
+        }
 
         private static void DrawNewListPopup()
         {
@@ -172,7 +227,7 @@ namespace Artisan.CraftingLists
             }
         }
 
-        
+
 
         public static void AddAllSubcrafts(Recipe selectedRecipe, CraftingList selectedList, int amounts = 1, int loops = 1)
         {
@@ -227,7 +282,7 @@ namespace Artisan.CraftingLists
             }
         }
 
-        
+
         public static unsafe bool CheckForIngredients(Recipe recipe, bool fetchFromCache = true, bool checkRetainer = false)
         {
             if (fetchFromCache)
@@ -316,7 +371,7 @@ namespace Artisan.CraftingLists
                 return 0;
             }
         }
-        
+
 
 
 

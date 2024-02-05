@@ -421,7 +421,7 @@ public static unsafe class Crafting
         if (QuickSynthState == state)
             return;
         QuickSynthState = state;
-        Svc.Log.Debug($"Quick-synth progress update: {QuickSynthState}");
+        Svc.Log.Debug($"Quick-synth progress update: {QuickSynthState} {Environment.TickCount64}");
         QuickSynthProgress?.Invoke(QuickSynthState.Cur, QuickSynthState.Max);
     }
 

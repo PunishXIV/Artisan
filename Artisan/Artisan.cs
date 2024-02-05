@@ -180,6 +180,11 @@ public unsafe class Artisan : IDalamudPlugin
 
         if (!Endurance.Enable)
             Endurance.DrawRecipeData();
+
+        if (CraftingListUI.Processing && !CraftingListFunctions.Paused)
+        {
+            CraftingListFunctions.ListEndTime -= framework.UpdateDelta;
+        }
     }
 
     public void Dispose()

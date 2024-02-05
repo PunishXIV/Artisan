@@ -63,6 +63,8 @@ namespace Artisan.CraftingLists
 
         public static TaskManager CLTM = new();
 
+        public static TimeSpan ListEndTime;
+
         public static void SetID(this CraftingList list)
         {
             var rng = new Random();
@@ -149,7 +151,6 @@ namespace Artisan.CraftingLists
 
         internal static unsafe void ProcessList(CraftingList selectedList)
         {
-
             var isCrafting = Svc.Condition[ConditionFlag.Crafting];
             var preparing = Svc.Condition[ConditionFlag.PreparingToCraft];
             Materials ??= selectedList.ListMaterials();
@@ -180,6 +181,7 @@ namespace Artisan.CraftingLists
             var options = selectedList.ListItemOptions.GetValueOrDefault(CraftingListUI.CurrentProcessedItem);
             var config = /* options?.CustomConfig ?? */ P.Config.RecipeConfigs.GetValueOrDefault(CraftingListUI.CurrentProcessedItem) ?? new();
             var needToRepair = selectedList.Repair && RepairManager.GetMinEquippedPercent() < selectedList.RepairPercent && (RepairManager.CanRepairAny() || RepairManager.RepairNPCNearby(out _));
+            PreCrafting.CraftType type = (options?.NQOnly ?? false) && recipe.CanQuickSynth && P.ri.HasRecipeCrafted(recipe.RowId) ? PreCrafting.CraftType.Quick : PreCrafting.CraftType.Normal;
 
             if (Crafting.QuickSynthState.Max > 0 && (needToRepair || Crafting.QuickSynthCompleted || selectedList.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
             {
@@ -213,6 +215,7 @@ namespace Artisan.CraftingLists
                     var currentRecipe = selectedList.Items[CurrentIndex];
                     while (currentRecipe == selectedList.Items[CurrentIndex])
                     {
+                        ListEndTime = ListEndTime.Subtract(CraftingListUI.GetCraftDuration(currentRecipe, type == PreCrafting.CraftType.Quick)).Subtract(TimeSpan.FromSeconds(1));
                         CurrentIndex++;
                         if (CurrentIndex == selectedList.Items.Count)
                             return;
@@ -231,6 +234,7 @@ namespace Artisan.CraftingLists
                     var currentRecipe = selectedList.Items[CurrentIndex];
                     while (currentRecipe == selectedList.Items[CurrentIndex])
                     {
+                        ListEndTime = ListEndTime.Subtract(CraftingListUI.GetCraftDuration(currentRecipe, type == PreCrafting.CraftType.Quick)).Subtract(TimeSpan.FromSeconds(1));
                         CurrentIndex++;
                         if (CurrentIndex == selectedList.Items.Count)
                             return;
@@ -247,6 +251,7 @@ namespace Artisan.CraftingLists
 
                 while (currentRecipe == selectedList.Items[CurrentIndex])
                 {
+                    ListEndTime = ListEndTime.Subtract(CraftingListUI.GetCraftDuration(currentRecipe, type == PreCrafting.CraftType.Quick)).Subtract(TimeSpan.FromSeconds(1));
                     CurrentIndex++;
                     if (CurrentIndex == selectedList.Items.Count)
                         return;
@@ -270,6 +275,7 @@ namespace Artisan.CraftingLists
 
                 while (currentRecipe == selectedList.Items[CurrentIndex])
                 {
+                    ListEndTime = ListEndTime.Subtract(CraftingListUI.GetCraftDuration(currentRecipe, type == PreCrafting.CraftType.Quick)).Subtract(TimeSpan.FromSeconds(1));
                     CurrentIndex++;
                     if (CurrentIndex == selectedList.Items.Count)
                         return;
@@ -291,7 +297,6 @@ namespace Artisan.CraftingLists
             }
 
             selectedList.ListItemOptions.TryAdd(CraftingListUI.CurrentProcessedItem, new ListItemOptions());
-            PreCrafting.CraftType type = (options?.NQOnly ?? false) && recipe.CanQuickSynth && P.ri.HasRecipeCrafted(recipe.RowId) ? PreCrafting.CraftType.Quick : PreCrafting.CraftType.Normal;
             bool needConsumables = (type == PreCrafting.CraftType.Normal || (type == PreCrafting.CraftType.Quick && P.Config.UseConsumablesQuickSynth)) && (!ConsumableChecker.IsFooded(config) || !ConsumableChecker.IsPotted(config) || !ConsumableChecker.IsManualled(config) || !ConsumableChecker.IsSquadronManualled(config));
             bool hasConsumables = config != default ? ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) && ConsumableChecker.HasItem(config.RequiredManual, false) && ConsumableChecker.HasItem(config.RequiredSquadronManual, false) : true;
 
@@ -341,7 +346,7 @@ namespace Artisan.CraftingLists
                     }
                     else if (type == PreCrafting.CraftType.Normal)
                     {
-                        CLTM.DelayNext(400);
+                        CLTM.DelayNext((int)(P.Config.ListCraftThrottle * 1000));
                         CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
                         CLTM.Enqueue(() => Operations.RepeatActualCraft(), "ListCraft");
                         CLTM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 2000, "ListNormalWaitStart");

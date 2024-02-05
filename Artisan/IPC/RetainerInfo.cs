@@ -35,6 +35,7 @@ namespace Artisan.IPC
         private static ICallGateSubscriber<uint, ulong, uint, uint>? _ItemCountHQ;
         private static ICallGateSubscriber<bool, bool>? _Initialized;
         private static ICallGateSubscriber<bool>? _IsInitialized;
+        private static bool _InventoryChanged;
 
         public static TaskManager TM = new TaskManager();
         internal static bool GenericThrottle => EzThrottler.Throttle("RetainerInfoThrottler", 100);
@@ -122,7 +123,9 @@ namespace Artisan.IPC
         {
             if (Svc.Condition[ConditionFlag.OccupiedSummoningBell])
             {
+                Svc.Log.Debug($"Item Added: Clearing cache");
                 ClearCache(null);
+                _InventoryChanged = true;
             }
         }
 
@@ -130,7 +133,9 @@ namespace Artisan.IPC
         {
             if (Svc.Condition[ConditionFlag.OccupiedSummoningBell])
             {
+                Svc.Log.Debug($"Item Removed: Clearing cache");
                 ClearCache(null);
+                _InventoryChanged = true;
             }
         }
 
@@ -414,18 +419,20 @@ namespace Artisan.IPC
             Dictionary<int, int> requiredItems = new();
             Dictionary<uint, int> materialList = new();
 
-            foreach (var item in list.Items)
-            {
-                var recipe = LuminaSheets.RecipeSheet[item];
-                CraftingListHelpers.AddRecipeIngredientsToList(recipe, ref materialList, false);
-            }
+            Svc.Log.Debug($"Making material list");
+
+            materialList = list.ListMaterials();
+
+            Svc.Log.Debug($"Creating Fetch List");
 
             foreach (var material in materialList.OrderByDescending(x => x.Key))
             {
+                Svc.Log.Debug($"{material}");
                 var invCount = CraftingListUI.NumberOfIngredient(material.Key);
                 if (invCount < material.Value)
                 {
                     var diffcheck = material.Value - invCount;
+                    Svc.Log.Debug($"{diffcheck}");
                     requiredItems.Add((int)material.Key, diffcheck);
                 }
 
@@ -433,6 +440,7 @@ namespace Artisan.IPC
                 GetRetainerItemCount(material.Key);
             }
 
+            Svc.Log.Debug($"Processing Retainer Data");
             if (RetainerData.SelectMany(x => x.Value).Any(x => requiredItems.Any(y => y.Key == x.Value.ItemID)))
             {
                 TM.Enqueue(() => Svc.Framework.Update += Tick);
@@ -488,7 +496,10 @@ namespace Artisan.IPC
         {
             if (requiredItems[item.Key] != 0)
             {
+                _InventoryChanged = false;
+                TM.EnqueueImmediate(() => GetRetainerItemCount((uint)item.Key));
                 bool lookingForHQ = RetainerData[key].Values.Any(x => x.ItemID == item.Key && x.HQQuantity > 0);
+                Svc.Log.Debug($"HQ?: {lookingForHQ}");
                 TM.DelayNextImmediate("WaitOnRetainerInventory", 500);
                 TM.EnqueueImmediate(() => RetainerHandlers.OpenItemContextMenu((uint)item.Key, lookingForHQ, out firstFoundQuantity), 300);
                 TM.DelayNextImmediate("WaitOnNumericPopup", 200);
@@ -496,17 +507,16 @@ namespace Artisan.IPC
                 {
                     var value = Math.Min(requiredItems[item.Key], (int)firstFoundQuantity);
                     if (value == 0) return true;
-                    Svc.Log.Debug($"Min withdrawing: {value}, found {firstFoundQuantity}");
+                    Svc.Log.Debug($"Min withdrawing: {value}, found {firstFoundQuantity}/{requiredItems[item.Key]}");
                     if (firstFoundQuantity == 1) { requiredItems[item.Key] -= (int)firstFoundQuantity; return true; }
                     if (RetainerHandlers.InputNumericValue(value))
                     {
                         requiredItems[item.Key] -= value;
-                        Svc.Log.Debug($"{requiredItems[item.Key]}");
-
+                        TM.EnqueueImmediate(() => _InventoryChanged);
                         TM.EnqueueImmediate(() =>
                         {
                             ExtractItem(requiredItems, item, key);
-                        });
+                        }, "RecursiveExtract");
                         return true;
                     }
                     else

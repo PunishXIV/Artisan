@@ -12,12 +12,14 @@ using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
+using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using OtterGui;
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -198,6 +200,7 @@ namespace Artisan.UI
                     }
 
                     ImGui.Text($"Endurance IPC: {Svc.PluginInterface.GetIpcSubscriber<bool>("Artisan.GetEnduranceStatus").InvokeFunc()}");
+                    ImGui.Text($"List IPC: {Svc.PluginInterface.GetIpcSubscriber<bool>("Artisan.IsListRunning").InvokeFunc()}");
                     if (ImGui.Button("Enable"))
                     {
                         Svc.PluginInterface.GetIpcSubscriber<bool, object>("Artisan.SetEnduranceStatus").InvokeAction(true);
@@ -216,12 +219,6 @@ namespace Artisan.UI
                     {
                         Svc.PluginInterface.GetIpcSubscriber<bool, object>("Artisan.SetStopRequest").InvokeAction(false);
                     }
-
-                    foreach (var retainer in P.Config.RetainerIDs.Where(x => x.Value == Svc.ClientState.LocalContentId))
-                    {
-                        ImGui.Text($"ATools IPC: {RetainerInfo.ATools} {RetainerInfo.GetRetainerInventoryItem(5111, retainer.Key)}");
-                    }
-                    ImGui.Text($"ATools IPC: {RetainerInfo.ATools} {RetainerInfo.GetRetainerItemCount(5111, false)}");
                 }
 
                 if (ImGui.CollapsingHeader("Collectables"))

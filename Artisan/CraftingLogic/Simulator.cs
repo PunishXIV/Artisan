@@ -173,43 +173,7 @@ public static class Simulator
         return (int)res;
     }
 
-    public static int MinLevel(Skills action) => action switch
-    {
-        Skills.BasicSynthesis => 1,
-        Skills.CarefulSynthesis => 62,
-        Skills.RapidSynthesis => 9,
-        Skills.FocusedSynthesis => 67,
-        Skills.Groundwork => 72,
-        Skills.IntensiveSynthesis => 78,
-        Skills.PrudentSynthesis => 88,
-        Skills.MuscleMemory => 54,
-        Skills.BasicTouch => 5,
-        Skills.StandardTouch => 18,
-        Skills.AdvancedTouch => 84,
-        Skills.HastyTouch => 9,
-        Skills.FocusedTouch => 68,
-        Skills.PreparatoryTouch => 71,
-        Skills.PreciseTouch => 53,
-        Skills.PrudentTouch => 66,
-        Skills.TrainedFinesse => 90,
-        Skills.Reflect => 69,
-        Skills.ByregotsBlessing => 50,
-        Skills.TrainedEye => 80,
-        Skills.DelicateSynthesis => 76,
-        Skills.Veneration => 15,
-        Skills.Innovation => 26,
-        Skills.GreatStrides => 21,
-        Skills.TricksOfTrade => 13,
-        Skills.MastersMend => 7,
-        Skills.Manipulation => 65,
-        Skills.WasteNot => 15,
-        Skills.WasteNot2 => 47,
-        Skills.Observe => 13,
-        Skills.CarefulObservation => 55,
-        Skills.FinalAppraisal => 42,
-        Skills.HeartAndSoul => 86,
-        _ => 0
-    };
+    public static int MinLevel(Skills action) => action.Level();
 
     public static bool CanUseAction(CraftState craft, StepState step, Skills action) => action switch
     {

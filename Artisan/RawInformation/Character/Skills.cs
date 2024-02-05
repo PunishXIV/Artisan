@@ -53,6 +53,8 @@ namespace Artisan.RawInformation.Character
         private static uint[,] _skillToAction = new uint[Enum.GetValues(typeof(Skills)).Length, 8];
 
         public static Skills ActionToSkill(uint actionId) => _actionToSkill.GetValueOrDefault(actionId);
+
+        public static int Level(this Skills skill) => skill.ActionId(Job.CRP) >= 100000 ? LuminaSheets.CraftActions[skill.ActionId(Job.CRP)].ClassJobLevel : LuminaSheets.ActionSheet[skill.ActionId(Job.CRP)].ClassJobLevel;
         public static uint ActionId(this Skills skill, Job job) => job is >= Job.CRP and <= Job.CUL ? _skillToAction[Array.IndexOf(Enum.GetValues(typeof(Skills)), skill), job - Job.CRP] : 0;
 
         static SkillActionMap()

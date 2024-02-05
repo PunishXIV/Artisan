@@ -56,7 +56,7 @@ namespace Artisan.Autocraft
 
             if (CraftingListUI.Processing)
             {
-                if (!CraftingListFunctions.Paused && !cancelled)
+                if (!cancelled)
                 {
                     Svc.Log.Verbose("Advancing Crafting List");
                     CraftingListFunctions.CurrentIndex++;

@@ -4,7 +4,6 @@ using Artisan.RawInformation;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 using System;
 
 namespace Artisan.UI
@@ -24,7 +23,7 @@ namespace Artisan.UI
             if (CraftingListUI.Processing)
                 return true;
 
-            return false;  
+            return false;
         }
 
         public override void PreDraw()
@@ -65,6 +64,10 @@ namespace Artisan.UI
                 {
                     ImGuiEx.TextV($"Crafting: {LuminaSheets.RecipeSheet[CraftingListUI.CurrentProcessedItem].ItemResult.Value.Name.RawString}");
                     ImGuiEx.TextV($"Overall Progress: {CraftingListFunctions.CurrentIndex + 1} / {CraftingListUI.selectedList.Items.Count}");
+
+                    string duration = string.Format("{0:D2}h {1:D2}m {2:D2}s", CraftingListFunctions.ListEndTime.Hours, CraftingListFunctions.ListEndTime.Minutes, CraftingListFunctions.ListEndTime.Seconds);
+                    ImGuiEx.TextV($"Approximate Remaining Duration: {duration}");
+
                 }
 
                 if (!CraftingListFunctions.Paused)
@@ -98,6 +101,7 @@ namespace Artisan.UI
                     CraftingListFunctions.Paused = false;
                     P.TM.Abort();
                     CraftingListFunctions.CLTM.Abort();
+                    Crafting.CraftFinished -= CraftingListUI.UpdateListTimer;
                 }
             }
         }
