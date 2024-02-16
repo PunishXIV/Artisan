@@ -138,7 +138,7 @@ namespace Artisan.Autocraft
                 }
             }
 
-            if (!RawInformation.Character.CharacterInfo.MateriaExtractionUnlocked())
+            if (!CharacterInfo.MateriaExtractionUnlocked())
                 ImGui.BeginDisabled();
 
             bool materia = P.Config.Materia;
@@ -148,7 +148,7 @@ namespace Artisan.Autocraft
                 P.Config.Save();
             }
 
-            if (!RawInformation.Character.CharacterInfo.MateriaExtractionUnlocked())
+            if (!CharacterInfo.MateriaExtractionUnlocked())
             {
                 ImGui.EndDisabled();
 
@@ -326,7 +326,7 @@ namespace Artisan.Autocraft
                     P.Config.CraftingX = false;
                     DuoLog.Information("Craft X has completed.");
                     if (P.Config.PlaySoundFinishEndurance)
-                        Sounds.SoundPlayer.PlaySound();
+                        SoundPlayer.PlaySound();
 
                     return;
                 }
@@ -341,11 +341,19 @@ namespace Artisan.Autocraft
 
                 if ((Job)LuminaSheets.RecipeSheet[RecipeID].CraftType.Row + 8 != CharacterInfo.JobID)
                 {
+                    PreCrafting.equipGearsetLoops = 0;
                     PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
                     PreCrafting.Tasks.Add((() => PreCrafting.TaskClassChange((Job)LuminaSheets.RecipeSheet[RecipeID].CraftType.Row + 8), TimeSpan.FromMilliseconds(200)));
                     return;
                 }
 
+                bool needEquipItem = recipe.ItemRequired.Row > 0 && !PreCrafting.IsItemEquipped(recipe.ItemRequired.Row);
+                if (needEquipItem)
+                {
+                    PreCrafting.equipAttemptLoops = 0;
+                    PreCrafting.Tasks.Add((() => PreCrafting.TaskEquipItem(recipe.ItemRequired.Row), TimeSpan.FromMilliseconds(200)));
+                    return;
+                }
 
                 if (!Spiritbond.ExtractMateriaTask(P.Config.Materia))
                 {

@@ -30,7 +30,7 @@ namespace Artisan.RawInformation
         private static List<DropSources>? DropList()
         {
             List<DropSources>? output = new();
-            using HttpResponseMessage? sources = new HttpClient().GetAsync("https://raw.githubusercontent.com/ffxiv-teamcraft/ffxiv-teamcraft/0170e596eb9fb1b7027616fd380ab85a3b6bb717/libs/data/src/lib/json/drop-sources.json").Result;
+            using HttpResponseMessage? sources = new HttpClient().GetAsync("https://raw.githubusercontent.com/ffxiv-teamcraft/ffxiv-teamcraft/master/libs/data/src/lib/json/drop-sources.json").Result;
             sources.EnsureSuccessStatusCode();
             string? data = sources.Content.ReadAsStringAsync().Result;
 

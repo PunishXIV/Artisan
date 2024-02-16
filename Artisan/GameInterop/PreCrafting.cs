@@ -1,8 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
-using Artisan.GameInterop.CSExt;
-using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Game.ClientState.Conditions;
@@ -20,7 +18,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
-using System.Numerics;
+using System.Text;
 using static ECommons.GenericHelpers;
 
 namespace Artisan.GameInterop;
@@ -30,7 +28,8 @@ public unsafe static class PreCrafting
 {
     public enum CraftType { Normal, Quick, Trial }
 
-    private static int equipAttemptLoops = 0;
+    public static int equipAttemptLoops = 0;
+    public static int equipGearsetLoops = 0;
 
     private static long NextTaskAt = 0;
 
@@ -38,6 +37,9 @@ public unsafe static class PreCrafting
     private static Hook<ClickSynthesisButton> _clickNormalSynthesisButtonHook;
     private static Hook<ClickSynthesisButton> _clickQuickSynthesisButtonHook;
     private static Hook<ClickSynthesisButton> _clickTrialSynthesisButtonHook;
+
+    private delegate void* FireCallbackDelegate(AtkUnitBase* atkUnitBase, int valueCount, AtkValue* atkValues, byte updateVisibility);
+    private static Hook<FireCallbackDelegate> _fireCallbackHook;
 
     public enum TaskResult { Done, Retry, Abort }
     public static List<(Func<TaskResult> task, TimeSpan retryDelay)> Tasks = new();
@@ -53,6 +55,31 @@ public unsafe static class PreCrafting
 
         _clickTrialSynthesisButtonHook = Svc.Hook.HookFromSignature<ClickSynthesisButton>("E9 ?? ?? ?? ?? 33 D2 49 8B CA E8 ?? ?? ?? ?? 83 CA FF", ClickTrialSynthesisButtonDetour);
         _clickTrialSynthesisButtonHook.Enable();
+
+        _fireCallbackHook = Svc.Hook.HookFromSignature<FireCallbackDelegate>("E8 ?? ?? ?? ?? 8B 4C 24 20 0F B6 D8", CallbackDetour);
+    }
+
+    private static void* CallbackDetour(AtkUnitBase* atkUnitBase, int valueCount, AtkValue* atkValues, byte updateVisibility)
+    {
+        var name = Encoding.UTF8.GetString(atkUnitBase->Name, 32).TrimEnd();
+        if (name.Substring(0, 11) == "SelectYesno")
+        {
+            var result = atkValues[0];
+            if (result.Int == 1)
+            {
+                Svc.Log.Debug($"Select no, clearing tasks");
+                Endurance.ToggleEndurance(false);
+                if (CraftingListUI.Processing)
+                {
+                    CraftingListFunctions.Paused = true;
+                }
+                Tasks.Clear();
+            }
+
+            _fireCallbackHook.Disable();
+
+        }
+        return _fireCallbackHook.Original(atkUnitBase, valueCount, atkValues, updateVisibility);
     }
 
     public static void Dispose()
@@ -60,6 +87,7 @@ public unsafe static class PreCrafting
         _clickNormalSynthesisButtonHook.Dispose();
         _clickQuickSynthesisButtonHook.Dispose();
         _clickTrialSynthesisButtonHook.Dispose();
+        _fireCallbackHook.Dispose();
     }
 
     public static void Update()
@@ -101,11 +129,6 @@ public unsafe static class PreCrafting
             bool hasConsumables = config != default ? ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) && ConsumableChecker.HasItem(config.RequiredManual, false) && ConsumableChecker.HasItem(config.RequiredSquadronManual, false) : true;
 
             // handle errors when we're forbidden from rectifying them automatically
-            if (!hasIngredients && type != CraftType.Trial)
-            {
-                DuoLog.Error($"Not all ingredients for {recipe.ItemResult.Value?.Name} found.");
-                return;
-            }
             if (P.Config.DontEquipItems && needClassChange)
             {
                 DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: wrong class, {requiredClass} needed");
@@ -123,14 +146,24 @@ public unsafe static class PreCrafting
             }
 
             bool needExitCraft = Crafting.CurState == Crafting.State.IdleBetween && (needClassChange || needEquipItem || needConsumables);
-            
+
             // TODO: pre-setup solver for incoming craft
             Tasks.Clear();
             _nextRetry = default;
             if (needExitCraft)
                 Tasks.Add((TaskExitCraft, default));
             if (needClassChange)
+            {
+                equipGearsetLoops = 0;
                 Tasks.Add((() => TaskClassChange(requiredClass), TimeSpan.FromMilliseconds(200))); // TODO: avoid delay and just wait until operation is done
+            }
+
+            if (!hasIngredients && type != CraftType.Trial)
+            {
+                DuoLog.Error($"Not all ingredients for {recipe.ItemResult.Value?.Name} found.");
+                return;
+            }
+
             if (needEquipItem)
             {
                 equipAttemptLoops = 0;
@@ -154,7 +187,7 @@ public unsafe static class PreCrafting
         if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon) && addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory != null)
         {
             if (int.TryParse(addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory->NodeText.ToString(), out int output))
-            return output;
+                return output;
         }
         return -1;
     }
@@ -188,14 +221,34 @@ public unsafe static class PreCrafting
         if (job == CharacterInfo.JobID)
             return TaskResult.Done;
 
+        if (equipGearsetLoops > 0)
+            return TaskResult.Retry;
+
         var gearsets = RaptureGearsetModule.Instance();
         foreach (ref var gs in gearsets->EntriesSpan)
         {
             if (!RaptureGearsetModule.Instance()->IsValidGearset(gs.ID)) continue;
             if ((Job)gs.ClassJob == job)
             {
+                if (gs.Flags.HasFlag(RaptureGearsetModule.GearsetFlag.MainHandMissing))
+                {
+                    if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var selectyesno))
+                    {
+                        if (selectyesno->AtkUnitBase.IsVisible)
+                            return TaskResult.Retry;
+                    }
+                    else
+                    {
+                        equipGearsetLoops++;
+                        _fireCallbackHook.Enable();
+                        var r = gearsets->EquipGearset(gs.ID);
+                        return r < 0 ? TaskResult.Abort : TaskResult.Retry;
+                    }
+                }
+
                 var result = gearsets->EquipGearset(gs.ID);
-                Svc.Log.Debug($"Tried to equip gearset {gs.ID} for {job}, result={result}");
+                equipGearsetLoops++;
+                Svc.Log.Debug($"Tried to equip gearset {gs.ID} for {job}, result={result}, flags={gs.Flags}");
                 return result < 0 ? TaskResult.Abort : TaskResult.Retry;
             }
         }
@@ -204,7 +257,7 @@ public unsafe static class PreCrafting
         return TaskResult.Abort;
     }
 
-    private static TaskResult TaskEquipItem(uint itemId)
+    public static TaskResult TaskEquipItem(uint itemId)
     {
         if (IsItemEquipped(itemId))
             return TaskResult.Done;
@@ -213,6 +266,10 @@ public unsafe static class PreCrafting
         if (pos == null)
         {
             DuoLog.Error($"Failed to find item {LuminaSheets.ItemSheet[itemId].Name} (ID: {itemId}) in inventory");
+            Endurance.ToggleEndurance(false);
+            if (CraftingListUI.Processing)
+                CraftingListFunctions.Paused = true;
+
             return TaskResult.Abort;
         }
 
@@ -344,7 +401,7 @@ public unsafe static class PreCrafting
         return TaskResult.Done;
     }
 
-    private static bool IsItemEquipped(uint itemId) => InventoryManager.Instance()->GetItemCountInContainer(itemId, InventoryType.EquippedItems) > 0;
+    public static bool IsItemEquipped(uint itemId) => InventoryManager.Instance()->GetItemCountInContainer(itemId, InventoryType.EquippedItems) > 0;
 
     private static (InventoryType inv, int slot)? FindItemInInventory(uint itemId, IEnumerable<InventoryType> inventories)
     {

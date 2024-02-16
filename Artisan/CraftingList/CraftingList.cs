@@ -262,9 +262,18 @@ namespace Artisan.CraftingLists
 
             if (Svc.ClientState.LocalPlayer.ClassJob.Id != recipe.CraftType.Value.RowId + 8)
             {
+                PreCrafting.equipGearsetLoops = 0;
                 PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
                 PreCrafting.Tasks.Add((() => PreCrafting.TaskClassChange((Job)recipe.CraftType.Value.RowId + 8), TimeSpan.FromMilliseconds(200)));
 
+                return;
+            }
+
+            bool needEquipItem = recipe.ItemRequired.Row > 0 && !PreCrafting.IsItemEquipped(recipe.ItemRequired.Row);
+            if (needEquipItem)
+            {
+                PreCrafting.equipAttemptLoops = 0;
+                PreCrafting.Tasks.Add((() => PreCrafting.TaskEquipItem(recipe.ItemRequired.Row), TimeSpan.FromMilliseconds(200)));
                 return;
             }
 
