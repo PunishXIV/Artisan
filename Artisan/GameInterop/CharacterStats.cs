@@ -1,5 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.RawInformation.Character;
+using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -210,8 +211,17 @@ public unsafe struct CharacterStats
         if (CharacterInfo.JobID == job)
             return GetBaseStatsEquipped();
         foreach (ref var gs in RaptureGearsetModule.Instance()->EntriesSpan)
-            if ((Job)gs.ClassJob == job)
-                return GetBaseStatsGearset(ref gs);
+        {
+            try
+            {
+                if ((Job)gs.ClassJob == job)
+                    return GetBaseStatsGearset(ref gs);
+            }
+            catch (Exception ex) 
+            {
+                ex.Log();
+            }
+        }
         return GetBaseStatsEquipped(); // fallback
     }
 

@@ -235,11 +235,15 @@ namespace Artisan
                     if (ImGui.Button($"Create Crafting List", new Vector2(size.X / 2, 0)))
                     {
                         CreateGCListAgent(atkUnitBase, false);
+                        P.PluginUi.IsOpen = true;
+                        P.PluginUi.OpenWindow = OpenWindow.Lists;
                     }
                     ImGui.SameLine();
                     if (ImGui.Button($"Create Crafting List (with subcrafts)", new Vector2(size.X / 2, 0)))
                     {
                         CreateGCListAgent(atkUnitBase, true);
+                        P.PluginUi.IsOpen = true;
+                        P.PluginUi.OpenWindow = OpenWindow.Lists;
                     }
 
                     ImGui.End();
@@ -309,11 +313,15 @@ namespace Artisan
                     if (ImGui.Button($"Create Crafting List", new Vector2(size.X / 2, 0)))
                     {
                         CreateGCList(atkUnitBase, false);
+                        P.PluginUi.IsOpen = true;
+                        P.PluginUi.OpenWindow = OpenWindow.Lists;
                     }
                     ImGui.SameLine();
                     if (ImGui.Button($"Create Crafting List (with subcrafts)", new Vector2(size.X / 2, 0)))
                     {
                         CreateGCList(atkUnitBase, true);
+                        P.PluginUi.IsOpen = true;
+                        P.PluginUi.OpenWindow = OpenWindow.Lists;
                     }
 
                     ImGui.End();
