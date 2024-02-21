@@ -123,6 +123,10 @@ namespace Artisan.UI.Tables
         private void SetFilterDirty(object? sender, bool e)
         {
             this.FilterDirty = true;
+            foreach (var item in Items)
+            {
+                Task.Run(() => item.AmountUsedForSubcrafts = item.GetSubCraftCount());
+            }
         }
 
         public void Dispose()

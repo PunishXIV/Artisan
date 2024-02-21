@@ -9,6 +9,7 @@ using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Utility.Raii;
 using ECommons;
+using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
@@ -344,6 +345,14 @@ namespace Artisan.UI
             ImGui.Text($"{PreCrafting.Tasks.Count()}");
             ImGui.Text($"{P.TM.IsBusy}");
             ImGui.Text($"{CraftingListFunctions.CLTM.IsBusy}");
+
+            foreach (var obj in Svc.Objects.Where(x => x.IsTargetable).OrderBy(x => x.Name))
+            {
+                if (ImGui.Button($"{obj.Name} - {obj.Position}"))
+                {
+                    Chat.Instance.SendMessage($"/vnavmesh flyto {obj.Position.X} {obj.Position.Y - obj.HitboxRadius} {obj.Position.Z}");
+                }
+            }
         }
 
         private static void DrawRecipeEntry(string tag, RecipeNoteRecipeEntry* e)

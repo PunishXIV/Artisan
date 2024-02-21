@@ -24,6 +24,7 @@ namespace Artisan.RawInformation
         public IDalamudTextureWrap Icon;
         public int MaterialIndex;
         public CraftingList OriginList;
+        public Dictionary<uint, int> OriginListMaterials;
         public int Required;
         public List<int> Sources = new();
         public bool TimedNode;
@@ -84,6 +85,7 @@ namespace Artisan.RawInformation
 
             Category = Data.ItemSearchCategory.Row;
             OriginList = originList;
+            OriginListMaterials = originList.ListMaterials();
             foreach (var recipe in OriginList.Items)
             {
                 if (LuminaSheets.RecipeSheet[recipe].UnkData5.Any(x => x.ItemIngredient == itemId) && !UsedInCrafts.Contains(recipe))
@@ -113,7 +115,6 @@ namespace Artisan.RawInformation
                 if (remaining != current)
                 {
                     remaining = current;
-                    AmountUsedForSubcrafts = GetSubCraftCount();
                     OnRemainingChange?.Invoke(this, true);
                 }
                 return remaining;
@@ -136,7 +137,7 @@ namespace Artisan.RawInformation
             return output;
         }
 
-        private int GetSubCraftCount()
+        public int GetSubCraftCount()
         {
             int output = 0;
             foreach (var material in UsedInMaterialsList)
@@ -144,10 +145,20 @@ namespace Artisan.RawInformation
                 var owned = RetainerInfo.GetRetainerItemCount(material.Key) + CraftingListUI.NumberOfIngredient(material.Key);
                 var recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == material.Key && x.UnkData5.Any(y => y.ItemIngredient == Data.RowId));
                 var numberUsedInRecipe = recipe.UnkData5.First(x => x.ItemIngredient == Data.RowId).AmountIngredient;
+                var listMaterialRequired = OriginListMaterials.Any(x => x.Key == material.Key) ? OriginListMaterials.FirstOrDefault(x => x.Key == material.Key).Value : 0;
+                var stillToMake = Math.Max(listMaterialRequired - owned, 0);
+                var technicallyAlreadyCrafted = Math.Ceiling((double)owned / recipe.AmountResult);
 
-                UsedInMaterialsListCount[recipe.RowId] = Math.Min((int)Math.Floor((double)(owned / recipe.AmountResult)) * numberUsedInRecipe, material.Value * numberUsedInRecipe);
+                if (listMaterialRequired % recipe.AmountResult == 0)
+                {
+                    UsedInMaterialsListCount[recipe.RowId] = Math.Min((int)Math.Floor((double)(owned / recipe.AmountResult)) * numberUsedInRecipe, material.Value * numberUsedInRecipe);
+                }
+                else
+                {
+                    UsedInMaterialsListCount[recipe.RowId] = (int)technicallyAlreadyCrafted * numberUsedInRecipe;
+                }
 
-                output += Math.Min((int)Math.Floor((double)(owned / recipe.AmountResult)) * numberUsedInRecipe, material.Value * numberUsedInRecipe);
+                output += UsedInMaterialsListCount[recipe.RowId];
             }
             return output;
         }
