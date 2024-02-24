@@ -220,6 +220,14 @@ namespace Artisan.UI
                     {
                         Svc.PluginInterface.GetIpcSubscriber<bool, object>("Artisan.SetStopRequest").InvokeAction(false);
                     }
+
+                    if (ImGui.Button($"Stop Navmesh"))
+                    {
+                        Svc.PluginInterface.GetIpcSubscriber<object>("vnavmesh.Stop").InvokeAction();
+                    }
+
+                    ImGui.Text($"Navmesh Ready: {Svc.PluginInterface.GetIpcSubscriber<bool>("vnavmesh.IsNavmeshReady").InvokeFunc()}");
+                    ImGui.Text($"Navmesh Running: {Svc.PluginInterface.GetIpcSubscriber<bool>("vnavmesh.IsPathRunning").InvokeFunc()}");
                 }
 
                 if (ImGui.CollapsingHeader("Collectables"))
@@ -345,14 +353,6 @@ namespace Artisan.UI
             ImGui.Text($"{PreCrafting.Tasks.Count()}");
             ImGui.Text($"{P.TM.IsBusy}");
             ImGui.Text($"{CraftingListFunctions.CLTM.IsBusy}");
-
-            foreach (var obj in Svc.Objects.Where(x => x.IsTargetable).OrderBy(x => x.Name))
-            {
-                if (ImGui.Button($"{obj.Name} - {obj.Position}"))
-                {
-                    Chat.Instance.SendMessage($"/vnavmesh flyto {obj.Position.X} {obj.Position.Y - obj.HitboxRadius} {obj.Position.Z}");
-                }
-            }
         }
 
         private static void DrawRecipeEntry(string tag, RecipeNoteRecipeEntry* e)

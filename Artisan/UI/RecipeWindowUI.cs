@@ -630,8 +630,12 @@ namespace Artisan
 
                     ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(7f, 7f));
                     ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
-                    ImGui.Begin($"###Options{node->NodeID}", ImGuiWindowFlags.NoScrollbar
-                        | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding);
+                    var flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding;
+                    if (P.Config.PinMiniMenu)
+                        flags |= ImGuiWindowFlags.NoMove;
+
+                    ImGui.Begin($"###Options{node->NodeID}", flags);
+
 
                     DrawCopyOfCraftMenu();
 

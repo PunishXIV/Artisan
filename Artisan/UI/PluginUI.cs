@@ -100,8 +100,11 @@ namespace Artisan.UI
             {
                 ShowEnduranceMessage();
 
-                if (ImGui.BeginTable($"ArtisanTableContainer", 2, ImGuiTableFlags.Resizable))
+                using (var table = ImRaii.Table($"ArtisanTableContainer", 2, ImGuiTableFlags.Resizable))
                 {
+                    if (!table)
+                        return;
+
                     ImGui.TableSetupColumn("##LeftColumn", ImGuiTableColumnFlags.WidthFixed, ImGui.GetWindowWidth() / 2);
 
                     ImGui.TableNextColumn();
@@ -109,7 +112,7 @@ namespace Artisan.UI
                     var regionSize = ImGui.GetContentRegionAvail();
 
                     ImGui.PushStyleVar(ImGuiStyleVar.SelectableTextAlign, new Vector2(0.5f, 0.5f));
-                    if (ImGui.BeginChild($"###ArtisanLeftSide", regionSize with { Y = topLeftSideHeight }, false, ImGuiWindowFlags.NoDecoration))
+                    using (var leftChild = ImRaii.Child($"###ArtisanLeftSide", regionSize with { Y = topLeftSideHeight }, false, ImGuiWindowFlags.NoDecoration))
                     {
                         var imagePath = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/artisan-icon.png");
 
@@ -185,10 +188,10 @@ namespace Artisan.UI
 #endif
 
                     }
-                    ImGui.EndChild();
+
                     ImGui.PopStyleVar();
                     ImGui.TableNextColumn();
-                    if (ImGui.BeginChild($"###ArtisanRightSide", Vector2.Zero, false))
+                    using (var rightChild = ImRaii.Child($"###ArtisanRightSide", Vector2.Zero, false))
                     {
                         switch (OpenWindow)
                         {
@@ -228,8 +231,6 @@ namespace Artisan.UI
                                 break;
                         };
                     }
-                    ImGui.EndChild();
-                    ImGui.EndTable();
                 }
             }
             catch (Exception ex)
@@ -682,6 +683,15 @@ namespace Artisan.UI
                     P.Config.LockMiniMenu = lockMini;
                     P.Config.Save();
                 }
+
+                if (!P.Config.LockMiniMenu)
+                {
+                    if (ImGui.Checkbox($"Pin mini-menu position", ref P.Config.PinMiniMenu))
+                    {
+                        P.Config.Save();
+                    }
+                }
+
                 if (ImGui.Button("Reset Recipe List mini-menu position"))
                 {
                     AtkResNodeFunctions.ResetPosition = true;
