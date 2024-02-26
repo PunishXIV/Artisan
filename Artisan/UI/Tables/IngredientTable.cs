@@ -58,13 +58,13 @@ namespace Artisan.UI.Tables
             DalamudReflector.TryGetDalamudPlugin("GatherBuddy", out var _, false, true);
 
         private static bool ItemVendor =>
-            DalamudReflector.TryGetDalamudPlugin("Item Vendor Location", out var _, false, true);
+            DalamudReflector.TryGetDalamudPlugin("ItemVendorLocation", out var _, false, true);
 
         private static bool MonsterLookup =>
-            DalamudReflector.TryGetDalamudPlugin("Monster Loot Hunter", out var _, false, true);
+            DalamudReflector.TryGetDalamudPlugin("MonsterLootHunter", out var _, false, true);
 
         private static bool Marketboard =>
-            DalamudReflector.TryGetDalamudPlugin("Market board", out var _, false, true);
+            DalamudReflector.TryGetDalamudPlugin("MarketBoardPlugin", out var _, false, true);
 
         private static bool Lifestream =>
     DalamudReflector.TryGetDalamudPlugin("Lifestream", out var _, false, true);

@@ -2,6 +2,7 @@
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Components;
+using ECommons.ImGuiMethods;
 using ImGuiNET;
 using static Artisan.RawInformation.AddonExtensions;
 
@@ -90,6 +91,11 @@ public class ExpertSolverSettings
         ImGuiComponents.HelpMarker("This will try to maximise quality to earn more Skyward points.");
         changed |= ImGui.Checkbox($"Finisher: use {Skills.CarefulObservation.NameOfAction()} to try baiting {Condition.Good.ToLocalizedString()} {ConditionString} for {Skills.ByregotsBlessing.NameOfAction()}", ref FinisherBaitGoodByregot);
         changed |= ImGui.Checkbox($"Emergency: use {Skills.CarefulObservation.NameOfAction()} to try baiting {Condition.Good.ToLocalizedString()} {ConditionString} for {Skills.TricksOfTrade.NameOfAction()} if really low on CP", ref EmergencyCPBaitGood);
+        if (ImGuiEx.ButtonCtrl("Reset Expert Solver Settings To Default"))
+        {
+            P.Config.ExpertSolverConfig = new();
+            changed |= true;
+        }
         return changed;
     }
 }

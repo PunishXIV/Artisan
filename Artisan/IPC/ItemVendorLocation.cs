@@ -6,15 +6,14 @@ namespace Artisan.IPC
     {
         public static void OpenContextMenu(uint itemId)
         {
-
-            if (DalamudReflector.TryGetDalamudPlugin("Item Vendor Location", out var pl, false, true))
+            if (DalamudReflector.TryGetDalamudPlugin("ItemVendorLocation", out var pl, false, true))
             {
                 var itemLookup = pl.GetFoP("_itemLookup");
-                var itemInfo = itemLookup.Call("GetItemInfo", itemId);
+                var itemInfo = itemLookup.Call("GetItemInfo", [itemId]);
                 if (itemInfo != null)
                 {
-                    itemInfo.Call("ApplyFilters");
-                    pl.Call("ShowMultipleVendors", itemInfo);
+                    itemInfo.Call("ApplyFilters", []);
+                    pl.Call("ShowMultipleVendors", [itemInfo]);
                 }
             }
 
@@ -22,10 +21,10 @@ namespace Artisan.IPC
 
         public static bool ItemHasVendor(uint itemId)
         {
-            if (DalamudReflector.TryGetDalamudPlugin("Item Vendor Location", out var pl, false, true))
+            if (DalamudReflector.TryGetDalamudPlugin("ItemVendorLocation", out var pl, false, true))
             {
                 var itemLookup = pl.GetFoP("_itemLookup");
-                var itemInfo = itemLookup.Call("GetItemInfo", itemId);
+                var itemInfo = itemLookup.Call("GetItemInfo", [itemId]);
                 if (itemInfo != null)
                 {
                     return true;

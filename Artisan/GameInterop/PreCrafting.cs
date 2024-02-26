@@ -30,7 +30,7 @@ public unsafe static class PreCrafting
 
     public static int equipAttemptLoops = 0;
     public static int equipGearsetLoops = 0;
-
+    public static int timeWasteLoops = 0;
     private static long NextTaskAt = 0;
 
     private delegate void ClickSynthesisButton(void* a1, void* a2);
@@ -172,14 +172,27 @@ public unsafe static class PreCrafting
             if (needConsumables)
                 Tasks.Add((() => TaskUseConsumables(config, type), default));
             Tasks.Add((() => TaskSelectRecipe(recipe), TimeSpan.FromMilliseconds(500)));
+            timeWasteLoops = 1;
+            Tasks.Add((() => TimeWasteLoop(), TimeSpan.FromMilliseconds(10))); //This is needed for controller players, else if they're near an NPC it will target them and exit the craft as the button is interpreted as target and not confirm.
             Tasks.Add((() => TaskStartCraft(type), default));
-
+            
             Update();
         }
         catch (Exception ex)
         {
             ex.Log();
         }
+    }
+
+    public static TaskResult TimeWasteLoop()
+    {
+        if (timeWasteLoops > 0)
+        {
+            timeWasteLoops--;
+            return TaskResult.Retry;
+        }
+
+        return TaskResult.Done;
     }
 
     public static int GetNumberCraftable(Recipe recipe)
@@ -446,6 +459,7 @@ public unsafe static class PreCrafting
         var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
         if (recipe != null)
             StartCrafting(recipe, CraftType.Quick);
+
     }
     private static void ClickTrialSynthesisButtonDetour(void* a1, void* a2)
     {

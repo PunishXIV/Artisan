@@ -6,6 +6,7 @@ using Artisan.TemporaryFixes;
 using Artisan.UI;
 using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Objects.Types;
+using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
@@ -174,7 +175,7 @@ namespace Artisan.Autocraft
                 TargetSystem.Instance()->OpenObjectInteraction(npc.Struct());
                 if (TryGetAddonByName<AddonSelectIconString>("SelectIconString", out var addonSelectIconString))
                 {
-                    var index = Svc.Data.Excel.GetSheet<ENpcBase>().GetRow(npc.DataId).ENpcData.IndexOf(x => x == 720915);
+                    var index = GenericHelpers.IndexOf(Svc.Data.Excel.GetSheet<ENpcBase>().GetRow(npc.DataId).ENpcData, x => x == 720915);
                     Callback.Fire(&addonSelectIconString->AtkUnitBase, true, index);
                 }
 
