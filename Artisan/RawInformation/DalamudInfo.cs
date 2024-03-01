@@ -16,21 +16,26 @@ namespace Artisan.RawInformation
         {
             if (DalamudReflector.TryGetDalamudStartInfo(out var startinfo, Svc.PluginInterface))
             {
-                var file = File.ReadAllText(startinfo.ConfigurationPath);
-                var ob = JsonConvert.DeserializeObject<dynamic>(file);
-                if (ob.DalamudBetaKind != "release")
+                if (File.Exists(startinfo.ConfigurationPath))
                 {
-                    return true;
+                    var file = File.ReadAllText(startinfo.ConfigurationPath);
+                    var ob = JsonConvert.DeserializeObject<dynamic>(file);
+                    string type = ob.DalamudBetaKind;
+                    if (type is not null && !string.IsNullOrEmpty(type) && type != "release")
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
                 else
                 {
                     return false;
                 }
             }
-            else
-            {
-                return false;
-            }
+            return false;
         }
     }
 }

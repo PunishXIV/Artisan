@@ -168,19 +168,13 @@ public unsafe class Artisan : IDalamudPlugin
 
     public void Dispose()
     {
-        cw.Dispose();
-
+        ECommonsMain.Dispose();
+        
         PluginUi.Dispose();
-        Endurance.Dispose();
-        RetainerInfo.Dispose();
-        IPC.IPC.Dispose();
 
         Svc.Commands.RemoveHandler(commandName);
-        Svc.Condition.ConditionChange -= Condition_ConditionChange;
         Svc.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
         Svc.PluginInterface.UiBuilder.Draw -= ws.Draw;
-        Svc.Framework.Update -= OnFrameworkUpdate;
-
         ws.RemoveAllWindows();
         ws = null!;
 
@@ -190,12 +184,23 @@ public unsafe class Artisan : IDalamudPlugin
         CraftingProcessor.Dispose();
         Crafting.Dispose();
 
-        ECommonsMain.Dispose();
         LuminaSheets.Dispose();
-        CraftingListContextMenu.Dispose();
-        UniversalsisClient.Dispose();
-        P = null!;
 
+        if (!DalamudInfo.IsOnStaging())
+        {
+            CraftingListContextMenu.Dispose();
+            UniversalsisClient.Dispose();
+
+            Svc.Condition.ConditionChange -= Condition_ConditionChange;
+            Svc.Framework.Update -= OnFrameworkUpdate;
+            Svc.ClientState.Logout -= DisableEndurance;
+            Svc.ClientState.Login -= DisableEndurance;
+            Endurance.Dispose();
+            RetainerInfo.Dispose();
+            IPC.IPC.Dispose();
+        }
+
+        P = null!;
     }
 
     private void OnCommand(string command, string args)
