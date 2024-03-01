@@ -7,6 +7,7 @@ using Artisan.GameInterop.CSExt;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Dalamud.Interface.Style;
 using Dalamud.Interface.Utility.Raii;
 using ECommons;
 using ECommons.Automation;
@@ -20,10 +21,13 @@ using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using Newtonsoft.Json;
 using OtterGui;
 using System;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using static Artisan.GameInterop.CSExt.CraftingEventHandler;
 using static ECommons.GenericHelpers;
 
 namespace Artisan.UI

@@ -48,7 +48,7 @@ namespace Artisan.CraftingLogic.Solvers
             }
 
             if (rec.Action == Skills.MastersMend &&
-                step.Condition is Condition.Good or Condition.Excellent)
+                step.Condition is Condition.Good or Condition.Excellent && Simulator.CanUseAction(craft, step, Skills.TricksOfTrade))
                 rec.Action = Skills.TricksOfTrade;
 
             return rec;
@@ -222,7 +222,7 @@ namespace Artisan.CraftingLogic.Solvers
                 {
                     if (step.PrevComboAction == Skills.BasicTouch && Simulator.CanUseAction(craft, step, Skills.StandardTouch) && step.Durability - Simulator.GetDurabilityCost(step, Skills.StandardTouch) > 0) return new(Skills.StandardTouch);
                     if (Simulator.CanUseAction(craft, step, Skills.BasicTouch) && step.Durability - Simulator.GetDurabilityCost(step, Skills.BasicTouch) > 0) return new(Skills.BasicTouch);
-                    return new(Skills.TricksOfTrade);
+                    if (Simulator.CanUseAction(craft, step, Skills.TricksOfTrade)) return new(Skills.TricksOfTrade);
                 }
                 if (step.InnovationLeft == 0 && Simulator.CanUseAction(craft, step, Skills.Innovation) && !inCombo && step.RemainingCP >= 36) return new(Skills.Innovation);
                 if (!_wasteNotUsed && step.WasteNotLeft == 0 && Simulator.CanUseAction(craft, step, Skills.WasteNot2)) return new(Skills.WasteNot2);

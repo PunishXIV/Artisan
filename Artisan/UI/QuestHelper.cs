@@ -33,7 +33,6 @@ namespace Artisan.UI
             if (!P.Config.DisableTheme)
             {
                 P.Style.Push();
-                ImGui.PushFont(P.CustomFont);
                 P.StylePushed = true;
             }
         }
@@ -43,7 +42,6 @@ namespace Artisan.UI
             if (P.StylePushed)
             {
                 P.Style.Pop();
-                ImGui.PopFont();
                 P.StylePushed = false;
             }
         }

@@ -67,7 +67,6 @@ namespace Artisan.UI
             if (!P.Config.DisableTheme)
             {
                 P.Style.Push();
-                ImGui.PushFont(P.CustomFont);
                 P.StylePushed = true;
             }
 
@@ -78,7 +77,6 @@ namespace Artisan.UI
             if (P.StylePushed)
             {
                 P.Style.Pop();
-                ImGui.PopFont();
                 P.StylePushed = false;
             }
         }
@@ -90,6 +88,12 @@ namespace Artisan.UI
 
         public override void Draw()
         {
+            if (DalamudInfo.IsOnStaging())
+            {
+                ImGui.Text($"Artisan is not designed to work on staging Dalamud. Please type /xlbranch and switch to release.");
+                return;
+            }
+
             var region = ImGui.GetContentRegionAvail();
             var itemSpacing = ImGui.GetStyle().ItemSpacing;
 

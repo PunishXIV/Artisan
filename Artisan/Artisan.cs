@@ -18,15 +18,10 @@ using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.Logging;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
-using OtterGui;
 using OtterGui.Classes;
 using PunishLib;
 using System;
-using System.IO;
 using System.Linq;
 
 namespace Artisan;
@@ -46,9 +41,7 @@ public unsafe class Artisan : IDalamudPlugin
     internal IconStorage Icons;
     internal UniversalisClient UniversalsisClient;
 
-    internal FontManager fm;
     internal StyleModel Style;
-    internal ImFontPtr CustomFont;
     internal bool StylePushed = false;
 
     public Artisan([RequiredVersion("1.0")] DalamudPluginInterface pluginInterface)
@@ -67,12 +60,11 @@ public unsafe class Artisan : IDalamudPlugin
         TM.ShowDebug = false;
         CTM.ShowDebug = false;
         ws = new();
-        cw = new();
         ri = new();
         Icons = new(pluginInterface, Svc.Data, Svc.Texture);
-        PluginUi = new();
         Config = P.Config;
-        fm = new FontManager();
+        PluginUi = new();
+
         Svc.Commands.AddHandler(commandName, new CommandInfo(OnCommand)
         {
             HelpMessage = "Opens the Artisan menu.\n" +
@@ -90,45 +82,32 @@ public unsafe class Artisan : IDalamudPlugin
             ShowInHelp = true,
         });
 
-        Svc.PluginInterface.UiBuilder.BuildFonts += AddCustomFont;
         Svc.PluginInterface.UiBuilder.Draw += ws.Draw;
         Svc.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
-        Svc.Framework.Update += OnFrameworkUpdate;
-        Svc.ClientState.Logout += DisableEndurance;
-        Svc.ClientState.Login += DisableEndurance;
-        Svc.Condition.ConditionChange += Condition_ConditionChange;
-        CraftingProcessor.Setup();
-        ConsumableChecker.Init();
-        Endurance.Init();
-        IPC.IPC.Init();
-        RetainerInfo.Init();
-        CraftingListContextMenu.Init();
-        UniversalsisClient = new();
 
-        ws.AddWindow(new RecipeWindowUI());
-        ws.AddWindow(new ProcessingWindow());
-        ws.AddWindow(new QuestHelper());
-        ws.AddWindow(cw);
-
-        EnduranceCraftWatcher.Setup();
-
-        Style = StyleModel.Deserialize("DS1H4sIAAAAAAAACq1YS3PbNhD+Kx2ePR6AeJG+xXYbH+KOJ3bHbW60REusaFGlKOXhyX/v4rEACEqumlY+ECD32/cuFn7NquyCnpOz7Cm7eM1+zy5yvfnDPL+fZTP4at7MHVntyMi5MGTwBLJn+HqWLZB46Ygbx64C5kQv/nRo8xXQ3AhZZRdCv2jdhxdHxUeqrJO3Ftslb5l5u/Fa2rfEvP0LWBkBPQiSerF1Cg7wApBn2c5wOMv2juNn9/zieH09aP63g+Kqyr1mI91mHdj5mj3UX4bEG+b5yT0fzRPoNeF1s62e2np+EuCxWc+7z5cLr1SuuCBlkTvdqBCEKmaQxCHJeZmXnFKlgMHVsmnnEZ5IyXMiFUfjwt6yCHvDSitx1212m4gHV0QURY4saMEYl6Q4rsRl18/rPuCZQ+rFJxeARwyAJb5fVmD4NBaJEK3eL331UscuAgflOcY0J5zLUioHpHmhCC0lCuSBwU23r3sfF/0N0wKdoxcGFqHezYZmHypJIkgiSCJIalc8NEM7Utb6ErWlwngt9aUoFRWSB3wilRUl5SRwISUFvhJt9lvDrMgLIjgLzK66tq0228j0H+R3W693l1UfmUd9kqA79MKn9/2sB9lPI8hbofb073vdh1BbQYRgqKzfGbTfTWVqHmnMOcXUpI6BXhzGJjEQCNULmy4x9GpZz1a3Vb8KqaIDz4RPVGZin6dlZPKDSS29baAyRqYfzVGnr0ekaaowTbEw9MLjLnfD0GGT1unHSSlKr2lRyqLA2qU5ESovi6m+lkvqYiZ1/ygxyqrgjDKF8Yr2lp1pd4R7dokhvOBUQk37TCVKQbX4TMVtyuymruKWJCURVEofClYWbNpWCQfFifDwsWnYyXXS8ZxDOI+H0uLToPzrhKg3VV8N3amt1dP/t5goW/E85pg2pB8N8sd623yr3/dNOPYVstELg9cLA8zFCJKapQpEYkPVi9CMA/L/Uv8hrk1hmg9WKKMQXyIxnGFrm6i06MkhBHlIiQ8rI0xx4k/rsLWBsWpbTmmhqFIypcvUHTRgQ859V/bbKaPf1s/dbBcfD0R6NnCWwg/dS3lB4MfQMSrnCY9EK8qEw9uUl4YdHjRQRVFTuu5mq2a9uOvrfVOH0SDHqtXxMjDfi1RA/fyyGb7G5y5KdJg8EnTXdsOHZl1vQyJJQrlCQTDsEBi80HdhO+VwrEP48hwdTRp202yHbgGzhRfu03/UCA4gjglDd44mUT2D2i4UH9coSy8mfjEYN54NfbcOOIZnn15M7YqAH5rFEmdl3eJ8r0N5E9zH0fz71nQQyN+1/zSP6yR2A/l93dazoY6n5DdyiumWc91Xi+u+2zxU/aI+Jipq2QD5tdrfgO3t2P5jcqz9gLEXAEjgFHzcMJUgr5uXyDQsNSxZtCvX81s3r1qLOw0EztC3ORiEs4vssu9W9fqn2263HqpmncFF016PqklGjh1kjQ2NUyUJH08mcIk9gSrqn+jg0XFoqeqTrmDPwQv+PDEr6wl3oljaxcRSRTCyMc/lJJ/lAcnNhMr3WWZ+ES3exrXE+HJ2yNOrowkb97A2cExdXcrYjaFToVDfGSMqnCaDa0pi/vzNMyLG/wQEyzmzfhx7KAwJUn93Fz6v5shD8B+DRAG4Oh+QHYapovAd3/OEQzuiDSdE4c8wjJHh7iiBFFozvP3+NxT8RWGlEQAA")!;
-
-        Svc.PluginInterface.UiBuilder.RebuildFonts();
-
-    }
-
-    private void AddCustomFont()
-    {
-        Svc.Log.Debug("Adding custom font");
-        if (Svc.ClientState.ClientLanguage == Dalamud.ClientLanguage.Japanese) return;
-
-        string path = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Fonts", "CaviarDreams_Bold.ttf");
-        if (File.Exists(path))
+        if (!DalamudInfo.IsOnStaging())
         {
-            CustomFont = fm.CustomFont;
-        }
+            Svc.Framework.Update += OnFrameworkUpdate;
+            Svc.ClientState.Logout += DisableEndurance;
+            Svc.ClientState.Login += DisableEndurance;
+            Svc.Condition.ConditionChange += Condition_ConditionChange;
+            CraftingProcessor.Setup();
+            ConsumableChecker.Init();
+            Endurance.Init();
+            IPC.IPC.Init();
+            RetainerInfo.Init();
+            CraftingListContextMenu.Init();
+            UniversalsisClient = new();
 
+            EnduranceCraftWatcher.Setup();
+
+            Style = StyleModel.Deserialize("DS1H4sIAAAAAAAACq1YS3PbNhD+Kx2ePR6AeJG+xXYbH+KOJ3bHbW60REusaFGlKOXhyX/v4rEACEqumlY+ECD32/cuFn7NquyCnpOz7Cm7eM1+zy5yvfnDPL+fZTP4at7MHVntyMi5MGTwBLJn+HqWLZB46Ygbx64C5kQv/nRo8xXQ3AhZZRdCv2jdhxdHxUeqrJO3Ftslb5l5u/Fa2rfEvP0LWBkBPQiSerF1Cg7wApBn2c5wOMv2juNn9/zieH09aP63g+Kqyr1mI91mHdj5mj3UX4bEG+b5yT0fzRPoNeF1s62e2np+EuCxWc+7z5cLr1SuuCBlkTvdqBCEKmaQxCHJeZmXnFKlgMHVsmnnEZ5IyXMiFUfjwt6yCHvDSitx1212m4gHV0QURY4saMEYl6Q4rsRl18/rPuCZQ+rFJxeARwyAJb5fVmD4NBaJEK3eL331UscuAgflOcY0J5zLUioHpHmhCC0lCuSBwU23r3sfF/0N0wKdoxcGFqHezYZmHypJIkgiSCJIalc8NEM7Utb6ErWlwngt9aUoFRWSB3wilRUl5SRwISUFvhJt9lvDrMgLIjgLzK66tq0228j0H+R3W693l1UfmUd9kqA79MKn9/2sB9lPI8hbofb073vdh1BbQYRgqKzfGbTfTWVqHmnMOcXUpI6BXhzGJjEQCNULmy4x9GpZz1a3Vb8KqaIDz4RPVGZin6dlZPKDSS29baAyRqYfzVGnr0ekaaowTbEw9MLjLnfD0GGT1unHSSlKr2lRyqLA2qU5ESovi6m+lkvqYiZ1/ygxyqrgjDKF8Yr2lp1pd4R7dokhvOBUQk37TCVKQbX4TMVtyuymruKWJCURVEofClYWbNpWCQfFifDwsWnYyXXS8ZxDOI+H0uLToPzrhKg3VV8N3amt1dP/t5goW/E85pg2pB8N8sd623yr3/dNOPYVstELg9cLA8zFCJKapQpEYkPVi9CMA/L/Uv8hrk1hmg9WKKMQXyIxnGFrm6i06MkhBHlIiQ8rI0xx4k/rsLWBsWpbTmmhqFIypcvUHTRgQ859V/bbKaPf1s/dbBcfD0R6NnCWwg/dS3lB4MfQMSrnCY9EK8qEw9uUl4YdHjRQRVFTuu5mq2a9uOvrfVOH0SDHqtXxMjDfi1RA/fyyGb7G5y5KdJg8EnTXdsOHZl1vQyJJQrlCQTDsEBi80HdhO+VwrEP48hwdTRp202yHbgGzhRfu03/UCA4gjglDd44mUT2D2i4UH9coSy8mfjEYN54NfbcOOIZnn15M7YqAH5rFEmdl3eJ8r0N5E9zH0fz71nQQyN+1/zSP6yR2A/l93dazoY6n5DdyiumWc91Xi+u+2zxU/aI+Jipq2QD5tdrfgO3t2P5jcqz9gLEXAEjgFHzcMJUgr5uXyDQsNSxZtCvX81s3r1qLOw0EztC3ORiEs4vssu9W9fqn2263HqpmncFF016PqklGjh1kjQ2NUyUJH08mcIk9gSrqn+jg0XFoqeqTrmDPwQv+PDEr6wl3oljaxcRSRTCyMc/lJJ/lAcnNhMr3WWZ+ES3exrXE+HJ2yNOrowkb97A2cExdXcrYjaFToVDfGSMqnCaDa0pi/vzNMyLG/wQEyzmzfhx7KAwJUn93Fz6v5shD8B+DRAG4Oh+QHYapovAd3/OEQzuiDSdE4c8wjJHh7iiBFFozvP3+NxT8RWGlEQAA")!;
+            ws.AddWindow(new RecipeWindowUI());
+            ws.AddWindow(new ProcessingWindow());
+            ws.AddWindow(new QuestHelper());
+            cw = new();
+            ws.AddWindow(cw);
+        }
     }
 
     private void Condition_ConditionChange(ConditionFlag flag, bool value)
@@ -202,7 +181,6 @@ public unsafe class Artisan : IDalamudPlugin
         Svc.PluginInterface.UiBuilder.Draw -= ws.Draw;
         Svc.Framework.Update -= OnFrameworkUpdate;
 
-        Svc.PluginInterface.UiBuilder.BuildFonts -= AddCustomFont;
         ws.RemoveAllWindows();
         ws = null!;
 
@@ -213,7 +191,6 @@ public unsafe class Artisan : IDalamudPlugin
         Crafting.Dispose();
 
         ECommonsMain.Dispose();
-        CustomFont = null;
         LuminaSheets.Dispose();
         CraftingListContextMenu.Dispose();
         UniversalsisClient.Dispose();

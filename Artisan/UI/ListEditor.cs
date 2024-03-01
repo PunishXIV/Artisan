@@ -138,7 +138,6 @@ internal class ListEditor : Window, IDisposable
         if (!P.Config.DisableTheme)
         {
             P.Style.Push();
-            ImGui.PushFont(P.CustomFont);
             P.StylePushed = true;
         }
     }
@@ -148,7 +147,6 @@ internal class ListEditor : Window, IDisposable
         if (P.StylePushed)
         {
             P.Style.Pop();
-            ImGui.PopFont();
             P.StylePushed = false;
         }
     }

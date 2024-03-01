@@ -132,6 +132,8 @@ namespace Artisan
                 ImGui.PushFont(ImGui.GetFont());
 
                 var compNode = (AtkComponentNode*)searchNode;
+                if (compNode->Component->UldManager.SearchNodeById(18) == null) return;
+
                 searched = !compNode->Component->UldManager.SearchNodeById(18)->IsVisible;
                 try
                 {
@@ -569,7 +571,6 @@ namespace Artisan
             if (!P.Config.DisableTheme)
             {
                 P.Style.Push();
-                ImGui.PushFont(P.CustomFont);
                 P.StylePushed = true;
             }
         }
@@ -579,7 +580,6 @@ namespace Artisan
             if (P.StylePushed)
             {
                 P.Style.Pop();
-                ImGui.PopFont();
                 P.StylePushed = false;
             }
         }
