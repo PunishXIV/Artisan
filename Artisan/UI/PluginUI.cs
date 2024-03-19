@@ -29,7 +29,7 @@ namespace Artisan.UI
 
 
         private bool visible = false;
-        public OpenWindow OpenWindow { get; set; } = OpenWindow.Overview;
+        public OpenWindow OpenWindow { get; set; }
 
         public bool Visible
         {
@@ -122,7 +122,7 @@ namespace Artisan.UI
 
                         if (ThreadLoadImageHandler.TryGetTextureWrap(imagePath, out var logo))
                         {
-                            ImGuiEx.ImGuiLineCentered("###ArtisanLogo", () =>
+                            ImGuiEx.LineCentered("###ArtisanLogo", () =>
                             {
                                 ImGui.Image(logo.ImGuiHandle, new(125f.Scale(), 125f.Scale()));
                                 if (ImGui.IsItemHovered())

@@ -3,7 +3,7 @@ using ECommons.Reflection;
 
 namespace Artisan.IPC;
 
-internal static class AutoRetainer
+internal static class AutoRetainerIPC
 {
     internal static bool ReEnable = false;
     internal static bool IsEnabled()

@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
@@ -21,12 +22,16 @@ internal static class SimulatorUIVeynVersion
     {
         public int NumExperiments;
         public int[] NumOutcomes = new int[(int)Simulator.CraftStatus.Count];
+        public List<float> QualityPercents = new();
     }
 
     private static Recipe? _selectedRecipe;
     private static CraftState? _selectedCraft;
     private static SolverRef _selectedSolver;
     private static float _startingQualityPct;
+
+    private static CancellationTokenSource _cancelTokenSource = new CancellationTokenSource();
+    private static bool taskRunning = false;   
 
     // fields for stats
     private static int _statsNumIterations = 100000;
@@ -102,15 +107,21 @@ internal static class SimulatorUIVeynVersion
         DrawStatistic("Execution errors", _statsCurrent.NumOutcomes[0]);
         DrawStatistic("Fails (durability)", _statsCurrent.NumOutcomes[1]);
         DrawStatistic("Fails (quality)", _statsCurrent.NumOutcomes[2]);
-        DrawStatistic("Success Q1", _statsCurrent.NumOutcomes[3]);
-        DrawStatistic("Success Q2", _statsCurrent.NumOutcomes[4]);
-        DrawStatistic("Success Q3", _statsCurrent.NumOutcomes[5]);
+        if (craft.CraftCollectible)
+        {
+            DrawStatistic("Success Q1", _statsCurrent.NumOutcomes[3]);
+            DrawStatistic("Success Q2", _statsCurrent.NumOutcomes[4]);
+            DrawStatistic("Success Q3", _statsCurrent.NumOutcomes[5]);
+        }
         DrawStatistic("Success Max Quality", _statsCurrent.NumOutcomes[6]);
         var yieldQ1 = 1;
         var yieldQ2 = yieldQ1 + (craft.CraftQualityMin2 > craft.CraftQualityMin1 ? 1 : 0);
         var yieldQ3 = yieldQ2 + (craft.CraftQualityMin3 > craft.CraftQualityMin2 ? 1 : 0);
         var yield = _statsCurrent.NumOutcomes[3] * yieldQ1 + _statsCurrent.NumOutcomes[4] * yieldQ2 + _statsCurrent.NumOutcomes[5] * yieldQ3;
-        ImGui.TextUnformatted($"Average yield: {(double)yield / _statsCurrent.NumExperiments:f3}");
+        if (craft.CraftCollectible)
+            ImGui.TextUnformatted($"Average yield: {(double)yield / _statsCurrent.NumExperiments:f3}");
+        else
+            ImGui.TextUnformatted($"Average quality: {Math.Round(_statsCurrent.QualityPercents.Average(), 0)}%");
     }
 
     private static void DrawStatistic(string prompt, int count) => ImGui.TextUnformatted($"{prompt}: {count} ({count * 100.0 / _statsCurrent!.NumExperiments:f2}%)");
@@ -124,77 +135,93 @@ internal static class SimulatorUIVeynVersion
         DrawSimulatorRestartRow(craft);
         if (_simCurSolver == null || _simCurSteps.Count == 0)
             return;
-        DrawSimulatorStepRow(craft);
-        DrawSimulatorSteps(craft);
+        if (!taskRunning)
+        {
+            DrawSimulatorStepRow(craft);
+            DrawSimulatorSteps(craft);
+        }
     }
 
     private static void DrawSimulatorRestartRow(CraftState craft)
     {
-        if (ImGui.Button("Restart!"))
+        if (taskRunning)
         {
-            RestartSimulator(craft, _simRngForSeeds.Next());
+            if (ImGui.Button("Stop Running"))
+            {
+                _cancelTokenSource.Cancel();
+                taskRunning = false;
+            }
         }
-        ImGui.SameLine();
-        if (ImGui.Button("Restart and solve"))
+        else
         {
-            RestartSimulator(craft, _simRngForSeeds.Next());
-            SolveRestSimulator(craft);
-        }
-        ImGui.SameLine();
-        if (ImGui.Button("Restart and solve until..."))
-        {
-            ImGui.OpenPopup("SolveUntil");
-        }
-        ImGui.SameLine();
-        if (ImGui.Button($"Restart with seed:"))
-        {
-            RestartSimulator(craft, _simCurSeed);
-        }
-        ImGui.SameLine();
-        ImGui.InputInt("###Seed", ref _simCurSeed);
+            if (ImGui.Button("Restart!"))
+            {
+                RestartSimulator(craft, _simRngForSeeds.Next());
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Restart and solve"))
+            {
+                RestartSimulator(craft, _simRngForSeeds.Next());
+                SolveRestSimulator(craft);
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Restart and solve until..."))
+            {
+                _cancelTokenSource = new CancellationTokenSource();
+                ImGui.OpenPopup("SolveUntil");
+            }
+            ImGui.SameLine();
+            if (ImGui.Button($"Restart with seed:"))
+            {
+                RestartSimulator(craft, _simCurSeed);
+            }
+            ImGui.SameLine();
+            ImGui.InputInt("###Seed", ref _simCurSeed);
 
-        using var popup = ImRaii.Popup("SolveUntil");
-        if (popup)
-        {
-            if (ImGui.MenuItem("Solver error"))
+            using var popup = ImRaii.Popup("SolveUntil");
+            if (popup)
             {
-                RestartSimulatorUntil(craft, Simulator.CraftStatus.InProgress);
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.MenuItem("Failure due to durability running out"))
-            {
-                RestartSimulatorUntil(craft, Simulator.CraftStatus.FailedDurability);
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.MenuItem("Failure due to lack of quality"))
-            {
-                RestartSimulatorUntil(craft, Simulator.CraftStatus.FailedMinQuality);
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.MenuItem("Breakpoint 1 success"))
-            {
-                RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededQ1);
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.MenuItem("Breakpoint 2 success"))
-            {
-                RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededQ2);
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.MenuItem("Breakpoint 3 success"))
-            {
-                RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededQ3);
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.MenuItem("Max quality"))
-            {
-                RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededMaxQuality);
-                ImGui.CloseCurrentPopup();
-            }
-            if (ImGui.MenuItem("Success, some quality"))
-            {
-                RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededSomeQuality);
-                ImGui.CloseCurrentPopup();
+                var token = _cancelTokenSource.Token;
+                if (ImGui.MenuItem("Solver error"))
+                {
+                    Task.Run(() => RestartSimulatorUntil(craft, Simulator.CraftStatus.InProgress), token);
+                    ImGui.CloseCurrentPopup();
+                }
+                if (ImGui.MenuItem("Failure due to durability running out"))
+                {
+                    Task.Run(() => RestartSimulatorUntil(craft, Simulator.CraftStatus.FailedDurability), token);
+                    ImGui.CloseCurrentPopup();
+                }
+                if (ImGui.MenuItem("Failure due to lack of quality"))
+                {
+                    Task.Run(() => RestartSimulatorUntil(craft, Simulator.CraftStatus.FailedMinQuality), token);
+                    ImGui.CloseCurrentPopup();
+                }
+                if (ImGui.MenuItem("Breakpoint 1 success"))
+                {
+                    Task.Run(() => RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededQ1), token);
+                    ImGui.CloseCurrentPopup();
+                }
+                if (ImGui.MenuItem("Breakpoint 2 success"))
+                {
+                    Task.Run(() => RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededQ2), token);
+                    ImGui.CloseCurrentPopup();
+                }
+                if (ImGui.MenuItem("Breakpoint 3 success"))
+                {
+                    Task.Run(() => RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededQ3), token);
+                    ImGui.CloseCurrentPopup();
+                }
+                if (ImGui.MenuItem("Max quality"))
+                {
+                    Task.Run(() => RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededMaxQuality), token);
+                    ImGui.CloseCurrentPopup();
+                }
+                if (ImGui.MenuItem("Success, some quality"))
+                {
+                    Task.Run(() => RestartSimulatorUntil(craft, Simulator.CraftStatus.SucceededSomeQuality), token);
+                    ImGui.CloseCurrentPopup();
+                }
             }
         }
     }
@@ -210,6 +237,9 @@ internal static class SimulatorUIVeynVersion
         if (ImGui.Button("Manual..."))
             ImGui.OpenPopup("Manual");
         ImGui.SameLine();
+
+        if (_simCurSteps.Count == 0) return;
+
         ImGui.TextUnformatted($"Status: {Simulator.Status(craft, _simCurSteps.Last().step)}, Suggestion: {_simNextRec.Action} ({_simNextRec.Comment})");
 
         using var popup = ImRaii.Popup("Manual");
@@ -237,6 +267,7 @@ internal static class SimulatorUIVeynVersion
 
     private static void DrawSimulatorSteps(CraftState craft)
     {
+        if (taskRunning) return;
         int restartAt = -1;
         for (int i = 0; i < _simCurSteps.Count; ++i)
         {
@@ -344,6 +375,7 @@ internal static class SimulatorUIVeynVersion
                 _statsCurrent.NumExperiments += s.NumExperiments;
                 for (int i = 0; i < s.NumOutcomes.Length; ++i)
                     _statsCurrent.NumOutcomes[i] += s.NumOutcomes[i];
+                _statsCurrent.QualityPercents = s.QualityPercents;
             }
         }
         return false;
@@ -368,6 +400,7 @@ internal static class SimulatorUIVeynVersion
                 step = outcome.Item2;
             }
             ++res.NumOutcomes[(int)Simulator.Status(craft, step)];
+            res.QualityPercents.Add(Math.Min(((float)step.Quality / craft.CraftQualityMax) * 100f, 100));
         }
         res.NumExperiments = numIterations;
         return res;
@@ -388,19 +421,27 @@ internal static class SimulatorUIVeynVersion
         }
     }
 
-    private static void RestartSimulatorUntil(CraftState craft, Simulator.CraftStatus status)
+    private static Task RestartSimulatorUntil(CraftState craft, Simulator.CraftStatus status)
     {
+        taskRunning = true;
         for (int i = 0; i < 100000; ++i)
         {
+            if (_cancelTokenSource.IsCancellationRequested) break;
+
             RestartSimulator(craft, _simRngForSeeds.Next());
             SolveRestSimulator(craft);
             if (_simCurSteps.Count == 0 || Simulator.Status(craft, _simCurSteps.Last().step) == status)
-                return;
+            {
+                taskRunning = false;
+                return Task.CompletedTask;
+            }
         }
         // failed to get desired state in a reasonable number of attempts
         _simCurSolver = null;
         _simCurSteps.Clear();
         _simNextRec = default;
+        taskRunning = false;
+        return Task.CompletedTask;
     }
 
     private static bool SolveNextSimulator(CraftState craft)

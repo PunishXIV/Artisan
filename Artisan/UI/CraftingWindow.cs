@@ -84,7 +84,7 @@ namespace Artisan.UI
             if (Crafting.CurCraft != null && !Crafting.CurCraft.CraftExpert && Crafting.CurRecipe?.SecretRecipeBook.Row > 0 && Crafting.CurCraft?.CraftLevel == Crafting.CurCraft?.StatLevel && !CraftingProcessor.ActiveSolver.IsType<MacroSolver>())
             {
                 ImGui.Dummy(new System.Numerics.Vector2(12f));
-                ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.", this.SizeConstraints?.MaximumSize.X ?? 0);
+                ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.");
             }
 
             bool autoMode = P.Config.AutoMode;
