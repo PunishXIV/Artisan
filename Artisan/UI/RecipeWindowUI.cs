@@ -9,6 +9,7 @@ using Artisan.RawInformation;
 using Artisan.UI;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ECommons;
 using ECommons.DalamudServices;
@@ -97,12 +98,10 @@ namespace Artisan
 
                 if (P.Config.ReplaceSearch)
                 {
-                    //searchNode->ToggleVisibility(false);
                     searchLabel->GetAsAtkTextNode()->SetText("Artisan Search");
                 }
                 else
                 {
-                    //searchNode->ToggleVisibility(true);
                     string searchText = Svc.Data.Excel.GetSheet<Addon>().GetRow(1412).Text;
                     searchLabel->GetAsAtkTextNode()->SetText(searchText);
                     return;
@@ -120,23 +119,13 @@ namespace Artisan
                 ImGuiHelpers.ForceNextWindowMainViewport();
                 ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y + size.Y));
 
-                //ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0.1f, 0.1f, 0.1f, 1f));
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
-                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(5f, 2.5f));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f, 3f));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
-                ImGui.GetFont().Scale = scale.X;
-                var oldScale = ImGui.GetIO().FontGlobalScale;
-                ImGui.GetIO().FontGlobalScale = 1f;
-                ImGui.PushFont(ImGui.GetFont());
-
-                var compNode = (AtkComponentNode*)searchNode;
-                if (compNode->Component->UldManager.SearchNodeById(18) == null) return;
-
-                searched = !compNode->Component->UldManager.SearchNodeById(18)->IsVisible;
                 try
                 {
+                    var compNode = (AtkComponentNode*)searchNode;
+                    if (compNode->Component->UldManager.SearchNodeById(18) == null) return;
+
+                    searched = !compNode->Component->UldManager.SearchNodeById(18)->IsVisible;
+
                     if (Search.Length > 0 && !searched)
                     {
                         if (LuminaSheets.RecipeSheet.Values.Count(x => Regex.Match(x.ItemResult.Value.Name.RawString, Search, RegexOptions.IgnoreCase).Success) > 0)
@@ -174,13 +163,6 @@ namespace Artisan
                     if (ex is not RegexParseException)
                         ex.Log();
                 }
-
-
-                ImGui.GetFont().Scale = 1;
-                ImGui.GetIO().FontGlobalScale = oldScale;
-                ImGui.PopFont();
-                ImGui.PopStyleVar(5);
-                //ImGui.PopStyleColor();
             }
         }
 
@@ -214,17 +196,12 @@ namespace Artisan
                     var scale = AtkResNodeFunctions.GetNodeScale(node);
                     var size = new Vector2(node->Width, node->Height) * scale;
                     var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
-
-                    var oldScale = ImGui.GetIO().FontGlobalScale;
-                    ImGui.GetIO().FontGlobalScale = 1f * scale.X;
-
                     var textSize = ImGui.CalcTextSize("Create Crafting List");
 
                     ImGuiHelpers.ForceNextWindowMainViewport();
                     ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y + (textSize.Y * scale.Y) + (14f * scale.Y)));
 
                     ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
-                    ImGui.PushFont(ImGui.GetFont());
                     ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
                     ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0f, 2f * scale.Y));
                     ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f * scale.X, 3f * scale.Y));
@@ -250,8 +227,6 @@ namespace Artisan
 
                     ImGui.End();
                     ImGui.PopStyleVar(5);
-                    ImGui.GetIO().FontGlobalScale = oldScale;
-                    ImGui.PopFont();
                     ImGui.PopStyleColor();
 
 
@@ -293,16 +268,12 @@ namespace Artisan
                     var size = new Vector2(node->Width, node->Height) * scale;
                     var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
 
-                    var oldScale = ImGui.GetIO().FontGlobalScale;
-                    ImGui.GetIO().FontGlobalScale = 1f * scale.X;
-
                     var textSize = ImGui.CalcTextSize("Create Crafting List");
 
                     ImGuiHelpers.ForceNextWindowMainViewport();
                     ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y - (textSize.Y * scale.Y) - (5f * scale.Y)));
 
                     ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
-                    ImGui.PushFont(ImGui.GetFont());
                     ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
                     ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0f, 2f * scale.Y));
                     ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f * scale.X, 3f * scale.Y));
@@ -328,8 +299,6 @@ namespace Artisan
 
                     ImGui.End();
                     ImGui.PopStyleVar(5);
-                    ImGui.GetIO().FontGlobalScale = oldScale;
-                    ImGui.PopFont();
                     ImGui.PopStyleColor();
 
 
@@ -860,9 +829,6 @@ namespace Artisan
             if (addonPtr == null)
                 return;
 
-            var baseX = addonPtr->X;
-            var baseY = addonPtr->Y;
-
             if (addonPtr->UldManager.NodeListCount >= 5)
             {
                 //var node = addonPtr->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[4];
@@ -883,21 +849,27 @@ namespace Artisan
 
                 //Svc.Log.Debug($"Length: {size.Length()}, Width: {node->Width}, Scale: {scale.Y}");
 
-                ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
-                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(5f, 2.5f));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f, 3f));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
-                ImGui.GetFont().Scale = scale.X;
-                var oldScale = ImGui.GetIO().FontGlobalScale;
-                ImGui.GetIO().FontGlobalScale = 1f;
-                ImGui.PushFont(ImGui.GetFont());
+                DrawCounter(node, scale, craftableCount);
+            }
+        }
 
-                ImGui.Begin($"###Repeat{node->NodeID}", ImGuiWindowFlags.NoScrollbar
-                    | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
-                    | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
+        private static unsafe void DrawCounter(AtkResNode* node, Vector2 scale, int craftableCount)
+        {
+            ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
+            ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
+            ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(5f, 2.5f));
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f, 3f));
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
 
+            ImGui.Begin($"###Repeat{node->NodeID}", ImGuiWindowFlags.NoScrollbar
+                | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
+                | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
+
+            var oldScale = ImGui.GetIO().FontGlobalScale;
+            ImGui.GetIO().FontGlobalScale = 1f;
+            using (var font = ImRaii.PushFont(ImGui.GetFont()))
+            {
                 ImGui.AlignTextToFramePadding();
                 ImGui.Text("Craft X Times:");
                 ImGui.SameLine();
@@ -930,14 +902,12 @@ namespace Artisan
                     }
                 }
 
-                ImGui.End();
-
-                ImGui.GetFont().Scale = 1;
-                ImGui.GetIO().FontGlobalScale = oldScale;
-                ImGui.PopFont();
-                ImGui.PopStyleVar(5);
-                ImGui.PopStyleColor();
+                ImGui.GetIO().FontGlobalScale = oldScale;   
             }
+
+            ImGui.End();
+            ImGui.PopStyleVar(5);
+            ImGui.PopStyleColor();
         }
     }
 }
