@@ -1,3 +1,9 @@
+<ins>UPDATE 21/03/2024</ins>
+<br>
+For all CN players - This plugin has been updated to .NET 8 and will not function on CN until CN Dalamud updates to .NET8. Please visit the Discord where the last .NET 7 version has been posted but will require you to install manually.
+
+
+
 <!-- Repository Header Begin -->
 <div align="center">
 <img src="https://love.puni.sh/resources/artisan.svg" alt="Artisan IconUrl" width="15%">
