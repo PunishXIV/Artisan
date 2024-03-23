@@ -1,9 +1,11 @@
-﻿using Dalamud.Utility.Signatures;
+﻿using Dalamud.Utility;
+using Dalamud.Utility.Signatures;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel.GeneratedSheets;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,21 +14,33 @@ namespace Artisan.RawInformation.Character
 {
     public static class CharacterInfo
     {
-        public static byte? CharacterLevel => Svc.ClientState.LocalPlayer?.Level;
+        public static unsafe void UpdateCharaStats()
+        {
+            if (Svc.ClientState.LocalPlayer is null) return;
 
-        public static Job JobID => (Job)(Svc.ClientState.LocalPlayer?.ClassJob.Id ?? 0);
+            JobID = (Job)(Svc.ClientState.LocalPlayer?.ClassJob.Id ?? 0);
+            CharacterLevel = Svc.ClientState.LocalPlayer?.Level;
+            CurrentCP = Svc.ClientState.LocalPlayer.CurrentCp;
+            MaxCP = Svc.ClientState.LocalPlayer.MaxCp;
+            Craftsmanship = PlayerState.Instance()->Attributes[70];
+            Control = PlayerState.Instance()->Attributes[71];
+        }
 
-        public static uint CurrentCP => Svc.ClientState.LocalPlayer.CurrentCp;
+        public static byte? CharacterLevel;
 
-        public static uint MaxCP => Svc.ClientState.LocalPlayer.MaxCp;
+        public static Job JobID;
 
-        public static unsafe int Craftsmanship => PlayerState.Instance()->Attributes[70];
+        public static uint CurrentCP;
 
-        public static unsafe int Control => PlayerState.Instance()->Attributes[71];
+        public static uint MaxCP;
+
+        public static unsafe int Craftsmanship;
+
+        public static unsafe int Control;
 
         public static unsafe int JobLevel(Job job) => PlayerState.Instance()->ClassJobLevelArray[Svc.Data.GetExcelSheet<ClassJob>()?.GetRow((uint)job)?.ExpArrayIndex ?? 0];
 
-        internal static bool IsManipulationUnlocked(Job job) => job switch
+        internal static bool IsManipulationUnlocked(Job job) =>  job switch
         {
             Job.CRP => QuestUnlocked(67979),
             Job.BSM => QuestUnlocked(68153),

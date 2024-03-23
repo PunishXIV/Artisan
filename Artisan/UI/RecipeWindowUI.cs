@@ -312,7 +312,7 @@ namespace Artisan
 
         private static unsafe void CreateGCListAgent(AtkUnitBase* atkUnitBase, bool withSubcrafts)
         {
-            CraftingList craftingList = new CraftingList();
+            NewCraftingList craftingList = new NewCraftingList();
             craftingList.Name = $"GC Supply List ({DateTime.Now.ToShortDateString()})";
 
             for (int i = 425; i <= 432; i++)
@@ -331,17 +331,13 @@ namespace Artisan
                     if (withSubcrafts)
                         CraftingListUI.AddAllSubcrafts(recipe, craftingList, timesToAdd);
 
-                    for (int p = 1; p <= timesToAdd; p++)
+                    if (craftingList.Recipes.Any(x => x.ID == recipe.RowId))
                     {
-                        if (craftingList.Items.IndexOf(recipe.RowId) == -1)
-                        {
-                            craftingList.Items.Add(recipe.RowId);
-                        }
-                        else
-                        {
-                            var indexOfLast = craftingList.Items.IndexOf(recipe.RowId);
-                            craftingList.Items.Insert(indexOfLast, recipe.RowId);
-                        }
+                        craftingList.Recipes.First(x => x.ID == recipe.RowId).Quantity = timesToAdd;
+                    }
+                    else
+                    {
+                        craftingList.Recipes.Add(new() { Quantity = timesToAdd, ID = recipe.RowId });
                     }
 
                 }
@@ -371,7 +367,7 @@ namespace Artisan
 
         private static unsafe void CreateGCList(AtkUnitBase* atkUnitBase, bool withSubcrafts)
         {
-            CraftingList craftingList = new CraftingList();
+            NewCraftingList craftingList = new NewCraftingList();
             craftingList.Name = $"GC Supply List ({DateTime.Now.ToShortDateString()})";
 
             for (int i = 233; i <= 240; i++)
@@ -390,19 +386,14 @@ namespace Artisan
                     if (withSubcrafts)
                         CraftingListUI.AddAllSubcrafts(recipe, craftingList, timesToAdd);
 
-                    for (int p = 1; p <= timesToAdd; p++)
+                    if (craftingList.Recipes.Any(x => x.ID == recipe.RowId))
                     {
-                        if (craftingList.Items.IndexOf(recipe.RowId) == -1)
-                        {
-                            craftingList.Items.Add(recipe.RowId);
-                        }
-                        else
-                        {
-                            var indexOfLast = craftingList.Items.IndexOf(recipe.RowId);
-                            craftingList.Items.Insert(indexOfLast, recipe.RowId);
-                        }
+                        craftingList.Recipes.First(x => x.ID == recipe.RowId).Quantity = timesToAdd;
                     }
-
+                    else
+                    {
+                        craftingList.Recipes.Add(new() { Quantity = timesToAdd, ID = recipe.RowId });
+                    }
                 }
             }
 

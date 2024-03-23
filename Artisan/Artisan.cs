@@ -18,7 +18,6 @@ using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.Logging;
-using ImGuiNET;
 using OtterGui.Classes;
 using PunishLib;
 using System;
@@ -107,6 +106,45 @@ public unsafe class Artisan : IDalamudPlugin
             cw = new();
             ws.AddWindow(cw);
             PluginUi.OpenWindow = OpenWindow.Main;
+
+            ConvertCraftingLists();
+        }
+    }
+
+    private void ConvertCraftingLists()
+    {
+        foreach (var list in P.Config.CraftingLists)
+        {
+            if (!P.Config.NewCraftingLists.Any(x => x.ID == list.ID))
+            {
+                NewCraftingList nl = new()
+                {
+                    ID = list.ID,
+                    Name = list.Name,
+                    Materia = list.Materia,
+                    AddAsQuickSynth = list.AddAsQuickSynth,
+                    Repair = list.Repair,
+                    RepairPercent = list.RepairPercent,
+                    SkipIfEnough = list.SkipIfEnough,
+                    SkipLiteral = list.SkipLiteral,
+                };
+
+                foreach (var item in list.Items.Distinct())
+                {
+                    ListItem listItem = new ListItem();
+                    var qty = list.Items.Count(x => x == item);
+                    listItem.ID = item;
+                    listItem.Quantity = qty;
+                    if (list.ListItemOptions.TryGetValue(item, out var opts))
+                    {
+                        listItem.ListItemOptions = opts;
+                    }
+                    nl.Recipes.Add(listItem);
+                }
+
+                P.Config.NewCraftingLists.Add(nl);
+                P.Config.Save();
+            }
         }
     }
 
@@ -145,6 +183,7 @@ public unsafe class Artisan : IDalamudPlugin
             return;
         }
 
+        CharacterInfo.UpdateCharaStats();
         Crafting.Update();
         SimpleTweaks.DisableImprovedLogTweak();
         PreCrafting.Update();
@@ -169,7 +208,7 @@ public unsafe class Artisan : IDalamudPlugin
     public void Dispose()
     {
         ECommonsMain.Dispose();
-        
+
         PluginUi.Dispose();
 
         Svc.Commands.RemoveHandler(commandName);
@@ -231,13 +270,13 @@ public unsafe class Artisan : IDalamudPlugin
                 {
                     if (int.TryParse(subcommands[1], out int id))
                     {
-                        if (P.Config.CraftingLists.Any(x => x.ID == id))
+                        if (P.Config.NewCraftingLists.Any(x => x.ID == id))
                         {
                             if (subcommands.Length >= 3 && subcommands[2].ToLower() == "start")
                             {
                                 if (!Endurance.Enable)
                                 {
-                                    CraftingListUI.selectedList = P.Config.CraftingLists.First(x => x.ID == id);
+                                    CraftingListUI.selectedList = P.Config.NewCraftingLists.First(x => x.ID == id);
                                     CraftingListUI.StartList();
                                     return;
                                 }

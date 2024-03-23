@@ -102,7 +102,7 @@ public static unsafe class Crafting
             CraftRecommendedControl = lt?.SuggestedControl ?? 0,
             CraftHQ = recipe.CanHq,
         };
-
+        
         if (res.CraftCollectible)
         {
             // Check regular collectibles first

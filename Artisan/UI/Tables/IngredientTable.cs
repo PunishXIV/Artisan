@@ -125,7 +125,7 @@ namespace Artisan.UI.Tables
             this.FilterDirty = true;
             foreach (var item in Items)
             {
-                Task.Run(() => item.AmountUsedForSubcrafts = item.GetSubCraftCount());
+                item.AmountUsedForSubcrafts = item.GetSubCraftCount();
             }
         }
 
@@ -201,7 +201,7 @@ namespace Artisan.UI.Tables
                     foreach (var usedin in item.UsedInCrafts)
                     {
                         var recipe = LuminaSheets.RecipeSheet[usedin];
-                        var amountUsed = recipe.UnkData5.FirstOrDefault(x => x.ItemIngredient == item.Data.RowId).AmountIngredient * item.OriginList.Items.Count(x => x == recipe.RowId);
+                        var amountUsed = recipe.UnkData5.FirstOrDefault(x => x.ItemIngredient == item.Data.RowId).AmountIngredient * item.OriginList.Recipes.First(x => x.ID == recipe.RowId).Quantity;
 
                         sb.Append($"{usedin.NameOfRecipe()} - {amountUsed}\r\n");
                     }
@@ -743,7 +743,7 @@ namespace Artisan.UI.Tables
             {
                 if (isOnList == null)
                 {
-                    isOnList = item.OriginList.Items.Any(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == item.Data.RowId && y.RowId == x));
+                    isOnList = item.OriginList.Recipes.Any(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == item.Data.RowId && y.RowId == x.ID));
                 }
 
                 if (item.Sources.Contains(1) && isOnList.Value)

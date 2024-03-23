@@ -31,7 +31,7 @@ namespace Artisan.CraftingLists
         internal static Dictionary<int, int> SelectedRecipeRawIngredients = new();
         internal static bool keyboardFocus = true;
         internal static string newListName = string.Empty;
-        internal static CraftingList selectedList = new();
+        internal static NewCraftingList selectedList = new();
         internal static List<uint> jobs = new();
         internal static List<int> rawIngredientsList = new();
         internal static Dictionary<int, int> subtableList = new();
@@ -105,7 +105,7 @@ namespace Artisan.CraftingLists
                     var clipboard = Clipboard.GetText();
                     if (clipboard != string.Empty)
                     {
-                        if (clipboard.TryParseJson<CraftingList>(out var import))
+                        if (clipboard.TryParseJson<NewCraftingList>(out var import))
                         {
                             import.SetID();
                             import.Save(true);
@@ -138,6 +138,11 @@ namespace Artisan.CraftingLists
         {
             CraftingListFunctions.Materials = null;
             CraftingListFunctions.CurrentIndex = 0;
+            selectedList.ExpandedList.Clear();
+            foreach (var r in selectedList.Recipes)
+            {
+                selectedList.ExpandedList.AddRange(Enumerable.Repeat(r.ID, r.Quantity));
+            }
 
             if (P.ws.Windows.FindFirst(x => x.WindowName.Contains(selectedList.ID.ToString(), StringComparison.CurrentCultureIgnoreCase), out var window))
                 window.IsOpen = false;
@@ -154,10 +159,10 @@ namespace Artisan.CraftingLists
             Task.Run(() =>
             {
                 TimeSpan output = new();
-                for (int i = CraftingListFunctions.CurrentIndex; i < selectedList.Items.Count; i++)
+                for (int i = CraftingListFunctions.CurrentIndex; i < selectedList.ExpandedList.Count; i++)
                 {
-                    var item = selectedList.Items[i];
-                    var options = selectedList.ListItemOptions.GetValueOrDefault(item);
+                    var item = selectedList.ExpandedList[i];
+                    var options = selectedList.Recipes.First(x => x.ID == item).ListItemOptions;
                     output = output.Add(GetCraftDuration(item, (options?.NQOnly ?? false))).Add(TimeSpan.FromSeconds(1));
                 }
 
@@ -165,17 +170,17 @@ namespace Artisan.CraftingLists
             });
         }
 
-        public static TimeSpan GetListTimer(CraftingList selectedList)
+        public static TimeSpan GetListTimer(NewCraftingList selectedList)
         {
             TimeSpan output = new();
             try
             {
                 if (selectedList is null) return output;
-                foreach (var item in selectedList.Items.Distinct())
+                foreach (var item in selectedList.Recipes.Distinct())
                 {
-                    var count = selectedList.Items.Count(x => x == item);
-                    var options = selectedList.ListItemOptions.GetValueOrDefault(item);
-                    output = output.Add(GetCraftDuration(item, (options?.NQOnly ?? false)) * count).Add(TimeSpan.FromSeconds(1 * count));
+                    var count = item.Quantity;
+                    var options = item.ListItemOptions;
+                    output = output.Add(GetCraftDuration(item.ID, (options?.NQOnly ?? false)) * count).Add(TimeSpan.FromSeconds(1 * count));
                 }
 
                 return output;
@@ -214,7 +219,7 @@ namespace Artisan.CraftingLists
 
                 if (ImGui.InputText("List Name###listName", ref newListName, 100, ImGuiInputTextFlags.EnterReturnsTrue) && newListName.Any())
                 {
-                    CraftingList newList = new();
+                    NewCraftingList newList = new();
                     newList.Name = newListName;
                     newList.SetID();
                     newList.Save(true);
@@ -227,9 +232,7 @@ namespace Artisan.CraftingLists
             }
         }
 
-
-
-        public static void AddAllSubcrafts(Recipe selectedRecipe, CraftingList selectedList, int amounts = 1, int loops = 1)
+        public static void AddAllSubcrafts(Recipe selectedRecipe, NewCraftingList selectedList, int amounts = 1, int loops = 1)
         {
             foreach (var subItem in selectedRecipe.UnkData5.Where(x => x.AmountIngredient > 0))
             {
@@ -238,24 +241,22 @@ namespace Artisan.CraftingLists
                 {
                     AddAllSubcrafts(subRecipe, selectedList, subItem.AmountIngredient * amounts, loops);
 
-                    for (int i = 1; i <= Math.Ceiling(subItem.AmountIngredient / (double)subRecipe.AmountResult * loops * amounts); i++)
+                    var quant = Math.Ceiling(subItem.AmountIngredient / (double)subRecipe.AmountResult * loops * amounts);
+                    if (selectedList.Recipes.Any(x => x.ID == subRecipe.RowId))
                     {
-                        if (selectedList.Items.IndexOf(subRecipe.RowId) == -1)
-                        {
-                            selectedList.Items.Add(subRecipe.RowId);
-                        }
-                        else
-                        {
-                            var indexOfLast = selectedList.Items.IndexOf(subRecipe.RowId);
-                            selectedList.Items.Insert(indexOfLast, subRecipe.RowId);
-                        }
+                        selectedList.Recipes.First(x => x.ID == subRecipe.RowId).Quantity += (int)quant;
+                    }
+                    else
+                    {
+                        Svc.Log.Debug($"Adding as new {subRecipe.RowId.NameOfRecipe()}");
+                        selectedList.Recipes.Add(new() { ID = subRecipe.RowId, Quantity = (int)quant });
                     }
                 }
             }
         }
 
 
-        private static void AddRecipeIngredientsToList(Recipe? recipe, ref List<int> ingredientList, bool addSubList = true, CraftingList? selectedList = null)
+        private static void AddRecipeIngredientsToList(Recipe? recipe, ref List<int> ingredientList, bool addSubList = true, NewCraftingList? selectedList = null)
         {
             try
             {

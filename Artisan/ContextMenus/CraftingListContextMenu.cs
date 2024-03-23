@@ -77,7 +77,7 @@ internal static class CraftingListContextMenu
 
     private static void AddToNewList(uint itemId, uint craftType, bool withPrecraft = false)
     {
-        CraftingList list = new CraftingList();
+        NewCraftingList list = new NewCraftingList();
         list.Name = itemId.NameOfItem();
         list.SetID();
         list.Save(true);
@@ -96,26 +96,14 @@ internal static class CraftingListContextMenu
         if (withPrecraft)
             CraftingListUI.AddAllSubcrafts(recipe, CraftingListUI.selectedList, 1, P.Config.ContextMenuLoops);
 
-        for (int i = 1; i <= P.Config.ContextMenuLoops; i++)
-        {
-            if (CraftingListUI.selectedList.Items.IndexOf(recipe.RowId) == -1)
-            {
-                CraftingListUI.selectedList.Items.Add(recipe.RowId);
-            }
-            else
-            {
-                var indexOfLast = CraftingListUI.selectedList.Items.IndexOf(recipe.RowId);
-                CraftingListUI.selectedList.Items.Insert(indexOfLast, recipe.RowId);
-            }
-        }
 
-        if (CraftingListUI.selectedList.ListItemOptions.TryGetValue(recipe.RowId, out var opts))
+        if (CraftingListUI.selectedList.Recipes.Any(x => x.ID == recipe.RowId))
         {
-            opts.NQOnly = CraftingListUI.selectedList.AddAsQuickSynth;
+            CraftingListUI.selectedList.Recipes.First(x => x.ID == recipe.RowId).Quantity += P.Config.ContextMenuLoops;
         }
         else
         {
-            CraftingListUI.selectedList.ListItemOptions.TryAdd(recipe.RowId, new ListItemOptions { NQOnly = CraftingListUI.selectedList.AddAsQuickSynth });
+            CraftingListUI.selectedList.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = P.Config.ContextMenuLoops, ListItemOptions = new ListItemOptions() { NQOnly = CraftingListUI.selectedList.AddAsQuickSynth } });   
         }
 
         CraftingListHelpers.TidyUpList(CraftingListUI.selectedList);
@@ -123,7 +111,7 @@ internal static class CraftingListContextMenu
         {
             if (w.WindowName == $"List Editor###{CraftingListUI.selectedList.ID}")
             {
-                (w as ListEditor).RecipeSelector.Items = CraftingListUI.selectedList.Items.Distinct().ToList();
+                (w as ListEditor).RecipeSelector.Items = CraftingListUI.selectedList.Recipes.ToList();
                 (w as ListEditor).RefreshTable(null, true);
             }
         }

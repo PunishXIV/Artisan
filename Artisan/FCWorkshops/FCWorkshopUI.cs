@@ -2,6 +2,7 @@
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Interface.Colors;
+using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
@@ -324,11 +325,11 @@ namespace Artisan.FCWorkshops
             }
         }
 
-        private static void CreatePartList(CompanyCraftPart value, string partNum, bool includePrecraft, CraftingList? existingList = null)
+        private static void CreatePartList(CompanyCraftPart value, string partNum, bool includePrecraft, NewCraftingList? existingList = null)
         {
             if (existingList == null)
             {
-                existingList = new CraftingList();
+                existingList = new NewCraftingList();
                 existingList.Name = $"{CurrentProject.ResultItem.Value.Name.RawString} - Part {partNum}";
                 existingList.SetID();
                 existingList.Save(true);
@@ -344,7 +345,7 @@ namespace Artisan.FCWorkshops
 
         private static void CreateProjectList(CompanyCraftSequence value, bool includePrecraft)
         {
-            CraftingList existingList = new CraftingList();
+            NewCraftingList existingList = new NewCraftingList();
             existingList.Name = $"{CurrentProject.ResultItem.Value.Name.RawString}";
             existingList.SetID();
             existingList.Save(true);
@@ -364,11 +365,11 @@ namespace Artisan.FCWorkshops
 
         }
 
-        public static void CreatePhaseList(CompanyCraftProcess value, string partNum, int phaseNum, bool includePrecraft, CraftingList? existingList = null, CompanyCraftSequence? projectOverride = null)
+        public static void CreatePhaseList(CompanyCraftProcess value, string partNum, int phaseNum, bool includePrecraft, NewCraftingList? existingList = null, CompanyCraftSequence? projectOverride = null)
         {
             if (existingList == null)
             {
-                existingList = new CraftingList();
+                existingList = new NewCraftingList();
                 if (projectOverride != null)
                 {
                     existingList.Name = $"{projectOverride.ResultItem.Value.Name.RawString} - {partNum}, Phase {phaseNum}";
@@ -394,19 +395,20 @@ namespace Artisan.FCWorkshops
                         CraftingListUI.AddAllSubcrafts(recipeID, existingList, timesToAdd);
                     }
 
-                    for (int i = 1; i <= timesToAdd / recipeID.AmountResult; i++)
+                    if (existingList.Recipes.Any(x => x.ID == recipeID.RowId))
                     {
-                        if (existingList.Items.IndexOf(recipeID.RowId) == -1)
-                        {
-                            existingList.Items.Add(recipeID.RowId);
-                        }
-                        else
-                        {
-                            var indexOfLast = existingList.Items.IndexOf(recipeID.RowId);
-                            existingList.Items.Insert(indexOfLast, recipeID.RowId);
-                        }
+                        var addition = timesToAdd / recipeID.AmountResult;
+                        existingList.Recipes.First(x => x.ID == recipeID.RowId).Quantity += addition;
                     }
-
+                    else
+                    {
+                        ListItem listItem = new ListItem()
+                        {
+                            ID = recipeID.RowId,
+                            Quantity = timesToAdd / recipeID.AmountResult,
+                             ListItemOptions = new ListItemOptions()
+                        };
+                    }
                 }
             }
             P.Config.Save();

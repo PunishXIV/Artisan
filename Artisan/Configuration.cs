@@ -46,6 +46,7 @@ namespace Artisan
         public Dictionary<uint, RecipeConfig> RecipeConfigs = new();
 
         public List<CraftingList> CraftingLists { get; set; } = new();
+        public List<NewCraftingList> NewCraftingLists { get; set; } = new();
 
         public int AutoDelay = 0;
         public bool DelayRecommendation = false;

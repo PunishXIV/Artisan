@@ -62,6 +62,8 @@ public class ScriptSolverSettings
 
     public bool Draw()
     {
+        ImGui.TextWrapped($"This is a very advanced feature, aimed at users wishing to create their own dynamic solvers using C#. Please visit the github source code and view the Demoscripts folder for an example. No support will be given as to learning C# to do this.");
+        ImGui.Separator();
         Script? toDel = null;
         foreach (var s in Scripts)
         {

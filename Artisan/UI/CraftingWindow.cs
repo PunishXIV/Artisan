@@ -190,7 +190,6 @@ namespace Artisan.UI
         {
             if (!Simulator.CanUseAction(craft, step, recommendation.Action))
             {
-                Svc.Log.Debug($"???");
                 return;
             }
             ShowRecommendation(recommendation.Action);

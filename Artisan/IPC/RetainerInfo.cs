@@ -312,7 +312,7 @@ namespace Artisan.IPC
                 }
                 catch (Exception ex)
                 {
-                    Svc.Log.Error(ex, "RetainerInfoItemCount");
+                    //Svc.Log.Error(ex, "RetainerInfoItemCount");
                     return 0;
                 }
             }
@@ -412,7 +412,7 @@ namespace Artisan.IPC
             return true;
         }
 
-        public static void RestockFromRetainers(CraftingList list)
+        public static void RestockFromRetainers(NewCraftingList list)
         {
             if (GetReachableRetainerBell() == null) return;
 
