@@ -408,6 +408,8 @@ namespace Artisan.FCWorkshops
                             Quantity = timesToAdd / recipeID.AmountResult,
                              ListItemOptions = new ListItemOptions()
                         };
+
+                        existingList.Recipes.Add(listItem);
                     }
                 }
             }

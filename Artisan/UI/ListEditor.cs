@@ -85,6 +85,11 @@ internal class ListEditor : Window, IDisposable
     private bool HQSubcraftsOnly = false;
 
     private bool NeedsToRefreshTable = false;
+
+    NewCraftingList? copyList;
+
+    IngredientHelpers IngredientHelper = new();
+
     public ListEditor(int listId)
         : base($"List Editor###{listId}")
     {
@@ -104,21 +109,27 @@ internal class ListEditor : Window, IDisposable
         if (P.Config.DefaultColourValidation) ColourValidation = true;
     }
 
-    public async Task GenerateTableAsync()
+    public async Task GenerateTableAsync(CancellationTokenSource source)
     {
         Table?.Dispose();
-        var list = await Ingredient.GenerateList(SelectedList);
+        var list = await IngredientHelper.GenerateList(SelectedList, source);
+        if (list is null)
+        {
+            Svc.Log.Debug($"Table list empty, aborting.");
+            return;
+        }
+
         Table = new IngredientTable(list);
     }
 
-    public async void RefreshTable(object? sender, bool e)
+    public void RefreshTable(object? sender, bool e)
     {
         token = source.Token;
         Table = null;
         if (RegenerateTask == null || RegenerateTask.IsCompleted)
         {
             Svc.Log.Debug($"Starting regeneration");
-            RegenerateTask = Task.Run(() => GenerateTableAsync(), token);
+            RegenerateTask = Task.Run(() => GenerateTableAsync(source), token);
         }
         else
         {
@@ -128,7 +139,7 @@ internal class ListEditor : Window, IDisposable
 
             source = new();
             token = source.Token;
-            RegenerateTask = Task.Run(() => GenerateTableAsync(), token);
+            RegenerateTask = Task.Run(() => GenerateTableAsync(source), token);
         }
     }
 
@@ -227,7 +238,7 @@ internal class ListEditor : Window, IDisposable
             {
                 if (NeedsToRefreshTable)
                 {
-                    Task.Run(async () => await GenerateTableAsync());
+                    RefreshTable(null, true);
                     NeedsToRefreshTable = false;
                 }
 
@@ -251,7 +262,7 @@ internal class ListEditor : Window, IDisposable
         }
     }
 
-    NewCraftingList copyList;
+    
     private void DrawCopyFromList()
     {
         if (P.Config.NewCraftingLists.Count > 1)
@@ -521,7 +532,7 @@ internal class ListEditor : Window, IDisposable
                 }
 
                 RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
-                GenerateTableAsync();
+                RefreshTable(null, true);
                 P.Config.Save();
                 if (P.Config.ResetTimesToAdd)
                     timesToAdd = 1;
@@ -805,6 +816,7 @@ internal class ListEditor : Window, IDisposable
     public override void OnClose()
     {
         Table?.Dispose();
+        source.Cancel();
         P.ws.RemoveWindow(this);
     }
 
@@ -824,9 +836,20 @@ internal class ListEditor : Window, IDisposable
     }
     private void DrawTotalIngredientsTable()
     {
+        if (Table == null && RegenerateTask.IsCompleted)
+        {
+            if (ImGui.Button($"Something went wrong creating the table. Try again?"))
+            {
+                RefreshTable(null, true);
+            }
+            return;
+        }
         if (Table == null)
         {
-            ImGui.Text($"Ingredient table is still populating. Please wait.");
+            ImGui.TextUnformatted($"Ingredient table is still populating. Please wait.");
+            var a = IngredientHelper.CurrentIngredient;
+            var b = IngredientHelper.MaxIngredient;
+            ImGui.ProgressBar((float)a / b, new(ImGui.GetContentRegionAvail().X, default), $"{a * 100.0f / b:f2}% ({a}/{b})");
             return;
         }
         ImGui.BeginChild("###IngredientsListTable", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 60f));
@@ -1207,6 +1230,7 @@ internal class ListEditor : Window, IDisposable
 
     public void Dispose()
     {
+        source.Cancel();
         RecipeSelector.ItemAdded -= RefreshTable;
         RecipeSelector.ItemDeleted -= RefreshTable;
     }

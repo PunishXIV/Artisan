@@ -85,7 +85,7 @@ namespace Artisan.UI
                         if (Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
                         {
                             var recipe = LuminaSheets.RecipeSheet[CraftingListUI.CurrentProcessedItem];
-                            PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromSeconds(5)));
+                            PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), default));
                         }
 
                         CraftingListFunctions.Paused = false;

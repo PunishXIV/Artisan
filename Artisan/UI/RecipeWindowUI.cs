@@ -858,7 +858,7 @@ namespace Artisan
                 | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
 
             var oldScale = ImGui.GetIO().FontGlobalScale;
-            ImGui.GetIO().FontGlobalScale = 1f;
+            ImGui.GetIO().FontGlobalScale = 1f * scale.X;
             using (var font = ImRaii.PushFont(ImGui.GetFont()))
             {
                 ImGui.AlignTextToFramePadding();

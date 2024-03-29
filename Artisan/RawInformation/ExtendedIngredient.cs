@@ -113,7 +113,7 @@ namespace Artisan.RawInformation
         {
             get
             {
-                if (DateTime.UtcNow > RemainingCheck)
+                if (DateTime.Now > RemainingCheck)
                 {
                     var current = Math.Max(0, Required - Inventory - RetainerCount - (CanBeCrafted ? TotalCraftable : 0) - AmountUsedForSubcrafts);
                     if (remaining != current)
@@ -157,21 +157,6 @@ namespace Artisan.RawInformation
 
         private int retainerCount;
         private int retainerCountHQ;
-
-        public static async Task<List<Ingredient>> GenerateList(NewCraftingList originList)
-        {
-            var materials = originList.ListMaterials();
-            List<Ingredient> output = new();
-            var taskList = new List<Task>();
-
-            foreach (var item in materials.OrderBy(x => x.Key))
-            {
-                taskList.Add(Task.Run(() => output.Add(new Ingredient(item.Key, item.Value, originList, materials))));
-            }
-            await Task.WhenAll(taskList);
-
-            return output;
-        }
 
         public int GetSubCraftCount()
         {

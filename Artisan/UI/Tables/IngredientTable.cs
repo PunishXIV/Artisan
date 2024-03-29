@@ -18,6 +18,7 @@ using OtterGui.Table;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -79,7 +80,6 @@ namespace Artisan.UI.Tables
         public IngredientTable(List<Ingredient> ingredientList)
             : base("IngredientTable", ingredientList)
         {
-
             if (P.Config.DefaultHideInventoryColumn) _inventoryColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
             if (P.Config.DefaultHideRetainerColumn) _retainerColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
             if (P.Config.DefaultHideRemainingColumn) _remainingColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
@@ -90,22 +90,14 @@ namespace Artisan.UI.Tables
             if (P.Config.DefaultHideGatherLocationColumn) _gatherItemLocationColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
             if (P.Config.DefaultHideIdColumn) _idColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
 
-            Headers.Add(_nameColumn);
-            Headers.Add(_requiredColumn);
-            Headers.Add(_inventoryColumn);
-            if (RetainerInfo.ATools) Headers.Add(_retainerColumn);
-            Headers.Add(_remainingColumn);
-            Headers.Add(_craftableColumn);
-            Headers.Add(_craftableCountColumn);
-            Headers.Add(_craftItemsColumn);
-            Headers.Add(_itemCategoryColumn);
-            Headers.Add(_gatherItemLocationColumn);
+            List<Column<Ingredient>> headers = new() { _nameColumn, _requiredColumn, _inventoryColumn, _remainingColumn, _craftableColumn, _craftableCountColumn, _craftItemsColumn, _itemCategoryColumn, _gatherItemLocationColumn, _idColumn };
+            if (RetainerInfo.ATools) headers.Insert(3, _retainerColumn);
             if (P.Config.UseUniversalis)
             {
-                Headers.Add(_cheapestServerColumn);
-                Headers.Add(_numberForSaleColumn);
+                headers.Insert(headers.Count - 1, _cheapestServerColumn);
+                headers.Insert(headers.Count - 1, _numberForSaleColumn);
             }
-            Headers.Add(_idColumn);
+            this.Headers = headers.ToArray();
 
             Sortable = true;
             ListItems = ingredientList;
@@ -423,7 +415,9 @@ namespace Artisan.UI.Tables
                         ImGui.Text($"No need to buy");
                         return;
                     }
-                    if (ImGui.Button("Fetch Prices"))
+
+                    using var smallBtnStyle = ImRaii.PushStyle(ImGuiStyleVar.FramePadding, new Vector2(ImGui.GetStyle().FramePadding.X, 0));
+                    if (ImGui.Button($"Fetch Prices"))
                     {
                         if (P.Config.LimitUnversalisToDC)
                             Task.Run(() => P.UniversalsisClient.GetDCData(item.Data.RowId, ref item.MarketboardData));

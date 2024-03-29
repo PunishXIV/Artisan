@@ -422,7 +422,7 @@ namespace Artisan.Autocraft
 
         private static void Toasts_ErrorToast(ref SeString message, ref bool isHandled)
         {
-            if (Enable || CraftingListUI.Processing)
+            if (Enable || (CraftingListUI.Processing && !CraftingListFunctions.Paused))
             {
                 foreach (uint errorId in UnableToCraftErrors)
                 {

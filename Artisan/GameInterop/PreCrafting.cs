@@ -398,7 +398,6 @@ public unsafe static class PreCrafting
         if (re != null && re->RecipeId == recipe.RowId)
             return TaskResult.Done;
 
-        CraftingListFunctions.OpenCraftingMenu();
         AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipe.RowId);
         return TaskResult.Retry;
     }

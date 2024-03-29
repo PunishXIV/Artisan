@@ -60,7 +60,7 @@ public unsafe class Artisan : IDalamudPlugin
         CTM.ShowDebug = false;
         ws = new();
         ri = new();
-        Icons = new(pluginInterface, Svc.Data, Svc.Texture);
+        Icons = new(Svc.Texture, Svc.Data);
         Config = P.Config;
         PluginUi = new();
 
@@ -105,6 +105,7 @@ public unsafe class Artisan : IDalamudPlugin
             ws.AddWindow(new QuestHelper());
             cw = new();
             ws.AddWindow(cw);
+
             PluginUi.OpenWindow = OpenWindow.Main;
 
             ConvertCraftingLists();

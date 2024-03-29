@@ -149,19 +149,6 @@ namespace Artisan.CraftingLists
             return true;
         }
 
-        public static unsafe void OpenCraftingMenu()
-        {
-            if (Crafting.CurState != Crafting.State.IdleNormal) return;
-
-            if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
-            {
-                if (Throttler.Throttle(1000))
-                {
-                    CommandProcessor.ExecuteThrottled("/clog");
-                }
-            }
-        }
-
         public static unsafe bool RecipeWindowOpen()
         {
             return TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) && addon->AtkUnitBase.IsVisible && Operations.GetSelectedRecipeEntry() != null;
