@@ -19,8 +19,8 @@ internal class IngredientHelpers
         foreach (var item in materials.OrderBy(x => x.Key))
         {
             if (source.IsCancellationRequested) return null;
-            await Task.Run(() => output.Add(new Ingredient(item.Key, item.Value, originList, materials)));
             CurrentIngredient++;
+            await Task.Run(() => output.Add(new Ingredient(item.Key, item.Value, originList, materials)));
         }
 
 

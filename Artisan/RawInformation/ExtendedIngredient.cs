@@ -87,7 +87,7 @@ namespace Artisan.RawInformation
 
             Category = Data.ItemSearchCategory.Row;
             OriginList = originList;
-            OriginListMaterials = originList.ListMaterials();
+            OriginListMaterials = materials;
             foreach (var recipe in OriginList.Recipes)
             {
                 if (LuminaSheets.RecipeSheet[recipe.ID].UnkData5.Any(x => x.ItemIngredient == itemId) && !UsedInCrafts.Contains(recipe.ID))
@@ -115,13 +115,13 @@ namespace Artisan.RawInformation
             {
                 if (DateTime.Now > RemainingCheck)
                 {
-                    var current = Math.Max(0, Required - Inventory - RetainerCount - (CanBeCrafted ? TotalCraftable : 0) - AmountUsedForSubcrafts);
+                    var current = Math.Max(0, Required - Inventory - RetainerCount - (CanBeCrafted ? TotalCraftable : 0) - (OriginList.SkipIfEnough && OriginList.SkipLiteral ? 0 : AmountUsedForSubcrafts));
                     if (remaining != current)
                     {
                         remaining = current;
                         OnRemainingChange?.Invoke(this, true);
                     }
-                    RemainingCheck = DateTime.Now.AddSeconds(1);
+                    RemainingCheck = DateTime.Now.AddSeconds(0.5);
                 }
                 return remaining;
             }
@@ -134,7 +134,7 @@ namespace Artisan.RawInformation
                 if (DateTime.Now > RetainerCheck)
                 {
                     retainerCount = RetainerInfo.GetRetainerItemCount(Data.RowId);
-                    RetainerCheck = DateTime.Now.AddSeconds(3);
+                    RetainerCheck = DateTime.Now.AddSeconds(0.5);
                 }
                 return retainerCount;
             }
@@ -147,7 +147,7 @@ namespace Artisan.RawInformation
                 if (DateTime.Now > RetainerCheck)
                 {
                     retainerCountHQ = RetainerInfo.GetRetainerItemCount(Data.RowId, true, true);
-                    RetainerCheck = DateTime.Now.AddSeconds(3);
+                    RetainerCheck = DateTime.Now.AddSeconds(0.5);
                 }
                 return retainerCountHQ;
             }

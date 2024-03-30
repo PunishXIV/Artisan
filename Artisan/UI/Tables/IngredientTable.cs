@@ -114,11 +114,11 @@ namespace Artisan.UI.Tables
 
         private void SetFilterDirty(object? sender, bool e)
         {
-            this.FilterDirty = true;
             foreach (var item in Items)
             {
                 item.AmountUsedForSubcrafts = item.GetSubCraftCount();
             }
+            this.FilterDirty = true;
         }
 
         public void Dispose()
@@ -167,7 +167,7 @@ namespace Artisan.UI.Tables
                         ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                     }
 
-                    if (invAmount >= item.Required)
+                    if (invAmount >= item.Required - (item.OriginList.SkipIfEnough && item.OriginList.SkipLiteral ? 0 : item.UsedInMaterialsListCount.Sum(x => x.Value)))
                     {
                         var color = ImGuiColors.HealerGreen;
                         color.W -= 0.3f;
@@ -592,7 +592,7 @@ namespace Artisan.UI.Tables
             {
                 ImGuiUtil.Center($"{item.Remaining}");
 
-                if (ImGui.IsItemHovered())
+                if (!(item.OriginList.SkipIfEnough && item.OriginList.SkipLiteral) && ImGui.IsItemHovered())
                 {
                     StringBuilder sb = new StringBuilder();
                     if (item.UsedInMaterialsListCount.Count > 0)

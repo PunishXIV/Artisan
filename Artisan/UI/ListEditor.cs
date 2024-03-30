@@ -852,7 +852,7 @@ internal class ListEditor : Window, IDisposable
             ImGui.ProgressBar((float)a / b, new(ImGui.GetContentRegionAvail().X, default), $"{a * 100.0f / b:f2}% ({a}/{b})");
             return;
         }
-        ImGui.BeginChild("###IngredientsListTable", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 60f));
+        ImGui.BeginChild("###IngredientsListTable", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - (ColourValidation ? (RetainerInfo.ATools ? 90f.Scale() : 60f.Scale()) : 30f.Scale())));
         Table._nameColumn.ShowColour = ColourValidation;
         Table._inventoryColumn.HQOnlyCrafts = HQSubcraftsOnly;
         Table._retainerColumn.HQOnlyCrafts = HQSubcraftsOnly;
@@ -867,40 +867,6 @@ internal class ListEditor : Window, IDisposable
         ImGui.SameLine();
         ImGui.Checkbox("Enable Colour Validation", ref ColourValidation);
 
-        if (ColourValidation)
-        {
-            ImGui.SameLine();
-            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.HealerGreen);
-            ImGui.BeginDisabled(true);
-            ImGui.Button("", new Vector2(23, 23));
-            ImGui.EndDisabled();
-            ImGui.PopStyleColor();
-            ImGui.SameLine();
-            ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
-            ImGui.Text($" - Inventory has all required items");
-
-            if (RetainerInfo.ATools)
-            {
-                ImGui.SameLine();
-                ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.DalamudOrange);
-                ImGui.BeginDisabled(true);
-                ImGui.Button("", new Vector2(23, 23));
-                ImGui.EndDisabled();
-                ImGui.PopStyleColor();
-                ImGui.SameLine();
-                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
-                ImGui.Text($" - Combination of Retainer & Inventory has all required items");
-            }
-
-            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedBlue);
-            ImGui.BeginDisabled(true);
-            ImGui.Button("", new Vector2(23, 23));
-            ImGui.EndDisabled();
-            ImGui.PopStyleColor();
-            ImGui.SameLine();
-            ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
-            ImGui.Text($" - Combination of Inventory & Craftable has all required items.");
-        }
         ImGui.SameLine();
 
         if (ImGui.GetIO().KeyShift)
@@ -957,6 +923,40 @@ internal class ListEditor : Window, IDisposable
         if (ImGui.Button("Need Help?"))
             ImGui.OpenPopup("HelpPopup");
 
+        if (ColourValidation)
+        {
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.HealerGreen);
+            ImGui.BeginDisabled(true);
+            ImGui.Button("", new Vector2(23, 23));
+            ImGui.EndDisabled();
+            ImGui.PopStyleColor();
+            ImGui.SameLine();
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
+            ImGui.Text($" - Inventory has all required items or is not required due to owning crafted materials using this ingredient");
+
+            if (RetainerInfo.ATools)
+            {
+                ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.DalamudOrange);
+                ImGui.BeginDisabled(true);
+                ImGui.Button("", new Vector2(23, 23));
+                ImGui.EndDisabled();
+                ImGui.PopStyleColor();
+                ImGui.SameLine();
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
+                ImGui.Text($" - Combination of Retainer & Inventory has all required items");
+            }
+
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedBlue);
+            ImGui.BeginDisabled(true);
+            ImGui.Button("", new Vector2(23, 23));
+            ImGui.EndDisabled();
+            ImGui.PopStyleColor();
+            ImGui.SameLine();
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
+            ImGui.Text($" - Combination of Inventory & Craftable has all required items.");
+        }
+        
+
         var windowSize = new Vector2(1024 * ImGuiHelpers.GlobalScale,
             ImGui.GetTextLineHeightWithSpacing() * 13 + 2 * ImGui.GetFrameHeightWithSpacing());
         ImGui.SetNextWindowSize(windowSize);
@@ -1003,7 +1003,8 @@ internal class ListEditor : Window, IDisposable
 
             ImGuiComponents.HelpMarker("Will continue to craft materials whilst your inventory has less of a material up to the amount the list would craft if starting from zero.\n\n" +
                 "[Recipe Amount Result] x [Number of Crafts] is less than [Inventory Amount].\n\n" +
-                "Use this when crafting materials for items not on your list (eg FC workshop projects)");
+                "Use this when crafting materials for items not on your list (eg FC workshop projects)\n\n" +
+                "This will also adjust the ingredient table's remaining column and colour validation to exclude checking for crafted items the ingredient may be used in.");
             ImGui.Unindent();
         }
 
@@ -1100,10 +1101,13 @@ internal class ListEditor : Window, IDisposable
             ImGui.SameLine();
             if (ImGui.Button("Apply To all###QuickSynthAll"))
             {
-                foreach (var option in SelectedList.Recipes.Select(x => x.ListItemOptions))
+                foreach (var r in SelectedList.Recipes)
                 {
-                    option.NQOnly = options.NQOnly;
+                    if (r.ListItemOptions == null)
+                        { r.ListItemOptions = new(); }
+                    r.ListItemOptions.NQOnly = options.NQOnly;
                 }
+                Notify.Success($"Quick Synth applied to all list items.");
                 P.Config.Save();
             }
         }
