@@ -1,5 +1,4 @@
 ﻿using Artisan.Autocraft;
-using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
 using System.Linq;
@@ -165,17 +164,25 @@ public class RecipeConfig
         {
             foreach (var opt in CraftingProcessor.GetAvailableSolversForRecipe(craft, true))
             {
-                bool selected = opt.Def == solver.Def && opt.Flavour == solver.Flavour;
-                if (ImGui.Selectable(opt.Name, selected))
+                if (opt.UnsupportedReason.Length > 0)
                 {
-                    SolverType = opt.Def.GetType().FullName!;
-                    SolverFlavour = opt.Flavour;
-                    changed = true;
+                    ImGui.Text($"{opt.Name} is unsupported - {opt.UnsupportedReason}");
+                }
+                else
+                {
+                    bool selected = opt.Def == solver.Def && opt.Flavour == solver.Flavour;
+                    if (ImGui.Selectable(opt.Name, selected))
+                    {
+                        SolverType = opt.Def.GetType().FullName!;
+                        SolverFlavour = opt.Flavour;
+                        changed = true;
+                    }
                 }
             }
 
             ImGui.EndCombo();
         }
+
         return changed;
     }
 }

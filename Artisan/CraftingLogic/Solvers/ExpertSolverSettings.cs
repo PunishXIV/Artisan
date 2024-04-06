@@ -2,8 +2,12 @@
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Internal;
+using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
+using System;
+using System.Diagnostics.Tracing;
 using static Artisan.RawInformation.AddonExtensions;
 
 namespace Artisan.CraftingLogic.Solvers;
@@ -42,8 +46,26 @@ public class ExpertSolverSettings
     public bool FinisherBaitGoodByregot = true; // if true, use careful observations to try baiting good byregot
     public bool EmergencyCPBaitGood = false; // if true, we allow spending careful observations to try baiting good for tricks when we really lack cp
 
+    [NonSerialized]
+    public IDalamudTextureWrap? expertIcon;
+
+    public ExpertSolverSettings()
+    {
+        var tex = Svc.PluginInterface.UiBuilder.LoadUld("ui/uld/RecipeNoteBook.uld");
+        expertIcon = tex.LoadTexturePart("ui/uld/RecipeNoteBook_hr1.tex", 14);
+    }
+
     public bool Draw()
     {
+        ImGui.TextWrapped($"The expert recipe solver is not an alternative to the standard solver. This is used exclusively with expert recipes.");
+        if (expertIcon != null)
+        {
+            ImGui.TextWrapped($"This solver only applies to recipes with the");
+            ImGui.SameLine();
+            ImGui.Image(expertIcon.ImGuiHandle, expertIcon.Size, new(0, 0), new(1, 1), new(0.94f, 0.57f, 0f, 1f));
+            ImGui.SameLine();
+            ImGui.TextWrapped($"icon in the crafting log.");
+        }
         bool changed = false;
         ImGui.Indent();
         if (ImGui.CollapsingHeader("Opener Settings"))

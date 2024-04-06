@@ -932,7 +932,7 @@ internal class ListEditor : Window, IDisposable
             ImGui.PopStyleColor();
             ImGui.SameLine();
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
-            ImGui.Text($" - Inventory has all required items or is not required due to owning crafted materials using this ingredient");
+            ImGui.Text($" - Inventory has all required items {(SelectedList.SkipIfEnough && SelectedList.SkipLiteral ? "" : "or is not required due to owning crafted materials using this ingredient")}");
 
             if (RetainerInfo.ATools)
             {

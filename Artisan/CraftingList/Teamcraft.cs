@@ -243,7 +243,7 @@ namespace Artisan.CraftingLists
                             int quantity = (int)Math.Ceiling(numberOfItem / (double)recipe.AmountResult);
                             output.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = quantity, ListItemOptions = new() });
 
-                            if (precraftQS && recipe.CanQuickSynth)
+                            if (finalitemQS && recipe.CanQuickSynth)
                                 output.Recipes.First(x => x.ID == recipe.RowId).ListItemOptions.NQOnly = true;
                         }
                     }

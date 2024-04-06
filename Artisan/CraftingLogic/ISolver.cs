@@ -1,5 +1,6 @@
 ﻿using Artisan.RawInformation.Character;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Artisan.CraftingLogic;
 
