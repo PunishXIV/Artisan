@@ -36,13 +36,15 @@ namespace Artisan.RawInformation
         private Dictionary<int, Recipe?> subRecipes = new();
         public Dictionary<uint, int> UsedInMaterialsList;
         public Dictionary<uint, int> UsedInMaterialsListCount = new();
+        public Dictionary<uint, List<Tuple<uint, int, int>>> SubSubMaterials = new();
         public MarketboardData? MarketboardData;
         public bool RecipeOnList;
+        public IngredientHelpers IngredientHelper;
 
-        public Ingredient(uint itemId, int required, NewCraftingList originList, Dictionary<uint, int> materials)
+        public Ingredient(uint itemId, int required, NewCraftingList originList, Dictionary<uint, int> materials, IngredientHelpers ingredientHelpers)
         {
             Data = LuminaSheets.ItemSheet.Values.First(x => x.RowId == itemId);
-            Icon = P.Icons.LoadIcon(Data.Icon);
+            Icon = P.Icons.LoadIcon(Data.Icon)!;
             Required = required;
             if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId, out CraftedRecipe)) { Sources.Add(1); CanBeCrafted = true; }
             if (LuminaSheets.GatheringItemSheet.Values.Any(x => x.Item == itemId)) Sources.Add(2);
@@ -102,6 +104,7 @@ namespace Artisan.RawInformation
                 else
                     Task.Run(() => P.UniversalsisClient.GetRegionData(itemId, ref MarketboardData));
             }
+            IngredientHelper = ingredientHelpers;
         }
 
         public virtual event EventHandler<bool>? OnRemainingChange;
@@ -161,27 +164,71 @@ namespace Artisan.RawInformation
         public int GetSubCraftCount()
         {
             int output = 0;
-            foreach (var material in UsedInMaterialsList)
-            {
-                var owned = RetainerInfo.GetRetainerItemCount(material.Key) + CraftingListUI.NumberOfIngredient(material.Key);
-                var recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == material.Key && x.UnkData5.Any(y => y.ItemIngredient == Data.RowId));
-                var numberUsedInRecipe = recipe.UnkData5.First(x => x.ItemIngredient == Data.RowId).AmountIngredient;
-                var listMaterialRequired = OriginListMaterials.Any(x => x.Key == material.Key) ? OriginListMaterials.FirstOrDefault(x => x.Key == material.Key).Value : 0;
-                var stillToMake = Math.Max(listMaterialRequired - owned, 0);
-                var technicallyAlreadyCrafted = Math.Ceiling((double)owned / recipe.AmountResult);
+            SubSubMaterials.Clear();
+            UsedInMaterialsListCount.Clear();
 
-                if (listMaterialRequired % recipe.AmountResult == 0)
+            foreach (var craft in UsedInCrafts)
+            {
+                var recipe = LuminaSheets.RecipeSheet[craft];
+                var owned = RetainerInfo.GetRetainerItemCount(recipe.ItemResult.Row) + CraftingListUI.NumberOfIngredient(recipe.ItemResult.Row);
+                var numberUsedInRecipe = recipe.UnkData5.First(x => x.ItemIngredient == Data.RowId).AmountIngredient;
+                var numberOnList = OriginList.Recipes.First(x => x.ID == craft).Quantity * recipe.AmountResult;
+                if (IngredientHelper.HelperList.Any(x => x.Data.RowId == recipe.ItemResult.Row))
                 {
-                    UsedInMaterialsListCount[recipe.RowId] = Math.Min((int)Math.Floor((double)(owned / recipe.AmountResult)) * numberUsedInRecipe, material.Value * numberUsedInRecipe);
+                    var subing = IngredientHelper.HelperList.First(x => x.Data.RowId == recipe.ItemResult.Row);
+                    if (subing.UsedInCrafts.Count > 0)
+                    {
+                        output += subing.GetSubCraftCount() * numberUsedInRecipe;
+                        foreach (var i in subing.UsedInMaterialsListCount)
+                        {
+                            if (i.Value == 0) continue;
+
+                            if (SubSubMaterials.ContainsKey(recipe.RowId))
+                            {
+                                if (SubSubMaterials.Values.Any(x => x.Any(y => y.Item1 == i.Key)))
+                                    continue;
+                                SubSubMaterials[recipe.RowId].Add(new Tuple<uint, int, int>(i.Key, i.Value * numberUsedInRecipe, i.Value));
+                            }
+                            else
+                            {
+                                SubSubMaterials[recipe.RowId] = new() { new Tuple<uint, int, int>(i.Key, i.Value * numberUsedInRecipe, i.Value) };
+                            }
+                        }
+                    }
                 }
                 else
                 {
-                    UsedInMaterialsListCount[recipe.RowId] = (int)technicallyAlreadyCrafted * numberUsedInRecipe;
+                    continue;
                 }
+
+                UsedInMaterialsListCount[recipe.RowId] = Math.Min(numberUsedInRecipe * numberOnList, (int)Math.Floor((double)(owned / recipe.AmountResult) * numberUsedInRecipe));
 
                 output += UsedInMaterialsListCount[recipe.RowId];
             }
+
             return output;
+
+            //foreach (var material in UsedInMaterialsList)
+            //{
+            //    var owned = RetainerInfo.GetRetainerItemCount(material.Key) + CraftingListUI.NumberOfIngredient(material.Key);
+            //    var recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == material.Key && x.UnkData5.Any(y => y.ItemIngredient == Data.RowId));
+            //    var numberUsedInRecipe = recipe.UnkData5.First(x => x.ItemIngredient == Data.RowId).AmountIngredient;
+            //    var listMaterialRequired = OriginListMaterials.Any(x => x.Key == material.Key) ? OriginListMaterials.FirstOrDefault(x => x.Key == material.Key).Value : 0;
+            //    var stillToMake = Math.Max(listMaterialRequired - owned, 0);
+            //    var technicallyAlreadyCrafted = Math.Ceiling((double)owned / recipe.AmountResult);
+
+            //    if (listMaterialRequired % recipe.AmountResult == 0)
+            //    {
+            //        UsedInMaterialsListCount[recipe.RowId] = Math.Min((int)Math.Floor((double)(owned / recipe.AmountResult)) * numberUsedInRecipe, material.Value * numberUsedInRecipe);
+            //    }
+            //    else
+            //    {
+            //        UsedInMaterialsListCount[recipe.RowId] = (int)technicallyAlreadyCrafted * numberUsedInRecipe;
+            //    }
+
+            //    output += UsedInMaterialsListCount[recipe.RowId];
+            //}
+            //return output;
         }
 
         private int NumberCraftable(uint itemId)

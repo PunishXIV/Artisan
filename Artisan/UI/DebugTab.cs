@@ -18,6 +18,8 @@ using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Group;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -359,6 +361,36 @@ namespace Artisan.UI
             ImGui.Text($"{PreCrafting.Tasks.Count()}");
             ImGui.Text($"{P.TM.IsBusy}");
             ImGui.Text($"{CraftingListFunctions.CLTM.IsBusy}");
+            if (ImGui.Button($"TeleportToGC"))
+            {
+                TeleportToGCTown();
+            }
+
+        }
+
+        public unsafe static void TeleportToGCTown()
+        {
+            var gc = UIState.Instance()->PlayerState.GrandCompany;
+            var aetheryte = gc switch
+            {
+                0 => 0u,
+                1 => 8u,
+                2 => 2u,
+                3 => 9u,
+                _ => 0u
+            };
+            var ticket = gc switch
+            {
+                0 => 0u,
+                1 => 21069u,
+                2 => 21070u,
+                3 => 21071u,
+                _ => 0u
+            };
+            if (InventoryManager.Instance()->GetInventoryItemCount(ticket) > 0)
+                AgentInventoryContext.Instance()->UseItem(ticket);
+            else
+                Telepo.Instance()->Teleport(aetheryte, 0);
         }
 
         private static void DrawRecipeEntry(string tag, RecipeNoteRecipeEntry* e)

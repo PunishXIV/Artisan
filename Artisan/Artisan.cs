@@ -56,8 +56,10 @@ public unsafe class Artisan : IDalamudPlugin
         TM = new();
         TM.TimeLimitMS = 1000;
         CTM = new();
+#if !DEBUG
         TM.ShowDebug = false;
         CTM.ShowDebug = false;
+#endif
         ws = new();
         ri = new();
         Icons = new(Svc.Texture, Svc.Data);
@@ -147,11 +149,12 @@ public unsafe class Artisan : IDalamudPlugin
                 P.Config.NewCraftingLists.Add(nl);
                 P.Config.Save();
             }
-
-            P.Config.CraftingLists.Clear();
-            P.Config.Save();
         }
+
+        P.Config.CraftingLists.Clear();
+        P.Config.Save();
     }
+
 
     private void Condition_ConditionChange(ConditionFlag flag, bool value)
     {
@@ -219,6 +222,7 @@ public unsafe class Artisan : IDalamudPlugin
         Svc.Commands.RemoveHandler(commandName);
         Svc.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
         Svc.PluginInterface.UiBuilder.Draw -= ws.Draw;
+        Svc.PluginInterface.UiBuilder.OpenMainUi -= DrawConfigUI;
         cw.Dispose();
         ri.Dispose();
         ws.RemoveAllWindows();

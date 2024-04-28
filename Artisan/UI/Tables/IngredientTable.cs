@@ -167,7 +167,7 @@ namespace Artisan.UI.Tables
                         ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                     }
 
-                    if (invAmount >= item.Required - (item.OriginList.SkipIfEnough && item.OriginList.SkipLiteral ? 0 : item.UsedInMaterialsListCount.Sum(x => x.Value)))
+                    if (invAmount >= item.Required - (item.OriginList.SkipIfEnough && item.OriginList.SkipLiteral ? 0 : item.GetSubCraftCount()))
                     {
                         var color = ImGuiColors.HealerGreen;
                         color.W -= 0.3f;
@@ -602,12 +602,28 @@ namespace Artisan.UI.Tables
                             var owned = RetainerInfo.GetRetainerItemCount(LuminaSheets.RecipeSheet[i.Key].ItemResult.Row) + CraftingListUI.NumberOfIngredient(LuminaSheets.RecipeSheet[i.Key].ItemResult.Row);
                             if (SourceList.FindFirst(x => x.CraftedRecipe?.RowId == i.Key, out var ingredient))
                             {
-                                sb.Append($"{i.Value} less is required due to having {(owned > ingredient.Required ? "at least " : "")}{Math.Min(ingredient.Required, owned)}x {i.Key.NameOfRecipe()}\r\n");
+                                sb.AppendLine($"{i.Value} less is required due to having {(owned > ingredient.Required ? "at least " : "")}{Math.Min(ingredient.Required, owned)}x {i.Key.NameOfRecipe()}");
                             }
                         }
-
-                        ImGuiUtil.HoverTooltip(sb.ToString().Trim());
                     }
+
+                    if (item.SubSubMaterials.Count > 0)
+                    {
+                        foreach (var i in item.SubSubMaterials)
+                        {
+                            sb.AppendLine($"{i.Value.Sum(x => x.Item2)} less is required for {i.Key.NameOfRecipe()}");
+                            foreach (var m in i.Value)
+                            {
+                                var owned = RetainerInfo.GetRetainerItemCount(LuminaSheets.RecipeSheet[m.Item1].ItemResult.Row) + CraftingListUI.NumberOfIngredient(LuminaSheets.RecipeSheet[m.Item1].ItemResult.Row);
+                                if (SourceList.FindFirst(x => x.CraftedRecipe?.RowId == m.Item1, out var ingredient))
+                                {
+                                    sb.AppendLine($"└ {m.Item1.NameOfRecipe()} uses {i.Key.NameOfRecipe()}, you have {(owned > ingredient.Required ? "at least " : "")}{Math.Min(ingredient.Required, owned)} {m.Item1.NameOfRecipe()} so {m.Item2}x {item.Data.Name} less is required as a result.");
+                                }
+                            }
+                        }
+                    }
+
+                    ImGuiUtil.HoverTooltip(sb.ToString().Trim());
                 }
 
             }

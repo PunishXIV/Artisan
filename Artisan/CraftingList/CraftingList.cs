@@ -158,7 +158,9 @@ namespace Artisan.CraftingLists
         {
             if (Crafting.CurState != Crafting.State.IdleNormal) return;
 
-            if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
+            var re = Operations.GetSelectedRecipeEntry();
+
+            if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) || (re != null && re->RecipeId != recipeID))
             {
                 AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipeID);
             }
@@ -343,7 +345,7 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if (needConsumables)
+            if (needConsumables && hasConsumables)
             {
                 if (!CLTM.IsBusy && !PreCrafting.Occupied())
                 {

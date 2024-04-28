@@ -10,18 +10,39 @@ using OtterGui;
 using Artisan.IPC;
 using Artisan.Autocraft;
 using Artisan.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using ImGuiNET;
 
 namespace Artisan.ContextMenus;
 
 internal static class CraftingListContextMenu
 {
     private static DalamudContextMenu? contextMenu;
+    private static Chat2IPC? Chat2IPC;
 
     public static void Init()
     {
         contextMenu = new(Svc.PluginInterface);
         contextMenu.OnOpenGameObjectContextMenu += AddMenu;
         contextMenu.OnOpenInventoryContextMenu += AddInventoryMenu;
+
+        Chat2IPC = new(Svc.PluginInterface);
+        Chat2IPC.Enable();
+        Chat2IPC.OnOpenChatTwoItemContextMenu += AddChat2Menu;
+    }
+
+    private static void AddChat2Menu(uint itemId)
+    {
+        if (P.Config.HideContextMenus) return;
+
+        if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == itemId)) return;
+
+        var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == itemId).RowId;
+
+        if (ImGui.Selectable($"Open Recipe Log"))
+        {
+            CraftingListFunctions.OpenRecipeByID(recipeId);
+        }
     }
 
     private static void AddInventoryMenu(InventoryContextMenuOpenArgs args)
@@ -44,7 +65,7 @@ internal static class CraftingListContextMenu
             IntPtr recipeNoteAgent = Svc.GameGui.FindAgentInterface(args.ParentAddonName);
             var itemId = *(uint*)(recipeNoteAgent + 0x398);
             var craftTypeIndex = *(uint*)(recipeNoteAgent + 944);
-
+            
             if (RetainerInfo.GetRetainerItemCount(itemId) > 0 && RetainerInfo.GetReachableRetainerBell() != null)
             {
                 int amountToGet = 1;
@@ -124,6 +145,7 @@ internal static class CraftingListContextMenu
         contextMenu.OnOpenGameObjectContextMenu -= AddMenu;
         contextMenu.OnOpenInventoryContextMenu -= AddInventoryMenu;
         contextMenu?.Dispose();
+        Chat2IPC.Disable();
     }
 }
 

@@ -5,10 +5,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-internal class IngredientHelpers
+public class IngredientHelpers
 {
     public int CurrentIngredient = 0;
     public int MaxIngredient = 0;
+
+    public List<Ingredient> HelperList = new List<Ingredient>();
 
     public async Task<List<Ingredient>> GenerateList(NewCraftingList originList, System.Threading.CancellationTokenSource source)
     {
@@ -20,10 +22,10 @@ internal class IngredientHelpers
         {
             if (source.IsCancellationRequested) return null;
             CurrentIngredient++;
-            await Task.Run(() => output.Add(new Ingredient(item.Key, item.Value, originList, materials)));
+            await Task.Run(() => output.Add(new Ingredient(item.Key, item.Value, originList, materials, this)));
         }
 
-
+        HelperList = output;
         return output;
     }
 }
