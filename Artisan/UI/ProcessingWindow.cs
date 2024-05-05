@@ -99,6 +99,7 @@ namespace Artisan.UI
                     CraftingListFunctions.Paused = false;
                     P.TM.Abort();
                     CraftingListFunctions.CLTM.Abort();
+                    PreCrafting.Tasks.Clear();
                     Crafting.CraftFinished -= CraftingListUI.UpdateListTimer;
                 }
             }

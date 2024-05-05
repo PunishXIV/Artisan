@@ -113,6 +113,9 @@ namespace Artisan.UI
                 if (ImGui.Button("Disable Endurance"))
                 {
                     Endurance.Enable = false;
+                    P.TM.Abort();
+                    CraftingListFunctions.CLTM.Abort();
+                    PreCrafting.Tasks.Clear();
                 }
             }
 

@@ -59,7 +59,7 @@ internal static class CraftingListContextMenu
     private unsafe static void AddMenu(GameObjectContextMenuOpenArgs args)
     {
         if (P.Config.HideContextMenus) return;
-
+        
         if (args.ParentAddonName == "RecipeNote")
         {
             IntPtr recipeNoteAgent = Svc.GameGui.FindAgentInterface(args.ParentAddonName);
@@ -94,7 +94,35 @@ internal static class CraftingListContextMenu
                 args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to Current Crafting List (with Sub-crafts)")), _ => AddToList(itemId, craftTypeIndex, true)));
             }
         }
+
+        if (args.ParentAddonName == "ChatLog")
+        {
+            var itemId = GetObjectItemId("ChatLog", 0x948);
+            if (itemId > 500_000)
+                itemId -= 500_000;
+
+            if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == itemId)) return;
+
+            var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == itemId).RowId;
+
+            args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Open Recipe Log")), _ => CraftingListFunctions.OpenRecipeByID(recipeId, true)));
+
+        }
     }
+
+    private static uint GetObjectItemId(uint itemId)
+    {
+        if (itemId > 500000)
+            itemId -= 500000;
+
+        return itemId;
+    }
+
+    private unsafe static uint? GetObjectItemId(IntPtr agent, int offset)
+        => agent != IntPtr.Zero ? GetObjectItemId(*(uint*)(agent + offset)) : null;
+
+    private static uint? GetObjectItemId(string name, int offset)
+        => GetObjectItemId(Svc.GameGui.FindAgentInterface(name), offset);
 
     private static void AddToNewList(uint itemId, uint craftType, bool withPrecraft = false)
     {
@@ -145,6 +173,7 @@ internal static class CraftingListContextMenu
         contextMenu.OnOpenGameObjectContextMenu -= AddMenu;
         contextMenu.OnOpenInventoryContextMenu -= AddInventoryMenu;
         contextMenu?.Dispose();
+        Chat2IPC.OnOpenChatTwoItemContextMenu -= AddChat2Menu;
         Chat2IPC.Disable();
     }
 }

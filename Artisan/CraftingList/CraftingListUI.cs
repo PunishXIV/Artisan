@@ -40,6 +40,7 @@ namespace Artisan.CraftingLists
         public static bool Processing;
         public static uint CurrentProcessedItem;
         private static readonly ListFolders ListsUI = new();
+
         private static bool GatherBuddy => DalamudReflector.TryGetDalamudPlugin("GatherBuddy", out var gb, false, true);
         private static bool ItemVendor => DalamudReflector.TryGetDalamudPlugin("Item Vendor Location", out var ivl, false, true);
 
@@ -139,7 +140,7 @@ namespace Artisan.CraftingLists
             CraftingListFunctions.Materials = null;
             CraftingListFunctions.CurrentIndex = 0;
             selectedList.ExpandedList.Clear();
-            foreach (var r in selectedList.Recipes)
+            foreach (var r in selectedList.Recipes.Where(x => !x.ListItemOptions.Skipping))
             {
                 selectedList.ExpandedList.AddRange(Enumerable.Repeat(r.ID, r.Quantity));
             }
@@ -178,6 +179,7 @@ namespace Artisan.CraftingLists
                 if (selectedList is null) return output;
                 foreach (var item in selectedList.Recipes.Distinct())
                 {
+                    if (item.ListItemOptions.Skipping) continue;
                     var count = item.Quantity;
                     var options = item.ListItemOptions;
                     output = output.Add(GetCraftDuration(item.ID, (options?.NQOnly ?? false)) * count).Add(TimeSpan.FromSeconds(1 * count));

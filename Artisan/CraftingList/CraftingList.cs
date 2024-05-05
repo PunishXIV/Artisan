@@ -84,6 +84,8 @@ namespace Artisan.CraftingLists
     {
         public bool NQOnly { get; set; }
         // TODO: custom RecipeConfig?
+
+        public bool Skipping { get; set; }
     }
 
     public static class CraftingListFunctions
@@ -115,6 +117,7 @@ namespace Artisan.CraftingLists
             var output = new Dictionary<uint, int>();
             foreach (var item in list.Recipes)
             {
+                if (item.ListItemOptions.Skipping || item.Quantity == 0) continue;
                 Recipe r = LuminaSheets.RecipeSheet[item.ID];
                 CraftingListHelpers.AddRecipeIngredientsToList(r, ref output, false, list);
             }
@@ -214,7 +217,7 @@ namespace Artisan.CraftingLists
                 Operations.CloseQuickSynthWindow();
             }
 
-            if (PreCrafting.Tasks.Count > 0 || Crafting.CurState is not Crafting.State.IdleNormal and not Crafting.State.IdleBetween)
+            if (PreCrafting.Tasks.Count > 0 || Crafting.CurState is not Crafting.State.IdleNormal and not Crafting.State.IdleBetween and not Crafting.State.InvalidState)
             {
                 return;
             }

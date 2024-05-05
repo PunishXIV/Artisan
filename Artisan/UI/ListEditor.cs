@@ -97,6 +97,7 @@ internal class ListEditor : Window, IDisposable
         RecipeSelector = new RecipeSelector(SelectedList.ID);
         RecipeSelector.ItemAdded += RefreshTable;
         RecipeSelector.ItemDeleted += RefreshTable;
+        RecipeSelector.ItemSkipTriggered += RefreshTable;
         IsOpen = true;
         P.ws.AddWindow(this);
         Size = new Vector2(1000, 600);
@@ -262,7 +263,7 @@ internal class ListEditor : Window, IDisposable
         }
     }
 
-    
+
     private void DrawCopyFromList()
     {
         if (P.Config.NewCraftingLists.Count > 1)
@@ -955,7 +956,7 @@ internal class ListEditor : Window, IDisposable
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
             ImGui.Text($" - Combination of Inventory & Craftable has all required items.");
         }
-        
+
 
         var windowSize = new Vector2(1024 * ImGuiHelpers.GlobalScale,
             ImGui.GetTextLineHeightWithSpacing() * 13 + 2 * ImGui.GetFrameHeightWithSpacing());
@@ -1071,7 +1072,7 @@ internal class ListEditor : Window, IDisposable
         ImGuiEx.SetNextItemFullWidth(-30);
         if (ImGui.InputInt("###AdjustQuantity", ref count))
         {
-            if (count > 0)
+            if (count >= 0)
             {
                 SelectedList.Recipes.First(x => x.ID == selectedListItem).Quantity = count;
                 P.Config.Save();
@@ -1104,7 +1105,7 @@ internal class ListEditor : Window, IDisposable
                 foreach (var r in SelectedList.Recipes)
                 {
                     if (r.ListItemOptions == null)
-                        { r.ListItemOptions = new(); }
+                    { r.ListItemOptions = new(); }
                     r.ListItemOptions.NQOnly = options.NQOnly;
                 }
                 Notify.Success($"Quick Synth applied to all list items.");
@@ -1136,7 +1137,7 @@ internal class ListEditor : Window, IDisposable
                             SelectedList.Recipes.Remove(SelectedList.Recipes.First(x => x.ID == selectedListItem));
                             RecipeSelector.Items.RemoveAt(RecipeSelector.CurrentIdx);
                             RecipeSelector.Current = RecipeSelector.Items.First(x => x.ID == altJob.RowId);
-                            RecipeSelector.CurrentIdx = RecipeSelector.Items.IndexOf(RecipeSelector.Current);   
+                            RecipeSelector.CurrentIdx = RecipeSelector.Items.IndexOf(RecipeSelector.Current);
                         }
                         else
                         {
@@ -1237,6 +1238,7 @@ internal class ListEditor : Window, IDisposable
         source.Cancel();
         RecipeSelector.ItemAdded -= RefreshTable;
         RecipeSelector.ItemDeleted -= RefreshTable;
+        RecipeSelector.ItemSkipTriggered -= RefreshTable;
     }
 }
 
@@ -1312,8 +1314,9 @@ internal class RecipeSelector : ItemSelector<ListItem>
         return true;
     }
 
-    protected override bool OnDraw(int idx)
+    protected override bool OnDraw(int idx, out bool changes)
     {
+        changes = false;
         var itemId = Items[idx];
         var itemCount = itemId.Quantity;
         var yield = LuminaSheets.RecipeSheet[itemId.ID].AmountResult * itemCount;
@@ -1321,7 +1324,18 @@ internal class RecipeSelector : ItemSelector<ListItem>
             $"{idx + 1}. {itemId.ID.NameOfRecipe()} x{itemCount}{(yield != itemCount ? $" ({yield} total)" : string.Empty)}";
         maxSize = ImGui.CalcTextSize(label).X > maxSize ? ImGui.CalcTextSize(label).X : maxSize;
 
-        return ImGui.Selectable(label, idx == CurrentIdx);
+        using (var col = ImRaii.PushColor(ImGuiCol.Text, itemCount == 0 || itemId.ListItemOptions.Skipping ? ImGuiColors.DalamudRed : ImGuiColors.DalamudWhite))
+        {
+            var res = ImGui.Selectable(label, idx == CurrentIdx);
+            ImGuiEx.Tooltip($"Right click to {(itemId.ListItemOptions.Skipping ? "enable" : "skip")} this recipe.");
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+            {
+                itemId.ListItemOptions.Skipping = !itemId.ListItemOptions.Skipping;
+                changes = true;
+                P.Config.Save();
+            }
+            return res;
+        }
     }
 
     protected override bool OnMove(int idx1, int idx2)
@@ -1379,8 +1393,9 @@ internal class ListFolders : ItemSelector<NewCraftingList>
         return true;
     }
 
-    protected override bool OnDraw(int idx)
+    protected override bool OnDraw(int idx, out bool changes)
     {
+        changes = false;
         if (CraftingListUI.Processing && CraftingListUI.selectedList.ID == P.Config.NewCraftingLists[idx].ID)
             ImGui.BeginDisabled();
 

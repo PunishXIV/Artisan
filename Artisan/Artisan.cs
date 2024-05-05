@@ -215,8 +215,6 @@ public unsafe class Artisan : IDalamudPlugin
 
     public void Dispose()
     {
-        ECommonsMain.Dispose();
-
         PluginUi.Dispose();
 
         Svc.Commands.RemoveHandler(commandName);
@@ -249,7 +247,7 @@ public unsafe class Artisan : IDalamudPlugin
             RetainerInfo.Dispose();
             IPC.IPC.Dispose();
         }
-
+        ECommonsMain.Dispose();
         P = null!;
     }
 

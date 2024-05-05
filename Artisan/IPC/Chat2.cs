@@ -63,7 +63,7 @@ namespace Artisan.IPC
 
         public void Disable()
         {
-            if (_id != null)
+            if (!string.IsNullOrEmpty(_id))
             {
                 Unregister.InvokeAction(_id);
                 _id = null;
