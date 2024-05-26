@@ -266,7 +266,7 @@ public unsafe static class PreCrafting
             }
         }
 
-        Svc.Log.Error($"Failed to find gearset for {job}");
+        DuoLog.Error($"Failed to find gearset for {job}");
         return TaskResult.Abort;
     }
 
@@ -398,7 +398,6 @@ public unsafe static class PreCrafting
         if (re != null && re->RecipeId == recipe.RowId)
             return TaskResult.Done;
 
-        CraftingListFunctions.OpenCraftingMenu();
         AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipe.RowId);
         return TaskResult.Retry;
     }
@@ -451,6 +450,8 @@ public unsafe static class PreCrafting
         var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
         if (recipe != null)
             StartCrafting(recipe, CraftType.Normal);
+        else
+            DuoLog.Error($"Somehow recipe is null. Please report this on the Discord.");
     }
 
     private static void ClickQuickSynthesisButtonDetour(void* a1, void* a2)
@@ -459,6 +460,8 @@ public unsafe static class PreCrafting
         var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
         if (recipe != null)
             StartCrafting(recipe, CraftType.Quick);
+        else
+            DuoLog.Error($"Somehow recipe is null. Please report this on the Discord.");
 
     }
     private static void ClickTrialSynthesisButtonDetour(void* a1, void* a2)
@@ -467,5 +470,7 @@ public unsafe static class PreCrafting
         var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
         if (recipe != null)
             StartCrafting(recipe, CraftType.Trial);
+        else
+            DuoLog.Error($"Somehow recipe is null. Please report this on the Discord.");
     }
 }

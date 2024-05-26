@@ -8,6 +8,8 @@ namespace Artisan.CraftingLogic.Solvers;
 
 public class MacroSolverDefinition : ISolverDefinition
 {
+    public string MouseoverDescription { get; set; } = "This is the equivalent of an in-game macro, with less restrictions.";
+
     public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
     {
         foreach (var m in P.Config.MacroSolverConfig.Macros)

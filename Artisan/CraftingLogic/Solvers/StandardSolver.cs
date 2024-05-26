@@ -11,6 +11,8 @@ namespace Artisan.CraftingLogic.Solvers
 {
     public class StandardSolverDefinition : ISolverDefinition
     {
+        public string MouseoverDescription { get; set; } = "This is the normal recipe solver.";
+
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
             if (!craft.CraftExpert)
@@ -167,7 +169,7 @@ namespace Artisan.CraftingLogic.Solvers
                 {
                     if (Simulator.CanUseAction(craft, step, Skills.MuscleMemory) && !CanFinishCraft(craft, step, Skills.MuscleMemory)) return new(Skills.MuscleMemory);
 
-                    if (step.MuscleMemoryLeft > 0)
+                    if (step.MuscleMemoryLeft > 0 && !CanFinishCraft(craft, step, Skills.BasicSynthesis))
                     {
                         if (craft.StatLevel < Simulator.MinLevel(Skills.IntensiveSynthesis) && step.Condition is Condition.Good or Condition.Excellent && Simulator.CanUseAction(craft, step, Skills.PreciseTouch)) return new(Skills.PreciseTouch);
                         if (step.Condition is not Condition.Good and not Condition.Excellent)
@@ -413,6 +415,7 @@ namespace Artisan.CraftingLogic.Solvers
             if (Simulator.CanUseAction(craft, step, Skills.PrudentTouch) && GetComboDurability(craft, step, Skills.BasicTouch, Skills.StandardTouch, Skills.AdvancedTouch) <= 0) return Skills.PrudentTouch;
             if (Simulator.CanUseAction(craft, step, Skills.TrainedFinesse) && step.Durability <= 10) return Skills.TrainedFinesse;
             if (Simulator.CanUseAction(craft, step, Skills.BasicTouch)) return Skills.BasicTouch;
+            if (Simulator.CanUseAction(craft, step, Skills.HastyTouch)) return Skills.HastyTouch;
 
             return Skills.None;
         }

@@ -2,6 +2,7 @@
 using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.RawInformation.Character;
+using ECommons;
 using ECommons.DalamudServices;
 using System;
 using System.Collections.Generic;
@@ -80,7 +81,17 @@ public static class CraftingProcessor
     }
 
     public static ISolverDefinition.Desc GetSolverForRecipe(RecipeConfig? recipeConfig, CraftState craft)
-        => FindSolver(craft, recipeConfig?.SolverType ?? "", recipeConfig?.SolverFlavour ?? 0) ?? GetAvailableSolversForRecipe(craft, false).MaxBy(f => f.Priority);
+    {
+        var s = FindSolver(craft, recipeConfig?.SolverType ?? "", recipeConfig?.SolverFlavour ?? 0);
+        if (s != null)
+            return s.Value;
+
+        var s2 = GetAvailableSolversForRecipe(craft, false);
+        if (s2.Count() > 0)
+            return s2.MaxBy(x => x.Priority);
+
+        return default;
+    }
 
     private static void OnCraftStarted(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState initialStep, bool trial)
     {

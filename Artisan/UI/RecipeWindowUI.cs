@@ -158,7 +158,7 @@ namespace Artisan
                         }
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     if (ex is not RegexParseException)
                         ex.Log();
@@ -211,20 +211,38 @@ namespace Artisan
                     ImGui.Begin($"###SupplyTimerWindow", ImGuiWindowFlags.NoNavFocus | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings
                         | ImGuiWindowFlags.AlwaysAutoResize);
 
-                    if (ImGui.Button($"Create Crafting List", new Vector2(size.X / 2, 0)))
+                    if (ImGui.GetIO().KeyShift)
                     {
-                        CreateGCListAgent(atkUnitBase, false);
-                        P.PluginUi.IsOpen = true;
-                        P.PluginUi.OpenWindow = OpenWindow.Lists;
+                        if (ImGui.Button($"Create Crafting List (Star only)", new Vector2(size.X / 2, 0)))
+                        {
+                            CreateGCListAgent(atkUnitBase, false, true);
+                            P.PluginUi.IsOpen = true;
+                            P.PluginUi.OpenWindow = OpenWindow.Lists;
+                        }
+                        ImGui.SameLine();
+                        if (ImGui.Button($"Create Crafting List (with subcrafts) (Star only)", new Vector2(size.X / 2, 0)))
+                        {
+                            CreateGCListAgent(atkUnitBase, true, true);
+                            P.PluginUi.IsOpen = true;
+                            P.PluginUi.OpenWindow = OpenWindow.Lists;
+                        }
                     }
-                    ImGui.SameLine();
-                    if (ImGui.Button($"Create Crafting List (with subcrafts)", new Vector2(size.X / 2, 0)))
+                    else
                     {
-                        CreateGCListAgent(atkUnitBase, true);
-                        P.PluginUi.IsOpen = true;
-                        P.PluginUi.OpenWindow = OpenWindow.Lists;
+                        if (ImGui.Button($"Create Crafting List", new Vector2(size.X / 2, 0)))
+                        {
+                            CreateGCListAgent(atkUnitBase, false, false);
+                            P.PluginUi.IsOpen = true;
+                            P.PluginUi.OpenWindow = OpenWindow.Lists;
+                        }
+                        ImGui.SameLine();
+                        if (ImGui.Button($"Create Crafting List (with subcrafts)", new Vector2(size.X / 2, 0)))
+                        {
+                            CreateGCListAgent(atkUnitBase, true, false);
+                            P.PluginUi.IsOpen = true;
+                            P.PluginUi.OpenWindow = OpenWindow.Lists;
+                        }
                     }
-
                     ImGui.End();
                     ImGui.PopStyleVar(5);
                     ImGui.PopStyleColor();
@@ -283,18 +301,44 @@ namespace Artisan
                     ImGui.Begin($"###SupplyTimerWindow", ImGuiWindowFlags.NoNavFocus | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings
                         | ImGuiWindowFlags.AlwaysAutoResize);
 
-                    if (ImGui.Button($"Create Crafting List", new Vector2(size.X / 2, 0)))
+                    if (ImGui.GetIO().KeyShift)
                     {
-                        CreateGCList(atkUnitBase, false);
-                        P.PluginUi.IsOpen = true;
-                        P.PluginUi.OpenWindow = OpenWindow.Lists;
+                        if (ImGui.Button($"Create Crafting List (Star only)", new Vector2(size.X / 2, 0)))
+                        {
+                            CreateGCList(atkUnitBase, false, true);
+                            P.PluginUi.IsOpen = true;
+                            P.PluginUi.OpenWindow = OpenWindow.Lists;
+                        }
+                        var s = ImGui.GetItemRectSize();
+                        ImGui.SameLine();
+                        var oldScale = ImGui.GetIO().FontGlobalScale;
+                        ImGui.GetIO().FontGlobalScale = 0.80f * scale.X;
+                        using (var f = ImRaii.PushFont(ImGui.GetFont()))
+                        {
+                            if (ImGui.Button($"Create Crafting List (with subcrafts) (Star only)", new Vector2(size.X / 2, s.Y)))
+                            {
+                                CreateGCList(atkUnitBase, true, true);
+                                P.PluginUi.IsOpen = true;
+                                P.PluginUi.OpenWindow = OpenWindow.Lists;
+                            }
+                        }
+                        ImGui.GetIO().FontGlobalScale = oldScale;
                     }
-                    ImGui.SameLine();
-                    if (ImGui.Button($"Create Crafting List (with subcrafts)", new Vector2(size.X / 2, 0)))
+                    else
                     {
-                        CreateGCList(atkUnitBase, true);
-                        P.PluginUi.IsOpen = true;
-                        P.PluginUi.OpenWindow = OpenWindow.Lists;
+                        if (ImGui.Button($"Create Crafting List", new Vector2(size.X / 2, 0)))
+                        {
+                            CreateGCList(atkUnitBase, false, false);
+                            P.PluginUi.IsOpen = true;
+                            P.PluginUi.OpenWindow = OpenWindow.Lists;
+                        }
+                        ImGui.SameLine();
+                        if (ImGui.Button($"Create Crafting List (with subcrafts)", new Vector2(size.X / 2, 0)))
+                        {
+                            CreateGCList(atkUnitBase, true, false);
+                            P.PluginUi.IsOpen = true;
+                            P.PluginUi.OpenWindow = OpenWindow.Lists;
+                        }
                     }
 
                     ImGui.End();
@@ -310,9 +354,9 @@ namespace Artisan
             }
         }
 
-        private static unsafe void CreateGCListAgent(AtkUnitBase* atkUnitBase, bool withSubcrafts)
+        private static unsafe void CreateGCListAgent(AtkUnitBase* atkUnitBase, bool withSubcrafts, bool boostedCraftsOnly)
         {
-            CraftingList craftingList = new CraftingList();
+            NewCraftingList craftingList = new NewCraftingList();
             craftingList.Name = $"GC Supply List ({DateTime.Now.ToShortDateString()})";
 
             for (int i = 425; i <= 432; i++)
@@ -323,27 +367,27 @@ namespace Artisan
                 var itemId = atkUnitBase->AtkValues[i].Int;
                 var requested = atkUnitBase->AtkValues[i - 40].Int;
                 uint job = TextureIdToJob(atkUnitBase->AtkValues[i - 360].Int);
+                bool starred = atkUnitBase->AtkValues[i - 400].Byte == 1;
 
-                if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row + 8 == job, out var recipe))
+                if (!boostedCraftsOnly || (boostedCraftsOnly && starred))
                 {
-                    var timesToAdd = requested / recipe.AmountResult;
-
-                    if (withSubcrafts)
-                        CraftingListUI.AddAllSubcrafts(recipe, craftingList, timesToAdd);
-
-                    for (int p = 1; p <= timesToAdd; p++)
+                    if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row + 8 == job, out var recipe))
                     {
-                        if (craftingList.Items.IndexOf(recipe.RowId) == -1)
+                        var timesToAdd = requested / recipe.AmountResult;
+
+                        if (withSubcrafts)
+                            CraftingListUI.AddAllSubcrafts(recipe, craftingList, timesToAdd);
+
+                        if (craftingList.Recipes.Any(x => x.ID == recipe.RowId))
                         {
-                            craftingList.Items.Add(recipe.RowId);
+                            craftingList.Recipes.First(x => x.ID == recipe.RowId).Quantity = timesToAdd;
                         }
                         else
                         {
-                            var indexOfLast = craftingList.Items.IndexOf(recipe.RowId);
-                            craftingList.Items.Insert(indexOfLast, recipe.RowId);
+                            craftingList.Recipes.Add(new() { Quantity = timesToAdd, ID = recipe.RowId });
                         }
-                    }
 
+                    }
                 }
             }
 
@@ -369,9 +413,9 @@ namespace Artisan
             };
         }
 
-        private static unsafe void CreateGCList(AtkUnitBase* atkUnitBase, bool withSubcrafts)
+        private static unsafe void CreateGCList(AtkUnitBase* atkUnitBase, bool withSubcrafts, bool boostedCraftOnly)
         {
-            CraftingList craftingList = new CraftingList();
+            NewCraftingList craftingList = new NewCraftingList();
             craftingList.Name = $"GC Supply List ({DateTime.Now.ToShortDateString()})";
 
             for (int i = 233; i <= 240; i++)
@@ -382,27 +426,26 @@ namespace Artisan
                 var itemId = atkUnitBase->AtkValues[i].Int;
                 var requested = atkUnitBase->AtkValues[i + 16].Int;
                 uint job = TextureIdToJob(atkUnitBase->AtkValues[i + 8].Int);
+                bool starred = atkUnitBase->AtkValues[i + 40].Byte == 1;
 
-                if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row + 8 == job, out var recipe))
+                if (!boostedCraftOnly || (boostedCraftOnly && starred))
                 {
-                    var timesToAdd = requested / recipe.AmountResult;
-
-                    if (withSubcrafts)
-                        CraftingListUI.AddAllSubcrafts(recipe, craftingList, timesToAdd);
-
-                    for (int p = 1; p <= timesToAdd; p++)
+                    if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row + 8 == job, out var recipe))
                     {
-                        if (craftingList.Items.IndexOf(recipe.RowId) == -1)
+                        var timesToAdd = requested / recipe.AmountResult;
+
+                        if (withSubcrafts)
+                            CraftingListUI.AddAllSubcrafts(recipe, craftingList, timesToAdd);
+
+                        if (craftingList.Recipes.Any(x => x.ID == recipe.RowId))
                         {
-                            craftingList.Items.Add(recipe.RowId);
+                            craftingList.Recipes.First(x => x.ID == recipe.RowId).Quantity = timesToAdd;
                         }
                         else
                         {
-                            var indexOfLast = craftingList.Items.IndexOf(recipe.RowId);
-                            craftingList.Items.Insert(indexOfLast, recipe.RowId);
+                            craftingList.Recipes.Add(new() { Quantity = timesToAdd, ID = recipe.RowId });
                         }
                     }
-
                 }
             }
 
@@ -576,7 +619,7 @@ namespace Artisan
                     if (!node->IsVisible)
                         return;
 
-                    if (P.Config.LockMiniMenu)
+                    if (P.Config.LockMiniMenuR)
                     {
                         var position = AtkResNodeFunctions.GetNodePosition(node);
                         var scale = AtkResNodeFunctions.GetNodeScale(node);
@@ -586,7 +629,7 @@ namespace Artisan
 
                         ImGuiHelpers.ForceNextWindowMainViewport();
 
-                        if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenu)
+                        if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
                         {
                             ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.Always);
                             AtkResNodeFunctions.ResetPosition = false;
@@ -678,7 +721,7 @@ namespace Artisan
                 var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
 
                 ImGuiHelpers.ForceNextWindowMainViewport();
-                if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenu)
+                if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
                 {
                     ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.FirstUseEver);
                     AtkResNodeFunctions.ResetPosition = false;
@@ -867,7 +910,7 @@ namespace Artisan
                 | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
 
             var oldScale = ImGui.GetIO().FontGlobalScale;
-            ImGui.GetIO().FontGlobalScale = 1f;
+            ImGui.GetIO().FontGlobalScale = 1f * scale.X;
             using (var font = ImRaii.PushFont(ImGui.GetFont()))
             {
                 ImGui.AlignTextToFramePadding();
@@ -902,7 +945,7 @@ namespace Artisan
                     }
                 }
 
-                ImGui.GetIO().FontGlobalScale = oldScale;   
+                ImGui.GetIO().FontGlobalScale = oldScale;
             }
 
             ImGui.End();

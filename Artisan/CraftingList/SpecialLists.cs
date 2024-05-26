@@ -373,7 +373,7 @@ namespace Artisan.CraftingLists
 
         private static bool CreateList(bool withSubcrafts)
         {
-            var craftingList = new CraftingList();
+            var craftingList = new NewCraftingList();
             craftingList.Name = listName;
             var recipes = new List<Recipe>();
 
@@ -613,7 +613,7 @@ namespace Artisan.CraftingLists
             {
                 foreach (var recipe in recipes.Distinct())
                 {
-                    craftingList.Items.Add(recipe.RowId);
+                    craftingList.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = 1, ListItemOptions = new() });
                 }
                 CraftingListHelpers.TidyUpList(craftingList);
                 craftingList.SetID();
@@ -623,8 +623,16 @@ namespace Artisan.CraftingLists
             {
                 foreach (var recipe in recipes.Distinct())
                 {
+                    Svc.Log.Debug($"{recipe.RowId.NameOfRecipe()}");
                     CraftingListUI.AddAllSubcrafts(recipe, craftingList, 1);
-                    craftingList.Items.Add(recipe.RowId);
+                    if (craftingList.Recipes.Any(x => x.ID == recipe.RowId))
+                    {
+                        craftingList.Recipes.First(x => x.ID == recipe.RowId).Quantity++;
+                    }
+                    else
+                    {
+                        craftingList.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = 1, ListItemOptions = new() });
+                    }
                 }
                 CraftingListHelpers.TidyUpList(craftingList);
                 craftingList.SetID();

@@ -113,6 +113,9 @@ namespace Artisan.UI
                 if (ImGui.Button("Disable Endurance"))
                 {
                     Endurance.Enable = false;
+                    P.TM.Abort();
+                    CraftingListFunctions.CLTM.Abort();
+                    PreCrafting.Tasks.Clear();
                 }
             }
 
@@ -190,7 +193,6 @@ namespace Artisan.UI
         {
             if (!Simulator.CanUseAction(craft, step, recommendation.Action))
             {
-                Svc.Log.Debug($"???");
                 return;
             }
             ShowRecommendation(recommendation.Action);

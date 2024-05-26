@@ -6,6 +6,8 @@ namespace Artisan.CraftingLogic.Solvers;
 
 public class ScriptSolverDefinition : ISolverDefinition
 {
+    public string? MouseoverDescription { get; set; }
+
     public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
     {
         foreach (var s in P.Config.ScriptSolverConfig.Scripts)

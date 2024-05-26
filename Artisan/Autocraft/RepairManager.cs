@@ -190,7 +190,7 @@ namespace Artisan.Autocraft
 
         private static DateTime _nextRetry;
 
-        internal static bool ProcessRepair(CraftingList? CraftingList = null)
+        internal static bool ProcessRepair(NewCraftingList? CraftingList = null)
         {
             int repairPercent = CraftingList != null ? CraftingList.RepairPercent : P.Config.RepairPercent;
             if (GetMinEquippedPercent() >= repairPercent)
@@ -234,7 +234,6 @@ namespace Artisan.Autocraft
             {
                 if (RepairNPCNearby(out var npc) && InventoryManager.Instance()->GetInventoryItemCount(1) >= GetNPCRepairPrice() && !RepairWindowOpen())
                 {
-                    Svc.Log.Debug($"Repair???");
                     InteractWithRepairNPC();
                     _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
                     return false;

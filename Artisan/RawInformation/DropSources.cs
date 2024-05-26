@@ -30,24 +30,30 @@ namespace Artisan.RawInformation
         private static List<DropSources>? DropList()
         {
             List<DropSources>? output = new();
-            using HttpResponseMessage? sources = new HttpClient().GetAsync("https://raw.githubusercontent.com/ffxiv-teamcraft/ffxiv-teamcraft/master/libs/data/src/lib/json/drop-sources.json").Result;
-            sources.EnsureSuccessStatusCode();
-            string? data = sources.Content.ReadAsStringAsync().Result;
-
-            if (data != null)
+            try
             {
-                JObject? file = JsonConvert.DeserializeObject<JObject>(data);
-                foreach (var item in file)
+                using HttpResponseMessage? sources = new HttpClient().GetAsync("https://raw.githubusercontent.com/ffxiv-teamcraft/ffxiv-teamcraft/master/libs/data/src/lib/json/drop-sources.json").Result;
+                sources.EnsureSuccessStatusCode();
+                string? data = sources.Content.ReadAsStringAsync().Result;
+
+                if (data != null)
                 {
-                    List<uint> monsters = new();
-                    foreach (var monster in item.Value)
+                    JObject? file = JsonConvert.DeserializeObject<JObject>(data);
+                    foreach (var item in file)
                     {
-                        monsters.Add((uint)monster);
+                        List<uint> monsters = new();
+                        foreach (var monster in item.Value)
+                        {
+                            monsters.Add((uint)monster);
+                        }
+                        DropSources source = new DropSources(Convert.ToUInt32(item.Key), monsters);
+                        if (source.UsedInRecipes && !source.CanObtainFromRetainer)
+                            output.Add(source);
                     }
-                    DropSources source = new DropSources(Convert.ToUInt32(item.Key), monsters);
-                    if (source.UsedInRecipes && !source.CanObtainFromRetainer)
-                    output.Add(source);
                 }
+            }
+            catch (Exception ex)
+            {
             }
 
             return output;

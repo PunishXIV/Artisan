@@ -27,7 +27,6 @@ using RawInformation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -69,7 +68,7 @@ internal class ListEditor : Window, IDisposable
 
     public readonly RecipeSelector RecipeSelector;
 
-    public readonly CraftingList SelectedList;
+    public readonly NewCraftingList SelectedList;
 
     private string newName = string.Empty;
 
@@ -86,13 +85,19 @@ internal class ListEditor : Window, IDisposable
     private bool HQSubcraftsOnly = false;
 
     private bool NeedsToRefreshTable = false;
+
+    NewCraftingList? copyList;
+
+    IngredientHelpers IngredientHelper = new();
+
     public ListEditor(int listId)
         : base($"List Editor###{listId}")
     {
-        SelectedList = P.Config.CraftingLists.First(x => x.ID == listId);
+        SelectedList = P.Config.NewCraftingLists.First(x => x.ID == listId);
         RecipeSelector = new RecipeSelector(SelectedList.ID);
         RecipeSelector.ItemAdded += RefreshTable;
         RecipeSelector.ItemDeleted += RefreshTable;
+        RecipeSelector.ItemSkipTriggered += RefreshTable;
         IsOpen = true;
         P.ws.AddWindow(this);
         Size = new Vector2(1000, 600);
@@ -105,21 +110,27 @@ internal class ListEditor : Window, IDisposable
         if (P.Config.DefaultColourValidation) ColourValidation = true;
     }
 
-    public async Task GenerateTableAsync()
+    public async Task GenerateTableAsync(CancellationTokenSource source)
     {
         Table?.Dispose();
-        var list = await Ingredient.GenerateList(SelectedList);
+        var list = await IngredientHelper.GenerateList(SelectedList, source);
+        if (list is null)
+        {
+            Svc.Log.Debug($"Table list empty, aborting.");
+            return;
+        }
+
         Table = new IngredientTable(list);
     }
 
-    public async void RefreshTable(object? sender, bool e)
+    public void RefreshTable(object? sender, bool e)
     {
         token = source.Token;
         Table = null;
         if (RegenerateTask == null || RegenerateTask.IsCompleted)
         {
             Svc.Log.Debug($"Starting regeneration");
-            RegenerateTask = Task.Run(() => GenerateTableAsync(), token);
+            RegenerateTask = Task.Run(() => GenerateTableAsync(source), token);
         }
         else
         {
@@ -129,7 +140,7 @@ internal class ListEditor : Window, IDisposable
 
             source = new();
             token = source.Token;
-            RegenerateTask = Task.Run(() => GenerateTableAsync(), token);
+            RegenerateTask = Task.Run(() => GenerateTableAsync(source), token);
         }
     }
 
@@ -168,6 +179,9 @@ internal class ListEditor : Window, IDisposable
         public int RecipeDepth = 0;
         public int RecipeDiff => Calculations.RecipeDifficulty(LuminaSheets.RecipeSheet[RecID]);
         public uint CraftType => LuminaSheets.RecipeSheet[RecID].CraftType.Row;
+
+        public int ListQuantity = 0;
+        public ListItemOptions ops;
     }
 
     public async override void Draw()
@@ -192,9 +206,10 @@ internal class ListEditor : Window, IDisposable
 
         if (ImGui.Button("Export List"))
         {
-            Clipboard.SetText(JsonConvert.SerializeObject(P.Config.CraftingLists.Where(x => x.ID == SelectedList.ID).First()));
+            Clipboard.SetText(JsonConvert.SerializeObject(P.Config.NewCraftingLists.Where(x => x.ID == SelectedList.ID).First()));
             Notify.Success("List exported to clipboard.");
         }
+
         var restock = ImGuiHelpers.GetButtonSize("Restock From Retainers");
         if (RetainerInfo.ATools)
         {
@@ -224,7 +239,7 @@ internal class ListEditor : Window, IDisposable
             {
                 if (NeedsToRefreshTable)
                 {
-                    Task.Run(async () => await GenerateTableAsync());
+                    RefreshTable(null, true);
                     NeedsToRefreshTable = false;
                 }
 
@@ -248,10 +263,10 @@ internal class ListEditor : Window, IDisposable
         }
     }
 
-    CraftingList copyList;
+
     private void DrawCopyFromList()
     {
-        if (P.Config.CraftingLists.Count > 1)
+        if (P.Config.NewCraftingLists.Count > 1)
         {
             ImGuiEx.TextWrapped($"Select List");
             ImGuiEx.SetNextItemFullWidth();
@@ -261,7 +276,7 @@ internal class ListEditor : Window, IDisposable
                 {
                     copyList = null;
                 }
-                foreach (var list in P.Config.CraftingLists.Where(x => x.ID != SelectedList.ID))
+                foreach (var list in P.Config.NewCraftingLists.Where(x => x.ID != SelectedList.ID))
                 {
                     if (ImGui.Selectable($"{list.Name}###CopyList{list.ID}"))
                     {
@@ -283,9 +298,9 @@ internal class ListEditor : Window, IDisposable
             ImGui.Indent();
             if (ImGui.BeginListBox("###ItemList", new(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 30f)))
             {
-                foreach (var rec in copyList.Items.Distinct())
+                foreach (var rec in copyList.Recipes.Distinct())
                 {
-                    ImGui.Text($"- {LuminaSheets.RecipeSheet[rec].ItemResult.Value.Name} x{copyList.Items.Count(x => x == rec)}");
+                    ImGui.Text($"- {LuminaSheets.RecipeSheet[rec.ID].ItemResult.Value.Name} x{rec.Quantity}");
                 }
 
                 ImGui.EndListBox();
@@ -293,18 +308,17 @@ internal class ListEditor : Window, IDisposable
             ImGui.Unindent();
             if (ImGui.Button($"Copy Items"))
             {
-                foreach (var recipe in copyList.Items)
+                foreach (var recipe in copyList.Recipes)
                 {
-                    if (SelectedList.Items.Contains(recipe))
+                    if (SelectedList.Recipes.Any(x => x.ID == recipe.ID))
                     {
-                        var index = SelectedList.Items.IndexOf(recipe);
-                        SelectedList.Items.Insert(index, recipe);
+                        SelectedList.Recipes.First(x => x.ID == recipe.ID).Quantity += recipe.Quantity;
                     }
                     else
-                        SelectedList.Items.Add(recipe);
+                        SelectedList.Recipes.Add(new ListItem() { Quantity = recipe.Quantity, ID = recipe.ID });
                 }
                 Notify.Success($"All items copied from {copyList.Name} to {SelectedList.Name}.");
-                RecipeSelector.Items = SelectedList.Items.Distinct().ToList();
+                RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
                 RefreshTable(null, true);
                 P.Config.Save();
             }
@@ -431,7 +445,6 @@ internal class ListEditor : Window, IDisposable
             ImGui.EndCombo();
         }
 
-
         if (SelectedRecipe != null)
         {
             if (ImGui.CollapsingHeader("Recipe Information")) DrawRecipeOptions();
@@ -451,33 +464,36 @@ internal class ListEditor : Window, IDisposable
             ImGui.InputInt("###TimesToAdd", ref timesToAdd, 1, 5);
             ImGui.PushItemWidth(-1f);
 
+            if (timesToAdd < 1)
+                ImGui.BeginDisabled();
+
             if (ImGui.Button("Add to List", new Vector2(ImGui.GetContentRegionAvail().X / 2, 30)))
             {
                 SelectedListMateralsNew.Clear();
                 listMaterialsNew.Clear();
 
-                for (var i = 0; i < timesToAdd; i++)
-                    if (SelectedList.Items.IndexOf(SelectedRecipe.RowId) == -1)
-                    {
-                        SelectedList.Items.Add(SelectedRecipe.RowId);
-                    }
-                    else
-                    {
-                        var indexOfLast = SelectedList.Items.IndexOf(SelectedRecipe.RowId);
-                        SelectedList.Items.Insert(indexOfLast, SelectedRecipe.RowId);
-                    }
+                if (SelectedList.Recipes.Any(x => x.ID == SelectedRecipe.RowId))
+                {
+                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).Quantity += checked(timesToAdd);
+                }
+                else
+                {
+                    SelectedList.Recipes.Add(new ListItem() { ID = SelectedRecipe.RowId, Quantity = checked(timesToAdd) });
+                }
 
                 if (TidyAfter)
                     CraftingListHelpers.TidyUpList(SelectedList);
 
-                if (SelectedList.ListItemOptions.TryGetValue(SelectedRecipe.RowId, out var opts))
-                    opts.NQOnly = SelectedList.AddAsQuickSynth;
+                if (SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).ListItemOptions is null)
+                {
+                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).ListItemOptions = new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth };
+                }
                 else
-                    SelectedList.ListItemOptions.TryAdd(
-                        SelectedRecipe.RowId,
-                        new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth });
+                {
+                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).ListItemOptions.NQOnly = SelectedList.AddAsQuickSynth;
+                }
 
-                RecipeSelector.Items = SelectedList.Items.Distinct().ToList();
+                RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
 
                 NeedsToRefreshTable = true;
 
@@ -495,45 +511,50 @@ internal class ListEditor : Window, IDisposable
                 CraftingListUI.AddAllSubcrafts(SelectedRecipe, SelectedList, 1, timesToAdd);
 
                 Svc.Log.Debug($"Adding: {SelectedRecipe.ItemResult.Value.Name.RawString} {timesToAdd} times");
-                for (var i = 1; i <= timesToAdd; i++)
-                    if (SelectedList.Items.IndexOf(SelectedRecipe.RowId) == -1)
-                    {
-                        SelectedList.Items.Add(SelectedRecipe.RowId);
-                    }
-                    else
-                    {
-                        var indexOfLast = SelectedList.Items.IndexOf(SelectedRecipe.RowId);
-                        SelectedList.Items.Insert(indexOfLast, SelectedRecipe.RowId);
-                    }
+                if (SelectedList.Recipes.Any(x => x.ID == SelectedRecipe.RowId))
+                {
+                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).Quantity += timesToAdd;
+                }
+                else
+                {
+                    SelectedList.Recipes.Add(new ListItem() { ID = SelectedRecipe.RowId, Quantity = timesToAdd });
+                }
 
                 if (TidyAfter)
                     CraftingListHelpers.TidyUpList(SelectedList);
 
-                if (SelectedList.ListItemOptions.TryGetValue(SelectedRecipe.RowId, out var opts))
-                    opts.NQOnly = SelectedList.AddAsQuickSynth;
+                if (SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).ListItemOptions is null)
+                {
+                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).ListItemOptions = new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth };
+                }
                 else
-                    SelectedList.ListItemOptions.TryAdd(
-                        SelectedRecipe.RowId,
-                        new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth });
+                {
+                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).ListItemOptions.NQOnly = SelectedList.AddAsQuickSynth;
+                }
 
-                RecipeSelector.Items = SelectedList.Items.Distinct().ToList();
-                GenerateTableAsync();
+                RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
+                RefreshTable(null, true);
                 P.Config.Save();
                 if (P.Config.ResetTimesToAdd)
                     timesToAdd = 1;
             }
 
+            if (timesToAdd < 1)
+                ImGui.EndDisabled();
+
             ImGui.Checkbox("Remove all unnecessary subcrafts after adding", ref TidyAfter);
         }
 
+        ImGui.Separator();
+
         if (ImGui.Button($"Sort Recipes"))
         {
-            List<uint> newList = new();
+            List<ListItem> newList = new();
             List<ListOrderCheck> order = new();
-            foreach (var item in SelectedList.Items.Distinct())
+            foreach (var item in SelectedList.Recipes.Distinct())
             {
                 var orderCheck = new ListOrderCheck();
-                var r = LuminaSheets.RecipeSheet[item];
+                var r = LuminaSheets.RecipeSheet[item.ID];
                 orderCheck.RecID = r.RowId;
                 int maxDepth = 0;
                 foreach (var ing in r.UnkData5.Where(x => x.AmountIngredient > 0).Select(x => x.ItemIngredient))
@@ -546,20 +567,18 @@ internal class ListEditor : Window, IDisposable
                     orderCheck.RecipeDepth = 0;
                 }
                 orderCheck.RecipeDepth = maxDepth;
+                orderCheck.ListQuantity = item.Quantity;
+                orderCheck.ops = item.ListItemOptions ?? new ListItemOptions();
                 order.Add(orderCheck);
             }
 
             foreach (var ord in order.OrderBy(x => x.RecipeDepth).ThenBy(x => x.RecipeDiff).ThenBy(x => x.CraftType))
             {
-                var count = SelectedList.Items.Count(x => x == ord.RecID);
-                for (int i = 1; i <= count; i++)
-                {
-                    newList.Add(ord.RecID);
-                }
+                newList.Add(new ListItem() { ID = ord.RecID, Quantity = ord.ListQuantity, ListItemOptions = ord.ops });
             }
 
-            SelectedList.Items = newList;
-            RecipeSelector.Items = SelectedList.Items.Distinct().ToList();
+            SelectedList.Recipes = newList;
+            RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
             P.Config.Save();
         }
 
@@ -575,7 +594,7 @@ internal class ListEditor : Window, IDisposable
         {
             listTime = CraftingListUI.GetListTimer(SelectedList);
         });
-        string duration = string.Format("{0:D2}d {1:D2}h {2:D2}m {3:D2}s",listTime.Days, listTime.Hours, listTime.Minutes, listTime.Seconds);
+        string duration = string.Format("{0:D2}d {1:D2}h {2:D2}m {3:D2}s", listTime.Days, listTime.Hours, listTime.Minutes, listTime.Seconds);
         ImGui.SameLine();
         ImGui.Text($"Approximate List Time: {duration}");
     }
@@ -584,7 +603,7 @@ internal class ListEditor : Window, IDisposable
 
     private void CheckIngredientRecipe(int ing, ListOrderCheck orderCheck)
     {
-        foreach (var result in SelectedList.Items.Distinct().Select(x => LuminaSheets.RecipeSheet[x]))
+        foreach (var result in SelectedList.Recipes.Distinct().Select(x => LuminaSheets.RecipeSheet[x.ID]))
         {
             if (result.ItemResult.Row == ing)
             {
@@ -800,6 +819,7 @@ internal class ListEditor : Window, IDisposable
     public override void OnClose()
     {
         Table?.Dispose();
+        source.Cancel();
         P.ws.RemoveWindow(this);
     }
 
@@ -807,7 +827,7 @@ internal class ListEditor : Window, IDisposable
     {
         if (SelectedList.ID != 0)
         {
-            if (SelectedList.Items.Count > 0)
+            if (SelectedList.Recipes.Count > 0)
             {
                 DrawTotalIngredientsTable();
             }
@@ -819,12 +839,23 @@ internal class ListEditor : Window, IDisposable
     }
     private void DrawTotalIngredientsTable()
     {
-        if (Table == null)
+        if (Table == null && RegenerateTask.IsCompleted)
         {
-            ImGui.Text($"Ingredient table is still populating. Please wait.");
+            if (ImGui.Button($"Something went wrong creating the table. Try again?"))
+            {
+                RefreshTable(null, true);
+            }
             return;
         }
-        ImGui.BeginChild("###IngredientsListTable", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 60f));
+        if (Table == null)
+        {
+            ImGui.TextUnformatted($"Ingredient table is still populating. Please wait.");
+            var a = IngredientHelper.CurrentIngredient;
+            var b = IngredientHelper.MaxIngredient;
+            ImGui.ProgressBar((float)a / b, new(ImGui.GetContentRegionAvail().X, default), $"{a * 100.0f / b:f2}% ({a}/{b})");
+            return;
+        }
+        ImGui.BeginChild("###IngredientsListTable", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - (ColourValidation ? (RetainerInfo.ATools ? 90f.Scale() : 60f.Scale()) : 30f.Scale())));
         Table._nameColumn.ShowColour = ColourValidation;
         Table._inventoryColumn.HQOnlyCrafts = HQSubcraftsOnly;
         Table._retainerColumn.HQOnlyCrafts = HQSubcraftsOnly;
@@ -839,40 +870,6 @@ internal class ListEditor : Window, IDisposable
         ImGui.SameLine();
         ImGui.Checkbox("Enable Colour Validation", ref ColourValidation);
 
-        if (ColourValidation)
-        {
-            ImGui.SameLine();
-            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.HealerGreen);
-            ImGui.BeginDisabled(true);
-            ImGui.Button("", new Vector2(23, 23));
-            ImGui.EndDisabled();
-            ImGui.PopStyleColor();
-            ImGui.SameLine();
-            ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
-            ImGui.Text($" - Inventory has all required items");
-
-            if (RetainerInfo.ATools)
-            {
-                ImGui.SameLine();
-                ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.DalamudOrange);
-                ImGui.BeginDisabled(true);
-                ImGui.Button("", new Vector2(23, 23));
-                ImGui.EndDisabled();
-                ImGui.PopStyleColor();
-                ImGui.SameLine();
-                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
-                ImGui.Text($" - Combination of Retainer & Inventory has all required items");
-            }
-
-            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedBlue);
-            ImGui.BeginDisabled(true);
-            ImGui.Button("", new Vector2(23, 23));
-            ImGui.EndDisabled();
-            ImGui.PopStyleColor();
-            ImGui.SameLine();
-            ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
-            ImGui.Text($" - Combination of Inventory & Craftable has all required items.");
-        }
         ImGui.SameLine();
 
         if (ImGui.GetIO().KeyShift)
@@ -929,6 +926,40 @@ internal class ListEditor : Window, IDisposable
         if (ImGui.Button("Need Help?"))
             ImGui.OpenPopup("HelpPopup");
 
+        if (ColourValidation)
+        {
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.HealerGreen);
+            ImGui.BeginDisabled(true);
+            ImGui.Button("", new Vector2(23, 23));
+            ImGui.EndDisabled();
+            ImGui.PopStyleColor();
+            ImGui.SameLine();
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
+            ImGui.Text($" - Inventory has all required items {(SelectedList.SkipIfEnough && SelectedList.SkipLiteral ? "" : "or is not required due to owning crafted materials using this ingredient")}");
+
+            if (RetainerInfo.ATools)
+            {
+                ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.DalamudOrange);
+                ImGui.BeginDisabled(true);
+                ImGui.Button("", new Vector2(23, 23));
+                ImGui.EndDisabled();
+                ImGui.PopStyleColor();
+                ImGui.SameLine();
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
+                ImGui.Text($" - Combination of Retainer & Inventory has all required items");
+            }
+
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGuiColors.ParsedBlue);
+            ImGui.BeginDisabled(true);
+            ImGui.Button("", new Vector2(23, 23));
+            ImGui.EndDisabled();
+            ImGui.PopStyleColor();
+            ImGui.SameLine();
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() - 7);
+            ImGui.Text($" - Combination of Inventory & Craftable has all required items.");
+        }
+
+
         var windowSize = new Vector2(1024 * ImGuiHelpers.GlobalScale,
             ImGui.GetTextLineHeightWithSpacing() * 13 + 2 * ImGui.GetFrameHeightWithSpacing());
         ImGui.SetNextWindowSize(windowSize);
@@ -975,7 +1006,8 @@ internal class ListEditor : Window, IDisposable
 
             ImGuiComponents.HelpMarker("Will continue to craft materials whilst your inventory has less of a material up to the amount the list would craft if starting from zero.\n\n" +
                 "[Recipe Amount Result] x [Number of Crafts] is less than [Inventory Amount].\n\n" +
-                "Use this when crafting materials for items not on your list (eg FC workshop projects)");
+                "Use this when crafting materials for items not on your list (eg FC workshop projects)\n\n" +
+                "This will also adjust the ingredient table's remaining column and colour validation to exclude checking for crafted items the ingredient may be used in.");
             ImGui.Unindent();
         }
 
@@ -1028,52 +1060,37 @@ internal class ListEditor : Window, IDisposable
         RecipeSelector.Draw(RecipeSelector.maxSize + 16f + ImGui.GetStyle().ScrollbarSize);
         ImGui.SameLine();
 
-        if (RecipeSelector.Current > 0)
+        if (RecipeSelector.Current?.ID > 0)
             ItemDetailsWindow.Draw("Recipe Options", DrawRecipeSettingsHeader, DrawRecipeSettings);
     }
 
     private void DrawRecipeSettings()
     {
-        var selectedListItem = RecipeSelector.Items[RecipeSelector.CurrentIdx];
-        var recipe = LuminaSheets.RecipeSheet[RecipeSelector.Current];
-        var count = SelectedList.Items.Count(x => x == selectedListItem);
+        var selectedListItem = RecipeSelector.Items[RecipeSelector.CurrentIdx].ID;
+        var recipe = LuminaSheets.RecipeSheet[RecipeSelector.Current.ID];
+        var count = RecipeSelector.Items[RecipeSelector.CurrentIdx].Quantity;
 
         ImGui.TextWrapped("Adjust Quantity");
         ImGuiEx.SetNextItemFullWidth(-30);
         if (ImGui.InputInt("###AdjustQuantity", ref count))
         {
-            if (count > 0)
+            if (count >= 0)
             {
-                var oldCount = SelectedList.Items.Count(x => x == selectedListItem);
-                if (oldCount < count)
-                {
-                    var diff = count - oldCount;
-                    for (var i = 1; i <= diff; i++)
-                        SelectedList.Items.Insert(
-                            SelectedList.Items.IndexOf(selectedListItem),
-                            selectedListItem);
-                    P.Config.Save();
-                }
-
-                if (count < oldCount)
-                {
-                    var diff = oldCount - count;
-                    for (var i = 1; i <= diff; i++) SelectedList.Items.Remove(selectedListItem);
-                    P.Config.Save();
-                }
+                SelectedList.Recipes.First(x => x.ID == selectedListItem).Quantity = count;
+                P.Config.Save();
             }
 
             NeedsToRefreshTable = true;
         }
 
-        if (!SelectedList.ListItemOptions.ContainsKey(selectedListItem))
+        if (SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions is null)
         {
-            SelectedList.ListItemOptions.TryAdd(selectedListItem, new ListItemOptions());
-            if (SelectedList.AddAsQuickSynth && recipe.CanQuickSynth)
-                SelectedList.ListItemOptions[selectedListItem].NQOnly = true;
+            SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions = new();
         }
+        if (SelectedList.AddAsQuickSynth && recipe.CanQuickSynth)
+            SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions.NQOnly = true;
 
-        SelectedList.ListItemOptions.TryGetValue(selectedListItem, out var options);
+        var options = SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions;
 
         if (recipe.CanQuickSynth)
         {
@@ -1087,10 +1104,13 @@ internal class ListEditor : Window, IDisposable
             ImGui.SameLine();
             if (ImGui.Button("Apply To all###QuickSynthAll"))
             {
-                foreach (var option in SelectedList.ListItemOptions)
+                foreach (var r in SelectedList.Recipes)
                 {
-                    option.Value.NQOnly = options.NQOnly;
+                    if (r.ListItemOptions == null)
+                    { r.ListItemOptions = new(); }
+                    r.ListItemOptions.NQOnly = options.NQOnly;
                 }
+                Notify.Success($"Quick Synth applied to all list items.");
                 P.Config.Save();
             }
         }
@@ -1113,26 +1133,20 @@ internal class ListEditor : Window, IDisposable
                     var altJ = $"{LuminaSheets.ClassJobSheet[altJob.CraftType.Row + 8].Abbreviation.RawString}";
                     if (ImGui.Selectable($"{altJ}"))
                     {
-                        for (var i = 0; i < SelectedList.Items.Count; i++)
+                        if (SelectedList.Recipes.Any(x => x.ID == altJob.RowId))
                         {
-                            if (SelectedList.Items[i] == selectedListItem)
-                            {
-                                SelectedList.Items[i] = altJob.RowId;
-                            }
+                            SelectedList.Recipes.First(x => x.ID == altJob.RowId).Quantity += SelectedList.Recipes.First(x => x.ID == selectedListItem).Quantity;
+                            SelectedList.Recipes.Remove(SelectedList.Recipes.First(x => x.ID == selectedListItem));
+                            RecipeSelector.Items.RemoveAt(RecipeSelector.CurrentIdx);
+                            RecipeSelector.Current = RecipeSelector.Items.First(x => x.ID == altJob.RowId);
+                            RecipeSelector.CurrentIdx = RecipeSelector.Items.IndexOf(RecipeSelector.Current);
                         }
-
-                        RecipeSelector.Items[RecipeSelector.CurrentIdx] = altJob.RowId;
-                        RecipeSelector.Current = RecipeSelector.Items[RecipeSelector.CurrentIdx];
-
-                        if (RecipeSelector.Items.Count(x => x == altJob.RowId) > 1)
+                        else
                         {
-                            var lastindex = RecipeSelector.Items.ToList().LastIndexOf(altJob.RowId);
-                            RecipeSelector.Items.RemoveAt(lastindex);
-                            var first = RecipeSelector.Items.ToList().IndexOf(altJob.RowId);
-                            RecipeSelector.Current = RecipeSelector.Items[first];
-                            RecipeSelector.CurrentIdx = first;
+                            SelectedList.Recipes.First(x => x.ID == selectedListItem).ID = altJob.RowId;
+                            RecipeSelector.Items[RecipeSelector.CurrentIdx].ID = altJob.RowId;
+                            RecipeSelector.Current = RecipeSelector.Items[RecipeSelector.CurrentIdx];
                         }
-
                         NeedsToRefreshTable = true;
 
                         P.Config.Save();
@@ -1145,7 +1159,7 @@ internal class ListEditor : Window, IDisposable
 
         var config = P.Config.RecipeConfigs.GetValueOrDefault(selectedListItem) ?? new();
         {
-            if (config.DrawFood())
+            if (config.DrawFood(true))
             {
                 P.Config.RecipeConfigs[selectedListItem] = config;
                 P.Config.Save();
@@ -1155,18 +1169,18 @@ internal class ListEditor : Window, IDisposable
 
             if (ImGui.Button($"Apply to all###FoodApplyAll"))
             {
-                foreach (var r in SelectedList.Items.Distinct())
+                foreach (var r in SelectedList.Recipes.Distinct())
                 {
-                    var o = P.Config.RecipeConfigs.GetValueOrDefault(r) ?? new();
+                    var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
                     o.RequiredFood = config.RequiredFood;
                     o.RequiredFoodHQ = config.RequiredFoodHQ;
-                    P.Config.RecipeConfigs[r] = o;
+                    P.Config.RecipeConfigs[r.ID] = o;
                 }
                 P.Config.Save();
             }
         }
         {
-            if (config.DrawPotion())
+            if (config.DrawPotion(true))
             {
                 P.Config.RecipeConfigs[selectedListItem] = config;
                 P.Config.Save();
@@ -1176,12 +1190,12 @@ internal class ListEditor : Window, IDisposable
 
             if (ImGui.Button($"Apply to all###PotionApplyAll"))
             {
-                foreach (var r in SelectedList.Items.Distinct())
+                foreach (var r in SelectedList.Recipes.Distinct())
                 {
-                    var o = P.Config.RecipeConfigs.GetValueOrDefault(r) ?? new();
+                    var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
                     o.RequiredPotion = config.RequiredPotion;
                     o.RequiredPotionHQ = config.RequiredPotionHQ;
-                    P.Config.RecipeConfigs[r] = o;
+                    P.Config.RecipeConfigs[r.ID] = o;
                 }
                 P.Config.Save();
             }
@@ -1223,23 +1237,25 @@ internal class ListEditor : Window, IDisposable
 
     public void Dispose()
     {
+        source.Cancel();
         RecipeSelector.ItemAdded -= RefreshTable;
         RecipeSelector.ItemDeleted -= RefreshTable;
+        RecipeSelector.ItemSkipTriggered -= RefreshTable;
     }
 }
 
-internal class RecipeSelector : ItemSelector<uint>
+internal class RecipeSelector : ItemSelector<ListItem>
 {
     public float maxSize = 100;
 
-    private readonly CraftingList List;
+    private readonly NewCraftingList List;
 
     public RecipeSelector(int list)
         : base(
-            P.Config.CraftingLists.First(x => x.ID == list).Items.Distinct().ToList(),
+            P.Config.NewCraftingLists.First(x => x.ID == list).Recipes.Distinct().ToList(),
             Flags.Add | Flags.Delete | Flags.Move)
     {
-        List = P.Config.CraftingLists.First(x => x.ID == list);
+        List = P.Config.NewCraftingLists.First(x => x.ID == list);
     }
 
     protected override bool Filtered(int idx)
@@ -1255,8 +1271,16 @@ internal class RecipeSelector : ItemSelector<uint>
             if (LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == id))
             {
                 var recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == id);
-                List.Items.Add(recipe.RowId);
-                if (!Items.Contains(recipe.RowId)) Items.Add(recipe.RowId);
+                if (List.Recipes.Any(x => x.ID == recipe.RowId))
+                {
+                    List.Recipes.First(x => x.ID == recipe.RowId).Quantity += 1;
+                }
+                else
+                {
+                    List.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = 1 });
+                }
+
+                if (!Items.Any(x => x.ID == recipe.RowId)) Items.Add(List.Recipes.First(x => x.ID == recipe.RowId));
             }
         }
         else
@@ -1265,8 +1289,16 @@ internal class RecipeSelector : ItemSelector<uint>
                     x => x.ItemResult.Value.Name.RawString.Equals(name, StringComparison.CurrentCultureIgnoreCase),
                     out var recipe))
             {
-                List.Items.Add(recipe.RowId);
-                if (!Items.Contains(recipe.RowId)) Items.Add(recipe.RowId);
+                if (List.Recipes.Any(x => x.ID == recipe.RowId))
+                {
+                    List.Recipes.First(x => x.ID == recipe.RowId).Quantity += 1;
+                }
+                else
+                {
+                    List.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = 1 });
+                }
+
+                if (!Items.Any(x => x.ID == recipe.RowId)) Items.Add(List.Recipes.First(x => x.ID == recipe.RowId));
             }
         }
 
@@ -1278,66 +1310,55 @@ internal class RecipeSelector : ItemSelector<uint>
     protected override bool OnDelete(int idx)
     {
         var itemId = Items[idx];
-        List.Items.RemoveAll(x => x == itemId);
+        List.Recipes.Remove(itemId);
         Items.RemoveAt(idx);
         P.Config.Save();
         return true;
     }
 
-    protected override bool OnDraw(int idx)
+    protected override bool OnDraw(int idx, out bool changes)
     {
+        changes = false;
         var itemId = Items[idx];
-        var itemCount = List.Items.Count(x => x == itemId);
-        var yield = LuminaSheets.RecipeSheet[itemId].AmountResult * itemCount;
+        var itemCount = itemId.Quantity;
+        var yield = LuminaSheets.RecipeSheet[itemId.ID].AmountResult * itemCount;
         var label =
-            $"{idx + 1}. {Items[idx].NameOfRecipe()} x{itemCount}{(yield != itemCount ? $" ({yield} total)" : string.Empty)}";
+            $"{idx + 1}. {itemId.ID.NameOfRecipe()} x{itemCount}{(yield != itemCount ? $" ({yield} total)" : string.Empty)}";
         maxSize = ImGui.CalcTextSize(label).X > maxSize ? ImGui.CalcTextSize(label).X : maxSize;
 
-        return ImGui.Selectable(label, idx == CurrentIdx);
+        if (itemId.ListItemOptions is null)
+        {
+            itemId.ListItemOptions = new();
+            P.Config.Save();
+        }
+
+        using (var col = ImRaii.PushColor(ImGuiCol.Text, itemCount == 0 || itemId.ListItemOptions.Skipping ? ImGuiColors.DalamudRed : ImGuiColors.DalamudWhite))
+        {
+            var res = ImGui.Selectable(label, idx == CurrentIdx);
+            ImGuiEx.Tooltip($"Right click to {(itemId.ListItemOptions.Skipping ? "enable" : "skip")} this recipe.");
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+            {
+                itemId.ListItemOptions.Skipping = !itemId.ListItemOptions.Skipping;
+                changes = true;
+                P.Config.Save();
+            }
+            return res;
+        }
     }
 
     protected override bool OnMove(int idx1, int idx2)
     {
-        var item1Idx = List.Items.IndexOf(Items[idx1]);
-        var item2Idx = List.Items.IndexOf(Items[idx2]);
-
-        var item1 = Items[idx1];
-        var item2 = Items[idx2];
-
-        var item1Count = List.Items.Count(x => x == Items[idx1]);
-        var item2Count = List.Items.Count(y => y == Items[idx2]);
-
-        if (item1Idx < item2Idx)
-        {
-            List.Items.RemoveAll(x => x == item1);
-
-            for (var i = 1; i <= item1Count; i++)
-            {
-                var index = List.Items.LastIndexOf(item2);
-                List.Items.Insert(index + 1, item1);
-            }
-        }
-        else
-        {
-            List.Items.RemoveAll(x => x == item1);
-
-            for (var i = 1; i <= item1Count; i++)
-            {
-                var index = List.Items.IndexOf(item2);
-                List.Items.Insert(index, item1);
-            }
-        }
-
+        List.Recipes.Move(idx1, idx2);
         Items.Move(idx1, idx2);
         P.Config.Save();
         return true;
     }
 }
 
-internal class ListFolders : ItemSelector<CraftingList>
+internal class ListFolders : ItemSelector<NewCraftingList>
 {
     public ListFolders()
-        : base(P.Config.CraftingLists, Flags.Add | Flags.Delete | Flags.Move | Flags.Filter | Flags.Duplicate)
+        : base(P.Config.NewCraftingLists, Flags.Add | Flags.Delete | Flags.Move | Flags.Filter | Flags.Duplicate)
     {
         CurrentIdx = -1;
     }
@@ -1356,7 +1377,7 @@ internal class ListFolders : ItemSelector<CraftingList>
 
     protected override bool OnAdd(string name)
     {
-        var list = new CraftingList { Name = name };
+        var list = new NewCraftingList { Name = name };
         list.SetID();
         list.Save(true);
 
@@ -1372,38 +1393,39 @@ internal class ListFolders : ItemSelector<CraftingList>
             P.ws.RemoveWindow(window);
         }
 
-        P.Config.CraftingLists.RemoveAt(idx);
+        P.Config.NewCraftingLists.RemoveAt(idx);
         P.Config.Save();
 
         if (!CraftingListUI.Processing)
-            CraftingListUI.selectedList = new CraftingList();
+            CraftingListUI.selectedList = new NewCraftingList();
         return true;
     }
 
-    protected override bool OnDraw(int idx)
+    protected override bool OnDraw(int idx, out bool changes)
     {
-        if (CraftingListUI.Processing && CraftingListUI.selectedList.ID == P.Config.CraftingLists[idx].ID)
+        changes = false;
+        if (CraftingListUI.Processing && CraftingListUI.selectedList.ID == P.Config.NewCraftingLists[idx].ID)
             ImGui.BeginDisabled();
 
         using var id = ImRaii.PushId(idx);
-        var selected = ImGui.Selectable($"{P.Config.CraftingLists[idx].Name} (ID: {P.Config.CraftingLists[idx].ID})", idx == CurrentIdx);
+        var selected = ImGui.Selectable($"{P.Config.NewCraftingLists[idx].Name} (ID: {P.Config.NewCraftingLists[idx].ID})", idx == CurrentIdx);
         if (selected)
         {
-            if (!P.ws.Windows.Any(x => x.WindowName.Contains(P.Config.CraftingLists[idx].ID.ToString())))
+            if (!P.ws.Windows.Any(x => x.WindowName.Contains(P.Config.NewCraftingLists[idx].ID.ToString())))
             {
                 Interface.SetupValues();
-                ListEditor editor = new(P.Config.CraftingLists[idx].ID);
+                ListEditor editor = new(P.Config.NewCraftingLists[idx].ID);
             }
             else
             {
                 P.ws.Windows.FindFirst(
-                    x => x.WindowName.Contains(P.Config.CraftingLists[idx].ID.ToString()),
+                    x => x.WindowName.Contains(P.Config.NewCraftingLists[idx].ID.ToString()),
                     out var window);
                 window.BringToFront();
             }
 
             if (!CraftingListUI.Processing)
-                CraftingListUI.selectedList = P.Config.CraftingLists[idx];
+                CraftingListUI.selectedList = P.Config.NewCraftingLists[idx];
         }
 
         if (!CraftingListUI.Processing)
@@ -1413,17 +1435,17 @@ internal class ListFolders : ItemSelector<CraftingList>
                 if (CurrentIdx == idx)
                 {
                     CurrentIdx = -1;
-                    CraftingListUI.selectedList = new CraftingList();
+                    CraftingListUI.selectedList = new NewCraftingList();
                 }
                 else
                 {
                     CurrentIdx = idx;
-                    CraftingListUI.selectedList = P.Config.CraftingLists[idx];
+                    CraftingListUI.selectedList = P.Config.NewCraftingLists[idx];
                 }
             }
         }
 
-        if (CraftingListUI.Processing && CraftingListUI.selectedList.ID == P.Config.CraftingLists[idx].ID)
+        if (CraftingListUI.Processing && CraftingListUI.selectedList.ID == P.Config.NewCraftingLists[idx].ID)
             ImGui.EndDisabled();
 
         return selected;
@@ -1431,8 +1453,8 @@ internal class ListFolders : ItemSelector<CraftingList>
 
     protected override bool OnDuplicate(string name, int idx)
     {
-        var baseList = P.Config.CraftingLists[idx];
-        CraftingList newList = new CraftingList();
+        var baseList = P.Config.NewCraftingLists[idx];
+        NewCraftingList newList = new NewCraftingList();
         newList = baseList.JSONClone();
         newList.Name = name;
         newList.SetID();
@@ -1442,7 +1464,7 @@ internal class ListFolders : ItemSelector<CraftingList>
 
     protected override bool OnMove(int idx1, int idx2)
     {
-        P.Config.CraftingLists.Move(idx1, idx2);
+        P.Config.NewCraftingLists.Move(idx1, idx2);
         return true;
     }
 }

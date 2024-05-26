@@ -10,18 +10,39 @@ using OtterGui;
 using Artisan.IPC;
 using Artisan.Autocraft;
 using Artisan.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using ImGuiNET;
 
 namespace Artisan.ContextMenus;
 
 internal static class CraftingListContextMenu
 {
     private static DalamudContextMenu? contextMenu;
+    private static Chat2IPC? Chat2IPC;
 
     public static void Init()
     {
         contextMenu = new(Svc.PluginInterface);
         contextMenu.OnOpenGameObjectContextMenu += AddMenu;
         contextMenu.OnOpenInventoryContextMenu += AddInventoryMenu;
+
+        Chat2IPC = new(Svc.PluginInterface);
+        Chat2IPC.Enable();
+        Chat2IPC.OnOpenChatTwoItemContextMenu += AddChat2Menu;
+    }
+
+    private static void AddChat2Menu(uint itemId)
+    {
+        if (P.Config.HideContextMenus) return;
+
+        if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == itemId)) return;
+
+        var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == itemId).RowId;
+
+        if (ImGui.Selectable($"Open Recipe Log"))
+        {
+            CraftingListFunctions.OpenRecipeByID(recipeId);
+        }
     }
 
     private static void AddInventoryMenu(InventoryContextMenuOpenArgs args)
@@ -38,13 +59,13 @@ internal static class CraftingListContextMenu
     private unsafe static void AddMenu(GameObjectContextMenuOpenArgs args)
     {
         if (P.Config.HideContextMenus) return;
-
+        
         if (args.ParentAddonName == "RecipeNote")
         {
             IntPtr recipeNoteAgent = Svc.GameGui.FindAgentInterface(args.ParentAddonName);
             var itemId = *(uint*)(recipeNoteAgent + 0x398);
             var craftTypeIndex = *(uint*)(recipeNoteAgent + 944);
-
+            
             if (RetainerInfo.GetRetainerItemCount(itemId) > 0 && RetainerInfo.GetReachableRetainerBell() != null)
             {
                 int amountToGet = 1;
@@ -73,11 +94,39 @@ internal static class CraftingListContextMenu
                 args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to Current Crafting List (with Sub-crafts)")), _ => AddToList(itemId, craftTypeIndex, true)));
             }
         }
+
+        if (args.ParentAddonName == "ChatLog")
+        {
+            var itemId = GetObjectItemId("ChatLog", 0x948);
+            if (itemId > 500_000)
+                itemId -= 500_000;
+
+            if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == itemId)) return;
+
+            var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == itemId).RowId;
+
+            args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Open Recipe Log")), _ => CraftingListFunctions.OpenRecipeByID(recipeId, true)));
+
+        }
     }
+
+    private static uint GetObjectItemId(uint itemId)
+    {
+        if (itemId > 500000)
+            itemId -= 500000;
+
+        return itemId;
+    }
+
+    private unsafe static uint? GetObjectItemId(IntPtr agent, int offset)
+        => agent != IntPtr.Zero ? GetObjectItemId(*(uint*)(agent + offset)) : null;
+
+    private static uint? GetObjectItemId(string name, int offset)
+        => GetObjectItemId(Svc.GameGui.FindAgentInterface(name), offset);
 
     private static void AddToNewList(uint itemId, uint craftType, bool withPrecraft = false)
     {
-        CraftingList list = new CraftingList();
+        NewCraftingList list = new NewCraftingList();
         list.Name = itemId.NameOfItem();
         list.SetID();
         list.Save(true);
@@ -96,26 +145,14 @@ internal static class CraftingListContextMenu
         if (withPrecraft)
             CraftingListUI.AddAllSubcrafts(recipe, CraftingListUI.selectedList, 1, P.Config.ContextMenuLoops);
 
-        for (int i = 1; i <= P.Config.ContextMenuLoops; i++)
-        {
-            if (CraftingListUI.selectedList.Items.IndexOf(recipe.RowId) == -1)
-            {
-                CraftingListUI.selectedList.Items.Add(recipe.RowId);
-            }
-            else
-            {
-                var indexOfLast = CraftingListUI.selectedList.Items.IndexOf(recipe.RowId);
-                CraftingListUI.selectedList.Items.Insert(indexOfLast, recipe.RowId);
-            }
-        }
 
-        if (CraftingListUI.selectedList.ListItemOptions.TryGetValue(recipe.RowId, out var opts))
+        if (CraftingListUI.selectedList.Recipes.Any(x => x.ID == recipe.RowId))
         {
-            opts.NQOnly = CraftingListUI.selectedList.AddAsQuickSynth;
+            CraftingListUI.selectedList.Recipes.First(x => x.ID == recipe.RowId).Quantity += P.Config.ContextMenuLoops;
         }
         else
         {
-            CraftingListUI.selectedList.ListItemOptions.TryAdd(recipe.RowId, new ListItemOptions { NQOnly = CraftingListUI.selectedList.AddAsQuickSynth });
+            CraftingListUI.selectedList.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = P.Config.ContextMenuLoops, ListItemOptions = new ListItemOptions() { NQOnly = CraftingListUI.selectedList.AddAsQuickSynth } });   
         }
 
         CraftingListHelpers.TidyUpList(CraftingListUI.selectedList);
@@ -123,7 +160,7 @@ internal static class CraftingListContextMenu
         {
             if (w.WindowName == $"List Editor###{CraftingListUI.selectedList.ID}")
             {
-                (w as ListEditor).RecipeSelector.Items = CraftingListUI.selectedList.Items.Distinct().ToList();
+                (w as ListEditor).RecipeSelector.Items = CraftingListUI.selectedList.Recipes.ToList();
                 (w as ListEditor).RefreshTable(null, true);
             }
         }
@@ -136,6 +173,8 @@ internal static class CraftingListContextMenu
         contextMenu.OnOpenGameObjectContextMenu -= AddMenu;
         contextMenu.OnOpenInventoryContextMenu -= AddInventoryMenu;
         contextMenu?.Dispose();
+        Chat2IPC.OnOpenChatTwoItemContextMenu -= AddChat2Menu;
+        Chat2IPC.Disable();
     }
 }
 

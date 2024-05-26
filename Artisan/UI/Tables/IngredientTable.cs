@@ -18,6 +18,7 @@ using OtterGui.Table;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -79,7 +80,6 @@ namespace Artisan.UI.Tables
         public IngredientTable(List<Ingredient> ingredientList)
             : base("IngredientTable", ingredientList)
         {
-
             if (P.Config.DefaultHideInventoryColumn) _inventoryColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
             if (P.Config.DefaultHideRetainerColumn) _retainerColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
             if (P.Config.DefaultHideRemainingColumn) _remainingColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
@@ -90,22 +90,14 @@ namespace Artisan.UI.Tables
             if (P.Config.DefaultHideGatherLocationColumn) _gatherItemLocationColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
             if (P.Config.DefaultHideIdColumn) _idColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
 
-            Headers.Add(_nameColumn);
-            Headers.Add(_requiredColumn);
-            Headers.Add(_inventoryColumn);
-            if (RetainerInfo.ATools) Headers.Add(_retainerColumn);
-            Headers.Add(_remainingColumn);
-            Headers.Add(_craftableColumn);
-            Headers.Add(_craftableCountColumn);
-            Headers.Add(_craftItemsColumn);
-            Headers.Add(_itemCategoryColumn);
-            Headers.Add(_gatherItemLocationColumn);
+            List<Column<Ingredient>> headers = new() { _nameColumn, _requiredColumn, _inventoryColumn, _remainingColumn, _craftableColumn, _craftableCountColumn, _craftItemsColumn, _itemCategoryColumn, _gatherItemLocationColumn, _idColumn };
+            if (RetainerInfo.ATools) headers.Insert(3, _retainerColumn);
             if (P.Config.UseUniversalis)
             {
-                Headers.Add(_cheapestServerColumn);
-                Headers.Add(_numberForSaleColumn);
+                headers.Insert(headers.Count - 1, _cheapestServerColumn);
+                headers.Insert(headers.Count - 1, _numberForSaleColumn);
             }
-            Headers.Add(_idColumn);
+            this.Headers = headers.ToArray();
 
             Sortable = true;
             ListItems = ingredientList;
@@ -122,11 +114,11 @@ namespace Artisan.UI.Tables
 
         private void SetFilterDirty(object? sender, bool e)
         {
-            this.FilterDirty = true;
             foreach (var item in Items)
             {
-                Task.Run(() => item.AmountUsedForSubcrafts = item.GetSubCraftCount());
+                item.AmountUsedForSubcrafts = item.GetSubCraftCount();
             }
+            this.FilterDirty = true;
         }
 
         public void Dispose()
@@ -175,7 +167,7 @@ namespace Artisan.UI.Tables
                         ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                     }
 
-                    if (invAmount >= item.Required)
+                    if (invAmount >= item.Required - (item.OriginList.SkipIfEnough && item.OriginList.SkipLiteral ? 0 : item.GetSubCraftCount()))
                     {
                         var color = ImGuiColors.HealerGreen;
                         color.W -= 0.3f;
@@ -201,7 +193,7 @@ namespace Artisan.UI.Tables
                     foreach (var usedin in item.UsedInCrafts)
                     {
                         var recipe = LuminaSheets.RecipeSheet[usedin];
-                        var amountUsed = recipe.UnkData5.FirstOrDefault(x => x.ItemIngredient == item.Data.RowId).AmountIngredient * item.OriginList.Items.Count(x => x == recipe.RowId);
+                        var amountUsed = recipe.UnkData5.FirstOrDefault(x => x.ItemIngredient == item.Data.RowId).AmountIngredient * item.OriginList.Recipes.First(x => x.ID == recipe.RowId).Quantity;
 
                         sb.Append($"{usedin.NameOfRecipe()} - {amountUsed}\r\n");
                     }
@@ -423,7 +415,9 @@ namespace Artisan.UI.Tables
                         ImGui.Text($"No need to buy");
                         return;
                     }
-                    if (ImGui.Button("Fetch Prices"))
+
+                    using var smallBtnStyle = ImRaii.PushStyle(ImGuiStyleVar.FramePadding, new Vector2(ImGui.GetStyle().FramePadding.X, 0));
+                    if (ImGui.Button($"Fetch Prices"))
                     {
                         if (P.Config.LimitUnversalisToDC)
                             Task.Run(() => P.UniversalsisClient.GetDCData(item.Data.RowId, ref item.MarketboardData));
@@ -598,7 +592,7 @@ namespace Artisan.UI.Tables
             {
                 ImGuiUtil.Center($"{item.Remaining}");
 
-                if (ImGui.IsItemHovered())
+                if (!(item.OriginList.SkipIfEnough && item.OriginList.SkipLiteral) && ImGui.IsItemHovered())
                 {
                     StringBuilder sb = new StringBuilder();
                     if (item.UsedInMaterialsListCount.Count > 0)
@@ -608,12 +602,28 @@ namespace Artisan.UI.Tables
                             var owned = RetainerInfo.GetRetainerItemCount(LuminaSheets.RecipeSheet[i.Key].ItemResult.Row) + CraftingListUI.NumberOfIngredient(LuminaSheets.RecipeSheet[i.Key].ItemResult.Row);
                             if (SourceList.FindFirst(x => x.CraftedRecipe?.RowId == i.Key, out var ingredient))
                             {
-                                sb.Append($"{i.Value} less is required due to having {(owned > ingredient.Required ? "at least " : "")}{Math.Min(ingredient.Required, owned)}x {i.Key.NameOfRecipe()}\r\n");
+                                sb.AppendLine($"{i.Value} less is required due to having {(owned > ingredient.Required ? "at least " : "")}{Math.Min(ingredient.Required, owned)}x {i.Key.NameOfRecipe()}");
                             }
                         }
-
-                        ImGuiUtil.HoverTooltip(sb.ToString().Trim());
                     }
+
+                    if (item.SubSubMaterials.Count > 0)
+                    {
+                        foreach (var i in item.SubSubMaterials)
+                        {
+                            sb.AppendLine($"{i.Value.Sum(x => x.Item2)} less is required for {i.Key.NameOfRecipe()}");
+                            foreach (var m in i.Value)
+                            {
+                                var owned = RetainerInfo.GetRetainerItemCount(LuminaSheets.RecipeSheet[m.Item1].ItemResult.Row) + CraftingListUI.NumberOfIngredient(LuminaSheets.RecipeSheet[m.Item1].ItemResult.Row);
+                                if (SourceList.FindFirst(x => x.CraftedRecipe?.RowId == m.Item1, out var ingredient))
+                                {
+                                    sb.AppendLine($"└ {m.Item1.NameOfRecipe()} uses {i.Key.NameOfRecipe()}, you have {(owned > ingredient.Required ? "at least " : "")}{Math.Min(ingredient.Required, owned)} {m.Item1.NameOfRecipe()} so {m.Item2}x {item.Data.Name} less is required as a result.");
+                                }
+                            }
+                        }
+                    }
+
+                    ImGuiUtil.HoverTooltip(sb.ToString().Trim());
                 }
 
             }
@@ -743,7 +753,7 @@ namespace Artisan.UI.Tables
             {
                 if (isOnList == null)
                 {
-                    isOnList = item.OriginList.Items.Any(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == item.Data.RowId && y.RowId == x));
+                    isOnList = item.OriginList.Recipes.Any(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == item.Data.RowId && y.RowId == x.ID));
                 }
 
                 if (item.Sources.Contains(1) && isOnList.Value)

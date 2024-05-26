@@ -7,10 +7,12 @@ namespace Artisan.CraftingLogic.Solvers;
 
 public class ExpertSolverDefinition : ISolverDefinition
 {
+    public string MouseoverDescription { get; set; } = "This is for expert recipes, it is not a more advanced standard recipe solver.";
+
     public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
     {
         if (craft.CraftExpert)
-            yield return new(this, 0, 1, "New Expert Recipe Solver", craft.StatLevel >= 90 ? "" : "Requires L90");
+            yield return new(this, 0, 1, "Expert Recipe Solver", craft.StatLevel >= 90 ? "" : "Requires Level 90");
     }
 
     public Solver Create(CraftState craft, int flavour) => new ExpertSolver();

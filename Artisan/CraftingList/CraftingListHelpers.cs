@@ -11,7 +11,7 @@ internal static class CraftingListHelpers
 {    
     internal static Dictionary<uint, bool> SelectedRecipesCraftable = new();
 
-    public static void AddRecipeIngredientsToList(Recipe? recipe, ref Dictionary<uint, int> ingredientList, bool addSublist = true, CraftingList? selectedList = null)
+    public static void AddRecipeIngredientsToList(Recipe? recipe, ref Dictionary<uint, int> ingredientList, bool addSublist = true, NewCraftingList? selectedList = null)
     {
         try
         {
@@ -23,11 +23,11 @@ internal static class CraftingListHelpers
                 {
                     if (ingredientList.ContainsKey((uint)ing.ItemIngredient))
                     {
-                        ingredientList[(uint)ing.ItemIngredient] += ing.AmountIngredient * selectedList.Items.Count(x => x == recipe.RowId);
+                        ingredientList[(uint)ing.ItemIngredient] += ing.AmountIngredient * selectedList.Recipes.First(x => x.ID == recipe.RowId).Quantity;
                     }
                     else
                     {
-                        ingredientList.TryAdd((uint)ing.ItemIngredient, ing.AmountIngredient * selectedList.Items.Count(x => x == recipe.RowId));
+                        ingredientList.TryAdd((uint)ing.ItemIngredient, ing.AmountIngredient * selectedList.Recipes.First(x => x.ID == recipe.RowId).Quantity);
                     }
 
                     var name = LuminaSheets.ItemSheet[(uint)ing.ItemIngredient].Name.RawString;
@@ -77,12 +77,12 @@ internal static class CraftingListHelpers
         return null;
     }
 
-    public static void TidyUpList(CraftingList list)
+    public static void TidyUpList(NewCraftingList list)
     {
         var tempMaterialList = new Dictionary<uint, int>();
-        foreach (var recipe in list.Items.Distinct())
+        foreach (var recipe in list.Recipes)
         {
-            Recipe r = LuminaSheets.RecipeSheet[recipe];
+            Recipe r = LuminaSheets.RecipeSheet[recipe.ID];
             AddRecipeIngredientsToList(r, ref tempMaterialList, false, list);
         }
 
@@ -91,64 +91,18 @@ internal static class CraftingListHelpers
             if (SelectedRecipesCraftable[requiredItem.Key])
             {
                 var recipe = GetIngredientRecipe(requiredItem.Key);
-                if (list.Items.Any(x => x == recipe.RowId))
+                if (list.Recipes.Any(x => x.ID == recipe.RowId))
                 {
-                    
-                    var crafting = list.Items.Count(x => x == recipe.RowId) * recipe.AmountResult;
+                    var crafting = list.Recipes.First(x => x.ID == recipe.RowId).Quantity * recipe.AmountResult;
                     
                     if (crafting > requiredItem.Value)
                     {
-                        double diff = crafting - requiredItem.Value;
-                        
-                        var numberOfCrafts = Math.Floor(diff / recipe.AmountResult);
-                        
-                        for (int i = 0; i < numberOfCrafts; i++)
-                        {
-                            var index = list.Items.IndexOf(recipe.RowId);
-                            list.Items.RemoveAt(index);
-                        }
-
-                        
+                        double quant = Math.Ceiling((double)requiredItem.Value / recipe.AmountResult);
+                        list.Recipes.First(x => x.ID == recipe.RowId).Quantity = (int)quant;
                     }
                 }
 
             }
         }
-
-        tempMaterialList.Clear();
-        foreach (var recipe in list.Items.Distinct())
-        {
-            Recipe r = LuminaSheets.RecipeSheet[recipe];
-            AddRecipeIngredientsToList(r, ref tempMaterialList, false, list);
-        }
-
-        foreach (var requiredItem in tempMaterialList)
-        {
-            if (SelectedRecipesCraftable[requiredItem.Key])
-            {
-                var recipe = GetIngredientRecipe(requiredItem.Key);
-                if (list.Items.Any(x => x == recipe.RowId))
-                {
-                   
-                    var crafting = list.Items.Count(x => x == recipe.RowId) * recipe.AmountResult;
-                   
-                    if (crafting > requiredItem.Value)
-                    {
-                        double diff = crafting - requiredItem.Value;
-                      
-                        var numberOfCrafts = Math.Floor(diff / recipe.AmountResult);
-
-                        for (int i = 0; i < numberOfCrafts; i++)
-                        {
-                            var index = list.Items.IndexOf(recipe.RowId);
-                            list.Items.RemoveAt(index);
-                        }
-
-                    }
-                }
-
-            }
-        }
-
     }
 }

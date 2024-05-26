@@ -379,7 +379,7 @@ namespace Artisan.Autocraft
                     return;
                 }
 
-                if (needConsumables)
+                if (needConsumables && hasConsumables)
                 {
                     if (!P.TM.IsBusy && !PreCrafting.Occupied())
                     {
@@ -401,7 +401,7 @@ namespace Artisan.Autocraft
                         if (type == PreCrafting.CraftType.Quick)
                         {
                             P.TM.Enqueue(() => Operations.QuickSynthItem(P.Config.CraftingX ? P.Config.CraftX : 99), "EnduranceQSStart");
-                            P.TM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 2500, "EnduranceQSWaitStart");
+                            P.TM.Enqueue(() => Crafting.CurState is Crafting.State.WaitStart, 5000, "EnduranceQSWaitStart");
                         }
                         else if (type == PreCrafting.CraftType.Normal)
                         {
@@ -412,7 +412,7 @@ namespace Artisan.Autocraft
                                 P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(SetIngredients), "EnduranceSetIngredientsLayout");
 
                             P.TM.Enqueue(() => Operations.RepeatActualCraft(), "EnduranceNormalStart");
-                            P.TM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 2500, "EnduranceNormalWaitStart");
+                            P.TM.Enqueue(() => Crafting.CurState is Crafting.State.WaitStart, 5000, "EnduranceNormalWaitStart");
                         }
                     }
 
@@ -422,7 +422,7 @@ namespace Artisan.Autocraft
 
         private static void Toasts_ErrorToast(ref SeString message, ref bool isHandled)
         {
-            if (Enable || CraftingListUI.Processing)
+            if (Enable || (CraftingListUI.Processing && !CraftingListFunctions.Paused))
             {
                 foreach (uint errorId in UnableToCraftErrors)
                 {
