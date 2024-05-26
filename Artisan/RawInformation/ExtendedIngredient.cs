@@ -136,7 +136,7 @@ namespace Artisan.RawInformation
             {
                 if (DateTime.Now > RetainerCheck)
                 {
-                    retainerCount = RetainerInfo.GetRetainerItemCount(Data.RowId);
+                    retainerCount = Task.Run(() => RetainerInfo.GetRetainerItemCount(Data.RowId)).Result;
                     RetainerCheck = DateTime.Now.AddSeconds(0.5);
                 }
                 return retainerCount;

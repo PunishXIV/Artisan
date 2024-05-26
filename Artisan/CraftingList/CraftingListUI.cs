@@ -140,8 +140,14 @@ namespace Artisan.CraftingLists
             CraftingListFunctions.Materials = null;
             CraftingListFunctions.CurrentIndex = 0;
             selectedList.ExpandedList.Clear();
-            foreach (var r in selectedList.Recipes.Where(x => !x.ListItemOptions.Skipping))
+            foreach (var r in selectedList.Recipes)
             {
+                if (r.ListItemOptions == null)
+                {
+                    r.ListItemOptions = new();
+                    P.Config.Save();
+                }
+                if (r.ListItemOptions.Skipping) continue;
                 selectedList.ExpandedList.AddRange(Enumerable.Repeat(r.ID, r.Quantity));
             }
 
@@ -179,6 +185,11 @@ namespace Artisan.CraftingLists
                 if (selectedList is null) return output;
                 foreach (var item in selectedList.Recipes.Distinct())
                 {
+                    if (item.ListItemOptions is null)
+                    {
+                        item.ListItemOptions = new();
+                        P.Config.Save();
+                    }
                     if (item.ListItemOptions.Skipping) continue;
                     var count = item.Quantity;
                     var options = item.ListItemOptions;

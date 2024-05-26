@@ -62,7 +62,7 @@ namespace Artisan
         public bool ShowOnlyCraftableRetainers = false;
         public bool DisableMiniMenu = false;
         public bool Materia = false;
-        public bool LockMiniMenu = false;
+        public bool LockMiniMenuR = true;
 
         public bool EnduranceStopFail = false;
         public bool EnduranceStopNQ = false;

@@ -545,6 +545,8 @@ internal class ListEditor : Window, IDisposable
             ImGui.Checkbox("Remove all unnecessary subcrafts after adding", ref TidyAfter);
         }
 
+        ImGui.Separator();
+
         if (ImGui.Button($"Sort Recipes"))
         {
             List<ListItem> newList = new();
@@ -1323,6 +1325,12 @@ internal class RecipeSelector : ItemSelector<ListItem>
         var label =
             $"{idx + 1}. {itemId.ID.NameOfRecipe()} x{itemCount}{(yield != itemCount ? $" ({yield} total)" : string.Empty)}";
         maxSize = ImGui.CalcTextSize(label).X > maxSize ? ImGui.CalcTextSize(label).X : maxSize;
+
+        if (itemId.ListItemOptions is null)
+        {
+            itemId.ListItemOptions = new();
+            P.Config.Save();
+        }
 
         using (var col = ImRaii.PushColor(ImGuiCol.Text, itemCount == 0 || itemId.ListItemOptions.Skipping ? ImGuiColors.DalamudRed : ImGuiColors.DalamudWhite))
         {

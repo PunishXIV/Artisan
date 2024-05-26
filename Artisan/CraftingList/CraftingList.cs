@@ -76,7 +76,7 @@ namespace Artisan.CraftingLists
 
         public int Quantity { get; set; }
 
-        public ListItemOptions ListItemOptions { get; set; }
+        public ListItemOptions? ListItemOptions { get; set; } = new();
 
     }
 
@@ -117,6 +117,11 @@ namespace Artisan.CraftingLists
             var output = new Dictionary<uint, int>();
             foreach (var item in list.Recipes)
             {
+                if (item.ListItemOptions == null)
+                {
+                    item.ListItemOptions = new ListItemOptions();
+                    P.Config.Save();
+                }
                 if (item.ListItemOptions.Skipping || item.Quantity == 0) continue;
                 Recipe r = LuminaSheets.RecipeSheet[item.ID];
                 CraftingListHelpers.AddRecipeIngredientsToList(r, ref output, false, list);

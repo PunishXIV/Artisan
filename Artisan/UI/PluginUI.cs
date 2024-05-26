@@ -697,14 +697,14 @@ namespace Artisan.UI
                 }
                 ImGuiComponents.HelpMarker("Hides the mini-menu for config settings in the recipe list. Still shows individual macro menu.");
 
-                bool lockMini = P.Config.LockMiniMenu;
+                bool lockMini = P.Config.LockMiniMenuR;
                 if (ImGui.Checkbox("Keep Recipe List mini-menu position attached to Recipe List.", ref lockMini))
                 {
-                    P.Config.LockMiniMenu = lockMini;
+                    P.Config.LockMiniMenuR = lockMini;
                     P.Config.Save();
                 }
 
-                if (!P.Config.LockMiniMenu)
+                if (!P.Config.LockMiniMenuR)
                 {
                     if (ImGui.Checkbox($"Pin mini-menu position", ref P.Config.PinMiniMenu))
                     {

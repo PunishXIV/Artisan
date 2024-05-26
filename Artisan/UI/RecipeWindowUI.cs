@@ -619,7 +619,7 @@ namespace Artisan
                     if (!node->IsVisible)
                         return;
 
-                    if (P.Config.LockMiniMenu)
+                    if (P.Config.LockMiniMenuR)
                     {
                         var position = AtkResNodeFunctions.GetNodePosition(node);
                         var scale = AtkResNodeFunctions.GetNodeScale(node);
@@ -629,7 +629,7 @@ namespace Artisan
 
                         ImGuiHelpers.ForceNextWindowMainViewport();
 
-                        if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenu)
+                        if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
                         {
                             ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.Always);
                             AtkResNodeFunctions.ResetPosition = false;
@@ -721,7 +721,7 @@ namespace Artisan
                 var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
 
                 ImGuiHelpers.ForceNextWindowMainViewport();
-                if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenu)
+                if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
                 {
                     ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.FirstUseEver);
                     AtkResNodeFunctions.ResetPosition = false;
