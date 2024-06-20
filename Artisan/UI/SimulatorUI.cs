@@ -4,6 +4,7 @@ using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Artisan.UI.ImGUI;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
@@ -43,6 +44,9 @@ namespace Artisan.UI
         private static List<(StepState step, string comment)> _simCurSteps = new();
         private static Solver.Recommendation _simNextRec;
         public static GearsetEntry? SimGS;
+        private static bool CustomStatMode = false;
+        private static int gsLevel = 1, gsCraftsmanship = 1, gsControl = 1, gsCP = 1;
+        private static bool gsSplend, gsSpecialist, gsManip;
         public static string SimGSName
         {
             get
@@ -128,6 +132,7 @@ namespace Artisan.UI
 
                 DrawGearSetDropdown();
 
+                if (!CustomStatMode)
                 DrawConsumablesDropdown();
 
                 DrawStatInfo();
@@ -165,7 +170,36 @@ namespace Artisan.UI
 
         private static void DrawSolverMode()
         {
-            if (SimGS != null)
+            if (!CustomStatMode)
+            {
+                if (SimGS != null)
+                {
+                    _selectedCraft ??= Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
+                    if (_simCurSteps.Count == 0)
+                    {
+                        var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
+                        _simCurSteps.Add((initial, ""));
+                    }
+
+                    ImGui.BeginChild("###ManualSolver", new Vector2(0), false, ImGuiWindowFlags.HorizontalScrollbar);
+                    DrawActionWidgets();
+                    ImGui.Separator();
+                    DrawSimulation();
+                    if (hoverStepAdded)
+                    {
+                        _simCurSteps.RemoveAt(_simCurSteps.Count - 1);
+                        SimActionIDs.RemoveAt(SimActionIDs.Count - 1);
+                    }
+                    hoverStepAdded = false;
+                    hoverMode = false;
+                    ImGui.EndChild();
+                }
+                else
+                {
+                    ImGui.Text($"Please have a gearset selected from above to use this feature.");
+                }
+            }
+            else
             {
                 _selectedCraft ??= Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
                 if (_simCurSteps.Count == 0)
@@ -186,10 +220,6 @@ namespace Artisan.UI
                 hoverStepAdded = false;
                 hoverMode = false;
                 ImGui.EndChild();
-            }
-            else
-            {
-                ImGui.Text($"Please have a gearset selected from above to use this feature.");
             }
         }
 
@@ -248,7 +278,7 @@ namespace Artisan.UI
             if (_selectedCraft != null && _simCurSteps != null && _simCurSteps.Count > 0)
             {
                 ImGui.Columns(16, null, false);
-                var job = (Job)(SimGS?.ClassJob ?? 0);
+                var job = Job.CRP + SelectedRecipe.CraftType.Row;
                 for (int i = 0; i < _simCurSteps.Count; i++)
                 {
                     if (_simCurSteps.Count == 1)
@@ -497,7 +527,7 @@ namespace Artisan.UI
 
         private static void DrawPreconfiguredMode()
         {
-            if (SimGS is null)
+            if (SimGS is null && !CustomStatMode)
             {
                 ImGui.Text($"Please have a gearset selected from above to use this feature.");
                 return;
@@ -508,7 +538,7 @@ namespace Artisan.UI
 
         private static void DrawSolverActions()
         {
-            if (_selectedSolver != null && SimGS != null)
+            if (_selectedSolver != null && (SimGS != null || CustomStatMode))
             {
                 ImGuiEx.SetNextItemFullWidth();
                 if (ImGui.Button($"Run Simulated Solver"))
@@ -531,7 +561,7 @@ namespace Artisan.UI
                 if (_simCurSolver != null && _simCurSteps.Count > 0)
                 {
                     ImGui.Columns(Math.Min(16, _simCurSteps.Count), null, false);
-                    var job = (Job)(SimGS?.ClassJob ?? 0);
+                    var job = Job.CRP + SelectedRecipe.CraftType.Row;
                     for (int i = 0; i < _simCurSteps.Count; i++)
                     {
                         if (i + 1 < _simCurSteps.Count)
@@ -585,7 +615,7 @@ namespace Artisan.UI
             float CPPercent = (float)(_simCurSteps.Last().step.RemainingCP / _selectedCraft.StatCP);
 
             ImGui.PushStyleColor(ImGuiCol.Text, successColor);
-            ImGuiEx.ImGuiLineCentered($"SimResults", () => ImGuiEx.TextUnderlined($"Simulator Result - {status.ToOutputString()}"));
+            ImGuiEx.LineCentered($"SimResults", () => ImGuiEx.TextUnderlined($"Simulator Result - {status.ToOutputString()}"));
             ImGui.Columns(4, null, false);
             ImGuiEx.TextCentered($"Quality (IQ: {_simCurSteps.Last().step.IQStacks})");
             ImGuiEx.SetNextItemFullWidth();
@@ -779,7 +809,7 @@ namespace Artisan.UI
         {
             if (SimGS != null)
             {
-                ImGuiEx.ImGuiLineCentered("SimulatorStats", () => ImGuiEx.TextUnderlined("Crafter Stats"));
+                ImGuiEx.LineCentered("SimulatorStats", () => ImGuiEx.TextUnderlined("Crafter Stats"));
                 var gs = SimGS.Value; //Ugh, can't pass nullable refs
                 var gsStats = CharacterStats.GetBaseStatsGearset(ref gs);
                 var craftsmanshipBoost = (SimFood == null ? 0 : SimFood.Stats.Stats.FirstOrDefault(x => x.Param == 70).Effective(gsStats.Craftsmanship)) + (SimMedicine == null ? 0 : SimMedicine.Stats.Stats.FirstOrDefault(x => x.Param == 70).Effective(gsStats.Craftsmanship));
@@ -815,52 +845,100 @@ namespace Artisan.UI
 
         private static unsafe void DrawGearSetDropdown()
         {
-            var validGS = RaptureGearsetModule.Instance()->EntriesSpan.ToArray().Count(x => RaptureGearsetModule.Instance()->IsValidGearset(x.ID) && x.ClassJob == SelectedRecipe?.CraftType.Row + 8);
-
-            if (validGS == 0)
+            if (!CustomStatMode)
             {
-                ImGuiEx.Text($"Please add a gearset for {LuminaSheets.ClassJobSheet[SelectedRecipe.CraftType.Row + 8].Abbreviation}");
-                SimGS = null;
-                return;
+                if (ImGui.Button($"Switch to Custom Stat Mode", new (ImGui.GetContentRegionAvail().X, 0)))
+                    CustomStatMode = true;
             }
-            if (validGS == 1)
+            else
             {
-                var gs = RaptureGearsetModule.Instance()->EntriesSpan.ToArray().First(x => RaptureGearsetModule.Instance()->IsValidGearset(x.ID) && x.ClassJob == SelectedRecipe?.CraftType.Row + 8);
-                SimGS = gs;
-                string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(gs.Name));
-                ImGuiEx.Text($"Gearset");
+                if (ImGui.Button($"Switch to Gearset Mode", new(ImGui.GetContentRegionAvail().X, 0)))
+                    CustomStatMode = false;
+            }
+
+            if (!CustomStatMode)
+            {
+                var validGS = RaptureGearsetModule.Instance()->EntriesSpan.ToArray().Count(x => RaptureGearsetModule.Instance()->IsValidGearset(x.ID) && x.ClassJob == SelectedRecipe?.CraftType.Row + 8);
+
+                if (validGS == 0)
+                {
+                    ImGuiEx.Text($"Please add a gearset for {LuminaSheets.ClassJobSheet[SelectedRecipe.CraftType.Row + 8].Abbreviation}");
+                    SimGS = null;
+                    return;
+                }
+                if (validGS == 1)
+                {
+                    var gs = RaptureGearsetModule.Instance()->EntriesSpan.ToArray().First(x => RaptureGearsetModule.Instance()->IsValidGearset(x.ID) && x.ClassJob == SelectedRecipe?.CraftType.Row + 8);
+                    SimGS = gs;
+                    string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(gs.Name));
+                    ImGuiEx.Text($"Gearset");
+                    ImGui.SameLine(120f);
+                    ImGuiEx.SetNextItemFullWidth();
+                    ImGuiEx.Text($"{name} (ilvl {SimGS?.ItemLevel})");
+                    return;
+                }
+
+
+                ImGui.Text($"Select Gearset");
                 ImGui.SameLine(120f);
                 ImGuiEx.SetNextItemFullWidth();
-                ImGuiEx.Text($"{name} (ilvl {SimGS?.ItemLevel})");
-                return;
+                using var combo = ImRaii.Combo("###SimGS", SimGS is null ? "" : SimGSName);
+                if (!combo)
+                    return;
+
+                if (ImGui.Selectable($""))
+                {
+                    SimGS = null;
+                }
+
+                foreach (var gs in RaptureGearsetModule.Instance()->EntriesSpan)
+                {
+                    if (!RaptureGearsetModule.Instance()->IsValidGearset(gs.ID)) continue;
+                    if (gs.ClassJob != SelectedRecipe?.CraftType.Row + 8)
+                        continue;
+
+                    string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(gs.Name));
+                    var selected = ImGui.Selectable($"{name} (ilvl {gs.ItemLevel})###GS{gs.ID}");
+
+                    if (selected)
+                    {
+                        SimGS = gs;
+                    }
+                }
             }
-
-
-            ImGui.Text($"Select Gearset");
-            ImGui.SameLine(120f);
-            ImGuiEx.SetNextItemFullWidth();
-            using var combo = ImRaii.Combo("###SimGS", SimGS is null ? "" : SimGSName);
-            if (!combo)
-                return;
-
-            if (ImGui.Selectable($""))
+            else
             {
                 SimGS = null;
-            }
 
-            foreach (var gs in RaptureGearsetModule.Instance()->EntriesSpan)
-            {
-                if (!RaptureGearsetModule.Instance()->IsValidGearset(gs.ID)) continue;
-                if (gs.ClassJob != SelectedRecipe?.CraftType.Row + 8)
-                    continue;
+                ImGui.Columns(4, null, false);
+                ImGUIMethods.InputIntBound($"Level:", ref gsLevel, 1, 100, true);
+                ImGui.NextColumn();
+                ImGUIMethods.InputIntBound($"Craftsmanship:", ref gsCraftsmanship, 1, 99999, true);
+                ImGui.NextColumn();
+                ImGUIMethods.InputIntBound($"Control:", ref gsControl, 1, 99999, true);
+                ImGui.NextColumn();
+                ImGUIMethods.InputIntBound($"CP:", ref gsCP, 1, 99999, true);
+                ImGui.NextColumn();
+                ImGui.Columns(3, null, false);
+                ImGUIMethods.FlippedCheckbox($"Splendorous:", ref gsSplend);
+                ImGui.NextColumn();
+                ImGUIMethods.FlippedCheckbox($"Specialist:", ref gsSpecialist);
+                ImGui.NextColumn();
+                ImGUIMethods.FlippedCheckbox($"Manipulation Unlocked:", ref gsManip);
+                ImGui.Columns(1);
 
-                string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(gs.Name));
-                var selected = ImGui.Selectable($"{name} (ilvl {gs.ItemLevel})###GS{gs.ID}");
-
-                if (selected)
+                SimStats = new CharacterStats()
                 {
-                    SimGS = gs;
-                }
+                    Craftsmanship = gsCraftsmanship,
+                    Control = gsControl,
+                    CP = gsCP,
+                    Specialist = gsSpecialist,
+                    Splendorous = gsSplend,
+                    Manipulation = gsManip,
+                    Level = gsLevel,    
+                };
+
+                ResolveSteps();
             }
         }
 

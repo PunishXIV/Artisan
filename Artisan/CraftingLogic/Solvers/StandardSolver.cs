@@ -195,7 +195,7 @@ namespace Artisan.CraftingLogic.Solvers
                 if (Simulator.CanUseAction(craft, step, Skills.BasicTouch) && CalculateNewQuality(craft, step, Skills.BasicTouch) >= craft.CraftQualityMax && step.Index == 1)
                     return new(Skills.BasicTouch);
 
-                if (step.Progress < craft.CraftProgress - 1 && !_qualityStarted)
+                if (step.Progress < craft.CraftProgress - 1 && (!_qualityStarted || !Simulator.CanUseAction(craft, step, Skills.FinalAppraisal)))
                 {
                     bool canUseAct = step.Progress + Simulator.BaseProgress(craft) < craft.CraftProgress;
                     if (canUseAct)

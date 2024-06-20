@@ -152,6 +152,7 @@ public unsafe struct CharacterStats
     public int Craftsmanship;
     public int Control;
     public int CP;
+    public int Level;
     public bool Splendorous;
     public bool Specialist;
     public bool Manipulation;

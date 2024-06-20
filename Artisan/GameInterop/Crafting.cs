@@ -83,7 +83,7 @@ public static unsafe class Crafting
             StatCraftsmanship = stats.Craftsmanship,
             StatControl = stats.Control,
             StatCP = stats.CP,
-            StatLevel = CharacterInfo.JobLevel(job),
+            StatLevel = stats.Level == default ? CharacterInfo.JobLevel(job) : stats.Level,
             UnlockedManipulation = CharacterInfo.IsManipulationUnlocked(job),
             Specialist = stats.Specialist,
             Splendorous = stats.Splendorous,

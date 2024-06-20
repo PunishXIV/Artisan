@@ -33,7 +33,6 @@ namespace Artisan.Autocraft
     internal static unsafe class Endurance
     {
         internal static bool SkipBuffs = false;
-        internal static List<Task> Tasks = new();
         internal static CircularBuffer<long> Errors = new(5);
 
         internal static List<int>? HQData = null;
@@ -52,7 +51,6 @@ namespace Artisan.Autocraft
             get => enable;
             set
             {
-                Tasks.Clear();
                 enable = value;
             }
         }
@@ -304,7 +302,7 @@ namespace Artisan.Autocraft
         {
             if (!Enable) return;
             var needToRepair = P.Config.Repair && RepairManager.GetMinEquippedPercent() < P.Config.RepairPercent && (RepairManager.CanRepairAny() || RepairManager.RepairNPCNearby(out _));
-            if ((Crafting.CurState == Crafting.State.QuickCraft && Crafting.QuickSynthCompleted) || needToRepair || IPC.IPC.StopCraftingRequest ||
+            if ((Crafting.CurState == Crafting.State.QuickCraft && Crafting.QuickSynthCompleted) || needToRepair ||
                 (P.Config.Materia && Spiritbond.IsSpiritbondReadyAny() && CharacterInfo.MateriaExtractionUnlocked()))
             {
                 Operations.CloseQuickSynthWindow();

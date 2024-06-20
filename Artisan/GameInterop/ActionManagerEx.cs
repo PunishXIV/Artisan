@@ -1,6 +1,7 @@
 ﻿using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace Artisan.GameInterop;
 
@@ -27,6 +28,12 @@ public static unsafe class ActionManagerEx
             return false;
         Svc.Log.Debug($"Using skill {skill}: {actionType} {actionId}");
         ActionManager.Instance()->UseAction(actionType, actionId);
+        //Reset AFK timer
+        var module = UIModule.Instance()->GetInputTimerModule();
+        module->AfkTimer = 0;
+        module->ContentInputTimer = 0;
+        module->InputTimer = 0;
+        module->Unk1C = 0;
         return true;
     }
 

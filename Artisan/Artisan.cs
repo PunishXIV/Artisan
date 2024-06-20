@@ -158,14 +158,14 @@ public unsafe class Artisan : IDalamudPlugin
 
     private void Condition_ConditionChange(ConditionFlag flag, bool value)
     {
-        Endurance.Tasks.Clear();
-
+        
         if (P.Config.RequestToStopDuty)
         {
             if (flag == ConditionFlag.WaitingForDutyFinder && value)
             {
                 IPC.IPC.StopCraftingRequest = true;
                 PreCrafting.Tasks.Clear();
+                PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), default));
             }
 
             if (flag == ConditionFlag.BoundByDuty && !value && IPC.IPC.StopCraftingRequest && P.Config.RequestToResumeDuty)
