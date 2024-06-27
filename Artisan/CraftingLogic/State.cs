@@ -62,6 +62,10 @@ public record class StepState
     public bool HeartAndSoulActive;
     public bool HeartAndSoulAvailable;
     public bool PrevActionFailed;
+    public int ExpedienceLeft;
+    public bool QuickInnoAvailable;
+    public bool TrainedPerfectionAvailable;
+    public bool TrainedPerfectionActive;
     public Skills PrevComboAction;
 
     public override string ToString() => $"#{Index} {Condition}: {Progress}/{Quality}/{Durability}/{RemainingCP}; {BuffsString()}; Prev={PrevComboAction}{(PrevActionFailed ? " (failed)" : "")}";

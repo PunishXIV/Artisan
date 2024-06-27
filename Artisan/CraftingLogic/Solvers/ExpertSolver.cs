@@ -364,8 +364,8 @@ public class ExpertSolver : Solver
             // TODO: consider good/sturdy prep or good tricks - do we want that without inno? some quick simulation shows it to be a slight loss...
             if (step.Condition == Condition.Good && CanUseActionSafelyInFinisher(step, Skills.PreciseTouch, freeCP))
                 return new(Skills.PreciseTouch, "mid quality gs-only: utilize good");
-            if (step.PrevComboAction == Skills.Observe && CanUseActionSafelyInFinisher(step, Skills.FocusedTouch, freeCP))
-                return new(Skills.FocusedTouch, "mid quality gs-only: after observe?"); // this is weird, why would we do gs->observe?.. maybe we're low on cp?
+            if (step.PrevComboAction == Skills.Observe && CanUseActionSafelyInFinisher(step, Skills.AdvancedTouch, freeCP))
+                return new(Skills.AdvancedTouch, "mid quality gs-only: after observe?"); // this is weird, why would we do gs->observe?.. maybe we're low on cp?
 
             if (step.GreatStridesLeft == 1)
             {
@@ -436,8 +436,8 @@ public class ExpertSolver : Solver
                 return new(Skills.GreatStrides, "mid quality: good omen gs");
         }
 
-        if (step.PrevComboAction == Skills.Observe && CanUseActionSafelyInFinisher(step, Skills.FocusedTouch, freeCP))
-            return new(Skills.FocusedTouch, "mid quality"); // complete focused half-combo
+        if (step.PrevComboAction == Skills.Observe && CanUseActionSafelyInFinisher(step, Skills.AdvancedTouch, freeCP))
+            return new(Skills.AdvancedTouch, "mid quality"); // complete focused half-combo
 
         // try spending some durability for using some other half-combo action:
         // - observe + focused if we have enough time on gs/inno is 150p for 25cp
@@ -706,9 +706,6 @@ public class ExpertSolver : Solver
         // best possible use of malleable is hs+intensive - but only bother if careful won't suffice
         if (step.Condition == Condition.Malleable && CanUseSynthForFinisher(craft, step, Skills.IntensiveSynthesis) && (step.HeartAndSoulAvailable || step.HeartAndSoulActive) && step.Progress + Simulator.CalculateProgress(craft, step, step.RemainingCP >= 7 ? Skills.CarefulSynthesis : Skills.BasicSynthesis) < craft.CraftProgress)
             return step.HeartAndSoulActive ? Skills.IntensiveSynthesis : Skills.HeartAndSoul;
-
-        if (step.PrevComboAction == Skills.Observe && CanUseSynthForFinisher(craft, step, Skills.FocusedSynthesis))
-            return Skills.FocusedSynthesis;
 
         if (step.Condition is Condition.Normal or Condition.Pliant or Condition.Centered or Condition.Primed && step.ManipulationLeft > 0 && step.Durability <= 10 && step.RemainingCP >= Simulator.GetCPCost(step, Skills.Observe) + 5)
             return Skills.Observe; // regen a bit of dura and use focused

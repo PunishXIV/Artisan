@@ -81,11 +81,6 @@ namespace Artisan.CraftingLogic.Solvers
                 return Skills.IntensiveSynthesis;
             }
 
-            if (step.PrevComboAction == Skills.Observe && Simulator.CanUseAction(craft, step, Skills.FocusedSynthesis))
-            {
-                return Skills.FocusedSynthesis;
-            }
-
             if (Simulator.CanUseAction(craft, step, Skills.PrudentSynthesis) && step.RemainingCP < 88) // TODO: what's up with this cp condition?
             {
                 return Skills.PrudentSynthesis;
@@ -132,7 +127,7 @@ namespace Artisan.CraftingLogic.Solvers
             _manipulationUsed |= step.PrevComboAction == Skills.Manipulation;
             _wasteNotUsed |= step.PrevComboAction is Skills.WasteNot or Skills.WasteNot2;
             _qualityStarted |= step.PrevComboAction is Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.ByregotsBlessing or Skills.PrudentTouch
-                or Skills.PreciseTouch or Skills.FocusedTouch or Skills.TrainedEye or Skills.PreparatoryTouch or Skills.TrainedFinesse or Skills.Innovation;
+                or Skills.PreciseTouch or Skills.TrainedEye or Skills.PreparatoryTouch or Skills.TrainedFinesse or Skills.Innovation;
             _venereationUsed |= step.PrevComboAction == Skills.Veneration;
 
             bool inCombo = (step.PrevComboAction == Skills.BasicTouch && Simulator.CanUseAction(craft, step, Skills.StandardTouch)) || (step.PrevComboAction == Skills.StandardTouch && Simulator.CanUseAction(craft, step, Skills.AdvancedTouch));
@@ -241,7 +236,7 @@ namespace Artisan.CraftingLogic.Solvers
                 if (step.Condition == Condition.Poor && Simulator.CanUseAction(craft, step, Skills.CarefulObservation) && P.Config.UseSpecialist) return new(Skills.CarefulObservation);
                 if (step.Condition == Condition.Poor && Simulator.CanUseAction(craft, step, Skills.Observe))
                 {
-                    if (step.InnovationLeft >= 2 && craft.StatLevel >= Simulator.MinLevel(Skills.FocusedTouch))
+                    if (step.InnovationLeft >= 2 && craft.StatLevel >= Simulator.MinLevel(Skills.AdvancedTouch))
                         return new(Skills.Observe);
 
                     if (!CanFinishCraft(craft, step, act))
@@ -407,7 +402,7 @@ namespace Artisan.CraftingLogic.Solvers
         {
             bool wasteNots = step.WasteNotLeft > 0;
 
-            if (Simulator.CanUseAction(craft, step, Skills.FocusedTouch) && step.PrevComboAction == Skills.Observe) return Skills.FocusedTouch;
+            if (Simulator.CanUseAction(craft, step, Skills.AdvancedTouch) && step.PrevComboAction == Skills.Observe) return Skills.AdvancedTouch;
             if (Simulator.CanUseAction(craft, step, Skills.PreciseTouch) && Simulator.CanUseAction(craft, step, Skills.PreciseTouch)) return Skills.PreciseTouch;
             if (Simulator.CanUseAction(craft, step, Skills.PreparatoryTouch) && step.IQStacks < P.Config.MaxIQPrepTouch && step.InnovationLeft > 0) return Skills.PreparatoryTouch;
             if (Simulator.CanUseAction(craft, step, Skills.AdvancedTouch) && step.PrevComboAction == Skills.StandardTouch) return Skills.AdvancedTouch;
@@ -423,7 +418,6 @@ namespace Artisan.CraftingLogic.Solvers
         public static Skills HighestLevelSynth(CraftState craft, StepState step)
         {
             if (Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis)) return Skills.IntensiveSynthesis;
-            if (Simulator.CanUseAction(craft, step, Skills.FocusedSynthesis) && step.PrevComboAction == Skills.Observe) return Skills.FocusedSynthesis;
             if (Simulator.CanUseAction(craft, step, Skills.Groundwork) && step.Durability > 20) return Skills.Groundwork;
             if (Simulator.CanUseAction(craft, step, Skills.PrudentSynthesis)) return Skills.PrudentSynthesis;
             if (Simulator.CanUseAction(craft, step, Skills.CarefulSynthesis)) return Skills.CarefulSynthesis;

@@ -368,19 +368,18 @@ namespace Artisan.UI
         }
         private static void DrawActionWidgets()
         {
-            ActionChild("Progress Actions", 7, () =>
+            ActionChild("Progress Actions", 6, () =>
             {
                 DrawActionWidget(Skills.BasicSynthesis);
                 DrawActionWidget(Skills.CarefulSynthesis);
                 DrawActionWidget(Skills.PrudentSynthesis);
                 DrawActionWidget(Skills.RapidSynthesis);
                 DrawActionWidget(Skills.Groundwork);
-                DrawActionWidget(Skills.FocusedSynthesis);
                 DrawActionWidget(Skills.IntensiveSynthesis);
             });
 
             ImGui.SameLine();
-            ActionChild("Quality Actions", 11, () =>
+            ActionChild("Quality Actions", 12, () =>
             {
                 DrawActionWidget(Skills.BasicTouch);
                 DrawActionWidget(Skills.StandardTouch);
@@ -388,15 +387,15 @@ namespace Artisan.UI
                 DrawActionWidget(Skills.HastyTouch);
                 DrawActionWidget(Skills.ByregotsBlessing);
                 DrawActionWidget(Skills.PreciseTouch);
-                DrawActionWidget(Skills.FocusedTouch);
                 DrawActionWidget(Skills.PrudentTouch);
                 DrawActionWidget(Skills.TrainedEye);
                 DrawActionWidget(Skills.PreparatoryTouch);
                 DrawActionWidget(Skills.TrainedFinesse);
-
+                DrawActionWidget(Skills.RefinedTouch);
+                DrawActionWidget(Skills.DaringTouch);
             });
 
-            ActionChild("Buff Actions", 8, () =>
+            ActionChild("Buff Actions", 9, () =>
             {
                 DrawActionWidget(Skills.WasteNot);
                 DrawActionWidget(Skills.WasteNot2);
@@ -406,23 +405,26 @@ namespace Artisan.UI
                 DrawActionWidget(Skills.FinalAppraisal);
                 DrawActionWidget(Skills.MuscleMemory);
                 DrawActionWidget(Skills.Reflect);
+                DrawActionWidget(Skills.QuickInnovation);
             });
 
             ImGui.SameLine();
-            ActionChild("Repair", 2, () =>
+            ActionChild("Repair", 3, () =>
             {
                 DrawActionWidget(Skills.Manipulation);
                 DrawActionWidget(Skills.MastersMend);
+                DrawActionWidget(Skills.ImmaculateMend);
             });
 
             ImGui.SameLine();
-            ActionChild("Other", 5, () =>
+            ActionChild("Other", 6, () =>
             {
                 DrawActionWidget(Skills.Observe);
                 DrawActionWidget(Skills.HeartAndSoul);
                 DrawActionWidget(Skills.CarefulObservation);
                 DrawActionWidget(Skills.DelicateSynthesis);
                 DrawActionWidget(Skills.TricksOfTrade);
+                DrawActionWidget(Skills.TrainedPerfection);
             });
 
         }

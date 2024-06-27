@@ -12,7 +12,7 @@ namespace Artisan.RawInformation.Character
         BasicSynthesis = 100001, // 120p progress, 10dur cost
         CarefulSynthesis = 100203, // 180p progress, 7cp + 10 dur cost
         RapidSynthesis = 100363, // 500p progress, 10 dur cost, 50% success
-        FocusedSynthesis = 100235, // 200p progress, 5cp + 10 dur cost, 50% success unless after observe
+        //FocusedSynthesis = 100235, // 200p progress, 5cp + 10 dur cost, 50% success unless after observe - Gone in 7.0
         Groundwork = 100403, // 360p progress, 18cp + 20 dur cost, half potency if durability left is less than required
         IntensiveSynthesis = 100315, // 400p progress, 6cp + 10 dur cost, requires good/excellent condition or heart&soul
         PrudentSynthesis = 100427, // 180p progress, 18cp + 5 dur cost, can't be used under waste-not
@@ -22,12 +22,14 @@ namespace Artisan.RawInformation.Character
         StandardTouch = 100004, // 125p quality, 18cp + 10 dur cost if used after basic touch (otherwise 32cp)
         AdvancedTouch = 100411, // 150p quality, 18cp + 10 dur cost if used after standard touch (otherwise 46cp)
         HastyTouch = 100355, // 100p quality, 10 dur cost, 60% success
-        FocusedTouch = 100243, // 150p quality, 18cp + 10 dur cost, 50% success unless after observe
+        //FocusedTouch = 100243, // 150p quality, 18cp + 10 dur cost, 50% success unless after observe - Gone in 7.0
         PreparatoryTouch = 100299, // 200p quality, 40cp + 20 dur cost, 1 extra iq stack
         PreciseTouch = 100128, // 150p quality, 18cp + 10 dur cost, 1 extra iq stack, requires good/excellent condition or heart&soul
         PrudentTouch = 100227, // 100p quality, 25cp + 5 dur cost, can't be used under waste-not
         TrainedFinesse = 100435, // 100p quality, 32cp cost, requires 10 iq stacks
         Reflect = 100387, // 100p quality, 6cp + 10 dur cost, requires first step, 1 extra iq stack
+        RefinedTouch = 100443, // 100p quality, 24cp + 10 dur cost, combo from Basic Touch increases IQ by 1
+        DaringTouch = 100451, //150p quality, 60% success rate, 0 cp, requires Hasty Touch Expedience buff
 
         ByregotsBlessing = 100339, // 100p+20*IQ quality, 24cp + 10 dur cost, removes iq
         TrainedEye = 100283, // max quality, 250cp, requires first step & low level recipe
@@ -45,6 +47,9 @@ namespace Artisan.RawInformation.Character
         CarefulObservation = 100395, // change condition
         FinalAppraisal = 19012, // next progress action can't finish craft, does not tick buffs or change conditions, 1cp cost
         HeartAndSoul = 100419, // next good-only action can be used without condition, does not tick buffs or change conditions
+        QuickInnovation = 100459, // grants one stack of innovation, 0 cp, specialist
+        ImmaculateMend = 100467, // Full durability, 112 cp
+        TrainedPerfection = 100475 // Reduces next action durability loss to 0, 0 cp, once per craft
     }
 
     public static class SkillActionMap
