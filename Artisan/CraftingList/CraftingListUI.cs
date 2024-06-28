@@ -372,7 +372,7 @@ namespace Artisan.CraftingLists
                         {
                             var item = container->GetInventorySlot(i);
 
-                            if (item->ItemID == ingredient)
+                            if (item->ItemId == ingredient)
                                 invNumberNQ++;
                         }
                     }

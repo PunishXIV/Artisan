@@ -22,23 +22,13 @@ namespace Artisan.RawInformation
             Svc.Hook.InitializeFromAttributes(this);
         }
 
-        public static ReceiveEventDelegate GetReceiveEvent(AtkEventListener* listener)
+        public static void InvokeReceiveEvent(AtkEventListener* eventListener, AtkEventType type, int which, AtkEvent* eventData, AtkEventData* inputData)
         {
-            var receiveEventAddress = new IntPtr(listener->vfunc[2]);
-            return Marshal.GetDelegateForFunctionPointer<ReceiveEventDelegate>(receiveEventAddress)!;
+            eventListener->ReceiveEvent(type, which, eventData, inputData);
         }
 
-        public static void InvokeReceiveEvent(AtkEventListener* eventListener, EventType type, uint which, EventData eventData, InputData inputData)
+        public static void ClickAddonComponent(AtkComponentBase* unitbase, AtkComponentNode* target, int which, AtkEventType type, AtkEvent* eventData, AtkEventData* inputData = null)
         {
-            var receiveEvent = GetReceiveEvent(eventListener);
-            receiveEvent(eventListener, type, which, eventData.Data, inputData.Data);
-        }
-
-        public static void ClickAddonComponent(AtkComponentBase* unitbase, AtkComponentNode* target, uint which, EventType type, EventData? eventData = null, InputData? inputData = null)
-        {
-            eventData ??= EventData.ForNormalTarget(target, unitbase);
-            inputData ??= InputData.Empty();
-
             InvokeReceiveEvent(&unitbase->AtkEventListener, type, which, eventData, inputData);
         }
     }
@@ -47,7 +37,7 @@ namespace Artisan.RawInformation
     {
         public static ClickHelper Helper = new();
 
-        public static void ClickAddonButton(this AtkComponentButton target, AtkComponentBase* addon, uint which, EventType type = EventType.CHANGE, EventData? eventData = null)
+        public static void ClickAddonButton(this AtkComponentButton target, AtkComponentBase* addon, int which, AtkEventType type, AtkEvent* eventData = null)
             => ClickHelper.ClickAddonComponent(addon, target.AtkComponentBase.OwnerNode, which, type, eventData);
 
         public static void ClickResNode(this AtkResNode target, AtkUnitBase* addon, int param, EventType type = EventType.CHANGE, EventData? eventData = null)
@@ -62,38 +52,6 @@ namespace Artisan.RawInformation
             {
                 ex.Log();
             }
-        }
-
-        public static void ClickRadioButton(this AtkComponentRadioButton target, AtkComponentBase* addon, uint which, EventType type = EventType.CHANGE)
-            => ClickHelper.ClickAddonComponent(addon, target.AtkComponentBase.OwnerNode, which, type);
-
-        public static void ClickAddonButton(this AtkComponentButton target, AtkUnitBase* addon, AtkEvent* eventData)
-        {
-            Helper.Listener.Invoke((nint)addon, eventData->Type, eventData->Param, eventData);
-        }
-
-        public static void ClickAddonButton(this AtkComponentButton target, AtkUnitBase* addon)
-        {
-            var btnRes = target.AtkComponentBase.OwnerNode->AtkResNode;
-            var evt = btnRes.AtkEventManager.Event;
-
-            try
-            {
-                addon->ReceiveEvent(evt->Type, (int)evt->Param, btnRes.AtkEventManager.Event);
-            }
-            catch (Exception e)
-            {
-                e.Log();
-            }
-
-        }
-
-        public static void ClickRadioButton(this AtkComponentRadioButton target, AtkUnitBase* addon)
-        {
-            var btnRes = target.AtkComponentBase.OwnerNode->AtkResNode;
-            var evt = btnRes.AtkEventManager.Event;
-
-            addon->ReceiveEvent(evt->Type, (int)evt->Param, btnRes.AtkEventManager.Event, evt->Flags);
         }
     }
 }

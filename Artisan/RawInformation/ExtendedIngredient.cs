@@ -41,16 +41,16 @@ namespace Artisan.RawInformation
         public bool RecipeOnList;
         public IngredientHelpers IngredientHelper;
 
-        public Ingredient(uint itemId, int required, NewCraftingList originList, Dictionary<uint, int> materials, IngredientHelpers ingredientHelpers)
+        public Ingredient(uint ItemId, int required, NewCraftingList originList, Dictionary<uint, int> materials, IngredientHelpers ingredientHelpers)
         {
-            Data = LuminaSheets.ItemSheet.Values.First(x => x.RowId == itemId);
+            Data = LuminaSheets.ItemSheet.Values.First(x => x.RowId == ItemId);
             Icon = P.Icons.LoadIcon(Data.Icon)!;
             Required = required;
-            if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId, out CraftedRecipe)) { Sources.Add(1); CanBeCrafted = true; }
-            if (LuminaSheets.GatheringItemSheet.Values.Any(x => x.Item == itemId)) Sources.Add(2);
-            if (Svc.Data.GetExcelSheet<FishingSpot>()!.Any(x => x.Item.Any(y => y.Value.RowId == itemId))) Sources.Add(3);
-            if (ItemVendorLocation.ItemHasVendor(itemId)) Sources.Add(4);
-            if (Svc.Data.GetExcelSheet<RetainerTaskNormal>()!.Any(x => x.Item.Row == itemId && x.GatheringLog.Row == 0 && x.FishingLog == 0) || DropSources.Sources!.Any(x => x.ItemId == itemId)) Sources.Add(5);
+            if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == ItemId, out CraftedRecipe)) { Sources.Add(1); CanBeCrafted = true; }
+            if (LuminaSheets.GatheringItemSheet.Values.Any(x => x.Item == ItemId)) Sources.Add(2);
+            if (Svc.Data.GetExcelSheet<FishingSpot>()!.Any(x => x.Item.Any(y => y.Value.RowId == ItemId))) Sources.Add(3);
+            if (ItemVendorLocation.ItemHasVendor(ItemId)) Sources.Add(4);
+            if (Svc.Data.GetExcelSheet<RetainerTaskNormal>()!.Any(x => x.Item.Row == ItemId && x.GatheringLog.Row == 0 && x.FishingLog == 0) || DropSources.Sources!.Any(x => x.ItemId == ItemId)) Sources.Add(5);
 
             if (Sources.Count == 0) Sources.Add(-1);
             GatherZone = Svc.Data.Excel.GetSheet<TerritoryType>()!.First(x => x.RowId == 1);
@@ -92,17 +92,17 @@ namespace Artisan.RawInformation
             OriginListMaterials = materials;
             foreach (var recipe in OriginList.Recipes)
             {
-                if (LuminaSheets.RecipeSheet[recipe.ID].UnkData5.Any(x => x.ItemIngredient == itemId) && !UsedInCrafts.Contains(recipe.ID))
+                if (LuminaSheets.RecipeSheet[recipe.ID].UnkData5.Any(x => x.ItemIngredient == ItemId) && !UsedInCrafts.Contains(recipe.ID))
                     UsedInCrafts.Add(recipe.ID);
             }
             UsedInMaterialsList = materials.Where(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == x.Key && y.UnkData5.Any(z => z.ItemIngredient == Data.RowId))).ToDictionary(x => x.Key, x => x.Value);
-            RecipeOnList = originList.Recipes.Any(x => LuminaSheets.RecipeSheet[x.ID].ItemResult.Row == itemId);
+            RecipeOnList = originList.Recipes.Any(x => LuminaSheets.RecipeSheet[x.ID].ItemResult.Row == ItemId);
             if (P.Config.UseUniversalis && !P.Config.UniversalisOnDemand)
             {
                 if (P.Config.LimitUnversalisToDC)
-                    Task.Run(() => P.UniversalsisClient.GetDCData(itemId, ref MarketboardData));
+                    Task.Run(() => P.UniversalsisClient.GetDCData(ItemId, ref MarketboardData));
                 else
-                    Task.Run(() => P.UniversalsisClient.GetRegionData(itemId, ref MarketboardData));
+                    Task.Run(() => P.UniversalsisClient.GetRegionData(ItemId, ref MarketboardData));
             }
             IngredientHelper = ingredientHelpers;
         }
@@ -231,10 +231,10 @@ namespace Artisan.RawInformation
             //return output;
         }
 
-        private int NumberCraftable(uint itemId)
+        private int NumberCraftable(uint ItemId)
         {
             List<int> NumberOfUses = new();
-            if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId, out var recipe))
+            if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == ItemId, out var recipe))
             {
                 foreach (var ingredient in recipe.UnkData5.Where(x => x.AmountIngredient > 0))
                 {

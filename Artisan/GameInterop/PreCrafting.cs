@@ -61,7 +61,7 @@ public unsafe static class PreCrafting
 
     private static void* CallbackDetour(AtkUnitBase* atkUnitBase, int valueCount, AtkValue* atkValues, byte updateVisibility)
     {
-        var name = Encoding.UTF8.GetString(atkUnitBase->Name, 32).TrimEnd();
+        var name = atkUnitBase->NameString.TrimEnd();
         if (name.Substring(0, 11) == "SelectYesno")
         {
             var result = atkValues[0];
@@ -238,9 +238,9 @@ public unsafe static class PreCrafting
             return TaskResult.Retry;
 
         var gearsets = RaptureGearsetModule.Instance();
-        foreach (ref var gs in gearsets->EntriesSpan)
+        foreach (ref var gs in gearsets->Entries)
         {
-            if (!RaptureGearsetModule.Instance()->IsValidGearset(gs.ID)) continue;
+            if (!RaptureGearsetModule.Instance()->IsValidGearset(gs.Id)) continue;
             if ((Job)gs.ClassJob == job)
             {
                 if (gs.Flags.HasFlag(RaptureGearsetModule.GearsetFlag.MainHandMissing))
@@ -254,14 +254,14 @@ public unsafe static class PreCrafting
                     {
                         equipGearsetLoops++;
                         _fireCallbackHook.Enable();
-                        var r = gearsets->EquipGearset(gs.ID);
+                        var r = gearsets->EquipGearset(gs.Id);
                         return r < 0 ? TaskResult.Abort : TaskResult.Retry;
                     }
                 }
 
-                var result = gearsets->EquipGearset(gs.ID);
+                var result = gearsets->EquipGearset(gs.Id);
                 equipGearsetLoops++;
-                Svc.Log.Debug($"Tried to equip gearset {gs.ID} for {job}, result={result}, flags={gs.Flags}");
+                Svc.Log.Debug($"Tried to equip gearset {gs.Id} for {job}, result={result}, flags={gs.Flags}");
                 return result < 0 ? TaskResult.Abort : TaskResult.Retry;
             }
         }
@@ -270,15 +270,15 @@ public unsafe static class PreCrafting
         return TaskResult.Abort;
     }
 
-    public static TaskResult TaskEquipItem(uint itemId)
+    public static TaskResult TaskEquipItem(uint ItemId)
     {
-        if (IsItemEquipped(itemId))
+        if (IsItemEquipped(ItemId))
             return TaskResult.Done;
 
-        var pos = FindItemInInventory(itemId, [InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3, InventoryType.Inventory4, InventoryType.ArmoryMainHand, InventoryType.ArmoryHands]);
+        var pos = FindItemInInventory(ItemId, [InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3, InventoryType.Inventory4, InventoryType.ArmoryMainHand, InventoryType.ArmoryHands]);
         if (pos == null)
         {
-            DuoLog.Error($"Failed to find item {LuminaSheets.ItemSheet[itemId].Name} (ID: {itemId}) in inventory");
+            DuoLog.Error($"Failed to find item {LuminaSheets.ItemSheet[ItemId].Name} (ID: {ItemId}) in inventory");
             Endurance.ToggleEndurance(false);
             if (CraftingListUI.Processing)
                 CraftingListFunctions.Paused = true;
@@ -287,7 +287,7 @@ public unsafe static class PreCrafting
         }
 
         var agentId = pos.Value.inv is InventoryType.ArmoryMainHand or InventoryType.ArmoryHands ? AgentId.ArmouryBoard : AgentId.Inventory;
-        var addonId = AgentModule.Instance()->GetAgentByInternalId(agentId)->GetAddonID();
+        var addonId = AgentModule.Instance()->GetAgentByInternalId(agentId)->GetAddonId();
         var ctx = AgentInventoryContext.Instance();
         ctx->OpenForItemSlot(pos.Value.inv, pos.Value.slot, addonId);
 
@@ -296,10 +296,10 @@ public unsafe static class PreCrafting
         {
             for (int i = 0; i < contextMenu->AtkValuesCount; i++)
             {
-                var firstEntryIsEquip = ctx->EventIdSpan[i] == 25; // i'th entry will fire eventid 7+i; eventid 25 is 'equip'
+                var firstEntryIsEquip = ctx->EventIds[i] == 25; // i'th entry will fire eventid 7+i; eventid 25 is 'equip'
                 if (firstEntryIsEquip)
                 {
-                    Svc.Log.Debug($"Equipping item #{itemId} from {pos.Value.inv} @ {pos.Value.slot}, index {i}");
+                    Svc.Log.Debug($"Equipping item #{ItemId} from {pos.Value.inv} @ {pos.Value.slot}, index {i}");
                     Callback.Fire(contextMenu, true, 0, i - 7, 0, 0, 0); // p2=-1 is close, p2=0 is exec first command
                 }
             }
@@ -413,16 +413,16 @@ public unsafe static class PreCrafting
         return TaskResult.Done;
     }
 
-    public static bool IsItemEquipped(uint itemId) => InventoryManager.Instance()->GetItemCountInContainer(itemId, InventoryType.EquippedItems) > 0;
+    public static bool IsItemEquipped(uint ItemId) => InventoryManager.Instance()->GetItemCountInContainer(ItemId, InventoryType.EquippedItems) > 0;
 
-    private static (InventoryType inv, int slot)? FindItemInInventory(uint itemId, IEnumerable<InventoryType> inventories)
+    private static (InventoryType inv, int slot)? FindItemInInventory(uint ItemId, IEnumerable<InventoryType> inventories)
     {
         foreach (var inv in inventories)
         {
             var cont = InventoryManager.Instance()->GetInventoryContainer(inv);
             for (int i = 0; i < cont->Size; ++i)
             {
-                if (cont->GetInventorySlot(i)->ItemID == itemId)
+                if (cont->GetInventorySlot(i)->ItemId == ItemId)
                 {
                     return (inv, i);
                 }

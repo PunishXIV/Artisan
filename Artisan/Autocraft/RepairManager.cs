@@ -41,7 +41,7 @@ namespace Artisan.Autocraft
                 addon->AtkUnitBase.IsVisible &&
                 addon->YesButton is not null &&
                 addon->YesButton->IsEnabled &&
-                addon->AtkUnitBase.UldManager.NodeList[15]->IsVisible)
+                addon->AtkUnitBase.UldManager.NodeList[15]->IsVisible())
             {
                 new ClickSelectYesNo((IntPtr)addon).Yes();
             }
@@ -68,12 +68,12 @@ namespace Artisan.Autocraft
             for (var i = 0; i < equipment->Size; i++)
             {
                 var item = equipment->GetInventorySlot(i);
-                if (item != null && item->ItemID > 0)
+                if (item != null && item->ItemId > 0)
                 {
                     double actualCond = Math.Round(item->Condition / (float)300, 2);
                     if (actualCond < 100)
                     {
-                        var lvl = LuminaSheets.ItemSheet[item->ItemID].LevelEquip;
+                        var lvl = LuminaSheets.ItemSheet[item->ItemId].LevelEquip;
                         var condDif = (100 - actualCond) / 100;
                         var price = Math.Round(Svc.Data.GetExcelSheet<ItemRepairPrice>().GetRow(lvl).Unknown0 * condDif, 0, MidpointRounding.ToPositiveInfinity);
                         output += (int)price;
@@ -91,7 +91,7 @@ namespace Artisan.Autocraft
             for (var i = 0; i < equipment->Size; i++)
             {
                 var item = equipment->GetInventorySlot(i);
-                if (item != null && item->ItemID > 0)
+                if (item != null && item->ItemId > 0)
                 {
                     if (item->Condition < ret) ret = item->Condition;
                 }
@@ -105,9 +105,9 @@ namespace Artisan.Autocraft
             for (var i = 0; i < equipment->Size; i++)
             {
                 var item = equipment->GetInventorySlot(i);
-                if (item != null && item->ItemID > 0)
+                if (item != null && item->ItemId > 0)
                 {
-                    if (CanRepairItem(item->ItemID) && item->Condition / 300 < (repairPercent > 0 ? repairPercent : 100))
+                    if (CanRepairItem(item->ItemId) && item->Condition / 300 < (repairPercent > 0 ? repairPercent : 100))
                     {
                         return true;
                     }
@@ -116,9 +116,9 @@ namespace Artisan.Autocraft
             return false;
         }
 
-        internal static bool CanRepairItem(uint itemID)
+        internal static bool CanRepairItem(uint ItemId)
         {
-            var item = LuminaSheets.ItemSheet[itemID];
+            var item = LuminaSheets.ItemSheet[ItemId];
 
             if (item.ClassJobRepair.Row > 0)
             {

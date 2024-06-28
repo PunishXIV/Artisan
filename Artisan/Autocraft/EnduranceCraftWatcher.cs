@@ -10,6 +10,7 @@ using ECommons.Logging;
 using Lumina.Excel.GeneratedSheets;
 using Dalamud.Game.Text.SeStringHandling;
 using System.Linq;
+using System;
 
 namespace Artisan.Autocraft
 {
@@ -23,14 +24,7 @@ namespace Artisan.Autocraft
             Svc.Chat.ChatMessage += ScanForHQItems;
         }
 
-        public static void Dispose()
-        {
-            Crafting.CraftFinished -= OnCraftFinished;
-            Crafting.QuickSynthProgress -= OnQuickSynthProgress;
-            Svc.Chat.ChatMessage -= ScanForHQItems;
-        }
-
-        private static void ScanForHQItems(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+        private static void ScanForHQItems(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool isHandled)
         {
             if (type == (XivChatType)2242 && Svc.Condition[ConditionFlag.Crafting])
             {
@@ -48,6 +42,13 @@ namespace Artisan.Autocraft
                     }
                 }
             }
+        }
+
+        public static void Dispose()
+        {
+            Crafting.CraftFinished -= OnCraftFinished;
+            Crafting.QuickSynthProgress -= OnQuickSynthProgress;
+            Svc.Chat.ChatMessage -= ScanForHQItems;
         }
 
         private static void OnCraftFinished(Recipe recipe, CraftState craft, StepState finalStep, bool cancelled)

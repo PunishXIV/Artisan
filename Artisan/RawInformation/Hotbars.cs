@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
+using static FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureHotbarModule;
 
 namespace Artisan.RawInformation
 {
@@ -27,11 +28,11 @@ namespace Artisan.RawInformation
 
         public static unsafe void PopulateHotbarDict()
         {
-            var raptureHotbarModule = Framework.Instance()->GetUiModule()->GetRaptureHotbarModule();
+            var raptureHotbarModule = Framework.Instance()->GetUIModule()->GetRaptureHotbarModule();
             int index = 0;
-            foreach (ref var hotbar in raptureHotbarModule->HotBarsSpan.Slice(0, 10))
+            foreach (ref var hotbar in raptureHotbarModule->Hotbars.Slice(0, 10))
             {
-                foreach (ref var slot in hotbar.SlotsSpan.Slice(0, 12))
+                foreach (ref var slot in hotbar.Slots.Slice(0, 12))
                 {
                     HotBarSkills[index++] = slot.CommandType is HotbarSlotType.Action or HotbarSlotType.CraftAction ? SkillActionMap.ActionToSkill(slot.CommandId) : Skills.None;
                 }

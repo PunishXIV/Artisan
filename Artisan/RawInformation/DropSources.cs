@@ -13,12 +13,12 @@ namespace Artisan.RawInformation
     {
         public static List<DropSources>? Sources = DropList()?.ToList();
 
-        public DropSources(uint itemId, List<uint> monsterId)
+        public DropSources(uint ItemId, List<uint> monsterId)
         {
-            ItemId = itemId;
+            ItemId = ItemId;
             MonsterId = monsterId;
-            CanObtainFromRetainer = Svc.Data.GetExcelSheet<RetainerTaskNormal>()!.Any(x => x.Item.Row == itemId);
-            UsedInRecipes = LuminaSheets.RecipeSheet.Values.Any(y => y.UnkData5.Any(x => x.ItemIngredient == itemId));
+            CanObtainFromRetainer = Svc.Data.GetExcelSheet<RetainerTaskNormal>()!.Any(x => x.Item.Row == ItemId);
+            UsedInRecipes = LuminaSheets.RecipeSheet.Values.Any(y => y.UnkData5.Any(x => x.ItemIngredient == ItemId));
         }
 
         public bool CanObtainFromRetainer { get; set; }

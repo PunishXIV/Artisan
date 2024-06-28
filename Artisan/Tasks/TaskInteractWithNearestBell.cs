@@ -11,6 +11,7 @@ using Artisan.IPC;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using ECommons.Automation.LegacyTaskManager;
 
 namespace Artisan.Tasks;
 

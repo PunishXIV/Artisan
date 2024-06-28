@@ -8,6 +8,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using ECommons;
 using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.Logging;
@@ -259,8 +260,8 @@ namespace Artisan.CraftingLists
 
             if (selectedList.SkipIfEnough && (preparing || !isCrafting))
             {
-                var itemId = recipe.ItemResult.Row;
-                int numMats = Materials.Any(x => x.Key == recipe.ItemResult.Row) && !selectedList.SkipLiteral ? Materials.First(x => x.Key == recipe.ItemResult.Row).Value : selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Row == itemId) * recipe.AmountResult;
+                var ItemId = recipe.ItemResult.Row;
+                int numMats = Materials.Any(x => x.Key == recipe.ItemResult.Row) && !selectedList.SkipLiteral ? Materials.First(x => x.Key == recipe.ItemResult.Row).Value : selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Row == ItemId) * recipe.AmountResult;
                 if (numMats <= CraftingListUI.NumberOfIngredient(recipe.ItemResult.Row))
                 {
                     DuoLog.Error($"Skipping {recipe.ItemResult.Value.Name} due to having enough in inventory [Skip Items you already have enough of]");
@@ -439,7 +440,7 @@ namespace Artisan.CraftingLists
             if (recipe == null)
                 return false;
 
-            if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon) &&
+            if (TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) &&
                 addon->AtkUnitBase.IsVisible &&
                 AgentRecipeNote.Instance() != null &&
                 RaptureAtkModule.Instance()->AtkModule.IsAddonReady(AgentRecipeNote.Instance()->AgentInterface.AddonId))
@@ -452,19 +453,19 @@ namespace Artisan.CraftingLists
                         {
                             var node = addon->AtkUnitBase.UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
 
-                            if (node is null || !node->AtkResNode.IsVisible)
+                            if (node is null || !node->AtkResNode.IsVisible())
                             {
                                 continue;
                             }
 
-                            if (node->Component->UldManager.NodeList[11]->IsVisible)
+                            if (node->Component->UldManager.NodeList[11]->IsVisible())
                             {
                                 var ingredient = LuminaSheets.RecipeSheet.Values.Where(x => x.RowId == Endurance.RecipeID).FirstOrDefault().UnkData5[i].ItemIngredient;
 
                                 var btn = node->Component->UldManager.NodeList[14]->GetAsAtkComponentButton();
                                 try
                                 {
-                                    btn->ClickAddonButton((AtkComponentBase*)addon, 4);
+                                    btn->ClickAddonButton((AtkComponentBase*)addon, 4, AtkEventType.ButtonClick);
                                 }
                                 catch (Exception ex)
                                 {
@@ -506,7 +507,7 @@ namespace Artisan.CraftingLists
                             if (node->Component->UldManager.NodeListCount < 16)
                                 return false;
 
-                            if (node is null || !node->AtkResNode.IsVisible)
+                            if (node is null || !node->AtkResNode.IsVisible())
                             {
                                 continue;
                             }
@@ -569,8 +570,8 @@ namespace Artisan.CraftingLists
                 var gearset = gearsetModule->GetGearset(i);
                 if (gearset == null) continue;
                 if (!gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists)) continue;
-                if (gearset->ID != i) continue;
-                if (gearset->ClassJob == cjId) return gearset->ID;
+                if (gearset->Id != i) continue;
+                if (gearset->ClassJob == cjId) return gearset->Id;
             }
 
             return null;

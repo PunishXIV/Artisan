@@ -31,13 +31,13 @@ internal static class CraftingListContextMenu
         Chat2IPC.OnOpenChatTwoItemContextMenu += AddChat2Menu;
     }
 
-    private static void AddChat2Menu(uint itemId)
+    private static void AddChat2Menu(uint ItemId)
     {
         if (P.Config.HideContextMenus) return;
 
-        if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == itemId)) return;
+        if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == ItemId)) return;
 
-        var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == itemId).RowId;
+        var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == ItemId).RowId;
 
         if (ImGui.Selectable($"Open Recipe Log"))
         {
@@ -63,59 +63,59 @@ internal static class CraftingListContextMenu
         if (args.ParentAddonName == "RecipeNote")
         {
             IntPtr recipeNoteAgent = Svc.GameGui.FindAgentInterface(args.ParentAddonName);
-            var itemId = *(uint*)(recipeNoteAgent + 0x398);
+            var ItemId = *(uint*)(recipeNoteAgent + 0x398);
             var craftTypeIndex = *(uint*)(recipeNoteAgent + 944);
             
-            if (RetainerInfo.GetRetainerItemCount(itemId) > 0 && RetainerInfo.GetReachableRetainerBell() != null)
+            if (RetainerInfo.GetRetainerItemCount(ItemId) > 0 && RetainerInfo.GetReachableRetainerBell() != null)
             {
                 int amountToGet = 1;
-                if (LuminaSheets.RecipeSheet[Endurance.RecipeID].ItemResult.Row != itemId)
+                if (LuminaSheets.RecipeSheet[Endurance.RecipeID].ItemResult.Row != ItemId)
                 {
-                    amountToGet = LuminaSheets.RecipeSheet[Endurance.RecipeID].UnkData5.First(y => y.ItemIngredient == itemId).AmountIngredient;
+                    amountToGet = LuminaSheets.RecipeSheet[Endurance.RecipeID].UnkData5.First(y => y.ItemIngredient == ItemId).AmountIngredient;
                 }
 
-                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Withdraw from Retainer")), _ => RetainerInfo.RestockFromRetainers(itemId, amountToGet)));
+                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Withdraw from Retainer")), _ => RetainerInfo.RestockFromRetainers(ItemId, amountToGet)));
             }
 
-            if (!LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId, out var recipe)) return;
+            if (!LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == ItemId, out var recipe)) return;
             
             bool ingredientsSubCraft = recipe.UnkData5.Any(x => CraftingListHelpers.GetIngredientRecipe((uint)x.ItemIngredient) != null);
             
             if (CraftingListUI.selectedList.ID == 0)
             {
-                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to New Crafting List")), _ => AddToNewList(itemId, craftTypeIndex)));
+                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to New Crafting List")), _ => AddToNewList(ItemId, craftTypeIndex)));
                 if (ingredientsSubCraft)
-                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to New Crafting List (with Sub-crafts)")), _ => AddToNewList(itemId, craftTypeIndex, true)));
+                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to New Crafting List (with Sub-crafts)")), _ => AddToNewList(ItemId, craftTypeIndex, true)));
             }
             else
             {
-                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to Current Crafting List")), _ => AddToList(itemId, craftTypeIndex)));
+                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to Current Crafting List")), _ => AddToList(ItemId, craftTypeIndex)));
                 if (ingredientsSubCraft)
-                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to Current Crafting List (with Sub-crafts)")), _ => AddToList(itemId, craftTypeIndex, true)));
+                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to Current Crafting List (with Sub-crafts)")), _ => AddToList(ItemId, craftTypeIndex, true)));
             }
         }
 
         if (args.ParentAddonName == "ChatLog")
         {
-            var itemId = GetObjectItemId("ChatLog", 0x948);
-            if (itemId > 500_000)
-                itemId -= 500_000;
+            var ItemId = GetObjectItemId("ChatLog", 0x948);
+            if (ItemId > 500_000)
+                ItemId -= 500_000;
 
-            if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == itemId)) return;
+            if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == ItemId)) return;
 
-            var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == itemId).RowId;
+            var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == ItemId).RowId;
 
             args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Open Recipe Log")), _ => CraftingListFunctions.OpenRecipeByID(recipeId, true)));
 
         }
     }
 
-    private static uint GetObjectItemId(uint itemId)
+    private static uint GetObjectItemId(uint ItemId)
     {
-        if (itemId > 500000)
-            itemId -= 500000;
+        if (ItemId > 500000)
+            ItemId -= 500000;
 
-        return itemId;
+        return ItemId;
     }
 
     private unsafe static uint? GetObjectItemId(IntPtr agent, int offset)
@@ -124,22 +124,22 @@ internal static class CraftingListContextMenu
     private static uint? GetObjectItemId(string name, int offset)
         => GetObjectItemId(Svc.GameGui.FindAgentInterface(name), offset);
 
-    private static void AddToNewList(uint itemId, uint craftType, bool withPrecraft = false)
+    private static void AddToNewList(uint ItemId, uint craftType, bool withPrecraft = false)
     {
         NewCraftingList list = new NewCraftingList();
-        list.Name = itemId.NameOfItem();
+        list.Name = ItemId.NameOfItem();
         list.SetID();
         list.Save(true);
         CraftingListUI.selectedList = list;
-        AddToList(itemId, craftType, withPrecraft);
+        AddToList(ItemId, craftType, withPrecraft);
     }
 
-    private static void AddToList(uint itemId, uint craftType, bool withPrecraft = false)
+    private static void AddToList(uint ItemId, uint craftType, bool withPrecraft = false)
     {
         CraftingListUI.listMaterialsNew.Clear();
-        if (!LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row == craftType, out var recipe))
+        if (!LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == ItemId && x.CraftType.Row == craftType, out var recipe))
         {
-            recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == itemId);
+            recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == ItemId);
         }
 
         if (withPrecraft)

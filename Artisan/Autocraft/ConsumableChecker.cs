@@ -166,7 +166,7 @@ namespace Artisan.Autocraft
             return false;
         }
 
-        internal static unsafe bool UseItem2(uint itemID) => ActionManagerEx.UseItem(itemID);
+        internal static unsafe bool UseItem2(uint ItemId) => ActionManagerEx.UseItem(ItemId);
 
         internal static bool CheckConsumables(RecipeConfig config, bool use = true)
         {

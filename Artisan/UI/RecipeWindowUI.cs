@@ -124,13 +124,13 @@ namespace Artisan
                     var compNode = (AtkComponentNode*)searchNode;
                     if (compNode->Component->UldManager.SearchNodeById(18) == null) return;
 
-                    searched = !compNode->Component->UldManager.SearchNodeById(18)->IsVisible;
+                    searched = !compNode->Component->UldManager.SearchNodeById(18)->IsVisible();
 
                     if (Search.Length > 0 && !searched)
                     {
                         if (LuminaSheets.RecipeSheet.Values.Count(x => Regex.Match(x.ItemResult.Value.Name.RawString, Search, RegexOptions.IgnoreCase).Success) > 0)
                         {
-                            ImGui.Begin($"###Search{searchNode->NodeID}", ImGuiWindowFlags.NoScrollbar
+                            ImGui.Begin($"###Search{searchNode->NodeId}", ImGuiWindowFlags.NoScrollbar
                                 | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
                                 | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
 
@@ -179,7 +179,7 @@ namespace Artisan
                     if (addon->SupplyRadioButton is null)
                         return;
 
-                    if (addon->SupplyRadioButton->AtkComponentBase.UldManager.NodeList[1] != null && addon->SupplyRadioButton->AtkComponentBase.UldManager.NodeList[1]->IsVisible)
+                    if (addon->SupplyRadioButton->UldManager.NodeList[1] != null && addon->SupplyRadioButton->UldManager.NodeList[1]->IsVisible())
                         return;
 
                     var timerWindow = Svc.GameGui.GetAddonByName("GrandCompanySupplyList");
@@ -189,7 +189,7 @@ namespace Artisan
                     var atkUnitBase = (AtkUnitBase*)timerWindow;
                     var node = atkUnitBase->UldManager.NodeList[19];
 
-                    if (!node->IsVisible)
+                    if (!node->IsVisible())
                         return;
 
                     var position = AtkResNodeFunctions.GetNodePosition(node);
@@ -278,7 +278,7 @@ namespace Artisan
 
                     var node = atkUnitBase->UldManager.NodeList[97];
 
-                    if (!node->IsVisible)
+                    if (!node->IsVisible())
                         return;
 
                     var position = AtkResNodeFunctions.GetNodePosition(node);
@@ -364,14 +364,14 @@ namespace Artisan
                 if (atkUnitBase->AtkValues[i].Type == 0)
                     continue;
 
-                var itemId = atkUnitBase->AtkValues[i].Int;
+                var ItemId = atkUnitBase->AtkValues[i].Int;
                 var requested = atkUnitBase->AtkValues[i - 40].Int;
                 uint job = TextureIdToJob(atkUnitBase->AtkValues[i - 360].Int);
                 bool starred = atkUnitBase->AtkValues[i - 400].Byte == 1;
 
                 if (!boostedCraftsOnly || (boostedCraftsOnly && starred))
                 {
-                    if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row + 8 == job, out var recipe))
+                    if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == ItemId && x.CraftType.Row + 8 == job, out var recipe))
                     {
                         var timesToAdd = requested / recipe.AmountResult;
 
@@ -423,14 +423,14 @@ namespace Artisan
                 if (atkUnitBase->AtkValues[i].Type == 0)
                     continue;
 
-                var itemId = atkUnitBase->AtkValues[i].Int;
+                var ItemId = atkUnitBase->AtkValues[i].Int;
                 var requested = atkUnitBase->AtkValues[i + 16].Int;
                 uint job = TextureIdToJob(atkUnitBase->AtkValues[i + 8].Int);
                 bool starred = atkUnitBase->AtkValues[i + 40].Byte == 1;
 
                 if (!boostedCraftOnly || (boostedCraftOnly && starred))
                 {
-                    if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == itemId && x.CraftType.Row + 8 == job, out var recipe))
+                    if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == ItemId && x.CraftType.Row + 8 == job, out var recipe))
                     {
                         var timesToAdd = requested / recipe.AmountResult;
 
@@ -472,7 +472,7 @@ namespace Artisan
 
                 var node = addonPtr->UldManager.NodeList[2];
 
-                if (!node->IsVisible)
+                if (!node->IsVisible())
                     return;
 
                 var position = AtkResNodeFunctions.GetNodePosition(node);
@@ -493,7 +493,7 @@ namespace Artisan
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f, 3f));
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
-                ImGui.Begin($"###WorkshopButton{node->NodeID}", ImGuiWindowFlags.NoScrollbar
+                ImGui.Begin($"###WorkshopButton{node->NodeId}", ImGuiWindowFlags.NoScrollbar
                     | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
                     | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
 
@@ -612,11 +612,11 @@ namespace Artisan
 
             if (addonPtr->UldManager.NodeListCount > 1)
             {
-                if (addonPtr->UldManager.NodeList[1]->IsVisible)
+                if (addonPtr->UldManager.NodeList[1]->IsVisible())
                 {
                     var node = addonPtr->UldManager.NodeList[1];
 
-                    if (!node->IsVisible)
+                    if (!node->IsVisible())
                         return;
 
                     if (P.Config.LockMiniMenuR)
@@ -646,7 +646,7 @@ namespace Artisan
                     if (P.Config.PinMiniMenu)
                         flags |= ImGuiWindowFlags.NoMove;
 
-                    ImGui.Begin($"###Options{node->NodeID}", flags);
+                    ImGui.Begin($"###Options{node->NodeId}", flags);
 
 
                     DrawCopyOfCraftMenu();
@@ -708,11 +708,11 @@ namespace Artisan
             var baseX = addonPtr->X;
             var baseY = addonPtr->Y;
 
-            if (addonPtr->UldManager.NodeListCount >= 2 && addonPtr->UldManager.NodeList[1]->IsVisible)
+            if (addonPtr->UldManager.NodeListCount >= 2 && addonPtr->UldManager.NodeList[1]->IsVisible())
             {
                 var node = addonPtr->UldManager.NodeList[1];
 
-                if (!node->IsVisible)
+                if (!node->IsVisible())
                     return;
 
                 var position = AtkResNodeFunctions.GetNodePosition(node);
@@ -734,7 +734,7 @@ namespace Artisan
                 //Svc.Log.Debug($"{position.X + node->Width + 7}");
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(7f, 7f));
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
-                ImGui.Begin($"###Options{node->NodeID}", ImGuiWindowFlags.NoScrollbar
+                ImGui.Begin($"###Options{node->NodeId}", ImGuiWindowFlags.NoScrollbar
                     | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding);
 
                 ImGui.Spacing();
@@ -826,7 +826,7 @@ namespace Artisan
                                 SimulatorUI.SimFood.Stats = new ConsumableStats(config.RequiredFood, config.RequiredFoodHQ);
                             }
 
-                            foreach (ref var gs in RaptureGearsetModule.Instance()->EntriesSpan)
+                            foreach (ref var gs in RaptureGearsetModule.Instance()->Entries)
                             {
                                 if ((Job)gs.ClassJob == Job.CRP + recipe.CraftType.Row)
                                 {
@@ -905,7 +905,7 @@ namespace Artisan
             ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
             ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
 
-            ImGui.Begin($"###Repeat{node->NodeID}", ImGuiWindowFlags.NoScrollbar
+            ImGui.Begin($"###Repeat{node->NodeId}", ImGuiWindowFlags.NoScrollbar
                 | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
                 | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
 
@@ -917,7 +917,7 @@ namespace Artisan
                 ImGui.Text("Craft X Times:");
                 ImGui.SameLine();
                 ImGui.PushItemWidth(110f * scale.X);
-                if (ImGui.InputInt($"###TimesRepeat{node->NodeID}", ref P.Config.CraftX))
+                if (ImGui.InputInt($"###TimesRepeat{node->NodeId}", ref P.Config.CraftX))
                 {
                     if (P.Config.CraftX < 0)
                         P.Config.CraftX = 0;

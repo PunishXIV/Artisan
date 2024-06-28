@@ -1309,8 +1309,8 @@ internal class RecipeSelector : ItemSelector<ListItem>
 
     protected override bool OnDelete(int idx)
     {
-        var itemId = Items[idx];
-        List.Recipes.Remove(itemId);
+        var ItemId = Items[idx];
+        List.Recipes.Remove(ItemId);
         Items.RemoveAt(idx);
         P.Config.Save();
         return true;
@@ -1319,26 +1319,26 @@ internal class RecipeSelector : ItemSelector<ListItem>
     protected override bool OnDraw(int idx, out bool changes)
     {
         changes = false;
-        var itemId = Items[idx];
-        var itemCount = itemId.Quantity;
-        var yield = LuminaSheets.RecipeSheet[itemId.ID].AmountResult * itemCount;
+        var ItemId = Items[idx];
+        var itemCount = ItemId.Quantity;
+        var yield = LuminaSheets.RecipeSheet[ItemId.ID].AmountResult * itemCount;
         var label =
-            $"{idx + 1}. {itemId.ID.NameOfRecipe()} x{itemCount}{(yield != itemCount ? $" ({yield} total)" : string.Empty)}";
+            $"{idx + 1}. {ItemId.ID.NameOfRecipe()} x{itemCount}{(yield != itemCount ? $" ({yield} total)" : string.Empty)}";
         maxSize = ImGui.CalcTextSize(label).X > maxSize ? ImGui.CalcTextSize(label).X : maxSize;
 
-        if (itemId.ListItemOptions is null)
+        if (ItemId.ListItemOptions is null)
         {
-            itemId.ListItemOptions = new();
+            ItemId.ListItemOptions = new();
             P.Config.Save();
         }
 
-        using (var col = ImRaii.PushColor(ImGuiCol.Text, itemCount == 0 || itemId.ListItemOptions.Skipping ? ImGuiColors.DalamudRed : ImGuiColors.DalamudWhite))
+        using (var col = ImRaii.PushColor(ImGuiCol.Text, itemCount == 0 || ItemId.ListItemOptions.Skipping ? ImGuiColors.DalamudRed : ImGuiColors.DalamudWhite))
         {
             var res = ImGui.Selectable(label, idx == CurrentIdx);
-            ImGuiEx.Tooltip($"Right click to {(itemId.ListItemOptions.Skipping ? "enable" : "skip")} this recipe.");
+            ImGuiEx.Tooltip($"Right click to {(ItemId.ListItemOptions.Skipping ? "enable" : "skip")} this recipe.");
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
             {
-                itemId.ListItemOptions.Skipping = !itemId.ListItemOptions.Skipping;
+                ItemId.ListItemOptions.Skipping = !ItemId.ListItemOptions.Skipping;
                 changes = true;
                 P.Config.Save();
             }

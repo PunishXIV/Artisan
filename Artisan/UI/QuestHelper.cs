@@ -78,7 +78,7 @@ namespace Artisan.UI
             if (isOnSayQuest)
             {
                 ImGui.Text($"Quest Helper (click to say)");
-                foreach (var quest in QuestManager.Instance()->DailyQuestsSpan)
+                foreach (var quest in QuestManager.Instance()->DailyQuests)
                 {
                     string message = QuestList.GetSayQuestString(quest.QuestId);
                     if (message != "")
@@ -94,7 +94,7 @@ namespace Artisan.UI
             if (isOnEmoteQuest)
             {
                 ImGui.Text("Quest Helper (click to target and emote)");
-                foreach (var quest in QuestManager.Instance()->DailyQuestsSpan)
+                foreach (var quest in QuestManager.Instance()->DailyQuests)
                 {
                     if (quest.IsCompleted) continue;
 

@@ -37,7 +37,7 @@ public static unsafe class ActionManagerEx
         return true;
     }
 
-    public static bool UseItem(uint itemId) => ActionManager.Instance()->UseAction(ActionType.Item, itemId, a4: 65535);
+    public static bool UseItem(uint ItemId) => ActionManager.Instance()->UseAction(ActionType.Item, ItemId, extraParam: 65535);
     public static bool UseRepair() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 6);
     public static bool UseMateriaExtraction() => ActionManager.Instance()->UseAction(ActionType.GeneralAction, 14);
 }

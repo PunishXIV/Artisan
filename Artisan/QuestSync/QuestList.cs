@@ -177,7 +177,7 @@ namespace Artisan.QuestSync
         public unsafe static bool HasIngredientsForAny()
         {
             QuestManager* qm = QuestManager.Instance();
-            foreach (var quest in qm->DailyQuestsSpan)
+            foreach (var quest in qm->DailyQuests)
             {
                 if (quest.IsCompleted) continue;
 
@@ -188,7 +188,7 @@ namespace Artisan.QuestSync
                 }
             }
 
-            foreach (var quest in qm->NormalQuestsSpan)
+            foreach (var quest in qm->NormalQuests)
             {
                 if (quest.QuestId == 1493)
                 {
@@ -218,13 +218,13 @@ namespace Artisan.QuestSync
                 questId = 1493;
 
             QuestManager* qm = QuestManager.Instance();
-            foreach (var quest in qm->DailyQuestsSpan)
+            foreach (var quest in qm->DailyQuests)
             {
                 if (quest.QuestId == questId && !quest.IsCompleted)
                     return true;
             }
 
-            foreach (var quest in qm->NormalQuestsSpan)
+            foreach (var quest in qm->NormalQuests)
             {
                 if (quest.QuestId == questId)
                     return true;
@@ -236,7 +236,7 @@ namespace Artisan.QuestSync
         public unsafe static uint GetRecipeForQuest(ushort questId)
         {
             QuestManager* qm = QuestManager.Instance();
-            foreach (var quest in qm->DailyQuestsSpan)
+            foreach (var quest in qm->DailyQuests)
             {
                 if (quest.QuestId > 0 && !quest.IsCompleted)
                 {
@@ -247,7 +247,7 @@ namespace Artisan.QuestSync
                 }
             }
 
-            foreach (var quest in qm->NormalQuestsSpan)
+            foreach (var quest in qm->NormalQuests)
             {
                 if (quest.QuestId == 1493)
                 {
@@ -280,7 +280,7 @@ namespace Artisan.QuestSync
         internal unsafe static bool IsOnSayQuest()
         {
             QuestManager* qm = QuestManager.Instance();
-            foreach (var quest in qm->DailyQuestsSpan)
+            foreach (var quest in qm->DailyQuests)
             {
                 if (!quest.IsCompleted)
                 {
@@ -301,7 +301,7 @@ namespace Artisan.QuestSync
         internal unsafe static bool IsOnEmoteQuest()
         {
             QuestManager* qm = QuestManager.Instance();
-            foreach (var quest in qm->DailyQuestsSpan)
+            foreach (var quest in qm->DailyQuests)
             {
                 if (!quest.IsCompleted)
                 {
@@ -332,7 +332,7 @@ namespace Artisan.QuestSync
 
         internal unsafe static string GetSayQuestString(ushort questId)
         {
-            foreach (var quest in QuestManager.Instance()->DailyQuestsSpan)
+            foreach (var quest in QuestManager.Instance()->DailyQuests)
             {
                 if (quest.IsCompleted && quest.QuestId == questId) return "";
             }

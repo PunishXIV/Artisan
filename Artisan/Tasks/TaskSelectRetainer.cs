@@ -9,6 +9,7 @@ using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Utility;
 using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.DalamudServices;
 using ECommons.Events;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -70,8 +71,8 @@ internal unsafe static class RetainerListHandlers
             var retainer = FFXIVClientStructs.FFXIV.Client.Game.RetainerManager.Instance()->GetRetainerBySortedIndex(i);
             if (retainer == null) continue;
 
-            if (retainer->RetainerID == id)
-                retainerName = MemoryHelper.ReadSeStringNullTerminated((IntPtr)retainer->Name).ExtractText();
+            if (retainer->RetainerId == id)
+                retainerName = retainer->NameString;
 
         }
         if (TryGetAddonByName<AtkUnitBase>("RetainerList", out var retainerList) && IsAddonReady(retainerList))
@@ -279,7 +280,7 @@ internal unsafe static class RetainerHandlers
         return TrySelectSpecificEntry(text);
     }
 
-    internal static bool? OpenItemContextMenu(uint itemId, bool lookingForHQ, out uint quantity)
+    internal static bool? OpenItemContextMenu(uint ItemId, bool lookingForHQ, out uint quantity)
     {
         quantity = 0;
         var inventories = new List<InventoryType>
@@ -300,20 +301,20 @@ internal unsafe static class RetainerHandlers
             for (int i = 0; i < InventoryManager.Instance()->GetInventoryContainer(inv)->Size; i++)
             {
                 var item = InventoryManager.Instance()->GetInventoryContainer(inv)->GetInventorySlot(i);
-                //Svc.Log.Debug($"ITEM {item->ItemID.NameOfItem()} IN {item->Slot}");
-                if (item->ItemID == itemId && ((lookingForHQ && item->Flags == InventoryItem.ItemFlags.HQ) || (!lookingForHQ)))
+                //Svc.Log.Debug($"ITEM {item->ItemId.NameOfItem()} IN {item->Slot}");
+                if (item->ItemId == ItemId && ((lookingForHQ && item->Flags == InventoryItem.ItemFlags.HighQuality) || (!lookingForHQ)))
                 {
                     quantity = item->Quantity;
                     Svc.Log.Debug($"Found item? {item->Quantity}");
                     var ag = AgentInventoryContext.Instance();
-                    ag->OpenForItemSlot(inv, i, AgentModule.Instance()->GetAgentByInternalId(AgentId.Retainer)->GetAddonID());
+                    ag->OpenForItemSlot(inv, i, AgentModule.Instance()->GetAgentByInternalId(AgentId.Retainer)->GetAddonId());
                     var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu", 1);
                     var contextAgent = AgentInventoryContext.Instance();
                     var indexOfRetrieveAll = -1;
                     var indexOfRetrieveQuantity = -1;
 
                     int looper = 0;
-                    foreach (var contextObj in contextAgent->EventParamsSpan)
+                    foreach (var contextObj in contextAgent->EventParams)
                     {
                         if (contextObj.Type == FFXIVClientStructs.FFXIV.Component.GUI.ValueType.String)
                         {
@@ -328,7 +329,7 @@ internal unsafe static class RetainerHandlers
 
                     if (contextMenu != null)
                     {
-                        if (item->Quantity == 1 || item->ItemID <= 19)
+                        if (item->Quantity == 1 || item->ItemId <= 19)
                         {
                             if (indexOfRetrieveAll == -1) return true;
                             Callback.Fire(contextMenu, true, 0, indexOfRetrieveAll, 0, 0, 0);
@@ -365,7 +366,7 @@ internal unsafe static class RetainerHandlers
         {
             var button = (AtkComponentButton*)addon->UldManager.NodeList[2]->GetComponent();
             var nodetext = MemoryHelper.ReadSeString(&addon->UldManager.NodeList[2]->GetComponent()->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText).ExtractText();
-            if (nodetext == text && addon->UldManager.NodeList[2]->IsVisible && button->IsEnabled && RetainerInfo.GenericThrottle)
+            if (nodetext == text && addon->UldManager.NodeList[2]->IsVisible() && button->IsEnabled && RetainerInfo.GenericThrottle)
             {
                 new ClickButtonGeneric(addon, "RetainerItemTransferProgress").Click(button);
                 return true;

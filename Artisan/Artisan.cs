@@ -16,6 +16,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using ECommons;
 using ECommons.Automation;
+using ECommons.Automation.LegacyTaskManager;
 using ECommons.DalamudServices;
 using ECommons.Logging;
 using OtterGui.Classes;
@@ -43,7 +44,7 @@ public unsafe class Artisan : IDalamudPlugin
     internal StyleModel Style;
     internal bool StylePushed = false;
 
-    public Artisan([RequiredVersion("1.0")] DalamudPluginInterface pluginInterface)
+    public Artisan(DalamudPluginInterface pluginInterface)
     {
         ECommonsMain.Init(pluginInterface, this, Module.All);
         PunishLibMain.Init(pluginInterface, "Artisan", new AboutPlugin() { Sponsor = "https://ko-fi.com/taurenkey" });

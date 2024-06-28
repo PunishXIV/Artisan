@@ -209,7 +209,7 @@ namespace Artisan.Autocraft
                 {
                     try
                     {
-                        if (addon->AtkUnitBase.UldManager.NodeList[88]->IsVisible)
+                        if (addon->AtkUnitBase.UldManager.NodeList[88]->IsVisible())
                         {
                             RecipeID = 0;
                             return;
@@ -225,7 +225,7 @@ namespace Artisan.Autocraft
                             return;
                         }
 
-                        if (addon->AtkUnitBase.UldManager.NodeList[49]->IsVisible)
+                        if (addon->AtkUnitBase.UldManager.NodeList[49]->IsVisible())
                         {
                             RecipeID = selectedRecipe->RecipeId;
                         }
@@ -239,7 +239,7 @@ namespace Artisan.Autocraft
                                 if (node->Component->UldManager.NodeListCount < 16)
                                     return;
 
-                                if (node is null || !node->AtkResNode.IsVisible)
+                                if (node is null || !node->AtkResNode.IsVisible())
                                 {
                                     break;
                                 }

@@ -59,7 +59,7 @@ namespace Artisan.CraftingLists
                 
                 int number = CraftingListUI.selectedList.Recipes[i].Quantity;
                 var recipe = LuminaSheets.RecipeSheet[sublist[i].ID];
-                var itemID = recipe.ItemResult.Value.RowId;
+                var ItemId = recipe.ItemResult.Value.RowId;
 
                 Svc.Log.Debug($"{recipe.ItemResult.Value.Name.RawString} {sublist.Count}");
                 ExtractRecipes(sublist, recipe);
@@ -69,9 +69,9 @@ namespace Artisan.CraftingLists
             {
                 int number = item.Quantity;
                 var recipe = LuminaSheets.RecipeSheet[item.ID];
-                var itemID = recipe.ItemResult.Value.RowId;
+                var ItemId = recipe.ItemResult.Value.RowId;
 
-                exportItems += $"{itemID},null,{number};";
+                exportItems += $"{ItemId},null,{number};";
             }
 
             exportItems = exportItems.TrimEnd(';');

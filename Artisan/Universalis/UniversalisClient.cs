@@ -22,13 +22,13 @@ namespace Artisan.Universalis
             };
         }
 
-        public MarketboardData? GetMarketBoard(string region, ulong itemId)
+        public MarketboardData? GetMarketBoard(string region, ulong ItemId)
         {
-            var marketBoardFromAPI = this.GetMarketBoardData(region, itemId);
+            var marketBoardFromAPI = this.GetMarketBoardData(region, ItemId);
             return marketBoardFromAPI;
         }
 
-        public MarketboardData? GetRegionData(ulong itemId, ref MarketboardData output)
+        public MarketboardData? GetRegionData(ulong ItemId, ref MarketboardData output)
         {
             var world = Svc.ClientState.LocalPlayer?.CurrentWorld.Id;
             if (world == null)
@@ -39,10 +39,10 @@ namespace Artisan.Universalis
                 return null;
 
 
-            return output = GetMarketBoard(region, itemId);
+            return output = GetMarketBoard(region, ItemId);
         }
 
-        public MarketboardData? GetDCData(ulong itemId, ref MarketboardData output)
+        public MarketboardData? GetDCData(ulong ItemId, ref MarketboardData output)
         {
             var world = Svc.ClientState.LocalPlayer?.CurrentWorld.Id;
             if (world == null)
@@ -52,7 +52,7 @@ namespace Artisan.Universalis
             if (region == null)
                 return null;
 
-            return output = GetMarketBoard(region, itemId);
+            return output = GetMarketBoard(region, ItemId);
         }
 
         public void Dispose()
@@ -60,12 +60,12 @@ namespace Artisan.Universalis
             this.httpClient.Dispose();
         }
 
-        private MarketboardData? GetMarketBoardData(string region, ulong itemId)
+        private MarketboardData? GetMarketBoardData(string region, ulong ItemId)
         {
             HttpResponseMessage result;
             try
             {
-                result = this.GetMarketBoardDataAsync(region, itemId).Result;
+                result = this.GetMarketBoardDataAsync(region, ItemId).Result;
             }
             catch (Exception ex)
             {
@@ -77,8 +77,8 @@ namespace Artisan.Universalis
             if (result.StatusCode != HttpStatusCode.OK)
             {
                 Svc.Log.Error(
-                    "Failed to retrieve data from Universalis for itemId {0} / worldId {1} with HttpStatusCode {2}.",
-                    itemId,
+                    "Failed to retrieve data from Universalis for ItemId {0} / worldId {1} with HttpStatusCode {2}.",
+                    ItemId,
                     region,
                     result.StatusCode);
                 return null;
@@ -88,8 +88,8 @@ namespace Artisan.Universalis
             if (json == null)
             {
                 Svc.Log.Error(
-                    "Failed to deserialize Universalis response for itemId {0} / worldId {1}.",
-                    itemId,
+                    "Failed to deserialize Universalis response for ItemId {0} / worldId {1}.",
+                    ItemId,
                     region);
                 return null;
             }
@@ -138,16 +138,16 @@ namespace Artisan.Universalis
             {
                 Svc.Log.Error(
                     ex,
-                    "Failed to parse marketBoard data for itemId {0} / worldId {1}.",
-                    itemId,
+                    "Failed to parse marketBoard data for ItemId {0} / worldId {1}.",
+                    ItemId,
                     region);
                 return null;
             }
         }
 
-        private async Task<HttpResponseMessage> GetMarketBoardDataAsync(string? worldId, ulong itemId)
+        private async Task<HttpResponseMessage> GetMarketBoardDataAsync(string? worldId, ulong ItemId)
         {
-            var request = Endpoint + worldId + "/" + itemId;
+            var request = Endpoint + worldId + "/" + ItemId;
             Svc.Log.Debug($"universalisRequest={request}");
             return await this.httpClient.GetAsync(new Uri(request));
         }

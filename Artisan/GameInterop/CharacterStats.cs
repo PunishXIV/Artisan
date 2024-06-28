@@ -49,13 +49,13 @@ public unsafe struct ItemStats
     public Item? Data;
     public StatValue[] Stats = new StatValue[(int)CharacterStatsUtils.Stat.Count];
 
-    public ItemStats(uint itemID, bool hq, ushort* materia, byte* materiaGrades)
+    public ItemStats(uint ItemId, bool hq, Span<ushort> materia, Span<byte> materiaGrades)
     {
         HQ = hq;
-        if (itemID == 0)
+        if (ItemId == 0)
             return;
 
-        Data = Svc.Data.GetExcelSheet<Item>()?.GetRow(itemID);
+        Data = Svc.Data.GetExcelSheet<Item>()?.GetRow(ItemId);
         if (Data == null)
             return;
 
@@ -97,8 +97,8 @@ public unsafe struct ItemStats
                 Stats[stat].Melded += materiaRow.Value[materiaGrades[i]];
         }
     }
-    public ItemStats(InventoryItem* item) : this(item->ItemID, item->Flags.HasFlag(InventoryItem.ItemFlags.HQ), item->Materia, item->MateriaGrade) { }
-    public ItemStats(RaptureGearsetModule.GearsetItem* item) : this(item->ItemID % 1000000, item->ItemID >= 1000000, item->Materia, item->MateriaGrade) { }
+    public ItemStats(InventoryItem* item) : this(item->ItemId, item->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality), item->Materia, item->MateriaGrades) { }
+    public ItemStats(RaptureGearsetModule.GearsetItem* item) : this(item->ItemId % 1000000, item->ItemId >= 1000000, item->Materia, item->MateriaGrades) { }
 }
 
 public unsafe struct ConsumableStats
@@ -118,13 +118,13 @@ public unsafe struct ConsumableStats
 
     public int EffectiveValue(CharacterStatsUtils.Stat stat, int baseValue) => (int)stat < Stats.Length ? Stats[(int)stat].Effective(baseValue) : 0;
 
-    public ConsumableStats(uint itemID, bool hq)
+    public ConsumableStats(uint ItemId, bool hq)
     {
         HQ = hq;
-        if (itemID == 0)
+        if (ItemId == 0)
             return;
 
-        Data = Svc.Data.GetExcelSheet<Item>()?.GetRow(itemID);
+        Data = Svc.Data.GetExcelSheet<Item>()?.GetRow(ItemId);
         if (Data == null)
             return;
 
@@ -163,8 +163,8 @@ public unsafe struct CharacterStats
         Craftsmanship = CharacterInfo.Craftsmanship,
         Control = CharacterInfo.Control,
         CP = (int)CharacterInfo.MaxCP,
-        Specialist = InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 13)->ItemID != 0, // specialist == job crystal equipped
-        Splendorous = Svc.Data.GetExcelSheet<Item>()?.GetRow(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemID) is { LevelEquip: 90, Rarity: >= 4 },
+        Specialist = InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 13)->ItemId != 0, // specialist == job crystal equipped
+        Splendorous = Svc.Data.GetExcelSheet<Item>()?.GetRow(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemId) is { LevelEquip: 90, Rarity: >= 4 },
         Manipulation = CharacterInfo.IsManipulationUnlocked(CharacterInfo.JobID)
     };
 
@@ -196,9 +196,9 @@ public unsafe struct CharacterStats
         if (!gs.Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists))
             return res;
 
-        for (int i = 0; i < gs.ItemsSpan.Length; ++i)
+        for (int i = 0; i < gs.Items.Length; ++i)
         {
-            var details = new ItemStats((RaptureGearsetModule.GearsetItem*)Unsafe.AsPointer(ref gs.ItemsSpan[i]));
+            var details = new ItemStats((RaptureGearsetModule.GearsetItem*)Unsafe.AsPointer(ref gs.Items[i]));
             if (details.Data != null)
                 res.AddItem(i, ref details);
         }
@@ -211,7 +211,7 @@ public unsafe struct CharacterStats
     {
         if (CharacterInfo.JobID == job)
             return GetBaseStatsEquipped();
-        foreach (ref var gs in RaptureGearsetModule.Instance()->EntriesSpan)
+        foreach (ref var gs in RaptureGearsetModule.Instance()->Entries)
         {
             try
             {

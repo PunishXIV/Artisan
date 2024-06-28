@@ -59,7 +59,7 @@ namespace Artisan.UI
                     fixed (GearsetEntry?* gs = &SimGS)
                     {
                         var val = gs->Value;
-                        string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(val.Name));
+                        string name = val.NameString;
 
                         return $"{name} (ilvl {val.ItemLevel})";
                     }
@@ -860,7 +860,7 @@ namespace Artisan.UI
 
             if (!CustomStatMode)
             {
-                var validGS = RaptureGearsetModule.Instance()->EntriesSpan.ToArray().Count(x => RaptureGearsetModule.Instance()->IsValidGearset(x.ID) && x.ClassJob == SelectedRecipe?.CraftType.Row + 8);
+                var validGS = RaptureGearsetModule.Instance()->Entries.ToArray().Count(x => RaptureGearsetModule.Instance()->IsValidGearset(x.Id) && x.ClassJob == SelectedRecipe?.CraftType.Row + 8);
 
                 if (validGS == 0)
                 {
@@ -870,9 +870,9 @@ namespace Artisan.UI
                 }
                 if (validGS == 1)
                 {
-                    var gs = RaptureGearsetModule.Instance()->EntriesSpan.ToArray().First(x => RaptureGearsetModule.Instance()->IsValidGearset(x.ID) && x.ClassJob == SelectedRecipe?.CraftType.Row + 8);
+                    var gs = RaptureGearsetModule.Instance()->Entries.ToArray().First(x => RaptureGearsetModule.Instance()->IsValidGearset(x.Id) && x.ClassJob == SelectedRecipe?.CraftType.Row + 8);
                     SimGS = gs;
-                    string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(gs.Name));
+                    string name = gs.NameString;
                     ImGuiEx.Text($"Gearset");
                     ImGui.SameLine(120f);
                     ImGuiEx.SetNextItemFullWidth();
@@ -893,14 +893,14 @@ namespace Artisan.UI
                     SimGS = null;
                 }
 
-                foreach (var gs in RaptureGearsetModule.Instance()->EntriesSpan)
+                foreach (var gs in RaptureGearsetModule.Instance()->Entries)
                 {
-                    if (!RaptureGearsetModule.Instance()->IsValidGearset(gs.ID)) continue;
+                    if (!RaptureGearsetModule.Instance()->IsValidGearset(gs.Id)) continue;
                     if (gs.ClassJob != SelectedRecipe?.CraftType.Row + 8)
                         continue;
 
-                    string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(gs.Name));
-                    var selected = ImGui.Selectable($"{name} (ilvl {gs.ItemLevel})###GS{gs.ID}");
+                    string name = gs.NameString;
+                    var selected = ImGui.Selectable($"{name} (ilvl {gs.ItemLevel})###GS{gs.Id}");
 
                     if (selected)
                     {

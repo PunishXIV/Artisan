@@ -99,7 +99,6 @@ public static unsafe class Crafting
             CraftQualityMax = Calculations.RecipeMaxQuality(recipe),
             CraftRequiredQuality = (int)recipe.RequiredQuality,
             CraftRecommendedCraftsmanship = lt?.SuggestedCraftsmanship ?? 0,
-            CraftRecommendedControl = lt?.SuggestedControl ?? 0,
             CraftHQ = recipe.CanHq,
         };
         
@@ -412,7 +411,7 @@ public static unsafe class Crafting
         //var succeededNQ = quickSynthWindow->AtkValues[5].Int;
         //var succeededHQ = quickSynthWindow->AtkValues[8].Int;
         //var failed = quickSynthWindow->AtkValues[6].Int;
-        //var itemId = quickSynthWindow->AtkValues[7].UInt;
+        //var ItemId = quickSynthWindow->AtkValues[7].UInt;
         return (cur, max);
     }
 
