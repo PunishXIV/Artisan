@@ -36,7 +36,7 @@ public unsafe static class PreCrafting
     public static int timeWasteLoops = 0;
     private static long NextTaskAt = 0;
 
-    private delegate void ClickSynthesisButton(AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* atkEventData);
+    private delegate void ClickSynthesisButton(void* thisPtr, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* atkEventData);
     private static Hook<ClickSynthesisButton> _clickButton;
 
     private delegate void* FireCallbackDelegate(AtkUnitBase* atkUnitBase, int valueCount, AtkValue* atkValues, byte updateVisibility);
@@ -48,8 +48,8 @@ public unsafe static class PreCrafting
 
     static PreCrafting()
     {
-        //_clickButton = Svc.Hook.HookFromSignature<ClickSynthesisButton>("40 55 53 56 57 41 57 48 8D 6C 24 ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 0F 48 8B 7D 7F", ClickSynthButtons);
-        //_clickButton.Enable();
+        _clickButton = Svc.Hook.HookFromSignature<ClickSynthesisButton>("40 55 53 56 57 41 57 48 8D 6C 24 ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 0F 48 8B 7D 7F", ClickSynthButtons);
+        _clickButton.Enable();
 
         //_fireCallbackHook = Svc.Hook.HookFromSignature<FireCallbackDelegate>("E8 ?? ?? ?? ?? 8B 4C 24 20 0F B6 D8", CallbackDetour);
     }
@@ -438,7 +438,7 @@ public unsafe static class PreCrafting
            || Svc.Condition[ConditionFlag.OccupiedSummoningBell];
     }
 
-    private static void ClickSynthButtons(AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* atkEventData)
+    private static void ClickSynthButtons(void* thisPtr, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* atkEventData)
     {
         if (eventType == AtkEventType.ButtonClick && eventParam is 13 or 14 or 15)
         {
@@ -451,7 +451,7 @@ public unsafe static class PreCrafting
         }
         else
         {
-            _clickButton?.OriginalDisposeSafe(eventType, eventParam, atkEvent, atkEventData);
+            _clickButton?.OriginalDisposeSafe(thisPtr, eventType, eventParam, atkEvent, atkEventData);
         }
         
     }
