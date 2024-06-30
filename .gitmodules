@@ -1,12 +1,9 @@
-[submodule "FFXIVClientStructs"]
-	path = FFXIVClientStructs
-	url = https://github.com/aers/FFXIVClientStructs.git
 [submodule "ECommons"]
 	path = ECommons
 	url = https://github.com/Taurenkey/ECommons.git
 [submodule "PunishLib"]
 	path = PunishLib
-	url = https://github.com/Taurenkey/PunishLib.git
+	url = https://github.com/PunishXIV/PunishLib.git
 [submodule "ClickLib"]
 	path = ClickLib
 	url = https://github.com/Taurenkey/ClickLib.git
