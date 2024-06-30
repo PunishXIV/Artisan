@@ -340,13 +340,13 @@ namespace Artisan.QuestSync
             {
                 switch (Svc.ClientState.ClientLanguage)
                 {
-                    case Dalamud.ClientLanguage.English:
+                    case Dalamud.Game.ClientLanguage.English:
                         return "free kupo nuts";
-                    case Dalamud.ClientLanguage.French:
+                    case Dalamud.Game.ClientLanguage.French:
                         return "Je sais où trouver des noix de kupo";
-                    case Dalamud.ClientLanguage.German:
+                    case Dalamud.Game.ClientLanguage.German:
                         return "Kupo-Nüsse für alle Helfer!";
-                    case Dalamud.ClientLanguage.Japanese:
+                    case Dalamud.Game.ClientLanguage.Japanese:
                         return "クポの実あるよ";
                 }
 
@@ -355,12 +355,12 @@ namespace Artisan.QuestSync
             {
                 switch (Svc.ClientState.ClientLanguage)
                 {
-                    case Dalamud.ClientLanguage.French:
-                    case Dalamud.ClientLanguage.English:
+                    case Dalamud.Game.ClientLanguage.French:
+                    case Dalamud.Game.ClientLanguage.English:
                         return "lali-ho";
-                    case Dalamud.ClientLanguage.German:
+                    case Dalamud.Game.ClientLanguage.German:
                         return "Holladrio";
-                    case Dalamud.ClientLanguage.Japanese:
+                    case Dalamud.Game.ClientLanguage.Japanese:
                         return "ラリホー";
                 }
             }
@@ -368,13 +368,13 @@ namespace Artisan.QuestSync
             {
                 switch (Svc.ClientState.ClientLanguage)
                 {
-                    case Dalamud.ClientLanguage.English:
+                    case Dalamud.Game.ClientLanguage.English:
                         return "dream bigger";
-                    case Dalamud.ClientLanguage.Japanese:
+                    case Dalamud.Game.ClientLanguage.Japanese:
                         return "ドリームマシマシ";
-                    case Dalamud.ClientLanguage.German:
+                    case Dalamud.Game.ClientLanguage.German:
                         return "Traummaschine";
-                    case Dalamud.ClientLanguage.French:
+                    case Dalamud.Game.ClientLanguage.French:
                         return "rêves à gogo";
                 }
             }
@@ -382,13 +382,13 @@ namespace Artisan.QuestSync
             {
                 switch (Svc.ClientState.ClientLanguage)
                 {
-                    case Dalamud.ClientLanguage.English:
+                    case Dalamud.Game.ClientLanguage.English:
                         return "With the Wind";
-                    case Dalamud.ClientLanguage.French:
+                    case Dalamud.Game.ClientLanguage.French:
                         return "Tel le vent";
-                    case Dalamud.ClientLanguage.German:
+                    case Dalamud.Game.ClientLanguage.German:
                         return "Sei eins mit dem Wind!";
-                    case Dalamud.ClientLanguage.Japanese:
+                    case Dalamud.Game.ClientLanguage.Japanese:
                         return "風のごとく！";
                 }
             }
@@ -396,13 +396,13 @@ namespace Artisan.QuestSync
             {
                 switch (Svc.ClientState.ClientLanguage)
                 {
-                    case Dalamud.ClientLanguage.English:
+                    case Dalamud.Game.ClientLanguage.English:
                         return "his whiskers";
-                    case Dalamud.ClientLanguage.French:
+                    case Dalamud.Game.ClientLanguage.French:
                         return "la gloire de la grande frairie";
-                    case Dalamud.ClientLanguage.German:
+                    case Dalamud.Game.ClientLanguage.German:
                         return "Große Flosse";
-                    case Dalamud.ClientLanguage.Japanese:
+                    case Dalamud.Game.ClientLanguage.Japanese:
                         return "おおなまずのまにまに";
                 }
             }
@@ -410,13 +410,13 @@ namespace Artisan.QuestSync
             {
                 switch (Svc.ClientState.ClientLanguage)
                 {
-                    case Dalamud.ClientLanguage.English:
+                    case Dalamud.Game.ClientLanguage.English:
                         return "Now Fall";
-                    case Dalamud.ClientLanguage.French:
+                    case Dalamud.Game.ClientLanguage.French:
                         return "Nous nous envolerons";
-                    case Dalamud.ClientLanguage.German:
+                    case Dalamud.Game.ClientLanguage.German:
                         return "Ab durch die Wolken!";
-                    case Dalamud.ClientLanguage.Japanese:
+                    case Dalamud.Game.ClientLanguage.Japanese:
                         return "天を翔ける！";
                 }
             }
@@ -424,13 +424,13 @@ namespace Artisan.QuestSync
             {
                 switch (Svc.ClientState.ClientLanguage)
                 {
-                    case Dalamud.ClientLanguage.English:
+                    case Dalamud.Game.ClientLanguage.English:
                         return "High as Honor";
-                    case Dalamud.ClientLanguage.French:
+                    case Dalamud.Game.ClientLanguage.French:
                         return "Haut dans le ciel";
-                    case Dalamud.ClientLanguage.German:
+                    case Dalamud.Game.ClientLanguage.German:
                         return "Hoch hinaus!";
-                    case Dalamud.ClientLanguage.Japanese:
+                    case Dalamud.Game.ClientLanguage.Japanese:
                         return "もっと高く！";
                 }
             }
@@ -438,13 +438,13 @@ namespace Artisan.QuestSync
             {
                 switch (Svc.ClientState.ClientLanguage)
                 {
-                    case Dalamud.ClientLanguage.English:
+                    case Dalamud.Game.ClientLanguage.English:
                         return "Wings Unbending";
-                    case Dalamud.ClientLanguage.French:
+                    case Dalamud.Game.ClientLanguage.French:
                         return "Ayatlan, terre sacrée";
-                    case Dalamud.ClientLanguage.German:
+                    case Dalamud.Game.ClientLanguage.German:
                         return "Mögen deine Schwingen nie brechen!";
-                    case Dalamud.ClientLanguage.Japanese:
+                    case Dalamud.Game.ClientLanguage.Japanese:
                         return "折れぬ翼を！";
                 }
             }
@@ -452,13 +452,13 @@ namespace Artisan.QuestSync
             {
                 switch (Svc.ClientState.ClientLanguage)
                 {
-                    case Dalamud.ClientLanguage.English:
+                    case Dalamud.Game.ClientLanguage.English:
                         return "Amid the Flowers";
-                    case Dalamud.ClientLanguage.French:
+                    case Dalamud.Game.ClientLanguage.French:
                         return "Bientôt nous retrouverons";
-                    case Dalamud.ClientLanguage.German:
+                    case Dalamud.Game.ClientLanguage.German:
                         return "Der unerfüllte Traum der Ixal!";
-                    case Dalamud.ClientLanguage.Japanese:
+                    case Dalamud.Game.ClientLanguage.Japanese:
                         return "果てぬ夢を！";
                 }
             }

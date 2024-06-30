@@ -157,16 +157,25 @@ public unsafe struct CharacterStats
     public bool Specialist;
     public bool Manipulation;
 
-    // current in-game stats
-    public static CharacterStats GetCurrentStats() => new()
+    public override string ToString()
     {
-        Craftsmanship = CharacterInfo.Craftsmanship,
-        Control = CharacterInfo.Control,
-        CP = (int)CharacterInfo.MaxCP,
-        Specialist = InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 13)->ItemId != 0, // specialist == job crystal equipped
-        Splendorous = Svc.Data.GetExcelSheet<Item>()?.GetRow(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemId) is { LevelEquip: 90, Rarity: >= 4 },
-        Manipulation = CharacterInfo.IsManipulationUnlocked(CharacterInfo.JobID)
-    };
+        return $"Craft: {Craftsmanship}; Control: {Control}; CP: {CP}; Level: {Level}; Splendorous: {Splendorous}; Specialist: {Specialist}; Manipulation: {Manipulation};";
+    }
+
+    // current in-game stats
+    public static CharacterStats GetCurrentStats()
+    {
+        var stats = new CharacterStats();
+
+        stats.Craftsmanship = CharacterInfo.Craftsmanship;
+        stats.Control = CharacterInfo.Control;
+        stats.CP = (int)CharacterInfo.MaxCP;
+        stats.Specialist = InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 13)->ItemId != 0; // specialist == job crystal equipped
+        stats.Splendorous = Svc.Data.GetExcelSheet<Item>()?.GetRow(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemId) is { LevelEquip: 90, Rarity: >= 4 };
+        stats.Manipulation = CharacterInfo.IsManipulationUnlocked(CharacterInfo.JobID);
+
+        return stats;
+    }
 
     // base naked stats
     public static CharacterStats GetBaseStatsNaked() => new() { CP = 180 };

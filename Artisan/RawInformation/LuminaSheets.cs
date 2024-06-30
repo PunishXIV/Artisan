@@ -1,6 +1,7 @@
 ﻿using Artisan.QuestSync;
 using Artisan.RawInformation.Character;
 using Dalamud;
+using Dalamud.Game;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Utility;
 using ECommons;

@@ -1,6 +1,5 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.RawInformation;
-using Dalamud.ContextMenu;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using ECommons.DalamudServices;
@@ -12,23 +11,46 @@ using Artisan.Autocraft;
 using Artisan.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
+using Dalamud.Game.Gui.ContextMenu;
+using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace Artisan.ContextMenus;
 
 internal static class CraftingListContextMenu
 {
-    private static DalamudContextMenu? contextMenu;
+    private static IContextMenu? contextMenu;
     private static Chat2IPC? Chat2IPC;
+
+    public const int SatisfactionSupplyItemIdx = 0x54;
+    public const int SatisfactionSupplyItem1Id = 0x80 + 1 * 0x3C;
+    public const int SatisfactionSupplyItem2Id = 0x80 + 2 * 0x3C;
+    public const int ContentsInfoDetailContextItemId = 0x17CC;
+    public const int RecipeNoteContextItemId = 0x398;
+    public const int AgentItemContextItemId = 0x28;
+    public const int GatheringNoteContextItemId = 0xA0;
+    public const int ItemSearchContextItemId = 0x1740;
+    public const int ChatLogContextItemId = 0x948;
+
+    public const int SubmarinePartsMenuContextItemId = 0x54;
+    public const int ShopExchangeItemContextItemId = 0x54;
+    public const int ShopContextMenuItemId = 0x54;
+    public const int ShopExchangeCurrencyContextItemId = 0x54;
+    public const int HWDSupplyContextItemId = 0x38C;
+    public const int GrandCompanySupplyListContextItemId = 0x54;
+    public const int GrandCompanyExchangeContextItemId = 0x54;
+
 
     public static void Init()
     {
-        contextMenu = new(Svc.PluginInterface);
-        contextMenu.OnOpenGameObjectContextMenu += AddMenu;
-        contextMenu.OnOpenInventoryContextMenu += AddInventoryMenu;
+        contextMenu = Svc.ContextMenu;
+        contextMenu.OnMenuOpened += AddMenu;
 
         Chat2IPC = new(Svc.PluginInterface);
         Chat2IPC.Enable();
         Chat2IPC.OnOpenChatTwoItemContextMenu += AddChat2Menu;
+
+        Svc.Log.Debug($"Init Context Menus.");
     }
 
     private static void AddChat2Menu(uint ItemId)
@@ -45,24 +67,34 @@ internal static class CraftingListContextMenu
         }
     }
 
-    private static void AddInventoryMenu(InventoryContextMenuOpenArgs args)
+    private static void AddInventoryMenu(IMenuOpenedArgs args)
     {
         if (P.Config.HideContextMenus) return;
 
-        if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == args.ItemId)) return;
+        uint? itemId;
+        itemId = GetGameObjectItemId(args);
 
-        var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == args.ItemId).RowId;
 
-        args.AddCustomItem(new InventoryContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Open Recipe Log")), _ => CraftingListFunctions.OpenRecipeByID(recipeId, true)));
+        if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == itemId)) return;
+
+        var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == itemId).RowId;
+
+        var menuItem = new MenuItem();
+        menuItem.Name = "Open Recipe Log";
+        menuItem.PrefixChar = 'A';
+        menuItem.PrefixColor = 706;
+        menuItem.OnClicked += clickedArgs => CraftingListFunctions.OpenRecipeByID(recipeId, true);
+
+        args.AddMenuItem(menuItem);
     }
 
-    private unsafe static void AddMenu(GameObjectContextMenuOpenArgs args)
+    private unsafe static void AddMenu(IMenuOpenedArgs args)
     {
+        Svc.Log.Debug($"{args.AddonName}");
         if (P.Config.HideContextMenus) return;
-        
-        if (args.ParentAddonName == "RecipeNote")
+        if (args.AddonName == "RecipeNote")
         {
-            IntPtr recipeNoteAgent = Svc.GameGui.FindAgentInterface(args.ParentAddonName);
+            IntPtr recipeNoteAgent = Svc.GameGui.FindAgentInterface(args.AddonName);
             var ItemId = *(uint*)(recipeNoteAgent + 0x398);
             var craftTypeIndex = *(uint*)(recipeNoteAgent + 944);
             
@@ -74,7 +106,13 @@ internal static class CraftingListContextMenu
                     amountToGet = LuminaSheets.RecipeSheet[Endurance.RecipeID].UnkData5.First(y => y.ItemIngredient == ItemId).AmountIngredient;
                 }
 
-                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Withdraw from Retainer")), _ => RetainerInfo.RestockFromRetainers(ItemId, amountToGet)));
+                var menuItem = new MenuItem();
+                menuItem.Name = "Withdraw from Retainer";
+                menuItem.PrefixChar = 'A';
+                menuItem.PrefixColor = 706;
+                menuItem.OnClicked += clickedArgs => RetainerInfo.RestockFromRetainers(ItemId, amountToGet);
+
+                args.AddMenuItem(menuItem);
             }
 
             if (!LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == ItemId, out var recipe)) return;
@@ -83,19 +121,47 @@ internal static class CraftingListContextMenu
             
             if (CraftingListUI.selectedList.ID == 0)
             {
-                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to New Crafting List")), _ => AddToNewList(ItemId, craftTypeIndex)));
+                var menuItem = new MenuItem();
+                menuItem.Name = "Add to New Crafting List";
+                menuItem.PrefixChar = 'A';
+                menuItem.PrefixColor = 706;
+                menuItem.OnClicked += clickedArgs => AddToNewList(ItemId, craftTypeIndex);
+
+                args.AddMenuItem(menuItem);
                 if (ingredientsSubCraft)
-                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to New Crafting List (with Sub-crafts)")), _ => AddToNewList(ItemId, craftTypeIndex, true)));
+                {
+                    var menuItem2 = new MenuItem();
+                    menuItem2.Name = "Add to New Crafting List (with Sub-crafts)";
+                    menuItem2.PrefixChar = 'A';
+                    menuItem2.PrefixColor = 706;
+                    menuItem2.OnClicked += clickedArgs => AddToNewList(ItemId, craftTypeIndex, true);
+
+                    args.AddMenuItem(menuItem2);
+                }
             }
             else
             {
-                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to Current Crafting List")), _ => AddToList(ItemId, craftTypeIndex)));
+                var menuItem = new MenuItem();
+                menuItem.Name = "Add to Current Crafting List";
+                menuItem.PrefixChar = 'A';
+                menuItem.PrefixColor = 706;
+                menuItem.OnClicked += clickedArgs => AddToList(ItemId, craftTypeIndex);
+
+                args.AddMenuItem(menuItem);
                 if (ingredientsSubCraft)
-                args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Add to Current Crafting List (with Sub-crafts)")), _ => AddToList(ItemId, craftTypeIndex, true)));
+                {
+                    var menuItem2 = new MenuItem();
+                    menuItem2.Name = "Add to Current Crafting List (with Sub-crafts)";
+                    menuItem2.PrefixChar = 'A';
+                    menuItem2.PrefixColor = 706;
+                    menuItem2.OnClicked += clickedArgs => AddToList(ItemId, craftTypeIndex, true);
+
+                    args.AddMenuItem(menuItem2);
+                }
             }
         }
 
-        if (args.ParentAddonName == "ChatLog")
+        if (args.AddonName == "ChatLog")
         {
             var ItemId = GetObjectItemId("ChatLog", 0x948);
             if (ItemId > 500_000)
@@ -105,9 +171,54 @@ internal static class CraftingListContextMenu
 
             var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == ItemId).RowId;
 
-            args.AddCustomItem(new GameObjectContextMenuItem(new Dalamud.Game.Text.SeStringHandling.SeString(new UIForegroundPayload(706), new TextPayload($"{SeIconChar.BoxedLetterA.ToIconString()} "), UIForegroundPayload.UIForegroundOff, new TextPayload("Open Recipe Log")), _ => CraftingListFunctions.OpenRecipeByID(recipeId, true)));
+            var menuItem = new MenuItem();
+            menuItem.Name = "Open Recipe Log";
+            menuItem.PrefixChar = 'A';
+            menuItem.PrefixColor = 706;
+            menuItem.OnClicked += clickedArgs => CraftingListFunctions.OpenRecipeByID(recipeId, true);
+
+            args.AddMenuItem(menuItem);
 
         }
+    }
+
+    private static uint? GetGameObjectItemId(IMenuOpenedArgs args)
+    {
+        var item = args.AddonName switch
+        {
+            null => HandleNulls(),
+            "Shop" => GetObjectItemId("Shop", ShopContextMenuItemId),
+            "GrandCompanySupplyList" => GetObjectItemId("GrandCompanySupplyList", GrandCompanySupplyListContextItemId),
+            "GrandCompanyExchange" => GetObjectItemId("GrandCompanyExchange", GrandCompanyExchangeContextItemId),
+            "ShopExchangeCurrency" => GetObjectItemId("ShopExchangeCurrency", ShopExchangeCurrencyContextItemId),
+            "SubmarinePartsMenu" => GetObjectItemId("SubmarinePartsMenu", SubmarinePartsMenuContextItemId),
+            "ShopExchangeItem" => GetObjectItemId("ShopExchangeItem", ShopExchangeItemContextItemId),
+            "ContentsInfoDetail" => GetObjectItemId("ContentsInfo", ContentsInfoDetailContextItemId),
+            "RecipeNote" => GetObjectItemId("RecipeNote", RecipeNoteContextItemId),
+            "RecipeTree" => GetObjectItemId(AgentById(AgentId.RecipeItemContext), AgentItemContextItemId),
+            "RecipeMaterialList" => GetObjectItemId(AgentById(AgentId.RecipeItemContext), AgentItemContextItemId),
+            "RecipeProductList" => GetObjectItemId(AgentById(AgentId.RecipeItemContext), AgentItemContextItemId),
+            "GatheringNote" => GetObjectItemId("GatheringNote", GatheringNoteContextItemId),
+            "ItemSearch" => GetObjectItemId(args.AgentPtr, ItemSearchContextItemId),
+            "ChatLog" => GetObjectItemId("ChatLog", ChatLogContextItemId),
+            _ => null,
+        };
+        if (item == null)
+        {
+            var guiHoveredItem = Svc.GameGui.HoveredItem;
+            if (guiHoveredItem >= 2000000 || guiHoveredItem == 0) return null;
+            item = (uint)guiHoveredItem % 500_000;
+        }
+
+        return item;
+    }
+
+    private static unsafe IntPtr AgentById(AgentId id)
+    {
+        var uiModule = (UIModule*)Svc.GameGui.GetUIModule();
+        var agents = uiModule->GetAgentModule();
+        var agent = agents->GetAgentByInternalId(id);
+        return (IntPtr)agent;
     }
 
     private static uint GetObjectItemId(uint ItemId)
@@ -116,6 +227,34 @@ internal static class CraftingListContextMenu
             ItemId -= 500000;
 
         return ItemId;
+    }
+
+    private static unsafe uint? HandleSatisfactionSupply()
+    {
+        var agent = Svc.GameGui.FindAgentInterface("SatisfactionSupply");
+        if (agent == IntPtr.Zero)
+            return null;
+
+        var itemIdx = *(byte*)(agent + SatisfactionSupplyItemIdx);
+        return itemIdx switch
+        {
+            1 => GetObjectItemId(*(uint*)(agent + SatisfactionSupplyItem1Id)),
+            2 => GetObjectItemId(*(uint*)(agent + SatisfactionSupplyItem2Id)),
+            _ => null,
+        };
+    }
+    private static unsafe uint? HandleHWDSupply()
+    {
+        var agent = Svc.GameGui.FindAgentInterface("HWDSupply");
+        if (agent == IntPtr.Zero)
+            return null;
+
+        return GetObjectItemId(*(uint*)(agent + HWDSupplyContextItemId));
+    }
+    private static uint? HandleNulls()
+    {
+        var itemId = HandleSatisfactionSupply() ?? HandleHWDSupply();
+        return itemId;
     }
 
     private unsafe static uint? GetObjectItemId(IntPtr agent, int offset)
@@ -170,9 +309,7 @@ internal static class CraftingListContextMenu
 
     public static void Dispose()
     {
-        contextMenu.OnOpenGameObjectContextMenu -= AddMenu;
-        contextMenu.OnOpenInventoryContextMenu -= AddInventoryMenu;
-        contextMenu?.Dispose();
+        contextMenu.OnMenuOpened -= AddMenu;
         Chat2IPC.OnOpenChatTwoItemContextMenu -= AddChat2Menu;
         Chat2IPC.Disable();
     }

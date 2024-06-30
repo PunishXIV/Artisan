@@ -18,14 +18,14 @@ public unsafe struct RecipeNoteIngredientEntry
     [FieldOffset(0x82)] public byte NumTotal;
 }
 
-[StructLayout(LayoutKind.Explicit, Size = 0x500)]
+[StructLayout(LayoutKind.Explicit, Size = 0x3F8)]
 public unsafe struct RecipeNoteRecipeEntry
 {
-    [FieldOffset(0x000)] public fixed byte Ingredients[8 * 0x88];
-    public Span<RecipeNoteIngredientEntry> IngredientsSpan => new(Unsafe.AsPointer(ref Ingredients[0]), 8);
+    [FieldOffset(0x000)] public fixed byte Ingredients[6 * 0x88];
+    public Span<RecipeNoteIngredientEntry> IngredientsSpan => new(Unsafe.AsPointer(ref Ingredients[0]), 6);
 
-    [FieldOffset(0x4C2)] public ushort RecipeId;
-    [FieldOffset(0x4E7)] public byte CraftType;
+    [FieldOffset(0x3B2)] public ushort RecipeId;
+    [FieldOffset(0x3D7)] public byte CraftType;
 
     public int[] GetAssignedHQIngredients()
     {
@@ -43,7 +43,7 @@ public unsafe struct RecipeNoteRecipeData
 
     [FieldOffset(0x000)] public RecipeNoteRecipeEntry* Recipes; // note: can be null
     [FieldOffset(0x008)] public int RecipesCount;
-    [FieldOffset(0x3B8)] public ushort SelectedIndex;
+    [FieldOffset(0x408)] public ushort SelectedIndex;
 
     public RecipeNoteRecipeEntry* FindRecipeById(uint id)
     {

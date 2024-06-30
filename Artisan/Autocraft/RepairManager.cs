@@ -136,7 +136,7 @@ namespace Artisan.Autocraft
             return false;
         }
 
-        internal static bool RepairNPCNearby(out GameObject npc)
+        internal static bool RepairNPCNearby(out IGameObject npc)
         {
             npc = null;
             if (Svc.ClientState.LocalPlayer != null)
@@ -170,7 +170,7 @@ namespace Artisan.Autocraft
         }
         internal static bool InteractWithRepairNPC()
         {
-            if (RepairNPCNearby(out GameObject npc))
+            if (RepairNPCNearby(out IGameObject npc))
             {
                 TargetSystem.Instance()->OpenObjectInteraction(npc.Struct());
                 if (TryGetAddonByName<AddonSelectIconString>("SelectIconString", out var addonSelectIconString))

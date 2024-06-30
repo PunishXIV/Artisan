@@ -3,6 +3,9 @@ using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Dalamud.Game.Addon.Events;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using ECommons;
@@ -33,10 +36,8 @@ public unsafe static class PreCrafting
     public static int timeWasteLoops = 0;
     private static long NextTaskAt = 0;
 
-    private delegate void ClickSynthesisButton(void* a1, void* a2);
-    private static Hook<ClickSynthesisButton> _clickNormalSynthesisButtonHook;
-    private static Hook<ClickSynthesisButton> _clickQuickSynthesisButtonHook;
-    private static Hook<ClickSynthesisButton> _clickTrialSynthesisButtonHook;
+    private delegate void ClickSynthesisButton(AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* atkEventData);
+    private static Hook<ClickSynthesisButton> _clickButton;
 
     private delegate void* FireCallbackDelegate(AtkUnitBase* atkUnitBase, int valueCount, AtkValue* atkValues, byte updateVisibility);
     private static Hook<FireCallbackDelegate> _fireCallbackHook;
@@ -47,17 +48,12 @@ public unsafe static class PreCrafting
 
     static PreCrafting()
     {
-        _clickNormalSynthesisButtonHook = Svc.Hook.HookFromSignature<ClickSynthesisButton>("E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 33 D2", ClickNormalSynthesisButtonDetour);
-        _clickNormalSynthesisButtonHook.Enable();
+        //_clickButton = Svc.Hook.HookFromSignature<ClickSynthesisButton>("40 55 53 56 57 41 57 48 8D 6C 24 ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 0F 48 8B 7D 7F", ClickSynthButtons);
+        //_clickButton.Enable();
 
-        _clickQuickSynthesisButtonHook = Svc.Hook.HookFromSignature<ClickSynthesisButton>("E9 ?? ?? ?? ?? 4C 8B 44 24 ?? 49 8B D2 48 8B CB 48 83 C4 30 5B E9 ?? ?? ?? ?? 33 D2 49 8B CA E8 ?? ?? ?? ?? 83 CA FF", ClickQuickSynthesisButtonDetour);
-        _clickQuickSynthesisButtonHook.Enable();
-
-        _clickTrialSynthesisButtonHook = Svc.Hook.HookFromSignature<ClickSynthesisButton>("E9 ?? ?? ?? ?? 33 D2 49 8B CA E8 ?? ?? ?? ?? 83 CA FF", ClickTrialSynthesisButtonDetour);
-        _clickTrialSynthesisButtonHook.Enable();
-
-        _fireCallbackHook = Svc.Hook.HookFromSignature<FireCallbackDelegate>("E8 ?? ?? ?? ?? 8B 4C 24 20 0F B6 D8", CallbackDetour);
+        //_fireCallbackHook = Svc.Hook.HookFromSignature<FireCallbackDelegate>("E8 ?? ?? ?? ?? 8B 4C 24 20 0F B6 D8", CallbackDetour);
     }
+
 
     private static void* CallbackDetour(AtkUnitBase* atkUnitBase, int valueCount, AtkValue* atkValues, byte updateVisibility)
     {
@@ -84,10 +80,8 @@ public unsafe static class PreCrafting
 
     public static void Dispose()
     {
-        _clickNormalSynthesisButtonHook.Dispose();
-        _clickQuickSynthesisButtonHook.Dispose();
-        _clickTrialSynthesisButtonHook.Dispose();
-        _fireCallbackHook.Dispose();
+        _clickButton?.Dispose();
+        _fireCallbackHook?.Dispose();
     }
 
     public static void Update()
@@ -197,7 +191,7 @@ public unsafe static class PreCrafting
 
     public static int GetNumberCraftable(Recipe recipe)
     {
-        if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon) && addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory != null)
+        if (TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) && addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory != null)
         {
             if (int.TryParse(addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory->NodeText.ToString(), out int output))
                 return output;
@@ -444,33 +438,21 @@ public unsafe static class PreCrafting
            || Svc.Condition[ConditionFlag.OccupiedSummoningBell];
     }
 
-    private static void ClickNormalSynthesisButtonDetour(void* a1, void* a2)
+    private static void ClickSynthButtons(AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* atkEventData)
     {
-        var re = Operations.GetSelectedRecipeEntry();
-        var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
-        if (recipe != null)
-            StartCrafting(recipe, CraftType.Normal);
+        if (eventType == AtkEventType.ButtonClick && eventParam is 13 or 14 or 15)
+        {
+            var re = Operations.GetSelectedRecipeEntry();
+            var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
+            if (recipe != null)
+                StartCrafting(recipe, eventParam is 13 ? CraftType.Normal : eventParam is 14 ? CraftType.Quick : CraftType.Trial);
+            else
+                DuoLog.Error($"Somehow recipe is null. Please report this on the Discord.");
+        }
         else
-            DuoLog.Error($"Somehow recipe is null. Please report this on the Discord.");
-    }
-
-    private static void ClickQuickSynthesisButtonDetour(void* a1, void* a2)
-    {
-        var re = Operations.GetSelectedRecipeEntry();
-        var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
-        if (recipe != null)
-            StartCrafting(recipe, CraftType.Quick);
-        else
-            DuoLog.Error($"Somehow recipe is null. Please report this on the Discord.");
-
-    }
-    private static void ClickTrialSynthesisButtonDetour(void* a1, void* a2)
-    {
-        var re = Operations.GetSelectedRecipeEntry();
-        var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
-        if (recipe != null)
-            StartCrafting(recipe, CraftType.Trial);
-        else
-            DuoLog.Error($"Somehow recipe is null. Please report this on the Discord.");
+        {
+            _clickButton?.OriginalDisposeSafe(eventType, eventParam, atkEvent, atkEventData);
+        }
+        
     }
 }

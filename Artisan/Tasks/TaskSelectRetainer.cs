@@ -174,6 +174,7 @@ public class SeAddressBase
 
     public SeAddressBase(ISigScanner sigScanner, string signature, int offset = 0)
     {
+        return;
         Address = sigScanner.GetStaticAddressFromSig(signature);
         if (Address != IntPtr.Zero)
             Address += offset;

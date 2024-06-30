@@ -41,7 +41,7 @@ public static unsafe class Operations
             if (recipeWindow == nint.Zero)
                 return;
 
-            GenericHelpers.TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon);
+            GenericHelpers.TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon);
 
             if (addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory == null || !int.TryParse(addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory->NodeText.ToString(), out int trueNumberCraftable) || trueNumberCraftable == 0)
             {

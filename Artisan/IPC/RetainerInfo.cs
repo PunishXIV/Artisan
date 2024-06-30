@@ -530,7 +530,7 @@ namespace Artisan.IPC
             return true;
         }
 
-        internal static GameObject? GetReachableRetainerBell()
+        internal static IGameObject? GetReachableRetainerBell()
         {
             foreach (var x in Svc.Objects)
             {
@@ -545,7 +545,7 @@ namespace Artisan.IPC
             return null;
         }
 
-        internal static float GetValidInteractionDistance(GameObject bell)
+        internal static float GetValidInteractionDistance(IGameObject bell)
         {
             if (bell.ObjectKind == ObjectKind.Housing)
             {
@@ -566,12 +566,12 @@ namespace Artisan.IPC
             get => Svc.Data.GetExcelSheet<EObjName>().GetRow(2000401).Singular.ToString();
         }
 
-        public unsafe static bool IsTargetable(this GameObject o)
+        public unsafe static bool IsTargetable(this IGameObject o)
         {
             return o.Struct()->GetIsTargetable();
         }
 
-        public unsafe static FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject* Struct(this GameObject o)
+        public unsafe static FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject* Struct(this IGameObject o)
         {
             return (FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)o.Address;
         }

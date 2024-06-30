@@ -15,7 +15,7 @@ namespace Artisan.IPC
 
     internal class Chat2IPC
     {
-        public Chat2IPC(DalamudPluginInterface pi)
+        public Chat2IPC(IDalamudPluginInterface pi)
         {
             Register = pi.GetIpcSubscriber<string>("ChatTwo.Register");
             Unregister = pi.GetIpcSubscriber<string, object?>("ChatTwo.Unregister");

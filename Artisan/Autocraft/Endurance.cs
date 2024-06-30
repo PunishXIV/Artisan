@@ -13,6 +13,7 @@ using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using System;
@@ -198,7 +199,7 @@ namespace Artisan.Autocraft
         internal static void DrawRecipeData()
         {
             var addonPtr = Svc.GameGui.GetAddonByName("RecipeNote", 1);
-            if (TryGetAddonByName<AddonRecipeNoteFixed>("RecipeNote", out var addon))
+            if (TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
             {
                 if (addonPtr == IntPtr.Zero)
                 {

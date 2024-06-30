@@ -136,6 +136,10 @@ namespace Artisan.UI
                         }
                     }
                 }
+                if (ImGui.CollapsingHeader("Base Stats"))
+                {
+                    ImGui.Text($"{CharacterStats.GetCurrentStats()}");
+                }
 
                 if (ImGui.CollapsingHeader("Crafting Stats") && Crafting.CurCraft != null && Crafting.CurStep != null)
                 {

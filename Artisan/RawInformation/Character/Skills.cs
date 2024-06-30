@@ -1,4 +1,6 @@
-﻿using ECommons.ExcelServices;
+﻿using ECommons;
+using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +14,6 @@ namespace Artisan.RawInformation.Character
         BasicSynthesis = 100001, // 120p progress, 10dur cost
         CarefulSynthesis = 100203, // 180p progress, 7cp + 10 dur cost
         RapidSynthesis = 100363, // 500p progress, 10 dur cost, 50% success
-        //FocusedSynthesis = 100235, // 200p progress, 5cp + 10 dur cost, 50% success unless after observe - Gone in 7.0
         Groundwork = 100403, // 360p progress, 18cp + 20 dur cost, half potency if durability left is less than required
         IntensiveSynthesis = 100315, // 400p progress, 6cp + 10 dur cost, requires good/excellent condition or heart&soul
         PrudentSynthesis = 100427, // 180p progress, 18cp + 5 dur cost, can't be used under waste-not
@@ -22,7 +23,6 @@ namespace Artisan.RawInformation.Character
         StandardTouch = 100004, // 125p quality, 18cp + 10 dur cost if used after basic touch (otherwise 32cp)
         AdvancedTouch = 100411, // 150p quality, 18cp + 10 dur cost if used after standard touch (otherwise 46cp)
         HastyTouch = 100355, // 100p quality, 10 dur cost, 60% success
-        //FocusedTouch = 100243, // 150p quality, 18cp + 10 dur cost, 50% success unless after observe - Gone in 7.0
         PreparatoryTouch = 100299, // 200p quality, 40cp + 20 dur cost, 1 extra iq stack
         PreciseTouch = 100128, // 150p quality, 18cp + 10 dur cost, 1 extra iq stack, requires good/excellent condition or heart&soul
         PrudentTouch = 100227, // 100p quality, 25cp + 5 dur cost, can't be used under waste-not
@@ -74,12 +74,12 @@ namespace Artisan.RawInformation.Character
         private static void AssignActionIDs(Skills skill)
         {
             var id = (uint)skill;
-            var skillName = id >= 100000 ? LuminaSheets.CraftActions[id].Name.RawString : LuminaSheets.ActionSheet[id].Name.RawString;
+            var skillName = id >= 100000 ? LuminaSheets.CraftActions[id].Name.RawString.Trim() : LuminaSheets.ActionSheet[id].Name.RawString;
 
             for (Job i = Job.CRP; i <= Job.CUL; i++)
             {
                 var enumIndex = Array.IndexOf(Enum.GetValues(typeof(Skills)), skill);
-                var convertedId = id >= 100000 ? LuminaSheets.CraftActions.Values.FirstOrDefault(x => x.ClassJob.Row == (int)i && x.Name.RawString == skillName).RowId : LuminaSheets.ActionSheet.Values.FirstOrDefault(x => x.ClassJob.Row == (int)i && x.Name.RawString == skillName).RowId;
+                var convertedId = id >= 100000 ? LuminaSheets.CraftActions.Values.FirstOrDefault(x => x.ClassJobCategory.Row == (int)i + 1 && x.Name.RawString == skillName).RowId : LuminaSheets.ActionSheet.Values.FirstOrDefault(x => x.ClassJob.Row == (int)i && x.Name.RawString == skillName).RowId;
                 ref var entry = ref _skillToAction[enumIndex, i - Job.CRP];
                 if (entry != 0)
                     throw new Exception($"Duplicate entry for {i} {skill}: {id} and {entry}");

@@ -38,13 +38,13 @@ public unsafe class Artisan : IDalamudPlugin
     internal RecipeInformation ri;
     internal TaskManager TM;
     internal TaskManager CTM;
-    internal IconStorage Icons;
+    internal TextureCache Icons;
     internal UniversalisClient UniversalsisClient;
 
     internal StyleModel Style;
     internal bool StylePushed = false;
 
-    public Artisan(DalamudPluginInterface pluginInterface)
+    public Artisan(IDalamudPluginInterface pluginInterface)
     {
         ECommonsMain.Init(pluginInterface, this, Module.All);
         PunishLibMain.Init(pluginInterface, "Artisan", new AboutPlugin() { Sponsor = "https://ko-fi.com/taurenkey" });
@@ -63,7 +63,7 @@ public unsafe class Artisan : IDalamudPlugin
 #endif
         ws = new();
         ri = new();
-        Icons = new(Svc.Texture, Svc.Data);
+        Icons = new(Svc.Data, Svc.Texture);
         Config = P.Config;
         PluginUi = new();
 
