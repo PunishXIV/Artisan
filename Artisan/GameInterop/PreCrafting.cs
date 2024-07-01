@@ -3,9 +3,6 @@ using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
-using Dalamud.Game.Addon.Events;
-using Dalamud.Game.Addon.Lifecycle;
-using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using ECommons;
@@ -21,7 +18,6 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using static ECommons.GenericHelpers;
 
 namespace Artisan.GameInterop;

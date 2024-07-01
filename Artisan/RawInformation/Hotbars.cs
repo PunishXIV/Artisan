@@ -3,7 +3,6 @@ using Artisan.GameInterop;
 using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 using static FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureHotbarModule;

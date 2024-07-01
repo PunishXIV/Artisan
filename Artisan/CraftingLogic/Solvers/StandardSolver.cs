@@ -1,9 +1,4 @@
-﻿using ECommons;
-using ECommons.DalamudServices;
-using SharpDX.Direct2D1;
-using SharpDX.DirectWrite;
-using System.Collections.Generic;
-using System.Security.Permissions;
+﻿using System.Collections.Generic;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 using Skills = Artisan.RawInformation.Character.Skills;
 

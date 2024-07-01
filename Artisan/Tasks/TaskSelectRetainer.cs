@@ -1,8 +1,5 @@
 ﻿using Artisan.IPC;
 using Artisan.RawInformation;
-using ClickLib.Clicks;
-using ClickLib.Enums;
-using ClickLib.Structures;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
@@ -12,10 +9,12 @@ using ECommons.Automation;
 using ECommons.Automation.LegacyTaskManager;
 using ECommons.DalamudServices;
 using ECommons.Events;
+using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using SharpDX.Direct2D1.Effects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +22,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using static ECommons.GenericHelpers;
 using MemoryHelper = Dalamud.Memory.MemoryHelper;
+using ECommons.Automation.UIInput;
 
 
 namespace Artisan.Tasks;
@@ -38,31 +38,6 @@ internal static class TaskSelectRetainer
 
 internal unsafe static class RetainerListHandlers
 {
-    internal static bool? SelectRetainerByName(string name)
-    {
-        if (TryGetAddonByName<AtkUnitBase>("RetainerList", out var retainerList) && IsAddonReady(retainerList))
-        {
-            var list = (AtkComponentNode*)retainerList->UldManager.NodeList[2];
-            for (var i = 1u; i < RetainerInfo.retainerManager.Count + 1; i++)
-            {
-                var retainerEntry = (AtkComponentNode*)list->Component->UldManager.NodeList[i];
-                var text = (AtkTextNode*)retainerEntry->Component->UldManager.NodeList[13];
-                var nodeName = text->NodeText.ToString();
-                //P.DebugLog($"Retainer {i} text {nodeName}");
-                if (name == nodeName)
-                {
-                    if (RetainerInfo.GenericThrottle)
-                    {
-                        ClickRetainerList.Using((IntPtr)retainerList).Select(list, retainerEntry, i - 1);
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
     internal static bool? SelectRetainerByID(ulong id)
     {
         string retainerName = "";
@@ -78,7 +53,7 @@ internal unsafe static class RetainerListHandlers
         if (TryGetAddonByName<AtkUnitBase>("RetainerList", out var retainerList) && IsAddonReady(retainerList))
         {
             var list = (AtkComponentNode*)retainerList->UldManager.NodeList[2];
-            for (var i = 1u; i < RetainerInfo.retainerManager.Count + 1; i++)
+            for (int i = 1; i < RetainerInfo.retainerManager.Count + 1; i++)
             {
                 var retainerEntry = (AtkComponentNode*)list->Component->UldManager.NodeList[i];
                 var text = (AtkTextNode*)retainerEntry->Component->UldManager.NodeList[13];
@@ -87,7 +62,7 @@ internal unsafe static class RetainerListHandlers
                 {
                     if (RetainerInfo.GenericThrottle)
                     {
-                        ClickRetainerList.Using((IntPtr)retainerList).Select(list, retainerEntry, i - 1);
+                        new AddonMaster.RetainerList(retainerList).Select(i);
                         return true;
                     }
                 }
@@ -232,40 +207,6 @@ public unsafe struct SeRetainer
     }
 }
 
-internal unsafe class ClickRetainerList : ClickLib.Bases.ClickBase<ClickRetainerList, AtkUnitBase>
-{
-    public ClickRetainerList(IntPtr addon = default)
-        : base("RetainerList", addon)
-    {
-    }
-    public static implicit operator ClickRetainerList(IntPtr addon) => new(addon);
-
-    public static ClickRetainerList Using(IntPtr addon) => new(addon);
-
-    public void Select(void* list, AtkComponentNode* target, uint index)
-    {
-        var data = InputData.Empty();
-        data.Data[0] = target;
-        data.Data[2] = (void*)(index | (ulong)index << 48);
-        ClickAddonComponent(target, 1, EventType.LIST_INDEX_CHANGE, null, data);
-    }
-}
-
-internal unsafe class ClickButtonGeneric : ClickLib.Bases.ClickBase<ClickButtonGeneric, AtkUnitBase>
-{
-    internal string Name;
-    public ClickButtonGeneric(void* addon, string name)
-    : base(name, (nint)addon)
-    {
-        Name = name;
-    }
-
-    public void Click(void* target, uint which = 0)
-    {
-        ClickAddonButton((AtkComponentButton*)target, which);
-    }
-}
-
 internal unsafe static class RetainerHandlers
 {
     internal static bool? SelectQuit()
@@ -369,7 +310,7 @@ internal unsafe static class RetainerHandlers
             var nodetext = MemoryHelper.ReadSeString(&addon->UldManager.NodeList[2]->GetComponent()->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText).ExtractText();
             if (nodetext == text && addon->UldManager.NodeList[2]->IsVisible() && button->IsEnabled && RetainerInfo.GenericThrottle)
             {
-                new ClickButtonGeneric(addon, "RetainerItemTransferProgress").Click(button);
+                button->ClickAddonButton(addon);
                 return true;
             }
         }
@@ -406,7 +347,7 @@ internal unsafe static class RetainerHandlers
                 var index = GetEntries(addon).IndexOf(entry);
                 if (index >= 0 && IsSelectItemEnabled(addon, index) && RetainerInfo.GenericThrottle)
                 {
-                    ClickSelectString.Using((nint)addon).SelectItem((ushort)index);
+                    new AddonMaster.SelectString((nint)addon).Entries[(ushort)index].Select();
                     return true;
                 }
             }

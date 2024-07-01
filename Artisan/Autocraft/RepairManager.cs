@@ -2,9 +2,7 @@
 using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
-using Artisan.TemporaryFixes;
 using Artisan.UI;
-using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Objects.Types;
 using ECommons;
 using ECommons.Automation;
@@ -12,11 +10,11 @@ using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.GameFunctions;
 using ECommons.Logging;
+using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina.Excel.GeneratedSheets;
-using OtterGui;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -28,22 +26,22 @@ namespace Artisan.Autocraft
     {
         internal static void Repair()
         {
-            if (TryGetAddonByName<AddonRepairFixed>("Repair", out var addon) && addon->AtkUnitBase.IsVisible && addon->RepairAllButton->IsEnabled && Throttler.Throttle(500))
+            if (TryGetAddonByName<AddonRepair>("Repair", out var addon) && addon->AtkUnitBase.IsVisible && addon->RepairAllButton->IsEnabled && Throttler.Throttle(500))
             {
-                new ClickRepairFixed((IntPtr)addon).RepairAll();
+                new AddonMaster.Repair((IntPtr)addon).RepairAll();
             }
         }
 
         internal static void ConfirmYesNo()
         {
-            if (TryGetAddonByName<AddonRepairFixed>("Repair", out var r) &&
+            if (TryGetAddonByName<AddonRepair>("Repair", out var r) &&
                 r->AtkUnitBase.IsVisible && TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var addon) &&
                 addon->AtkUnitBase.IsVisible &&
                 addon->YesButton is not null &&
                 addon->YesButton->IsEnabled &&
                 addon->AtkUnitBase.UldManager.NodeList[15]->IsVisible())
             {
-                new ClickSelectYesNo((IntPtr)addon).Yes();
+                new AddonMaster.SelectYesno((IntPtr)addon).Yes();
             }
         }
 
@@ -163,7 +161,7 @@ namespace Artisan.Autocraft
 
         internal static bool RepairWindowOpen()
         {
-            if (TryGetAddonByName<AddonRepairFixed>("Repair", out var repairAddon))
+            if (TryGetAddonByName<AddonRepair>("Repair", out var repairAddon))
                 return true;
 
             return false;
@@ -179,7 +177,7 @@ namespace Artisan.Autocraft
                     Callback.Fire(&addonSelectIconString->AtkUnitBase, true, index);
                 }
 
-                if (TryGetAddonByName<AddonRepairFixed>("AddonRepair", out var addonRepair))
+                if (TryGetAddonByName<AddonRepair>("AddonRepair", out var addonRepair))
                 {
                     return true;
                 }
@@ -195,7 +193,7 @@ namespace Artisan.Autocraft
             int repairPercent = CraftingList != null ? CraftingList.RepairPercent : P.Config.RepairPercent;
             if (GetMinEquippedPercent() >= repairPercent)
             {
-                if (TryGetAddonByName<AddonRepairFixed>("Repair", out var r) && r->AtkUnitBase.IsVisible)
+                if (TryGetAddonByName<AddonRepair>("Repair", out var r) && r->AtkUnitBase.IsVisible)
                 {
                     if (DateTime.Now < _nextRetry) return false;
                     if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Occupied39])
@@ -212,7 +210,7 @@ namespace Artisan.Autocraft
 
             if (DateTime.Now < _nextRetry) return false;
 
-            if (TryGetAddonByName<AddonRepairFixed>("Repair", out var repairAddon) && repairAddon->AtkUnitBase.IsVisible && repairAddon->RepairAllButton != null)
+            if (TryGetAddonByName<AddonRepair>("Repair", out var repairAddon) && repairAddon->AtkUnitBase.IsVisible && repairAddon->RepairAllButton != null)
             {
                 if (!repairAddon->RepairAllButton->IsEnabled)
                 {

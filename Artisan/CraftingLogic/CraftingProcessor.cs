@@ -2,7 +2,6 @@
 using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.RawInformation.Character;
-using ECommons;
 using ECommons.DalamudServices;
 using System;
 using System.Collections.Generic;

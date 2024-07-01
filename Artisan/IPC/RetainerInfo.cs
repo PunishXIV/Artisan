@@ -1,18 +1,17 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.RawInformation;
 using Artisan.Tasks;
-using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin.Ipc;
 using ECommons;
-using ECommons.Automation;
 using ECommons.Automation.LegacyTaskManager;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices.TerritoryEnumeration;
 using ECommons.Reflection;
 using ECommons.Throttlers;
+using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina.Excel.GeneratedSheets;
@@ -488,7 +487,7 @@ namespace Artisan.IPC
             {
                 if (TryGetAddonByName<AddonTalk>("Talk", out var addon) && addon->AtkUnitBase.IsVisible)
                 {
-                    ClickTalk.Using((IntPtr)addon).Click();
+                    new AddonMaster.Talk((IntPtr)addon).Click();
                 }
             }
         }

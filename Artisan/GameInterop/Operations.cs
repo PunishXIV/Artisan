@@ -1,6 +1,5 @@
 ﻿using Artisan.Autocraft;
 using Artisan.GameInterop.CSExt;
-using Artisan.RawInformation;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;

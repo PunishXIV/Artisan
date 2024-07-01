@@ -1,7 +1,5 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.RawInformation;
-using Dalamud.Game.Text;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using ECommons.DalamudServices;
 using System;
 using System.Linq;
@@ -12,7 +10,6 @@ using Artisan.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 using Dalamud.Game.Gui.ContextMenu;
-using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace Artisan.ContextMenus;

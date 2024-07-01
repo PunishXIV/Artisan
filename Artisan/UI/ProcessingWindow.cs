@@ -4,7 +4,6 @@ using Artisan.RawInformation;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
-using System;
 
 namespace Artisan.UI
 {

@@ -1,7 +1,6 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.IPC;
 using Artisan.Universalis;
-using Dalamud.Interface.Internal;
 using Dalamud.Interface.Textures.TextureWraps;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;

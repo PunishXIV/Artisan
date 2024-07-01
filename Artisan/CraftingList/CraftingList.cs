@@ -2,7 +2,6 @@
 using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
-using ClickLib.Clicks;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -12,6 +11,7 @@ using ECommons.Automation.LegacyTaskManager;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.Logging;
+using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using static ECommons.GenericHelpers;
+using ECommons.Automation.UIInput;
 
 namespace Artisan.CraftingLists
 {
@@ -447,7 +448,7 @@ namespace Artisan.CraftingLists
             {
                 if (setIngredients == null)
                 {
-                    for (var i = 0; i <= 5; i++)
+                    for (uint i = 0; i <= 5; i++)
                     {
                         try
                         {
@@ -465,7 +466,7 @@ namespace Artisan.CraftingLists
                                 var btn = node->Component->UldManager.NodeList[14]->GetAsAtkComponentButton();
                                 try
                                 {
-                                    btn->ClickAddonButton((AtkComponentBase*)addon, 4, AtkEventType.ButtonClick);
+                                    btn->ClickAddonButton((AtkComponentBase*)addon, 4, EventType.CHANGE);
                                 }
                                 catch (Exception ex)
                                 {
@@ -481,12 +482,12 @@ namespace Artisan.CraftingLists
                             {
                                 for (int m = 0; m <= 100; m++)
                                 {
-                                    ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
+                                   new AddonMaster.RecipeNote((IntPtr)addon).Material(i, false);
                                 }
 
                                 for (int m = 0; m <= 100; m++)
                                 {
-                                    ClickRecipeNote.Using((IntPtr)addon).Material(i, true);
+                                   new AddonMaster.RecipeNote((IntPtr)addon).Material(i, true);
                                 }
                             }
 
@@ -499,7 +500,7 @@ namespace Artisan.CraftingLists
                 }
                 else
                 {
-                    for (var i = 0; i <= 5; i++)
+                    for (uint i = 0; i <= 5; i++)
                     {
                         try
                         {
@@ -525,12 +526,12 @@ namespace Artisan.CraftingLists
                             {
                                 for (int h = hqSet; h < setIngredients.First(x => x.IngredientSlot == i).HQSet; h++)
                                 {
-                                    ClickRecipeNote.Using((IntPtr)addon).Material(i, true);
+                                    new AddonMaster.RecipeNote((IntPtr)addon).Material(i, true);
                                 }
 
                                 for (int h = nqSet; h < setIngredients.First(x => x.IngredientSlot == i).NQSet; h++)
                                 {
-                                    ClickRecipeNote.Using((IntPtr)addon).Material(i, false);
+                                    new AddonMaster.RecipeNote((IntPtr)addon).Material(i, false);
                                 }
                             }
                         }

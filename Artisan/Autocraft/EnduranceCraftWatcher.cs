@@ -10,7 +10,6 @@ using ECommons.Logging;
 using Lumina.Excel.GeneratedSheets;
 using Dalamud.Game.Text.SeStringHandling;
 using System.Linq;
-using System;
 
 namespace Artisan.Autocraft
 {

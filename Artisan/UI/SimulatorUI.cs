@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Xml.Linq;
 using static FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
@@ -201,25 +200,32 @@ namespace Artisan.UI
             }
             else
             {
-                _selectedCraft ??= Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
-                if (_simCurSteps.Count == 0)
+                try
                 {
-                    var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
-                    _simCurSteps.Add((initial, ""));
-                }
+                    _selectedCraft ??= Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
+                    if (_simCurSteps.Count == 0)
+                    {
+                        var initial = Simulator.CreateInitial(_selectedCraft, startingQuality);
+                        _simCurSteps.Add((initial, ""));
+                    }
 
-                ImGui.BeginChild("###ManualSolver", new Vector2(0), false, ImGuiWindowFlags.HorizontalScrollbar);
-                DrawActionWidgets();
-                ImGui.Separator();
-                DrawSimulation();
-                if (hoverStepAdded)
-                {
-                    _simCurSteps.RemoveAt(_simCurSteps.Count - 1);
-                    SimActionIDs.RemoveAt(SimActionIDs.Count - 1);
+                    ImGui.BeginChild("###ManualSolver", new Vector2(0), false, ImGuiWindowFlags.HorizontalScrollbar);
+                    //DrawActionWidgets();
+                    ImGui.Separator();
+                    DrawSimulation();
+                    if (hoverStepAdded)
+                    {
+                        _simCurSteps.RemoveAt(_simCurSteps.Count - 1);
+                        SimActionIDs.RemoveAt(SimActionIDs.Count - 1);
+                    }
+                    hoverStepAdded = false;
+                    hoverMode = false;
+                    ImGui.EndChild();
                 }
-                hoverStepAdded = false;
-                hoverMode = false;
-                ImGui.EndChild();
+                catch (Exception ex) 
+                {
+                    ex.Log();
+                }
             }
         }
 

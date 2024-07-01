@@ -1,7 +1,6 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation.Character;
 using Dalamud.Utility;
-using ECommons.DalamudServices;
 using System;
 using System.ComponentModel;
 

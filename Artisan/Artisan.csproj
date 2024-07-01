@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Authors></Authors>
     <Company></Company>
-    <Version>3.0.5.16</Version>
+    <Version>4.0.0.2</Version>
     <Description>A 'simple' crafting plugin.</Description>
     <Copyright>Taurenkey</Copyright>
   </PropertyGroup>
@@ -94,7 +94,6 @@
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="Reloaded.Memory" Version="7.1.0" />
     <PackageReference Include="SharpDX.Direct2D1" Version="4.2.0" />
-    <ProjectReference Include="..\ClickLib\ClickLib\ClickLib.csproj" />
     <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj" />
     <ProjectReference Include="..\OtterGui\OtterGui.csproj" />
     <ProjectReference Include="..\PunishLib\PunishLib\PunishLib.csproj" />

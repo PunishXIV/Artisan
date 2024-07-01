@@ -1,7 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.FCWorkshops;
-using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface;
@@ -14,7 +13,6 @@ using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
-using OtterGui;
 using PunishLib.ImGuiMethods;
 using System;
 using System.IO;
