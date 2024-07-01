@@ -175,6 +175,7 @@ namespace Artisan.UI.Tables
                     }
                 }
 
+                if (item.Icon is not null)
                 ImGuiUtil.HoverIcon(item.Icon, Interface.LineIconSize);
                 ImGui.SameLine();
 

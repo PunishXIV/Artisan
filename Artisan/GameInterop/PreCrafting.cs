@@ -247,7 +247,7 @@ public unsafe static class PreCrafting
                     else
                     {
                         equipGearsetLoops++;
-                        _fireCallbackHook.Enable();
+                        _fireCallbackHook?.Enable();
                         var r = gearsets->EquipGearset(gs.Id);
                         return r < 0 ? TaskResult.Abort : TaskResult.Retry;
                     }
