@@ -141,6 +141,7 @@ public static class CraftingProcessor
             Svc.Log.Warning($"Previous action was different from recommendation: recommended {_nextRec.Action}, used {step.PrevComboAction}");
 
         _nextRec = _activeSolver.Solve(craft, step);
+        Svc.Log.Debug($"Next rec is: {_nextRec.Action}");
         if (_nextRec.Action != Skills.None)
             RecommendationReady?.Invoke(recipe, ActiveSolver, craft, step, _nextRec);
     }

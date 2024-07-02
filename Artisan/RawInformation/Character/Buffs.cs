@@ -12,6 +12,8 @@
             WasteNot2 = 257,
             FinalAppraisal = 2190,
             MuscleMemory = 2191,
-            HeartAndSoul = 2665;
+            HeartAndSoul = 2665,
+            Expedience = 3812,
+            TrainedPerfection = 3813;
     }
 }

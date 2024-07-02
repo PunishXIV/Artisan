@@ -1,4 +1,6 @@
 ﻿using Artisan.CraftingLists;
+using Artisan.GameInterop;
+using ECommons.DalamudServices;
 using System.Collections.Generic;
 using System.Linq;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;

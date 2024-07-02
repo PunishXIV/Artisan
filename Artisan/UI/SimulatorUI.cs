@@ -210,7 +210,7 @@ namespace Artisan.UI
                     }
 
                     ImGui.BeginChild("###ManualSolver", new Vector2(0), false, ImGuiWindowFlags.HorizontalScrollbar);
-                    //DrawActionWidgets();
+                    DrawActionWidgets();
                     ImGui.Separator();
                     DrawSimulation();
                     if (hoverStepAdded)
@@ -298,7 +298,7 @@ namespace Artisan.UI
                         var currentAction = _simCurSteps[i + 1].step.PrevComboAction;
                         var step = _simCurSteps[i + 1].step;
                         var x = ImGui.GetCursorPosX();
-                        ImGui.Image(P.Icons.LoadIcon(currentAction.IconOfAction(job)).ImGuiHandle, new Vector2(widgetSize), new Vector2(), new Vector2(1, 1), highlightLast ? new Vector4(0f, 0.75f, 0.25f, 1f) : new Vector4(1f, 1f, 1f, 1f));
+                        ImGui.Image(P.Icons.TryLoadIconAsync(currentAction.IconOfAction(job)).Result.ImGuiHandle, new Vector2(widgetSize), new Vector2(), new Vector2(1, 1), highlightLast ? new Vector4(0f, 0.75f, 0.25f, 1f) : new Vector4(1f, 1f, 1f, 1f));
                         if (ImGui.IsItemHovered())
                         {
                             ImGui.BeginTooltip();
@@ -437,7 +437,7 @@ namespace Artisan.UI
 
         private static void DrawActionWidget(Skills action)
         {
-            var icon = P.Icons.LoadIcon(action.IconOfAction(Job.CRP + SelectedRecipe.CraftType.Row));
+            var icon = P.Icons.TryLoadIconAsync(action.IconOfAction(Job.CRP + SelectedRecipe.CraftType.Row)).Result;
             ImGui.Image(icon.ImGuiHandle, new Vector2(widgetSize));
 
             var nextstep = Simulator.Execute(_selectedCraft, _simCurSteps.Last().step, action, 0, 1);
@@ -575,7 +575,7 @@ namespace Artisan.UI
                         if (i + 1 < _simCurSteps.Count)
                         {
                             var currentAction = _simCurSteps[i + 1].step.PrevComboAction;
-                            ImGui.Image(P.Icons.LoadIcon(currentAction.IconOfAction(job)).ImGuiHandle, new Vector2(widgetSize));
+                            ImGui.Image(P.Icons.TryLoadIconAsync(currentAction.IconOfAction(job)).Result.ImGuiHandle, new Vector2(widgetSize));
                             var step = _simCurSteps[i + 1].step;
                             if (ImGui.IsItemHovered())
                             {

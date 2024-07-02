@@ -449,6 +449,10 @@ public static unsafe class Crafting
         CarefulObservationLeft = ActionManagerEx.CanUseSkill(Skills.CarefulObservation) ? 1 : 0,
         HeartAndSoulActive = GetStatus(Buffs.HeartAndSoul) != null,
         HeartAndSoulAvailable = ActionManagerEx.CanUseSkill(Skills.HeartAndSoul),
+        QuickInnoAvailable = ActionManagerEx.CanUseSkill(Skills.QuickInnovation),
+        TrainedPerfectionActive = GetStatus(Buffs.TrainedPerfection) != null,
+        TrainedPerfectionAvailable = ActionManagerEx.CanUseSkill(Skills.TrainedPerfection),
+        ExpedienceLeft = GetStatus(Buffs.Expedience)?.StackCount ?? 0,
         PrevActionFailed = prevActionFailed,
         PrevComboAction = prevAction,
     };

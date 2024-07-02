@@ -1,6 +1,7 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation.Character;
 using Dalamud.Utility;
+using ECommons.DalamudServices;
 using System;
 using System.ComponentModel;
 
@@ -122,6 +123,10 @@ public static class Simulator
                 next.IQStacks = 10;
             if (action == Skills.ByregotsBlessing)
                 next.IQStacks = 0;
+            if (action == Skills.HastyTouch && craft.StatLevel >= Skills.DaringTouch.Level())
+                next.ExpedienceLeft = 1;
+            else
+                next.ExpedienceLeft = 0;
         }
 
         next.WasteNotLeft = action switch
@@ -134,7 +139,6 @@ public static class Simulator
         next.GreatStridesLeft = action == Skills.GreatStrides ? GetNewBuffDuration(step, 3) : GetOldBuffDuration(step.GreatStridesLeft, action, next.Quality != step.Quality);
         next.InnovationLeft = action == Skills.Innovation ? GetNewBuffDuration(step, 4) : action == Skills.QuickInnovation ? GetNewBuffDuration(step, 1) : GetOldBuffDuration(step.InnovationLeft, action);
         next.VenerationLeft = action == Skills.Veneration ? GetNewBuffDuration(step, 4) : GetOldBuffDuration(step.VenerationLeft, action);
-        next.ExpedienceLeft = action == Skills.HastyTouch ? GetNewBuffDuration(step, 1) : GetOldBuffDuration(step.ExpedienceLeft, action);
         next.MuscleMemoryLeft = action == Skills.MuscleMemory ? GetNewBuffDuration(step, 5) : GetOldBuffDuration(step.MuscleMemoryLeft, action, next.Progress != step.Progress);
         next.FinalAppraisalLeft = action == Skills.FinalAppraisal ? GetNewBuffDuration(step, 5) : GetOldBuffDuration(step.FinalAppraisalLeft, action, next.Progress >= craft.CraftProgress);
         next.CarefulObservationLeft = step.CarefulObservationLeft - (action == Skills.CarefulObservation ? 1 : 0);
@@ -203,7 +207,6 @@ public static class Simulator
         Skills.HeartAndSoul => step.HeartAndSoulAvailable,
         Skills.TrainedPerfection => step.TrainedPerfectionAvailable,
         Skills.DaringTouch => step.ExpedienceLeft > 0,
-        Skills.RefinedTouch => step.PrevComboAction == Skills.BasicTouch,
         Skills.QuickInnovation => step.QuickInnoAvailable && step.InnovationLeft == 0,
         _ => true
     } && craft.StatLevel >= MinLevel(action) && step.RemainingCP >= GetCPCost(step, action);
@@ -325,9 +328,10 @@ public static class Simulator
             Skills.PreciseTouch => 150,
             Skills.PrudentTouch => 100,
             Skills.TrainedFinesse => 100,
-            Skills.Reflect => 100,
+            Skills.Reflect => 300,
             Skills.ByregotsBlessing => 100 + 20 * step.IQStacks,
             Skills.DelicateSynthesis => 100,
+            Skills.RefinedTouch => 100,
             _ => 0
         };
         if (potency == 0)
