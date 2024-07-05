@@ -162,9 +162,9 @@ namespace Artisan.IPC
 
             public uint HQQuantity { get; set; }
 
-            public ItemInfo(uint ItemId, uint quantity, uint hqQuantity)
+            public ItemInfo(uint itemId, uint quantity, uint hqQuantity)
             {
-                ItemId = ItemId;
+                ItemId = itemId;
                 Quantity = quantity;
                 HQQuantity = hqQuantity;
             }
@@ -297,7 +297,6 @@ namespace Artisan.IPC
                                 else
                                 {
                                     ret.TryAdd(ItemId, new ItemInfo(ItemId, GetRetainerInventoryItem(ItemId, retainerId), GetRetainerInventoryItem(ItemId, retainerId, true)));
-
                                 }
                             }
                         }
@@ -432,7 +431,7 @@ namespace Artisan.IPC
                 if (invCount < material.Value)
                 {
                     var diffcheck = material.Value - invCount;
-                    Svc.Log.Debug($"{diffcheck}");
+                    Svc.Log.Debug($"{material.Key} {diffcheck}");
                     requiredItems.Add((int)material.Key, diffcheck);
                 }
 
@@ -440,9 +439,9 @@ namespace Artisan.IPC
                 GetRetainerItemCount(material.Key);
             }
 
-            Svc.Log.Debug($"Processing Retainer Data");
             if (RetainerData.SelectMany(x => x.Value).Any(x => requiredItems.Any(y => y.Key == x.Value.ItemId)))
             {
+                Svc.Log.Debug($"Processing Retainer Data");
                 TM.Enqueue(() => Svc.Framework.Update += Tick);
                 TM.Enqueue(() => AutoRetainerIPC.Suppress());
                 TM.EnqueueBell();

@@ -60,7 +60,6 @@ namespace Artisan
         public bool DisableToasts = false;
         public bool ShowOnlyCraftable = false;
         public bool ShowOnlyCraftableRetainers = false;
-        public bool DisableMiniMenu = false;
         public bool Materia = false;
         public bool LockMiniMenuR = true;
 

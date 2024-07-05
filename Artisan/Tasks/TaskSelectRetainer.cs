@@ -23,6 +23,7 @@ using System.Runtime.InteropServices;
 using static ECommons.GenericHelpers;
 using MemoryHelper = Dalamud.Memory.MemoryHelper;
 using ECommons.Automation.UIInput;
+using Artisan.Autocraft;
 
 
 namespace Artisan.Tasks;
@@ -50,19 +51,28 @@ internal unsafe static class RetainerListHandlers
                 retainerName = retainer->NameString;
 
         }
+
+        return SelectRetainerByName(retainerName);
+    }
+
+
+    internal static bool? SelectRetainerByName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            throw new Exception($"Name can not be null or empty");
+        }
         if (TryGetAddonByName<AtkUnitBase>("RetainerList", out var retainerList) && IsAddonReady(retainerList))
         {
-            var list = (AtkComponentNode*)retainerList->UldManager.NodeList[2];
-            for (int i = 1; i < RetainerInfo.retainerManager.Count + 1; i++)
+            var list = new AddonMaster.RetainerList(retainerList);
+            foreach (var retainer in list.Retainers)
             {
-                var retainerEntry = (AtkComponentNode*)list->Component->UldManager.NodeList[i];
-                var text = (AtkTextNode*)retainerEntry->Component->UldManager.NodeList[13];
-                var nodeName = text->NodeText.ToString();
-                if (retainerName == nodeName)
+                if (retainer.Name == name)
                 {
                     if (RetainerInfo.GenericThrottle)
                     {
-                        new AddonMaster.RetainerList(retainerList).Select(i);
+                        Svc.Log.Debug($"Selecting retainer {retainer.Name} with index {retainer.Index}");
+                        retainer.Select();
                         return true;
                     }
                 }
@@ -71,6 +81,7 @@ internal unsafe static class RetainerListHandlers
 
         return false;
     }
+
 
     internal static bool? CloseRetainerList()
     {

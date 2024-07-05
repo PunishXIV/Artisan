@@ -19,6 +19,7 @@ namespace Artisan.IPC
                 if (plugin == null) return false;
 
                 var baseTweak = plugin?.Call("GetTweakById", ["UiAdjustments@AutoFocusRecipeSearch", plugin.GetFoP("Tweaks")]);
+                if (baseTweak == null) return false;
                 bool enabled = (bool)baseTweak.GetFoP("Enabled");
                 return enabled;
             }
@@ -35,6 +36,7 @@ namespace Artisan.IPC
                 if (plugin == null) return false;
 
                 var baseTweak = plugin?.Call("GetTweakById", ["ImprovedCraftingLog", plugin.GetFoP("Tweaks")]);
+                if (baseTweak == null) return false;
                 bool enabled = (bool)baseTweak.GetFoP("Enabled");
                 return enabled;
             }
@@ -51,6 +53,7 @@ namespace Artisan.IPC
                 if (plugin == null) return;
 
                 var baseTweak = plugin?.Call("GetTweakById", ["ImprovedCraftingLog", plugin.GetFoP("Tweaks")]);
+                if (baseTweak == null) return;
                 baseTweak.SetFoP("Enabled", false);
 
                 DuoLog.Information($"Improved Crafting Log Tweak is disabled whilst using Artisan.");

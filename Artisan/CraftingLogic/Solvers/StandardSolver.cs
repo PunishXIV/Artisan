@@ -44,9 +44,12 @@ namespace Artisan.CraftingLogic.Solvers
                 rec.Action = Skills.ByregotsBlessing;
             }
 
-            if (rec.Action == Skills.MastersMend &&
+            if ((rec.Action is Skills.MastersMend or Skills.ImmaculateMend) &&
                 step.Condition is Condition.Good or Condition.Excellent && Simulator.CanUseAction(craft, step, Skills.TricksOfTrade))
                 rec.Action = Skills.TricksOfTrade;
+
+            if (Simulator.GetDurabilityCost(step, rec.Action) == 20 && step.TrainedPerfectionAvailable)
+                rec.Action = Skills.TrainedPerfection;
 
             return rec;
         }
@@ -143,6 +146,7 @@ namespace Artisan.CraftingLogic.Solvers
                     return new(Skills.TricksOfTrade);
             }
 
+            if (ShouldMend(craft, step, goingForQuality) && Simulator.CanUseAction(craft, step, Skills.ImmaculateMend) && craft.CraftDurability >= 70) return new(Skills.ImmaculateMend);
             if (ShouldMend(craft, step, goingForQuality) && Simulator.CanUseAction(craft, step, Skills.MastersMend)) return new(Skills.MastersMend);
 
             if ((maxQuality == 0 || P.Config.MaxPercentage == 0) && !craft.CraftCollectible)

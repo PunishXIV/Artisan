@@ -147,7 +147,7 @@ public static class Simulator
         next.QuickInnoAvailable = step.QuickInnoAvailable && action != Skills.QuickInnovation;
         next.PrevActionFailed = !success;
         next.PrevComboAction = action; // note: even stuff like final appraisal and h&s break combos
-        next.TrainedPerfectionActive = action == Skills.TrainedPerfection;
+        next.TrainedPerfectionActive = action == Skills.TrainedPerfection || (step.TrainedPerfectionActive && !HasDurabilityCost(action));
         next.TrainedPerfectionAvailable = step.TrainedPerfectionAvailable && action != Skills.TrainedPerfection;
 
         if (step.FinalAppraisalLeft > 0 && next.Progress >= craft.CraftProgress)
@@ -174,6 +174,21 @@ public static class Simulator
         next.Condition = action is Skills.FinalAppraisal or Skills.HeartAndSoul ? step.Condition : GetNextCondition(craft, step, nextStateRoll);
 
         return (success ? ExecuteResult.Succeeded : ExecuteResult.Failed, next);
+    }
+
+    private static bool HasDurabilityCost(Skills action)
+    {
+        var cost = action switch
+        {
+            Skills.BasicSynthesis or Skills.CarefulSynthesis or Skills.RapidSynthesis or Skills.IntensiveSynthesis or Skills.MuscleMemory => 10,
+            Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.PreciseTouch or Skills.Reflect => 10,
+            Skills.ByregotsBlessing or Skills.DelicateSynthesis => 10,
+            Skills.Groundwork or Skills.PreparatoryTouch => 20,
+            Skills.PrudentSynthesis or Skills.PrudentTouch => 5,
+            _ => 0
+        };
+
+        return cost > 0;
     }
 
     public static int BaseProgress(CraftState craft)

@@ -453,7 +453,6 @@ namespace Artisan.UI
             //bool useSimulated = P.Config.UseSimulatedStartingQuality;
             bool disableGlow = P.Config.DisableHighlightedAction;
             bool disableToasts = P.Config.DisableToasts;
-            bool disableMini = P.Config.DisableMiniMenu;
 
             ImGui.Separator();
 
@@ -687,13 +686,6 @@ namespace Artisan.UI
                 }
 
                 ImGuiComponents.HelpMarker("These are the pop-ups whenever a new action is recommended.");
-
-                if (ImGui.Checkbox("Disable Recipe List mini-menu", ref disableMini))
-                {
-                    P.Config.DisableMiniMenu = disableMini;
-                    P.Config.Save();
-                }
-                ImGuiComponents.HelpMarker("Hides the mini-menu for config settings in the recipe list. Still shows individual macro menu.");
 
                 bool lockMini = P.Config.LockMiniMenuR;
                 if (ImGui.Checkbox("Keep Recipe List mini-menu position attached to Recipe List.", ref lockMini))
