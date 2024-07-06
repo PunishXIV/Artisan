@@ -1113,6 +1113,12 @@ internal class ListEditor : Window, IDisposable
                 Notify.Success($"Quick Synth applied to all list items.");
                 P.Config.Save();
             }
+
+            if (NQOnly && !P.Config.UseConsumablesQuickSynth)
+            {
+                if (ImGui.Checkbox("You do not have quick synth consumables enabled. Turn this on?", ref P.Config.UseConsumablesQuickSynth))
+                    P.Config.Save();
+            }
         }
         else
         {
@@ -1195,6 +1201,48 @@ internal class ListEditor : Window, IDisposable
                     var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
                     o.RequiredPotion = config.RequiredPotion;
                     o.RequiredPotionHQ = config.RequiredPotionHQ;
+                    P.Config.RecipeConfigs[r.ID] = o;
+                }
+                P.Config.Save();
+            }
+        }
+
+        {
+            if (config.DrawManual(true))
+            {
+                P.Config.RecipeConfigs[selectedListItem] = config;
+                P.Config.Save();
+            }
+
+            ImGui.SameLine();
+
+            if (ImGui.Button($"Apply to all###ManualApplyAll"))
+            {
+                foreach (var r in SelectedList.Recipes.Distinct())
+                {
+                    var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
+                    o.RequiredManual = config.RequiredManual;
+                    P.Config.RecipeConfigs[r.ID] = o;
+                }
+                P.Config.Save();
+            }
+        }
+
+        {
+            if (config.DrawSquadronManual(true))
+            {
+                P.Config.RecipeConfigs[selectedListItem] = config;
+                P.Config.Save();
+            }
+
+            ImGui.SameLine();
+
+            if (ImGui.Button($"Apply to all###ManualApplyAll"))
+            {
+                foreach (var r in SelectedList.Recipes.Distinct())
+                {
+                    var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
+                    o.RequiredSquadronManual = config.RequiredSquadronManual;
                     P.Config.RecipeConfigs[r.ID] = o;
                 }
                 P.Config.Save();
