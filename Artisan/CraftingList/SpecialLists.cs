@@ -21,7 +21,7 @@ namespace Artisan.CraftingLists
         private static Dictionary<ushort, bool> Durabilities = LuminaSheets.RecipeSheet.Values.Where(x => x.Number > 0).Select(x => (ushort)(x.RecipeLevelTable.Value.Durability * ((float)x.DurabilityFactor / 100))).Distinct().Order().ToDictionary(x => x, x => false);
 
         private static int minLevel = 1;
-        private static int maxLevel = 90;
+        private static int maxLevel = 100;
 
         private static int minCraftsmanship = LuminaSheets.RecipeSheet.Values.Min(x => x.RequiredCraftsmanship);
         private static int minControl = LuminaSheets.RecipeSheet.Values.Min(x => x.RequiredControl);
@@ -173,7 +173,7 @@ namespace Artisan.CraftingLists
             ImGui.TextWrapped("Minimum Level");
             ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
             ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, ImGui.GetStyle().FramePadding with { Y = 5 });
-            ImGui.SliderInt("###SpecialListMinLevel", ref minLevel, 1, 90);
+            ImGui.SliderInt("###SpecialListMinLevel", ref minLevel, 1, 100);
             ImGui.PopStyleVar();
 
             ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
@@ -226,7 +226,7 @@ namespace Artisan.CraftingLists
             ImGui.TextWrapped("Max Level");
             ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
             ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, ImGui.GetStyle().FramePadding with { Y = 5});
-            ImGui.SliderInt("###SpecialListMaxLevel", ref maxLevel, 1, 90);
+            ImGui.SliderInt("###SpecialListMaxLevel", ref maxLevel, 1, 100);
             ImGui.PopStyleVar();
             ImGui.PushItemWidth(ImGui.GetContentRegionAvail().X);
             ImGui.TextWrapped($"Expert Recipe");

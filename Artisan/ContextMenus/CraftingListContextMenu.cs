@@ -11,6 +11,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using ImGuiNET;
 using Dalamud.Game.Gui.ContextMenu;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using System.Collections.Generic;
 
 namespace Artisan.ContextMenus;
 
@@ -68,33 +69,38 @@ internal static class CraftingListContextMenu
     {
         if (P.Config.HideContextMenus) return;
 
-        uint? itemId;
-        itemId = GetGameObjectItemId(args);
 
-
-        if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == itemId)) return;
-
-        var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == itemId).RowId;
-
-        var menuItem = new MenuItem();
-        menuItem.Name = "Open Recipe Log";
-        menuItem.PrefixChar = 'A';
-        menuItem.PrefixColor = 706;
-        menuItem.OnClicked += clickedArgs => CraftingListFunctions.OpenRecipeByID(recipeId, true);
-
-        args.AddMenuItem(menuItem);
     }
 
     private unsafe static void AddMenu(IMenuOpenedArgs args)
     {
         Svc.Log.Debug($"{args.AddonName}");
         if (P.Config.HideContextMenus) return;
+        if (args.AddonName != "RecipeNote")
+        {
+            uint? itemId;
+            itemId = GetGameObjectItemId(args);
+
+
+            if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == itemId)) return;
+
+            var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == itemId).RowId;
+
+            var menuItem = new MenuItem();
+            menuItem.Name = "Open Recipe Log";
+            menuItem.PrefixChar = 'A';
+            menuItem.PrefixColor = 706;
+            menuItem.OnClicked += clickedArgs => CraftingListFunctions.OpenRecipeByID(recipeId, true);
+
+            args.AddMenuItem(menuItem);
+        }
+
         if (args.AddonName == "RecipeNote")
         {
             IntPtr recipeNoteAgent = Svc.GameGui.FindAgentInterface(args.AddonName);
             var ItemId = *(uint*)(recipeNoteAgent + 0x398);
             var craftTypeIndex = *(uint*)(recipeNoteAgent + 944);
-            
+
             if (RetainerInfo.GetRetainerItemCount(ItemId) > 0 && RetainerInfo.GetReachableRetainerBell() != null)
             {
                 int amountToGet = 1;
@@ -113,49 +119,18 @@ internal static class CraftingListContextMenu
             }
 
             if (!LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == ItemId, out var recipe)) return;
-            
+
             bool ingredientsSubCraft = recipe.UnkData5.Any(x => CraftingListHelpers.GetIngredientRecipe((uint)x.ItemIngredient) != null);
-            
-            if (CraftingListUI.selectedList.ID == 0)
-            {
-                var menuItem = new MenuItem();
-                menuItem.Name = "Add to New Crafting List";
-                menuItem.PrefixChar = 'A';
-                menuItem.PrefixColor = 706;
-                menuItem.OnClicked += clickedArgs => AddToNewList(ItemId, craftTypeIndex);
 
-                args.AddMenuItem(menuItem);
-                if (ingredientsSubCraft)
-                {
-                    var menuItem2 = new MenuItem();
-                    menuItem2.Name = "Add to New Crafting List (with Sub-crafts)";
-                    menuItem2.PrefixChar = 'A';
-                    menuItem2.PrefixColor = 706;
-                    menuItem2.OnClicked += clickedArgs => AddToNewList(ItemId, craftTypeIndex, true);
+            var subMenu = new MenuItem();
+            subMenu.IsSubmenu = true;
+            subMenu.Name = "Artisan Crafting List";
+            subMenu.PrefixChar = 'A';
+            subMenu.PrefixColor = 706;
 
-                    args.AddMenuItem(menuItem2);
-                }
-            }
-            else
-            {
-                var menuItem = new MenuItem();
-                menuItem.Name = "Add to Current Crafting List";
-                menuItem.PrefixChar = 'A';
-                menuItem.PrefixColor = 706;
-                menuItem.OnClicked += clickedArgs => AddToList(ItemId, craftTypeIndex);
+            subMenu.OnClicked += args => OpenArtisanCraftingListSubmenu(args, ItemId, craftTypeIndex, ingredientsSubCraft);
 
-                args.AddMenuItem(menuItem);
-                if (ingredientsSubCraft)
-                {
-                    var menuItem2 = new MenuItem();
-                    menuItem2.Name = "Add to Current Crafting List (with Sub-crafts)";
-                    menuItem2.PrefixChar = 'A';
-                    menuItem2.PrefixColor = 706;
-                    menuItem2.OnClicked += clickedArgs => AddToList(ItemId, craftTypeIndex, true);
-
-                    args.AddMenuItem(menuItem2);
-                }
-            }
+            args.AddMenuItem(subMenu);
         }
 
         if (args.AddonName == "ChatLog")
@@ -177,6 +152,53 @@ internal static class CraftingListContextMenu
             args.AddMenuItem(menuItem);
 
         }
+    }
+
+    private static unsafe void OpenArtisanCraftingListSubmenu(IMenuItemClickedArgs args, uint ItemId, uint craftTypeIndex, bool ingredientsSubCraft)
+    {
+        var menuItems = new List<MenuItem>();
+        if (CraftingListUI.selectedList.ID == 0)
+        {
+            var menuItem = new MenuItem();
+            menuItem.Name = "Add to New Artisan Crafting List";
+            menuItem.PrefixChar = 'A';
+            menuItem.PrefixColor = 706;
+            menuItem.OnClicked += clickedArgs => AddToNewList(ItemId, craftTypeIndex);
+
+            menuItems.Add(menuItem);
+            if (ingredientsSubCraft)
+            {
+                var menuItem2 = new MenuItem();
+                menuItem2.Name = "Add to New Artisan Crafting List (with Sub-crafts)";
+                menuItem2.PrefixChar = 'A';
+                menuItem2.PrefixColor = 706;
+                menuItem2.OnClicked += clickedArgs => AddToNewList(ItemId, craftTypeIndex, true);
+
+                menuItems.Add(menuItem2);
+            }
+        }
+        else
+        {
+            var menuItem = new MenuItem();
+            menuItem.Name = "Add to Current Artisan Crafting List";
+            menuItem.PrefixChar = 'A';
+            menuItem.PrefixColor = 706;
+            menuItem.OnClicked += clickedArgs => AddToList(ItemId, craftTypeIndex);
+
+            menuItems.Add(menuItem);
+            if (ingredientsSubCraft)
+            {
+                var menuItem2 = new MenuItem();
+                menuItem2.Name = "Add to Current Artisan Crafting List (with Sub-crafts)";
+                menuItem2.PrefixChar = 'A';
+                menuItem2.PrefixColor = 706;
+                menuItem2.OnClicked += clickedArgs => AddToList(ItemId, craftTypeIndex, true);
+
+                menuItems.Add(menuItem2);
+            }
+        }
+        if (menuItems.Count > 0)
+            args.OpenSubmenu(menuItems);
     }
 
     private static uint? GetGameObjectItemId(IMenuOpenedArgs args)

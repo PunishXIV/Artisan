@@ -202,7 +202,7 @@ namespace Artisan.Autocraft
                         if (DebugTab.Debug) Svc.Log.Verbose("Closing repair window");
                         ActionManagerEx.UseRepair();
                     }
-                    _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
+                    _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(1000));
                     return false;
                 }
                 return true;
@@ -215,7 +215,7 @@ namespace Artisan.Autocraft
                 if (!repairAddon->RepairAllButton->IsEnabled)
                 {
                     ActionManagerEx.UseRepair();
-                    _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
+                    _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(1000));
                     return false;
                 }
 
@@ -224,7 +224,7 @@ namespace Artisan.Autocraft
                     ConfirmYesNo();
                     Repair();
                 }
-                _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
+                _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(1000));
                 return false;
             }
 
@@ -233,7 +233,7 @@ namespace Artisan.Autocraft
                 if (RepairNPCNearby(out var npc) && InventoryManager.Instance()->GetInventoryItemCount(1) >= GetNPCRepairPrice() && !RepairWindowOpen())
                 {
                     InteractWithRepairNPC();
-                    _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
+                    _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(1000));
                     return false;
                 }
             }
@@ -244,7 +244,7 @@ namespace Artisan.Autocraft
                 {
                     ActionManagerEx.UseRepair();
                 }
-                _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
+                _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(1000));
                 return false;
             }
 
@@ -252,7 +252,7 @@ namespace Artisan.Autocraft
             {
                 Endurance.ToggleEndurance(false);
                 DuoLog.Warning($"Endurance has stopped due to being unable to repair.");
-                _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
+                _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(1000));
                 return false;
             }
 
@@ -260,7 +260,7 @@ namespace Artisan.Autocraft
             {
                 CraftingListFunctions.Paused = true;
                 DuoLog.Warning($"List has been paused due to being unable to repair.");
-                _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(200));
+                _nextRetry = DateTime.Now.Add(TimeSpan.FromMilliseconds(1000));
                 return false;
             }
 
