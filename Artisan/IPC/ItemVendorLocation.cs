@@ -8,7 +8,8 @@ namespace Artisan.IPC
         {
             if (DalamudReflector.TryGetDalamudPlugin("ItemVendorLocation", out var pl, false, true))
             {
-                var itemLookup = pl.GetFoP("_itemLookup");
+                var itemLookup = pl.GetFoP("ItemLookup");
+                if (itemLookup == null) return;
                 var itemInfo = itemLookup.Call("GetItemInfo", [ItemId]);
                 if (itemInfo != null)
                 {
@@ -23,7 +24,8 @@ namespace Artisan.IPC
         {
             if (DalamudReflector.TryGetDalamudPlugin("ItemVendorLocation", out var pl, false, true))
             {
-                var itemLookup = pl.GetFoP("_itemLookup");
+                var itemLookup = pl.GetFoP("ItemLookup");
+                if (itemLookup == null) return false;
                 var itemInfo = itemLookup.Call("GetItemInfo", [ItemId]);
                 if (itemInfo != null)
                 {

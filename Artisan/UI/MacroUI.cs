@@ -155,7 +155,7 @@ namespace Artisan.UI
         {
             IEnumerable<Lumina.Excel.GeneratedSheets.Recipe> filteredRecipes = LuminaSheets.RecipeSheet.Values;
 
-            if (ImGui.SliderInt($"{LuminaSheets.AddonSheet[335].Text}", ref quickAssignLevel, 1, 90))
+            if (ImGui.SliderInt($"{LuminaSheets.AddonSheet[335].Text}", ref quickAssignLevel, 1, 100))
             {
                 quickAssignPossibleDifficulties.Clear();
                 quickAssignPossibleQualities.Clear();

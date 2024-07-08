@@ -103,7 +103,7 @@ namespace Artisan
         public bool ShowMacroAssignResults = false;
         public bool HideContextMenus = false;
         public int ContextMenuLoops = 1;
-        public float ListCraftThrottle = 1f;
+        public float ListCraftThrottle2 = 1f;
 
         public bool DefaultHideInventoryColumn = false;
         public bool DefaultHideRetainerColumn = false;

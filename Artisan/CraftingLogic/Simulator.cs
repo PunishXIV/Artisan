@@ -117,7 +117,7 @@ public static class Simulator
         {
             if (next.Quality != step.Quality)
                 ++next.IQStacks;
-            if (action is Skills.PreciseTouch or Skills.PreparatoryTouch or Skills.Reflect)
+            if (action is Skills.PreciseTouch or Skills.PreparatoryTouch or Skills.Reflect or Skills.RefinedTouch)
                 ++next.IQStacks;
             if (next.IQStacks > 10)
                 next.IQStacks = 10;

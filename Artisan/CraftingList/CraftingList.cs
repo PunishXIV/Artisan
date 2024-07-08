@@ -100,7 +100,7 @@ namespace Artisan.CraftingLists
 
         public static TaskManager CLTM = new();
 
-        public static TimeSpan ListEndTime;
+        public static TimeSpan ListEndTime = default(TimeSpan);
 
         public static void SetID(this NewCraftingList list)
         {
@@ -394,7 +394,7 @@ namespace Artisan.CraftingLists
                     }
                     else if (type == PreCrafting.CraftType.Normal)
                     {
-                        CLTM.DelayNext((int)(P.Config.ListCraftThrottle * 1000));
+                        CLTM.DelayNext((int)(Math.Min(P.Config.ListCraftThrottle2, 2) * 1000));
                         CLTM.Enqueue(() => SetIngredients(), "SettingIngredients");
                         CLTM.Enqueue(() => Operations.RepeatActualCraft(), "ListCraft");
                         CLTM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 2000, "ListNormalWaitStart");

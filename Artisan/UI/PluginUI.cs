@@ -811,13 +811,13 @@ namespace Artisan.UI
                 }
 
                 ImGui.PushItemWidth(400);
-                if (ImGui.SliderFloat("Delay Between Crafts", ref P.Config.ListCraftThrottle, 0.2f, 2f, "%.1f"))
+                if (ImGui.SliderFloat("Delay Between Crafts", ref P.Config.ListCraftThrottle2, 0.2f, 2f, "%.1f"))
                 {
-                    if (P.Config.ListCraftThrottle < 0.2f)
-                        P.Config.ListCraftThrottle = 0.2f;
+                    if (P.Config.ListCraftThrottle2 < 0.2f)
+                        P.Config.ListCraftThrottle2 = 0.2f;
 
-                    if (P.Config.ListCraftThrottle > 2f)
-                        P.Config.ListCraftThrottle = 2f;
+                    if (P.Config.ListCraftThrottle2 > 2f)
+                        P.Config.ListCraftThrottle2 = 2f;
 
                     P.Config.Save();
                 }

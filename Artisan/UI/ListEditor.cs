@@ -1237,7 +1237,7 @@ internal class ListEditor : Window, IDisposable
 
             ImGui.SameLine();
 
-            if (ImGui.Button($"Apply to all###ManualApplyAll"))
+            if (ImGui.Button($"Apply to all###SquadManualApplyAll"))
             {
                 foreach (var r in SelectedList.Recipes.Distinct())
                 {
