@@ -992,6 +992,7 @@ internal class ListEditor : Window, IDisposable
         if (ImGui.InputText("###RenameList", ref listName, 200))
         {
             SelectedList.Name = listName;
+            P.Config.Save();
         }
         ImGuiComponents.HelpMarker("This list name.");
 
