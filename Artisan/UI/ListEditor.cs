@@ -988,6 +988,13 @@ internal class ListEditor : Window, IDisposable
     private void DrawListSettings()
     {
         ImGui.BeginChild("ListSettings", ImGui.GetContentRegionAvail(), false);
+        var listName = SelectedList.Name;
+        if (ImGui.InputText("###RenameList", ref listName, 200))
+        {
+            SelectedList.Name = listName;
+        }
+        ImGuiComponents.HelpMarker("This list name.");
+
         var skipIfEnough = SelectedList.SkipIfEnough;
         if (ImGui.Checkbox("Skip Crafting Unnecessary Materials", ref skipIfEnough))
         {
