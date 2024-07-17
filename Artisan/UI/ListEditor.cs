@@ -226,6 +226,16 @@ internal class ListEditor : Window, IDisposable
             if (Endurance.Enable || CraftingListUI.Processing)
                 ImGui.EndDisabled();
         }
+        else
+        {
+            ImGui.SameLine();
+
+            if (!RetainerInfo.AToolsInstalled)
+                ImGuiEx.Text(ImGuiColors.DalamudYellow, $"Please install Allagan Tools for retainer features.");
+
+            if (RetainerInfo.AToolsInstalled && !RetainerInfo.AToolsEnabled)
+                ImGuiEx.Text(ImGuiColors.DalamudYellow, $"Please enable Allagan Tools for retainer features.");
+        }
 
         if (ImGui.BeginTabBar("CraftingListEditor", ImGuiTabBarFlags.None))
         {
@@ -1139,23 +1149,30 @@ internal class ListEditor : Window, IDisposable
                     var altJ = $"{LuminaSheets.ClassJobSheet[altJob.CraftType.Row + 8].Abbreviation.RawString}";
                     if (ImGui.Selectable($"{altJ}"))
                     {
-                        if (SelectedList.Recipes.Any(x => x.ID == altJob.RowId))
+                        try
                         {
-                            SelectedList.Recipes.First(x => x.ID == altJob.RowId).Quantity += SelectedList.Recipes.First(x => x.ID == selectedListItem).Quantity;
-                            SelectedList.Recipes.Remove(SelectedList.Recipes.First(x => x.ID == selectedListItem));
-                            RecipeSelector.Items.RemoveAt(RecipeSelector.CurrentIdx);
-                            RecipeSelector.Current = RecipeSelector.Items.First(x => x.ID == altJob.RowId);
-                            RecipeSelector.CurrentIdx = RecipeSelector.Items.IndexOf(RecipeSelector.Current);
-                        }
-                        else
-                        {
-                            SelectedList.Recipes.First(x => x.ID == selectedListItem).ID = altJob.RowId;
-                            RecipeSelector.Items[RecipeSelector.CurrentIdx].ID = altJob.RowId;
-                            RecipeSelector.Current = RecipeSelector.Items[RecipeSelector.CurrentIdx];
-                        }
-                        NeedsToRefreshTable = true;
+                            if (SelectedList.Recipes.Any(x => x.ID == altJob.RowId))
+                            {
+                                SelectedList.Recipes.First(x => x.ID == altJob.RowId).Quantity += SelectedList.Recipes.First(x => x.ID == selectedListItem).Quantity;
+                                SelectedList.Recipes.Remove(SelectedList.Recipes.First(x => x.ID == selectedListItem));
+                                RecipeSelector.Items.RemoveAt(RecipeSelector.CurrentIdx);
+                                RecipeSelector.Current = RecipeSelector.Items.First(x => x.ID == altJob.RowId);
+                                RecipeSelector.CurrentIdx = RecipeSelector.Items.IndexOf(RecipeSelector.Current);
+                            }
+                            else
+                            {
+                                SelectedList.Recipes.First(x => x.ID == selectedListItem).ID = altJob.RowId;
+                                RecipeSelector.Items[RecipeSelector.CurrentIdx].ID = altJob.RowId;
+                                RecipeSelector.Current = RecipeSelector.Items[RecipeSelector.CurrentIdx];
+                            }
+                            NeedsToRefreshTable = true;
 
-                        P.Config.Save();
+                            P.Config.Save();
+                        }
+                        catch
+                        {
+
+                        }
                     }
                 }
 

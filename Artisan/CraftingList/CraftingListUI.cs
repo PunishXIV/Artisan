@@ -4,6 +4,7 @@ using Artisan.GameInterop;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.UI;
+using Dalamud.Interface.Colors;
 using Dalamud.Utility;
 using ECommons;
 using ECommons.DalamudServices;
@@ -94,6 +95,15 @@ namespace Artisan.CraftingLists
                         }
                     }
                 }
+                else
+                {
+                    if (!RetainerInfo.AToolsInstalled)
+                        ImGuiEx.TextCentered(ImGuiColors.DalamudYellow, $"Please install Allagan Tools for retainer features.");
+
+                    if (RetainerInfo.AToolsInstalled && !RetainerInfo.AToolsEnabled)
+                        ImGuiEx.TextCentered(ImGuiColors.DalamudYellow, $"Please enable Allagan Tools for retainer features.");
+                }
+
 
                 if (Endurance.Enable || Processing)
                     ImGui.EndDisabled();

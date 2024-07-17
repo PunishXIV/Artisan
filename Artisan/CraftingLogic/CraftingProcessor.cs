@@ -36,6 +36,7 @@ public static class CraftingProcessor
     public static void Setup()
     {
         _solverDefs.Add(new StandardSolverDefinition());
+        _solverDefs.Add(new ProgressOnlySolverDefinition());
         _solverDefs.Add(new ExpertSolverDefinition());
         _solverDefs.Add(new MacroSolverDefinition());
         _solverDefs.Add(new ScriptSolverDefinition());

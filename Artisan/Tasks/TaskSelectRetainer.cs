@@ -229,7 +229,7 @@ internal unsafe static class RetainerHandlers
     internal static bool? SelectEntrustItems()
     {
         //2378	Entrust or withdraw items.
-        var text = Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.Addon>().GetRow(2378).Text.ToDalamudString().ExtractText();
+        var text = Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.Addon>().GetRow(2378).Text.ToDalamudString().ExtractText(true);
         return TrySelectSpecificEntry(text);
     }
 
@@ -352,7 +352,7 @@ internal unsafe static class RetainerHandlers
     {
         if (TryGetAddonByName<AddonSelectString>("SelectString", out var addon) && IsAddonReady(&addon->AtkUnitBase))
         {
-            var entry = GetEntries(addon).FirstOrDefault(x => x.EqualsAny(text));
+            var entry = GetEntries(addon).FirstOrDefault(x => x.StartsWithAny(text));
             if (entry != null)
             {
                 var index = GetEntries(addon).IndexOf(entry);

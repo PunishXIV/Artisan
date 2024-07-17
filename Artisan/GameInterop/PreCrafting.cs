@@ -47,7 +47,7 @@ public unsafe static class PreCrafting
         _clickButton = Svc.Hook.HookFromSignature<ClickSynthesisButton>("40 55 53 56 57 41 57 48 8D 6C 24 ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 0F 48 8B 7D 7F", ClickSynthButtons);
         _clickButton.Enable();
 
-        //_fireCallbackHook = Svc.Hook.HookFromSignature<FireCallbackDelegate>("E8 ?? ?? ?? ?? 8B 4C 24 20 0F B6 D8", CallbackDetour);
+        _fireCallbackHook = Svc.Hook.HookFromSignature<FireCallbackDelegate>("E8 ?? ?? ?? ?? 0F B6 E8 8B 44 24 20", CallbackDetour);
     }
 
 
@@ -116,7 +116,11 @@ public unsafe static class PreCrafting
             bool needEquipItem = recipe.ItemRequired.Row > 0 && (needClassChange || !IsItemEquipped(recipe.ItemRequired.Row));
             // TODO: repair & extract materia
             bool needConsumables = (type == CraftType.Normal || (type == CraftType.Trial && P.Config.UseConsumablesTrial) || (type == CraftType.Quick && P.Config.UseConsumablesQuickSynth)) && (!ConsumableChecker.IsFooded(config) || !ConsumableChecker.IsPotted(config) || !ConsumableChecker.IsManualled(config) || !ConsumableChecker.IsSquadronManualled(config));
-            bool hasConsumables = config != default ? ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) && ConsumableChecker.HasItem(config.RequiredManual, false) && ConsumableChecker.HasItem(config.RequiredSquadronManual, false) : true;
+            bool hasConsumables = config != default ? 
+                (ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) || ConsumableChecker.IsFooded(config)) && 
+                (ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) || ConsumableChecker.IsPotted(config)) && 
+                (ConsumableChecker.HasItem(config.RequiredManual, false) || ConsumableChecker.IsManualled(config)) && 
+                (ConsumableChecker.HasItem(config.RequiredSquadronManual, false) || ConsumableChecker.IsSquadronManualled(config)) : true;
 
             // handle errors when we're forbidden from rectifying them automatically
             if (P.Config.DontEquipItems && needClassChange)
@@ -131,7 +135,9 @@ public unsafe static class PreCrafting
             }
             if (P.Config.AbortIfNoFoodPot && needConsumables && !hasConsumables)
             {
-                DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: required consumables not up");
+                List<string> missingConsumables = MissingConsumables(config);
+
+                DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: required consumables not up and missing {string.Join(", ", missingConsumables)}");
                 return;
             }
 
@@ -150,7 +156,9 @@ public unsafe static class PreCrafting
 
             if (!hasIngredients && type != CraftType.Trial)
             {
-                DuoLog.Error($"Not all ingredients for {recipe.ItemResult.Value?.Name} found.");
+                List<string> missingIngredients = MissingIngredients(recipe);
+
+                DuoLog.Error($"Not all ingredients for {recipe.ItemResult.Value?.Name} found.\r\nMissing: {string.Join(", ", missingIngredients)}");
                 return;
             }
 
@@ -165,13 +173,47 @@ public unsafe static class PreCrafting
             timeWasteLoops = 1;
             Tasks.Add((() => TimeWasteLoop(), TimeSpan.FromMilliseconds(10))); //This is needed for controller players, else if they're near an NPC it will target them and exit the craft as the button is interpreted as target and not confirm.
             Tasks.Add((() => TaskStartCraft(type), default));
-            
+
             Update();
         }
         catch (Exception ex)
         {
             ex.Log();
         }
+    }
+
+    public static List<string> MissingConsumables(RecipeConfig? config)
+    {
+        List<string> missingConsumables = new List<string>();
+        if (!ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ))
+            missingConsumables.Add(config.RequiredFood.NameOfItem());
+
+        if (!ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ))
+            missingConsumables.Add(config.RequiredPotion.NameOfItem());
+
+        if (!ConsumableChecker.HasItem(config.RequiredManual, false))
+            missingConsumables.Add(config.RequiredManual.NameOfItem());
+
+        if (!ConsumableChecker.HasItem(config.RequiredSquadronManual, false))
+            missingConsumables.Add(config.RequiredSquadronManual.NameOfItem());
+        return missingConsumables;
+    }
+
+    public static List<string> MissingIngredients(Recipe recipe)
+    {
+        List<string> missingIngredients = new();
+        foreach (var ing in recipe.UnkData5)
+        {
+            if (ing.AmountIngredient > 0)
+            {
+                if (CraftingListUI.NumberOfIngredient((uint)ing.ItemIngredient) < ing.AmountIngredient)
+                {
+                    missingIngredients.Add(((uint)ing.ItemIngredient).NameOfItem());
+                }
+            }
+        }
+
+        return missingIngredients;
     }
 
     public static TaskResult TimeWasteLoop()
@@ -449,6 +491,6 @@ public unsafe static class PreCrafting
         {
             _clickButton?.OriginalDisposeSafe(thisPtr, eventType, eventParam, atkEvent, atkEventData);
         }
-        
+
     }
 }

@@ -549,33 +549,5 @@ namespace Artisan.CraftingLists
 
             return true;
         }
-
-        public static bool SwitchJobGearset(uint cjID)
-        {
-            var gs = GetGearsetForClassJob(cjID);
-            if (gs is null) return false;
-
-            if (Throttler.Throttle(1000))
-            {
-                CommandProcessor.ExecuteThrottled($"/gearset change {gs.Value + 1}");
-            }
-
-            return true;
-        }
-
-        private static unsafe byte? GetGearsetForClassJob(uint cjId)
-        {
-            var gearsetModule = RaptureGearsetModule.Instance();
-            for (var i = 0; i < 100; i++)
-            {
-                var gearset = gearsetModule->GetGearset(i);
-                if (gearset == null) continue;
-                if (!gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists)) continue;
-                if (gearset->Id != i) continue;
-                if (gearset->ClassJob == cjId) return gearset->Id;
-            }
-
-            return null;
-        }
     }
 }

@@ -228,9 +228,10 @@ namespace Artisan.UI
                         Svc.PluginInterface.GetIpcSubscriber<object>("vnavmesh.Stop").InvokeAction();
                     }
 
-                    ImGui.Text($"Navmesh Ready: {Svc.PluginInterface.GetIpcSubscriber<bool>("vnavmesh.IsNavmeshReady").InvokeFunc()}");
-                    ImGui.Text($"Navmesh Running: {Svc.PluginInterface.GetIpcSubscriber<bool>("vnavmesh.IsPathRunning").InvokeFunc()}");
-                }
+                    ImGui.Text($"ATools Installed: {RetainerInfo.AToolsInstalled}");
+                    ImGui.Text($"ATools Enabled: {RetainerInfo.AToolsEnabled}");
+                    ImGui.Text($"ATools Allowed: {RetainerInfo.ATools}");
+                } 
 
                 if (ImGui.CollapsingHeader("Collectables"))
                 {
@@ -360,6 +361,11 @@ namespace Artisan.UI
                 TeleportToGCTown();
             }
 
+            ImGui.Text($"{Loot.Instance()->UnkObjectId} {Loot.Instance()->UnkObjectId2}");
+            foreach (var i in Loot.Instance()->Items)
+            {
+                ImGui.Text($"{i.RollState} {i.RollValue} {i.RollResult} {i.LootMode} {i.ItemCount} {i.Time}");
+            }
         }
 
         public unsafe static void TeleportToGCTown()

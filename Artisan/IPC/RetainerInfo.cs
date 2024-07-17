@@ -43,13 +43,29 @@ namespace Artisan.IPC
         internal static void RethrottleGeneric() => EzThrottler.Throttle("RetainerInfoThrottler", 100, true);
         internal static Tasks.RetainerManager retainerManager = new(Svc.SigScanner);
 
+        public static bool AToolsInstalled
+        {
+            get
+            {
+                return Svc.PluginInterface.InstalledPlugins.Any(x => x.InternalName is "Allagan Tools" or "InventoryTools");
+            }
+        }
+
+        public static bool AToolsEnabled
+        {
+            get
+            {
+                return AToolsInstalled && (DalamudReflector.TryGetDalamudPlugin("Allagan Tools", out var at, false, true) || DalamudReflector.TryGetDalamudPlugin("InventoryTools", out var it, false, true)) && _IsInitialized != null && _IsInitialized.InvokeFunc();
+            }
+        }
+
         public static bool ATools
         {
             get
             {
                 try
                 {
-                    return !P.Config.DisableAllaganTools && (DalamudReflector.TryGetDalamudPlugin("Allagan Tools", out var at, false, true) || DalamudReflector.TryGetDalamudPlugin("InventoryTools", out var it, false, true)) && _IsInitialized != null && _IsInitialized.InvokeFunc();
+                    return !P.Config.DisableAllaganTools && AToolsEnabled;
                 }
                 catch
                 {

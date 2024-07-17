@@ -10,8 +10,8 @@ namespace Artisan.CraftingLogic.Solvers
 
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
-            if (!craft.CraftExpert)
-                yield return new(this, 0, 1, "Standard Recipe Solver");
+            if (!craft.CraftExpert && craft.CraftHQ)
+                yield return new(this, 0, 2, "Standard Recipe Solver");
         }
 
         public Solver Create(CraftState craft, int flavour) => new StandardSolver(flavour != 0);
@@ -48,7 +48,7 @@ namespace Artisan.CraftingLogic.Solvers
                 step.Condition is Condition.Good or Condition.Excellent && Simulator.CanUseAction(craft, step, Skills.TricksOfTrade))
                 rec.Action = Skills.TricksOfTrade;
 
-            if (Simulator.GetDurabilityCost(step, rec.Action) == 20 && step.TrainedPerfectionAvailable)
+            if (Simulator.GetDurabilityCost(step, rec.Action) == 20 && step.Durability <= 20 && step.TrainedPerfectionAvailable)
                 rec.Action = Skills.TrainedPerfection;
 
             return rec;
@@ -57,14 +57,14 @@ namespace Artisan.CraftingLogic.Solvers
         private static bool InTouchRotation(CraftState craft, StepState step)
             => step.PrevComboAction == Skills.BasicTouch && craft.StatLevel >= Simulator.MinLevel(Skills.StandardTouch) || step.PrevComboAction == Skills.StandardTouch && craft.StatLevel >= Simulator.MinLevel(Skills.AdvancedTouch);
 
-        public Skills BestSynthesis(CraftState craft, StepState step)
+        public Skills BestSynthesis(CraftState craft, StepState step, bool progOnly = false)
         {
             // Need to take into account MP
             // Rapid(500/50, 0)?
             // Intensive(400, 6) > Groundwork(300, 18) > Focused(200, 5) > Prudent(180, 18) > Careful(150, 7) > Groundwork(150, 18) > Basic(120, 0)
 
             var remainingProgress = craft.CraftProgress - step.Progress;
-            if (Simulator.CanUseAction(craft, step, Skills.DelicateSynthesis) && CanFinishCraft(craft, step, Skills.DelicateSynthesis))
+            if (Simulator.CanUseAction(craft, step, Skills.DelicateSynthesis) && CanFinishCraft(craft, step, Skills.DelicateSynthesis) && !progOnly)
             {
                 return Skills.DelicateSynthesis;
             }
@@ -86,7 +86,7 @@ namespace Artisan.CraftingLogic.Solvers
 
             bool carefulCanFinish = Simulator.CanUseAction(craft, step, Skills.CarefulSynthesis) && CanFinishCraft(craft, step, Skills.CarefulSynthesis) && step.FinalAppraisalLeft > 0;
 
-            if (!_qualityStarted)
+            if (!_qualityStarted && !progOnly)
             {
                 if (CalculateNewProgress(craft, step, Skills.BasicSynthesis) >= craft.CraftProgress - Simulator.BaseProgress(craft))
                     return Skills.BasicSynthesis;
@@ -285,11 +285,6 @@ namespace Artisan.CraftingLogic.Solvers
 
         private static bool GoingForQuality(CraftState craft, StepState step, out int maxQuality)
         {
-            if (!craft.CraftHQ)
-            {
-                maxQuality = 0;
-                return false;
-            }
             bool wantMoreQuality;
             if (craft.CraftQualityMin1 == 0)
             {
