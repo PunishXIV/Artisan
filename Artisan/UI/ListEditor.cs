@@ -1274,6 +1274,12 @@ internal class ListEditor : Window, IDisposable
             P.Config.RecipeConfigs[selectedListItem] = config;
             P.Config.Save();
         }
+
+        var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor);
+        if (!recipe.IsExpert)
+            ImGuiEx.TextWrapped(hintColor, solverHint);
+        else
+            ImGuiEx.TextWrapped($"Please run this recipe in the simulator for results.");
     }
 
     private void DrawRecipeSettingsHeader()

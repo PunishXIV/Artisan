@@ -116,10 +116,10 @@ public unsafe static class PreCrafting
             bool needEquipItem = recipe.ItemRequired.Row > 0 && (needClassChange || !IsItemEquipped(recipe.ItemRequired.Row));
             // TODO: repair & extract materia
             bool needConsumables = (type == CraftType.Normal || (type == CraftType.Trial && P.Config.UseConsumablesTrial) || (type == CraftType.Quick && P.Config.UseConsumablesQuickSynth)) && (!ConsumableChecker.IsFooded(config) || !ConsumableChecker.IsPotted(config) || !ConsumableChecker.IsManualled(config) || !ConsumableChecker.IsSquadronManualled(config));
-            bool hasConsumables = config != default ? 
-                (ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) || ConsumableChecker.IsFooded(config)) && 
-                (ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) || ConsumableChecker.IsPotted(config)) && 
-                (ConsumableChecker.HasItem(config.RequiredManual, false) || ConsumableChecker.IsManualled(config)) && 
+            bool hasConsumables = config != default ?
+                (ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) || ConsumableChecker.IsFooded(config)) &&
+                (ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) || ConsumableChecker.IsPotted(config)) &&
+                (ConsumableChecker.HasItem(config.RequiredManual, false) || ConsumableChecker.IsManualled(config)) &&
                 (ConsumableChecker.HasItem(config.RequiredSquadronManual, false) || ConsumableChecker.IsSquadronManualled(config)) : true;
 
             // handle errors when we're forbidden from rectifying them automatically
@@ -359,9 +359,8 @@ public unsafe static class PreCrafting
         if (Occupied())
             return TaskResult.Retry;
 
-        if (!ConsumableChecker.IsSquadronManualled(config))
+        if (!ConsumableChecker.IsSquadronManualled(config) && InventoryManager.Instance()->GetInventoryItemCount(config.RequiredSquadronManual) != 0)
         {
-            if (InventoryManager.Instance()->GetInventoryItemCount(config.RequiredSquadronManual) == 0) return TaskResult.Abort;
             if (ActionManagerEx.CanUseAction(ActionType.Item, config.RequiredSquadronManual))
             {
                 Svc.Log.Debug($"Using squadron manual: {config.RequiredSquadronManual}");
@@ -374,9 +373,8 @@ public unsafe static class PreCrafting
             }
         }
 
-        if (!ConsumableChecker.IsManualled(config))
+        if (!ConsumableChecker.IsManualled(config) && InventoryManager.Instance()->GetInventoryItemCount(config.RequiredManual) != 0)
         {
-            if (InventoryManager.Instance()->GetInventoryItemCount(config.RequiredManual) == 0) return TaskResult.Abort;
             if (ActionManagerEx.CanUseAction(ActionType.Item, config.RequiredManual))
             {
                 Svc.Log.Debug($"Using manual: {config.RequiredManual}");
@@ -389,10 +387,9 @@ public unsafe static class PreCrafting
             }
         }
 
-        if (!ConsumableChecker.IsFooded(config))
+        var foodId = config.RequiredFood + (config.RequiredFoodHQ ? 1000000u : 0);
+        if (!ConsumableChecker.IsFooded(config) && InventoryManager.Instance()->GetInventoryItemCount(config.RequiredFood, config.RequiredFoodHQ) != 0)
         {
-            var foodId = config.RequiredFood + (config.RequiredFoodHQ ? 1000000u : 0);
-            if (InventoryManager.Instance()->GetInventoryItemCount(config.RequiredFood, config.RequiredFoodHQ) == 0) return TaskResult.Abort;
             if (ActionManagerEx.CanUseAction(ActionType.Item, foodId))
             {
                 Svc.Log.Debug($"Using food: {foodId}");
@@ -405,10 +402,9 @@ public unsafe static class PreCrafting
             }
         }
 
-        if (!ConsumableChecker.IsPotted(config))
+        var potId = config.RequiredPotion + (config.RequiredPotionHQ ? 1000000u : 0);
+        if (!ConsumableChecker.IsPotted(config) && InventoryManager.Instance()->GetInventoryItemCount(config.RequiredPotion, config.RequiredPotionHQ) != 0)
         {
-            var potId = config.RequiredPotion + (config.RequiredPotionHQ ? 1000000u : 0);
-            if (InventoryManager.Instance()->GetInventoryItemCount(config.RequiredPotion, config.RequiredPotionHQ) == 0) return TaskResult.Abort;
             if (ActionManagerEx.CanUseAction(ActionType.Item, potId))
             {
                 Svc.Log.Debug($"Using pot: {potId}");

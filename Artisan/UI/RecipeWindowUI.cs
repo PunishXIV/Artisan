@@ -49,7 +49,7 @@ namespace Artisan
                 }
             }
         }
-        public RecipeWindowUI() : base($"###RecipeWindow", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoNavInputs)
+        public RecipeWindowUI() : base($"###RecipeWindow", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoNavInputs | ImGuiWindowFlags.NoNavFocus | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoFocusOnAppearing)
         {
             this.Size = new Vector2(0, 0);
             this.Position = new Vector2(0, 0);
@@ -759,45 +759,7 @@ namespace Artisan
 
                     if (!P.Config.HideRecipeWindowSimulator)
                     {
-                        var solver = CraftingProcessor.GetSolverForRecipe(config, craft).CreateSolver(craft);
-                        var rd = RecipeNoteRecipeData.Ptr();
-                        var re = rd != null ? rd->FindRecipeById(recipe.RowId) : null;
-                        var startingQuality = re != null ? Calculations.GetStartingQuality(recipe, re->GetAssignedHQIngredients()) : 0;
-                        var time = SolverUtils.EstimateCraftTime(solver, craft, startingQuality);
-                        var result = SolverUtils.SimulateSolverExecution(solver, craft, startingQuality);
-                        var status = result != null ? Simulator.Status(craft, result) : Simulator.CraftStatus.InProgress;
-                        var hq = result != null ? Calculations.GetHQChance((float)result.Quality / craft.CraftQualityMax * 100) : 0;
-
-                        string solverHint = status switch
-                        {
-                            Simulator.CraftStatus.InProgress => "Craft did not finish (solver failed to return any more steps before finishing).",
-                            Simulator.CraftStatus.FailedDurability => $"Craft failed due to durability shortage. (P: {(float)result.Progress / craft.CraftProgress * 100:f0}%, Q: {(float)result.Quality / craft.CraftQualityMax * 100:f0}%)",
-                            Simulator.CraftStatus.FailedMinQuality => "Craft completed but didn't meet minimum quality.",
-                            Simulator.CraftStatus.SucceededQ1 => $"Craft completed and managed to hit 1st quality threshold in {time.TotalSeconds:f0}s.",
-                            Simulator.CraftStatus.SucceededQ2 => $"Craft completed and managed to hit 2nd quality threshold in {time.TotalSeconds:f0}s.",
-                            Simulator.CraftStatus.SucceededQ3 => $"Craft completed and managed to hit 3rd quality threshold in {time.TotalSeconds:f0}s!",
-                            Simulator.CraftStatus.SucceededMaxQuality => $"Craft completed with full quality in {time.TotalSeconds:f0}s!",
-                            Simulator.CraftStatus.SucceededSomeQuality => $"Craft completed but didn't max out quality ({hq}%) in {time.TotalSeconds:f0}s",
-                            Simulator.CraftStatus.SucceededNoQualityReq => $"Craft completed, no quality required in {time.TotalSeconds:f0}s!",
-                            Simulator.CraftStatus.Count => "You shouldn't be able to see this. Report it please.",
-                            _ => "You shouldn't be able to see this. Report it please.",
-                        };
-
-
-                        Vector4 hintColor = status switch
-                        {
-                            Simulator.CraftStatus.InProgress => ImGuiColors.DalamudWhite,
-                            Simulator.CraftStatus.FailedDurability => ImGuiColors.DalamudRed,
-                            Simulator.CraftStatus.FailedMinQuality => ImGuiColors.DalamudRed,
-                            Simulator.CraftStatus.SucceededQ1 => new Vector4(0.7f, 0.5f, 0.5f, 1f),
-                            Simulator.CraftStatus.SucceededQ2 => new Vector4(0.5f, 0.5f, 0.7f, 1f),
-                            Simulator.CraftStatus.SucceededQ3 => new Vector4(0.5f, 1f, 0.5f, 1f),
-                            Simulator.CraftStatus.SucceededMaxQuality => ImGuiColors.ParsedGreen,
-                            Simulator.CraftStatus.SucceededSomeQuality => new Vector4(1 - (hq / 100f), 0 + (hq / 100f), 1 - (hq / 100f), 255),
-                            Simulator.CraftStatus.SucceededNoQualityReq => ImGuiColors.ParsedGreen,
-                            Simulator.CraftStatus.Count => ImGuiColors.DalamudWhite,
-                            _ => ImGuiColors.DalamudWhite,
-                        };
+                        var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor);
 
                         if (!recipe.IsExpert)
                             ImGuiEx.TextWrapped(hintColor, solverHint);

@@ -1,9 +1,15 @@
 ﻿using Artisan.CraftingLogic.CraftData;
+using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
+using Dalamud.Interface.Colors;
 using Dalamud.Utility;
 using ECommons.DalamudServices;
+using ECommons.ImGuiMethods;
+using Lumina.Excel.GeneratedSheets;
 using System;
 using System.ComponentModel;
+using System.Numerics;
+using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.CraftingLogic;
 
@@ -98,6 +104,51 @@ public static class Simulator
         }
     }
 
+    public unsafe static string SimulatorResult(Recipe recipe, RecipeConfig config, CraftState craft, out Vector4 hintColor)
+    {
+        var solver = CraftingProcessor.GetSolverForRecipe(config, craft).CreateSolver(craft);
+        var rd = RecipeNoteRecipeData.Ptr();
+        var re = rd != null ? rd->FindRecipeById(recipe.RowId) : null;
+        var startingQuality = re != null ? Calculations.GetStartingQuality(recipe, re->GetAssignedHQIngredients()) : 0;
+        var time = SolverUtils.EstimateCraftTime(solver, craft, startingQuality);
+        var result = SolverUtils.SimulateSolverExecution(solver, craft, startingQuality);
+        var status = result != null ? Status(craft, result) : CraftStatus.InProgress;
+        var hq = result != null ? Calculations.GetHQChance((float)result.Quality / craft.CraftQualityMax * 100) : 0;
+
+        string solverHint = status switch
+        {
+            CraftStatus.InProgress => "Craft did not finish (solver failed to return any more steps before finishing).",
+            CraftStatus.FailedDurability => $"Craft failed due to durability shortage. (P: {(float)result.Progress / craft.CraftProgress * 100:f0}%, Q: {(float)result.Quality / craft.CraftQualityMax * 100:f0}%)",
+            CraftStatus.FailedMinQuality => "Craft completed but didn't meet minimum quality.",
+            CraftStatus.SucceededQ1 => $"Craft completed and managed to hit 1st quality threshold in {time.TotalSeconds:f0}s.",
+            CraftStatus.SucceededQ2 => $"Craft completed and managed to hit 2nd quality threshold in {time.TotalSeconds:f0}s.",
+            CraftStatus.SucceededQ3 => $"Craft completed and managed to hit 3rd quality threshold in {time.TotalSeconds:f0}s!",
+            CraftStatus.SucceededMaxQuality => $"Craft completed with full quality in {time.TotalSeconds:f0}s!",
+            CraftStatus.SucceededSomeQuality => $"Craft completed but didn't max out quality ({hq}%) in {time.TotalSeconds:f0}s",
+            CraftStatus.SucceededNoQualityReq => $"Craft completed, no quality required in {time.TotalSeconds:f0}s!",
+            CraftStatus.Count => "You shouldn't be able to see this. Report it please.",
+            _ => "You shouldn't be able to see this. Report it please.",
+        };
+
+
+        hintColor = status switch
+        {
+            CraftStatus.InProgress => ImGuiColors.DalamudWhite,
+            CraftStatus.FailedDurability => ImGuiColors.DalamudRed,
+            CraftStatus.FailedMinQuality => ImGuiColors.DalamudRed,
+            CraftStatus.SucceededQ1 => new Vector4(0.7f, 0.5f, 0.5f, 1f),
+            CraftStatus.SucceededQ2 => new Vector4(0.5f, 0.5f, 0.7f, 1f),
+            CraftStatus.SucceededQ3 => new Vector4(0.5f, 1f, 0.5f, 1f),
+            CraftStatus.SucceededMaxQuality => ImGuiColors.ParsedGreen,
+            CraftStatus.SucceededSomeQuality => new Vector4(1 - (hq / 100f), 0 + (hq / 100f), 1 - (hq / 100f), 255),
+            CraftStatus.SucceededNoQualityReq => ImGuiColors.ParsedGreen,
+            CraftStatus.Count => ImGuiColors.DalamudWhite,
+            _ => ImGuiColors.DalamudWhite,
+        };
+
+        return solverHint;
+    }
+
     public static (ExecuteResult, StepState) Execute(CraftState craft, StepState step, Skills action, float actionSuccessRoll, float nextStateRoll)
     {
         if (Status(craft, step) != CraftStatus.InProgress)
@@ -123,7 +174,7 @@ public static class Simulator
                 next.IQStacks = 10;
             if (action == Skills.ByregotsBlessing)
                 next.IQStacks = 0;
-            if (action == Skills.HastyTouch && craft.StatLevel >= Skills.DaringTouch.Level())
+            if (action == Skills.HastyTouch)
                 next.ExpedienceLeft = 1;
             else
                 next.ExpedienceLeft = 0;
@@ -288,7 +339,7 @@ public static class Simulator
         var cost = action switch
         {
             Skills.BasicSynthesis or Skills.CarefulSynthesis or Skills.RapidSynthesis or Skills.IntensiveSynthesis or Skills.MuscleMemory => 10,
-            Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.PreciseTouch or Skills.Reflect => 10,
+            Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.DaringTouch or Skills.PreciseTouch or Skills.Reflect => 10,
             Skills.ByregotsBlessing or Skills.DelicateSynthesis => 10,
             Skills.Groundwork or Skills.PreparatoryTouch => 20,
             Skills.PrudentSynthesis or Skills.PrudentTouch => 5,
