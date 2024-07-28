@@ -714,6 +714,7 @@ namespace Artisan.UI
             _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP + SelectedRecipe.CraftType.Row, SelectedRecipe);
             foreach (var opt in CraftingProcessor.GetAvailableSolversForRecipe(_selectedCraft, false))
             {
+                if (opt == default) continue;
                 bool selected = ImGui.Selectable(opt.Name);
                 if (selected)
                 {
