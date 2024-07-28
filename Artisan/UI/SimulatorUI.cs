@@ -28,7 +28,7 @@ namespace Artisan.UI
 {
     public static class SimulatorUI
     {
-        public static Recipe? SelectedRecipe = Svc.Data.GetExcelSheet<Recipe>().First(x => x.RowId == 35585);
+        public static Recipe? SelectedRecipe;
         internal static string Search = string.Empty;
         private static CraftState? _selectedCraft;
         private static string macroName = string.Empty;
@@ -44,8 +44,8 @@ namespace Artisan.UI
         private static Solver.Recommendation _simNextRec;
         public static GearsetEntry? SimGS;
         private static bool CustomStatMode = false;
-        private static int gsLevel = 100, gsCraftsmanship = 4727, gsControl = 4612, gsCP = 641;
-        private static bool gsSplend, gsSpecialist, gsManip = true;
+        private static int gsLevel = 1, gsCraftsmanship = 1, gsControl = 1, gsCP = 1;
+        private static bool gsSplend, gsSpecialist, gsManip;
         public static string SimGSName
         {
             get
