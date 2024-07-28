@@ -89,7 +89,7 @@ namespace Artisan.UI
         {
             if (DalamudInfo.IsOnStaging())
             {
-                ImGui.Text($"Artisan is not designed to work on staging Dalamud. Please type /xlbranch and switch to release.");
+                ImGui.Text($"Artisan is not designed to work on non-release versions of Dalamud. Please type /xlbranch, click 'release' and then 'Pick & Restart'.");
                 return;
             }
 
@@ -249,13 +249,13 @@ namespace Artisan.UI
 
             if (ThreadLoadImageHandler.TryGetTextureWrap(imagePath, out var logo))
             {
-                ImGuiEx.ImGuiLineCentered("###ArtisanTextLogo", () =>
+                ImGuiEx.LineCentered("###ArtisanTextLogo", () =>
                 {
                     ImGui.Image(logo.ImGuiHandle, new Vector2(logo.Width, 100f.Scale()));
                 });
             }
 
-            ImGuiEx.ImGuiLineCentered("###ArtisanOverview", () =>
+            ImGuiEx.LineCentered("###ArtisanOverview", () =>
             {
                 ImGuiEx.TextUnderlined("Artisan - Overview");
             });
@@ -266,7 +266,7 @@ namespace Artisan.UI
             ImGuiEx.TextWrapped($"Before you get started with Artisan, we should go over a few things about how the plugin works. Artisan is simple to use once you understand a few key factors.");
 
             ImGui.Spacing();
-            ImGuiEx.ImGuiLineCentered("###ArtisanModes", () =>
+            ImGuiEx.LineCentered("###ArtisanModes", () =>
             {
                 ImGuiEx.TextUnderlined("Crafting Modes");
             });
@@ -281,7 +281,7 @@ namespace Artisan.UI
 
             if (ThreadLoadImageHandler.TryGetTextureWrap(automode, out var example))
             {
-                ImGuiEx.ImGuiLineCentered("###AutoModeExample", () =>
+                ImGuiEx.LineCentered("###AutoModeExample", () =>
                 {
                     ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
                 });
@@ -294,7 +294,7 @@ namespace Artisan.UI
 
             if (ThreadLoadImageHandler.TryGetTextureWrap(craftWindowExample, out example))
             {
-                ImGuiEx.ImGuiLineCentered("###CraftWindowExample", () =>
+                ImGuiEx.LineCentered("###CraftWindowExample", () =>
                 {
                     ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
                 });
@@ -309,14 +309,14 @@ namespace Artisan.UI
 
             if (ThreadLoadImageHandler.TryGetTextureWrap(outlineExample, out example))
             {
-                ImGuiEx.ImGuiLineCentered("###OutlineExample", () =>
+                ImGuiEx.LineCentered("###OutlineExample", () =>
                 {
                     ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
                 });
             }
 
             ImGui.Spacing();
-            ImGuiEx.ImGuiLineCentered("###ArtisanSuggestions", () =>
+            ImGuiEx.LineCentered("###ArtisanSuggestions", () =>
             {
                 ImGuiEx.TextUnderlined("Solvers/Macros");
             });
@@ -346,7 +346,7 @@ namespace Artisan.UI
 
             if (ThreadLoadImageHandler.TryGetTextureWrap(recipeWindowExample, out example))
             {
-                ImGuiEx.ImGuiLineCentered("###RecipeWindowExample", () =>
+                ImGuiEx.LineCentered("###RecipeWindowExample", () =>
                 {
                     ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
                 });
@@ -358,7 +358,7 @@ namespace Artisan.UI
 
 
             ImGui.Spacing();
-            ImGuiEx.ImGuiLineCentered("###Endurance", () =>
+            ImGuiEx.LineCentered("###Endurance", () =>
             {
                 ImGuiEx.TextUnderlined("Endurance");
             });
@@ -383,7 +383,7 @@ namespace Artisan.UI
             }
 
             ImGui.Spacing();
-            ImGuiEx.ImGuiLineCentered("###Lists", () =>
+            ImGuiEx.LineCentered("###Lists", () =>
             {
                 ImGuiEx.TextUnderlined("Crafting Lists");
             });
@@ -405,7 +405,7 @@ namespace Artisan.UI
             }
 
             ImGui.Spacing();
-            ImGuiEx.ImGuiLineCentered("###Questions", () =>
+            ImGuiEx.LineCentered("###Questions", () =>
             {
                 ImGuiEx.TextUnderlined("Got Questions?");
             });
@@ -636,6 +636,11 @@ namespace Artisan.UI
                 if (ImGui.Checkbox($"Use Quality Starter ({Skills.Reflect.NameOfAction()})", ref P.Config.UseQualityStarter))
                     P.Config.Save();
                 ImGuiComponents.HelpMarker($"This tends to be more favourable at lower durability crafts.");
+
+                //if (ImGui.Checkbox("Low Stat Mode", ref P.Config.LowStatsMode))
+                //    P.Config.Save();
+
+                //ImGuiComponents.HelpMarker("This swaps out Waste Not II & Groundwork for Prudent Synthesis");
 
                 ImGui.TextWrapped($"{Skills.PreparatoryTouch.NameOfAction()} - Max {Buffs.InnerQuiet.NameOfBuff()} stacks");
                 ImGui.SameLine();

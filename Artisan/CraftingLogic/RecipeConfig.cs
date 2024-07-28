@@ -1,6 +1,7 @@
 ﻿using Artisan.Autocraft;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using System.Linq;
 
 namespace Artisan.CraftingLogic;
@@ -164,6 +165,7 @@ public class RecipeConfig
         {
             foreach (var opt in CraftingProcessor.GetAvailableSolversForRecipe(craft, true))
             {
+                if (opt == default) continue;
                 if (opt.UnsupportedReason.Length > 0)
                 {
                     ImGui.Text($"{opt.Name} is unsupported - {opt.UnsupportedReason}");

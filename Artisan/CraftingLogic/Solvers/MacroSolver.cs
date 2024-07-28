@@ -29,7 +29,7 @@ public class MacroSolverDefinition : ISolverDefinition
 public class MacroSolver : Solver
 {
     private MacroSolverSettings.Macro _macro;
-    private Solver _fallback;
+    private Solver? _fallback;
     private int _nextStep;
 
     public MacroSolver(MacroSolverSettings.Macro m, CraftState craft)

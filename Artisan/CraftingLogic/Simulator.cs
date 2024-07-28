@@ -106,7 +106,9 @@ public static class Simulator
 
     public unsafe static string SimulatorResult(Recipe recipe, RecipeConfig config, CraftState craft, out Vector4 hintColor)
     {
+        hintColor = ImGuiColors.DalamudWhite;
         var solver = CraftingProcessor.GetSolverForRecipe(config, craft).CreateSolver(craft);
+        if (solver == null) return "No valid solver found.";
         var rd = RecipeNoteRecipeData.Ptr();
         var re = rd != null ? rd->FindRecipeById(recipe.RowId) : null;
         var startingQuality = re != null ? Calculations.GetStartingQuality(recipe, re->GetAssignedHQIngredients()) : 0;

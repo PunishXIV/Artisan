@@ -221,12 +221,12 @@ public unsafe class Artisan : IDalamudPlugin
         Svc.PluginInterface.UiBuilder.OpenConfigUi -= DrawConfigUI;
         Svc.PluginInterface.UiBuilder.Draw -= ws.Draw;
         Svc.PluginInterface.UiBuilder.OpenMainUi -= DrawConfigUI;
-        cw.Dispose();
-        ri.Dispose();
-        ws.RemoveAllWindows();
+        cw?.Dispose();
+        ri?.Dispose();
+        ws?.RemoveAllWindows();
         ws = null!;
 
-        Config.ScriptSolverConfig.Dispose();
+        Config.ScriptSolverConfig?.Dispose();
         EnduranceCraftWatcher.Dispose();
         PreCrafting.Dispose();
         CraftingProcessor.Dispose();

@@ -67,6 +67,7 @@ public static class CraftingProcessor
                     yield return f;
                 }
             }
+            yield return default;
         }
     }
 

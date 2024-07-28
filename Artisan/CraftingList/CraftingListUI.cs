@@ -139,7 +139,7 @@ namespace Artisan.CraftingLists
 
 
             ImGui.EndChild();
-            
+
             ImGui.BeginChild("TeamCraftSection", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 5f), false);
             Teamcraft.DrawTeamCraftListButtons();
             ImGui.EndChild();
@@ -203,7 +203,10 @@ namespace Artisan.CraftingLists
                     if (item.ListItemOptions.Skipping) continue;
                     var count = item.Quantity;
                     var options = item.ListItemOptions;
-                    output = output.Add(GetCraftDuration(item.ID, (options?.NQOnly ?? false)) * count).Add(TimeSpan.FromSeconds(1 * count));
+                    if (GetCraftDuration(item.ID, (options?.NQOnly ?? false)) == TimeSpan.Zero)
+                        output = TimeSpan.Zero;
+                    else
+                        output = output.Add(GetCraftDuration(item.ID, (options?.NQOnly ?? false)) * count).Add(TimeSpan.FromSeconds(1 * count));
                 }
 
                 return output;
@@ -225,9 +228,13 @@ namespace Artisan.CraftingLists
             stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
             var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.Row, recipe);
             var solver = CraftingProcessor.GetSolverForRecipe(config, craft).CreateSolver(craft);
-            var time = SolverUtils.EstimateCraftTime(solver, craft, 0);
+            if (solver != null)
+            {
+                var time = SolverUtils.EstimateCraftTime(solver, craft, 0);
 
-            return time;
+                return time;
+            }
+            return TimeSpan.Zero;
         }
 
         private static void DrawNewListPopup()

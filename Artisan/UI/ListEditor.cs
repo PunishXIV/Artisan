@@ -604,7 +604,7 @@ internal class ListEditor : Window, IDisposable
         {
             listTime = CraftingListUI.GetListTimer(SelectedList);
         });
-        string duration = string.Format("{0:D2}d {1:D2}h {2:D2}m {3:D2}s", listTime.Days, listTime.Hours, listTime.Minutes, listTime.Seconds);
+        string duration = listTime == TimeSpan.Zero ? "Unknown" : string.Format("{0:D2}d {1:D2}h {2:D2}m {3:D2}s", listTime.Days, listTime.Hours, listTime.Minutes, listTime.Seconds);
         ImGui.SameLine();
         ImGui.Text($"Approximate List Time: {duration}");
     }
@@ -1097,8 +1097,6 @@ internal class ListEditor : Window, IDisposable
         {
             SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions = new();
         }
-        if (SelectedList.AddAsQuickSynth && recipe.CanQuickSynth)
-            SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions.NQOnly = true;
 
         var options = SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions;
 
