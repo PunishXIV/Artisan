@@ -12,6 +12,7 @@ using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -846,6 +847,7 @@ namespace Artisan.UI
                     CP = gsStats.CP + cpBoost,
                     Specialist = gsStats.Specialist,
                     Splendorous = gsStats.Splendorous,
+                    Manipulation = gsStats.Manipulation
                 };
 
                 ResolveSteps();

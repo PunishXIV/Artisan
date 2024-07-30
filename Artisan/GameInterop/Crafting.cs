@@ -84,7 +84,7 @@ public static unsafe class Crafting
             StatControl = stats.Control,
             StatCP = stats.CP,
             StatLevel = stats.Level == default ? CharacterInfo.JobLevel(job) : stats.Level,
-            UnlockedManipulation = CharacterInfo.IsManipulationUnlocked(job),
+            UnlockedManipulation = stats.Manipulation,
             Specialist = stats.Specialist,
             Splendorous = stats.Splendorous,
             CraftCollectible = recipe.ItemResult.Value?.IsCollectable ?? false,
@@ -101,7 +101,7 @@ public static unsafe class Crafting
             CraftRecommendedCraftsmanship = lt?.SuggestedCraftsmanship ?? 0,
             CraftHQ = recipe.CanHq,
         };
-        
+
         if (res.CraftCollectible)
         {
             // Check regular collectibles first
