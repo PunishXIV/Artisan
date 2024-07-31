@@ -40,6 +40,9 @@ namespace Artisan.CraftingLists
         internal static Dictionary<int, int> listMaterialsNew = new();
         public static bool Processing;
         public static uint CurrentProcessedItem;
+        public static int CurrentProcessedItemIndex;
+        public static int CurrentProcessedItemCount;
+        public static int CurrentProcessedItemListCount;
         private static readonly ListFolders ListsUI = new();
 
         private static bool GatherBuddy => DalamudReflector.TryGetDalamudPlugin("GatherBuddy", out var gb, false, true);
