@@ -198,7 +198,19 @@ namespace Artisan.CraftingLists
 
             if (CurrentIndex < selectedList.ExpandedList.Count)
             {
-                CraftingListUI.CurrentProcessedItem = selectedList.ExpandedList[CurrentIndex];
+                if (CraftingListUI.CurrentProcessedItem != selectedList.ExpandedList[CurrentIndex])
+                {
+                    CraftingListUI.CurrentProcessedItem = selectedList.ExpandedList[CurrentIndex];
+                    CraftingListUI.CurrentProcessedItemCount = 1;
+                    CraftingListUI.CurrentProcessedItemIndex = CurrentIndex;
+                    CraftingListUI.CurrentProcessedItemListCount = selectedList.ExpandedList.Count(v => v == CraftingListUI.CurrentProcessedItem);
+                    
+                }
+                else if (CraftingListUI.CurrentProcessedItemIndex != CurrentIndex)
+                {
+                    CraftingListUI.CurrentProcessedItemIndex = CurrentIndex;
+                    CraftingListUI.CurrentProcessedItemCount++;
+                }
             }
             else
             {
