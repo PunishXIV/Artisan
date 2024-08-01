@@ -269,6 +269,18 @@ namespace Artisan.UI
                                 P.Config.Save();
                             }
 
+                            ImGuiComponents.HelpMarker("Uses a recommendation from the appropriate default solver, i.e Standard Recipe Solver for regular recipes, Expert Recipe Solver for expert recipes.");
+
+                            if (ImGui.Selectable($"Touch Combo"))
+                            {
+                                step.Action = Skills.TouchCombo;
+                                P.Config.Save();
+                            }
+
+                            ImGuiComponents.HelpMarker("This will use the appropriate step of the 3-step touch combo, depending on the last action actually used. Useful if upgrading quality actions or skipping on conditions.");
+
+                            ImGui.Separator();
+
                             foreach (var opt in Enum.GetValues(typeof(Skills)).Cast<Skills>().OrderBy(SheetExtensions.NameOfAction))
                             {
                                 if (ImGui.Selectable(opt.NameOfAction()))

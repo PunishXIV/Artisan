@@ -420,12 +420,12 @@ public static class Simulator
 
     public static bool WillFinishCraft(CraftState craft, StepState step, Skills action) => step.FinalAppraisalLeft == 0 && step.Progress + CalculateProgress(craft, step, action) >= craft.CraftProgress;
 
-    public static Skills NextTouchCombo(StepState step) => step.PrevComboAction switch
+    public static Skills NextTouchCombo(StepState step, CraftState craft)
     {
-        Skills.BasicTouch => Skills.StandardTouch,
-        Skills.StandardTouch => Skills.AdvancedTouch,
-        _ => Skills.BasicTouch
-    };
+        if (step.PrevComboAction == Skills.BasicTouch && craft.StatLevel >= MinLevel(Skills.StandardTouch)) return Skills.StandardTouch;
+        if (step.PrevComboAction == Skills.StandardTouch && craft.StatLevel >= MinLevel(Skills.AdvancedTouch)) return Skills.AdvancedTouch;
+        return Skills.BasicTouch;
+    }
 
     public static Condition GetNextCondition(CraftState craft, StepState step, float roll) => step.Condition switch
     {

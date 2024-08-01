@@ -188,7 +188,7 @@ public class ExpertSolver : Solver
         var allowPrecise = cfg.MidAllowPrecise && (!allowObserveOnLowDura || step.ManipulationLeft > 0 || step.Durability > 25) /*&& !venerationActive*/;
         if (progressDeficit > 0 && SolveMidHighPriorityProgress(step, allowIntensive) is var highPrioProgress && highPrioProgress != Skills.None)
             return new(SafeCraftAction(craft, step, highPrioProgress), "mid pre quality: high-prio progress");
-        if (step.IQStacks < 10 && SolveMidHighPriorityIQ(cfg, step, allowPrecise) is var highPrioIQ && highPrioIQ != Skills.None)
+        if (step.IQStacks < 10 && SolveMidHighPriorityIQ(cfg, craft, step, allowPrecise) is var highPrioIQ && highPrioIQ != Skills.None)
             return new(highPrioIQ, "mid pre quality: high-prio iq");
         if (step.Condition == Condition.Good)
             return new(Skills.TricksOfTrade, "mid pre quality: high-prio tricks"); // progress/iq below decided not to use good, so spend it on tricks
@@ -595,7 +595,7 @@ public class ExpertSolver : Solver
         return Skills.None;
     }
 
-    private static Skills SolveMidHighPriorityIQ(ExpertSolverSettings cfg, StepState step, bool allowPrecise)
+    private static Skills SolveMidHighPriorityIQ(ExpertSolverSettings cfg, CraftState craft, StepState step, bool allowPrecise)
     {
         if (step.Condition is Condition.Good or Condition.Excellent && allowPrecise && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreciseTouch))
             return Skills.PreciseTouch;
@@ -604,7 +604,7 @@ public class ExpertSolver : Solver
         if (step.Condition == Condition.Sturdy && cfg.MidAllowSturdyPreсise && (step.HeartAndSoulActive || step.HeartAndSoulAvailable) && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreciseTouch))
             return step.HeartAndSoulActive ? Skills.PreciseTouch : Skills.HeartAndSoul;
         if (step.Condition == Condition.Sturdy && step.Durability > Simulator.GetDurabilityCost(step, Skills.HastyTouch))
-            return cfg.MidAllowSturdyHasty ? Skills.HastyTouch : Simulator.NextTouchCombo(step);
+            return cfg.MidAllowSturdyHasty ? Skills.HastyTouch : Simulator.NextTouchCombo(step, craft);
         return Skills.None;
     }
 

@@ -1,6 +1,5 @@
 ﻿using Artisan.CraftingLists;
-using Artisan.GameInterop;
-using ECommons.DalamudServices;
+using Artisan.RawInformation.Character;
 using System.Collections.Generic;
 using System.Linq;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
@@ -81,6 +80,11 @@ public class MacroSolver : Solver
                 (s.ExcludeGoodOmen && step.Condition == Condition.GoodOmen))
             {
                 continue;
+            }
+
+            if (action == Skills.TouchCombo)
+            {
+                action = Simulator.NextTouchCombo(step, craft);
             }
 
             if (action == Skills.None)
