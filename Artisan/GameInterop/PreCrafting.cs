@@ -114,13 +114,8 @@ public unsafe static class PreCrafting
             bool hasIngredients = GetNumberCraftable(recipe) > 0;
             bool needClassChange = requiredClass != CharacterInfo.JobID;
             bool needEquipItem = recipe.ItemRequired.Row > 0 && (needClassChange || !IsItemEquipped(recipe.ItemRequired.Row));
-            // TODO: repair & extract materia
-            bool needConsumables = (type == CraftType.Normal || (type == CraftType.Trial && P.Config.UseConsumablesTrial) || (type == CraftType.Quick && P.Config.UseConsumablesQuickSynth)) && (!ConsumableChecker.IsFooded(config) || !ConsumableChecker.IsPotted(config) || !ConsumableChecker.IsManualled(config) || !ConsumableChecker.IsSquadronManualled(config));
-            bool hasConsumables = config != default ?
-                (ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) || ConsumableChecker.IsFooded(config)) &&
-                (ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) || ConsumableChecker.IsPotted(config)) &&
-                (ConsumableChecker.HasItem(config.RequiredManual, false) || ConsumableChecker.IsManualled(config)) &&
-                (ConsumableChecker.HasItem(config.RequiredSquadronManual, false) || ConsumableChecker.IsSquadronManualled(config)) : true;
+            bool needConsumables = NeedsConsumablesCheck(type, config);
+            bool hasConsumables = HasConsumablesCheck(config);
 
             // handle errors when we're forbidden from rectifying them automatically
             if (P.Config.DontEquipItems && needClassChange)
@@ -135,9 +130,7 @@ public unsafe static class PreCrafting
             }
             if (P.Config.AbortIfNoFoodPot && needConsumables && !hasConsumables)
             {
-                List<string> missingConsumables = MissingConsumables(config);
-
-                DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: required consumables not up and missing {string.Join(", ", missingConsumables)}");
+                MissingConsumablesMessage(recipe, config);
                 return;
             }
 
@@ -182,19 +175,41 @@ public unsafe static class PreCrafting
         }
     }
 
+    internal static void MissingConsumablesMessage(Recipe recipe, RecipeConfig? config)
+    {
+        List<string> missingConsumables = MissingConsumables(config);
+
+        DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: required consumables not up and missing {string.Join(", ", missingConsumables)}");
+    }
+
+    internal static bool NeedsConsumablesCheck(CraftType type, RecipeConfig? config)
+    {
+        // TODO: repair & extract materia
+        return (type == CraftType.Normal || (type == CraftType.Trial && P.Config.UseConsumablesTrial) || (type == CraftType.Quick && P.Config.UseConsumablesQuickSynth)) && (!ConsumableChecker.IsFooded(config) || !ConsumableChecker.IsPotted(config) || !ConsumableChecker.IsManualled(config) || !ConsumableChecker.IsSquadronManualled(config));
+    }
+
+    internal static bool HasConsumablesCheck(RecipeConfig? config)
+    {
+        return config != default ?
+            (ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) || ConsumableChecker.IsFooded(config)) &&
+            (ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) || ConsumableChecker.IsPotted(config)) &&
+            (ConsumableChecker.HasItem(config.RequiredManual, false) || ConsumableChecker.IsManualled(config)) &&
+            (ConsumableChecker.HasItem(config.RequiredSquadronManual, false) || ConsumableChecker.IsSquadronManualled(config)) : true;
+    }
+
     public static List<string> MissingConsumables(RecipeConfig? config)
     {
         List<string> missingConsumables = new List<string>();
-        if (!ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ))
-            missingConsumables.Add(config.RequiredFood.NameOfItem());
+        if (!ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && !ConsumableChecker.IsFooded(config))
+            missingConsumables.Add($"{(config.RequiredFoodHQ ? " " : "")}{config.RequiredFood.NameOfItem()}");
 
-        if (!ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ))
-            missingConsumables.Add(config.RequiredPotion.NameOfItem());
+        if (!ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) && !ConsumableChecker.IsPotted(config))
+            missingConsumables.Add($"{(config.RequiredPotionHQ ? " " : "")}{config.RequiredPotion.NameOfItem()}");
 
-        if (!ConsumableChecker.HasItem(config.RequiredManual, false))
+        if (!ConsumableChecker.HasItem(config.RequiredManual, false) && !ConsumableChecker.IsManualled(config))
             missingConsumables.Add(config.RequiredManual.NameOfItem());
 
-        if (!ConsumableChecker.HasItem(config.RequiredSquadronManual, false))
+        if (!ConsumableChecker.HasItem(config.RequiredSquadronManual, false) && !ConsumableChecker.IsSquadronManualled(config))
             missingConsumables.Add(config.RequiredSquadronManual.NameOfItem());
         return missingConsumables;
     }

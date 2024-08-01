@@ -1,7 +1,10 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.RawInformation;
 using ECommons.DalamudServices;
 using ECommons.Logging;
+using OtterGui;
+using System;
 
 namespace Artisan.IPC
 {
@@ -39,6 +42,8 @@ namespace Artisan.IPC
 
             Svc.PluginInterface.GetIpcProvider<bool>("Artisan.GetStopRequest").RegisterFunc(GetStopRequest);
             Svc.PluginInterface.GetIpcProvider<bool, object>("Artisan.SetStopRequest").RegisterAction(SetStopRequest);
+
+            Svc.PluginInterface.GetIpcProvider<ushort, int, object>("Artisan.CraftItem").RegisterAction(CraftX);
         }
 
         internal static void Dispose()
@@ -52,6 +57,8 @@ namespace Artisan.IPC
 
             Svc.PluginInterface.GetIpcProvider<bool>("Artisan.GetStopRequest").UnregisterFunc();
             Svc.PluginInterface.GetIpcProvider<bool, object>("Artisan.SetStopRequest").UnregisterAction();
+
+            Svc.PluginInterface.GetIpcProvider<ushort, int, object>("Artisan.CraftItem").UnregisterAction();
         }
 
         static bool GetEnduranceStatus()
@@ -93,6 +100,21 @@ namespace Artisan.IPC
                 DuoLog.Information("Artisan has been requested to restart by an external plugin.");
 
             StopCraftingRequest = s;
+        }
+
+        private static void CraftX(ushort recipeId, int amount)
+        {
+            if (!LuminaSheets.RecipeSheet!.FindFirst(x => x.Value.RowId == recipeId, out var recipe))
+            {
+                Endurance.RecipeID = recipeId;
+                P.Config.CraftX = amount;
+                P.Config.CraftingX = true;
+                Endurance.ToggleEndurance(true);
+            }
+            else
+            {
+                throw new Exception("RecipeID not found.");
+            }
         }
 
         public enum ArtisanMode

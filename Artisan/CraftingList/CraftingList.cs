@@ -357,13 +357,13 @@ namespace Artisan.CraftingLists
             {
                 selectedList.Recipes.First(x => x.ID == CraftingListUI.CurrentProcessedItem).ListItemOptions = new ListItemOptions();
             }
-            bool needConsumables = (type == PreCrafting.CraftType.Normal || (type == PreCrafting.CraftType.Quick && P.Config.UseConsumablesQuickSynth)) && (!ConsumableChecker.IsFooded(config) || !ConsumableChecker.IsPotted(config) || !ConsumableChecker.IsManualled(config) || !ConsumableChecker.IsSquadronManualled(config));
-            bool hasConsumables = config != default ? ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) && ConsumableChecker.HasItem(config.RequiredManual, false) && ConsumableChecker.HasItem(config.RequiredSquadronManual, false) : true;
+            bool needConsumables = PreCrafting.NeedsConsumablesCheck(type, config);
+            bool hasConsumables = PreCrafting.HasConsumablesCheck(config);
 
             if (P.Config.AbortIfNoFoodPot && needConsumables && !hasConsumables)
             {
-                DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: required consumables not up");
-                Paused = true;
+                PreCrafting.MissingConsumablesMessage(recipe, config);
+                Paused = false;
                 return;
             }
 
