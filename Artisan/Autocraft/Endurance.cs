@@ -291,6 +291,8 @@ namespace Artisan.Autocraft
                  message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1145).Text.ExtractText() ||
                  message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1144).Text.ExtractText()))
             {
+
+                Discord.Discord.SendEnduranceFinished();
                 if (P.Config.PlaySoundFinishEndurance)
                     SoundPlayer.PlaySound();
 
@@ -323,6 +325,7 @@ namespace Artisan.Autocraft
                     Enable = false;
                     P.Config.CraftingX = false;
                     DuoLog.Information("Craft X has completed.");
+                    Discord.Discord.SendEnduranceFinished();
                     if (P.Config.PlaySoundFinishEndurance)
                         SoundPlayer.PlaySound();
 

@@ -147,6 +147,8 @@ namespace Artisan
 
         public bool ReplaceSearch = true;
 
+        public string DiscordWebhook = "";
+
         public void Save()
         {
             Svc.PluginInterface.SavePluginConfig(this);
