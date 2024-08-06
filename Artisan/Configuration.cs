@@ -146,6 +146,8 @@ namespace Artisan
         public bool DisableSimulatorActionTooltips = false;
 
         public bool ReplaceSearch = true;
+        public bool UsingDiscordHooks;
+        public string? DiscordWebhookUrl;
 
         public void Save()
         {

@@ -377,7 +377,12 @@ namespace Artisan.Autocraft
                     return;
                 }
 
-                if (needConsumables && hasConsumables)
+                bool needFood = config != default && ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && !ConsumableChecker.IsFooded(config);
+                bool needPot = config != default && ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) && !ConsumableChecker.IsPotted(config);
+                bool needManual = config != default && ConsumableChecker.HasItem(config.RequiredManual, false) && !ConsumableChecker.IsManualled(config);
+                bool needSquadronManual = config != default && ConsumableChecker.HasItem(config.RequiredSquadronManual, false) && !ConsumableChecker.IsSquadronManualled(config);
+
+                if (needFood || needPot || needManual || needSquadronManual)
                 {
                     if (!P.TM.IsBusy && !PreCrafting.Occupied())
                     {
