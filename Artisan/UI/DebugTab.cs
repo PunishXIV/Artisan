@@ -12,8 +12,10 @@ using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
+using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -359,12 +361,6 @@ namespace Artisan.UI
             if (ImGui.Button($"TeleportToGC"))
             {
                 TeleportToGCTown();
-            }
-
-            ImGui.Text($"{Loot.Instance()->UnkObjectId} {Loot.Instance()->UnkObjectId2}");
-            foreach (var i in Loot.Instance()->Items)
-            {
-                ImGui.Text($"{i.RollState} {i.RollValue} {i.RollResult} {i.LootMode} {i.ItemCount} {i.Time}");
             }
         }
 

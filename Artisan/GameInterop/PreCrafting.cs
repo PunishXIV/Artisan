@@ -490,7 +490,8 @@ public unsafe static class PreCrafting
            || Svc.Condition[ConditionFlag.OccupiedInCutSceneEvent]
            || Svc.Condition[ConditionFlag.OccupiedInEvent]
            || Svc.Condition[ConditionFlag.OccupiedInQuestEvent]
-           || Svc.Condition[ConditionFlag.OccupiedSummoningBell];
+           || Svc.Condition[ConditionFlag.OccupiedSummoningBell]
+           || Svc.Condition[ConditionFlag.UsingParasol];
     }
 
     private static void ClickSynthButtons(void* thisPtr, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* atkEventData)

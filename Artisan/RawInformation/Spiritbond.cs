@@ -1,6 +1,7 @@
 ﻿using Artisan.GameInterop;
 using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
+using ECommons.GameHelpers;
 using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -97,7 +98,7 @@ namespace Artisan.RawInformation
         public unsafe static bool ExtractMateriaTask(bool option)
         {
             if (!CharacterInfo.MateriaExtractionUnlocked()) return true;
-
+            if (CharacterOther.GetInventoryFreeSlotCount() == 0) return true;
 
             if (option)
             {
