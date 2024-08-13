@@ -9,7 +9,7 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog": "- Macros that previously used deleted actions will no longer crash and those actions have been replaced with \"Artisan Recommendation\"\n- Artisan will no longer try to extract materia if your inventory is full.",
+  "Changelog": "- Revert previous change to stop lists/Endurance if using a parasol (I was misled to believe it would prevent crafting).",
   "RepoUrl": "https://github.com/PunishXIV/Artisan",
   "DalamudApiLevel": 10,
   "DownloadLinkTesting" : "https://love.puni.sh/plugins/Artisan/Testing/latest.zip"

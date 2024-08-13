@@ -287,8 +287,11 @@ public unsafe static class PreCrafting
         if (job == CharacterInfo.JobID)
             return TaskResult.Done;
 
-        if (equipGearsetLoops > 0)
-            return TaskResult.Retry;
+        if (equipGearsetLoops >= 5)
+        {
+            DuoLog.Error("Unable to switch gearsets.");
+            return TaskResult.Abort;
+        }
 
         var gearsets = RaptureGearsetModule.Instance();
         foreach (ref var gs in gearsets->Entries)
@@ -490,8 +493,7 @@ public unsafe static class PreCrafting
            || Svc.Condition[ConditionFlag.OccupiedInCutSceneEvent]
            || Svc.Condition[ConditionFlag.OccupiedInEvent]
            || Svc.Condition[ConditionFlag.OccupiedInQuestEvent]
-           || Svc.Condition[ConditionFlag.OccupiedSummoningBell]
-           || Svc.Condition[ConditionFlag.UsingParasol];
+           || Svc.Condition[ConditionFlag.OccupiedSummoningBell];
     }
 
     private static void ClickSynthButtons(void* thisPtr, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* atkEventData)
