@@ -423,6 +423,7 @@ public unsafe class Artisan : IDalamudPlugin
         if (Crafting.CurState == Crafting.State.QuickCraft)
             Operations.CloseQuickSynthWindow();
 
+        PreCrafting.Tasks.Clear();
         PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), default));
 
     }

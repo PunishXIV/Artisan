@@ -24,7 +24,7 @@ namespace Artisan.IPC
                 else
                 {
                     if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.WaitingForDutyFinder] && !Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.BoundByDuty])
-                    ResumeCrafting();
+                        ResumeCrafting();
                 }
                 stopCraftingRequest = value;
             }
@@ -102,14 +102,22 @@ namespace Artisan.IPC
             StopCraftingRequest = s;
         }
 
-        private static void CraftX(ushort recipeId, int amount)
+        public unsafe static void CraftX(ushort recipeId, int amount)
         {
-            if (!LuminaSheets.RecipeSheet!.FindFirst(x => x.Value.RowId == recipeId, out var recipe))
+            if (LuminaSheets.RecipeSheet!.FindFirst(x => x.Value.RowId == recipeId, out var recipe))
             {
-                Endurance.RecipeID = recipeId;
-                P.Config.CraftX = amount;
-                P.Config.CraftingX = true;
-                Endurance.ToggleEndurance(true);
+                P.TM.Enqueue(() =>
+                {
+                    CraftingListFunctions.OpenRecipeByID(recipeId);
+                });
+                P.TM.DelayNext(100);
+                P.TM.Enqueue(() =>
+                {
+                    Endurance.RecipeID = recipeId;
+                    P.Config.CraftX = amount;
+                    P.Config.CraftingX = true;
+                    Endurance.ToggleEndurance(true);
+                });
             }
             else
             {

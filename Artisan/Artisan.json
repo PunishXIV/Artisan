@@ -9,7 +9,7 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog": "- Revert previous change to stop lists/Endurance if using a parasol (I was misled to believe it would prevent crafting).",
+  "Changelog": "- IPC fixes.",
   "RepoUrl": "https://github.com/PunishXIV/Artisan",
   "DalamudApiLevel": 10,
   "DownloadLinkTesting" : "https://love.puni.sh/plugins/Artisan/Testing/latest.zip"
