@@ -91,7 +91,7 @@ namespace Artisan.Autocraft
             if (item.ItemUICategory.Row != 63)
                 return false; // not 'other'
             var action = item.ItemAction.Value;
-            return action != null && action.Type == 816 && action.Data[0] is 301 or 1751 or 5329;
+            return action != null && action.Type == 816 && action.Data[0] is 300 or 301 or 1751 or 5329;
         }
 
         internal static bool IsSquadronManual(Item item)
