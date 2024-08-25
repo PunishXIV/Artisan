@@ -219,6 +219,8 @@ namespace Artisan.CraftingLists
                 Operations.CloseQuickSynthWindow();
                 PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromSeconds(5)));
 
+                Discord.Discord.SendCraftingListFinished();
+
                 if (P.Config.PlaySoundFinishList)
                     Sounds.SoundPlayer.PlaySound();
                 return;
