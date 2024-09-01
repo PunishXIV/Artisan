@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="Artisan/Images/Icon.png" alt="Pandora IconUrl" width="15%">
+<img src="Artisan/Images/Icon.png" alt="Artisan IconUrl" width="15%">
 
 <br />
 
-<img src="Artisan/Images/artisan.png" alt="Pandora IconUrl" width="30%">
+<img src="Artisan/Images/artisan.png" alt="Artisan LogoUrl" width="30%">
 
 <br />
 
