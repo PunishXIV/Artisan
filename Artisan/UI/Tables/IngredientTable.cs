@@ -179,7 +179,7 @@ namespace Artisan.UI.Tables
                 ImGuiUtil.HoverIcon(item.Icon, Interface.LineIconSize);
                 ImGui.SameLine();
 
-                var selected = ImGui.Selectable(item.Data.Name.RawString);
+                var selected = ImGui.Selectable($"{item.Data.Name.RawString}");
                 InvokeContextMenu(item);
 
                 if (selected)
@@ -612,6 +612,9 @@ namespace Artisan.UI.Tables
                     {
                         foreach (var i in item.SubSubMaterials)
                         {
+                            if (item.UsedInMaterialsListCount.ContainsKey(i.Key))
+                                continue;
+
                             sb.AppendLine($"{i.Value.Sum(x => x.Item2)} less is required for {i.Key.NameOfRecipe()}");
                             foreach (var m in i.Value)
                             {

@@ -55,7 +55,7 @@ namespace Artisan.CraftingLists
             for (int i = 0; i < sublist.Count; i++)
             {
                 if (i >= sublist.Count) break;
-                
+
                 int number = CraftingListUI.selectedList.Recipes[i].Quantity;
                 var recipe = LuminaSheets.RecipeSheet[sublist[i].ID];
                 var ItemId = recipe.ItemResult.Value.RowId;
@@ -206,7 +206,10 @@ namespace Artisan.CraftingLists
                         if (recipe is not null)
                         {
                             int quantity = (int)Math.Ceiling(numberOfItem / (double)recipe.AmountResult);
-                            output.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = quantity, ListItemOptions = new() });
+                            if (output.Recipes.Any(x => x.ID == recipe.RowId))
+                                output.Recipes.First(x => x.ID == recipe.RowId).Quantity += quantity;
+                            else
+                                output.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = quantity, ListItemOptions = new() });
 
                             if (precraftQS && recipe.CanQuickSynth)
                                 output.Recipes.First(x => x.ID == recipe.RowId).ListItemOptions.NQOnly = true;

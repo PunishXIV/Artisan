@@ -1,5 +1,9 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game.Event;
+﻿using ECommons;
+using ECommons.Automation;
+using ECommons.Logging;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -16,6 +20,52 @@ public unsafe struct RecipeNoteIngredientEntry
     [FieldOffset(0x09)] public byte NumAssignedHQ;
     [FieldOffset(0x78)] public uint ItemId;
     [FieldOffset(0x82)] public byte NumTotal;
+
+    public void SetMaxHQ(bool updateUI = true)
+    {
+        var assigning = (byte)Math.Min(NumAvailableHQ, NumTotal);
+        NumAssignedHQ = assigning;
+        NumAssignedNQ = (byte)Math.Min(NumAssignedNQ, NumTotal - assigning);
+
+        if (updateUI && GenericHelpers.TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon))
+        {
+            Callback.Fire(addon, true, 6);
+        }
+    }
+
+    public void SetMaxNQ(bool updateUI = true)
+    {
+        var assigning = (byte)Math.Min(NumAvailableNQ, NumTotal);
+        NumAssignedNQ = assigning;
+        NumAssignedHQ = (byte)Math.Min(NumAvailableHQ, NumTotal - assigning);
+
+        if (updateUI && GenericHelpers.TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon))
+        {
+            Callback.Fire(addon, true, 6);
+        }
+    }
+
+    public void SetSpecific(int nq, int hq, bool updateUI = true)
+    {
+        if (NumAvailableNQ + NumAvailableHQ < NumTotal)
+        {
+            DuoLog.Error("Unable to set specified ingredients properly due to insufficient materials.");
+            return;
+        }
+
+        NumAssignedNQ = 0;
+        NumAssignedHQ = 0;
+
+        NumAssignedNQ = (byte)Math.Min(NumTotal, Math.Min(NumAvailableNQ, nq));
+        if (NumAssignedNQ != NumTotal)
+            NumAssignedHQ = (byte)Math.Min(NumTotal, Math.Min(NumAvailableHQ, hq));
+
+        if (updateUI && GenericHelpers.TryGetAddonByName<AtkUnitBase>("RecipeNote", out var addon))
+        {
+            Callback.Fire(addon, true, 6);
+        }
+    }
+
 }
 
 [StructLayout(LayoutKind.Explicit, Size = 0x3F8)]

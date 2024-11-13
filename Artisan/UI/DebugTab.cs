@@ -9,6 +9,7 @@ using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Utility.Raii;
 using ECommons;
+using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
@@ -34,6 +35,7 @@ namespace Artisan.UI
         internal static int SelRecId = 0;
         internal static bool Debug = false;
         public static int DebugValue = 1;
+        static int NQMats, HQMats = 0;
 
         internal static void Draw()
         {
@@ -402,7 +404,27 @@ namespace Artisan.UI
                 if (ing.NumTotal != 0)
                 {
                     var item = Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()?.GetRow(ing.ItemId);
-                    using var n1 = ImRaii.TreeNode($"Ingredient {i}: {ing.ItemId} '{item?.Name}' (ilvl={item?.LevelItem.Row}, hq={item?.CanBeHq}), max={ing.NumTotal}, nq={ing.NumAssignedNQ}/{ing.NumAvailableNQ}, hq={ing.NumAssignedHQ}/{ing.NumAvailableHQ}", ImGuiTreeNodeFlags.Leaf);
+                    using var n1 = ImRaii.TreeNode($"Ingredient {i}: {ing.ItemId} '{item?.Name}' (ilvl={item?.LevelItem.Row}, hq={item?.CanBeHq}), max={ing.NumTotal}, nq={ing.NumAssignedNQ}/{ing.NumAvailableNQ}, hq={ing.NumAssignedHQ}/{ing.NumAvailableHQ}###ingy{ing.ItemId}");
+                    if (n1)
+                    {
+                        ImGui.InputInt("NQ Mats", ref NQMats);
+                        ImGui.InputInt("HQ Mats", ref HQMats);
+
+                        if (ImGui.Button("Set Specific"))
+                        {
+                            ing.SetSpecific(NQMats, HQMats);
+                        }
+
+                        if (ImGui.Button("Set Max HQ"))
+                        {
+                            ing.SetMaxHQ();
+                        }
+                        ImGui.SameLine();
+                        if (ImGui.Button("Set Max NQ"))
+                        {
+                            ing.SetMaxNQ();
+                        }
+                    }
                 }
                 i++;
             }

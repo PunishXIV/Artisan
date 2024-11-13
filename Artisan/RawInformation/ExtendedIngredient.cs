@@ -178,7 +178,7 @@ namespace Artisan.RawInformation
                     var subing = IngredientHelper.HelperList.First(x => x.Data.RowId == recipe.ItemResult.Row);
                     if (subing.UsedInCrafts.Count > 0)
                     {
-                        output += subing.GetSubCraftCount() * numberUsedInRecipe;
+                        //output += subing.GetSubCraftCount() * numberUsedInRecipe;
                         foreach (var i in subing.UsedInMaterialsListCount)
                         {
                             if (i.Value == 0) continue;
