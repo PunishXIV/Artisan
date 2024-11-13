@@ -15,7 +15,7 @@ using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using static ECommons.GenericHelpers;
@@ -108,12 +108,12 @@ public unsafe static class PreCrafting
         {
             Svc.Log.Debug($"Starting {type} crafting: {recipe.RowId} '{recipe.ItemResult.Value?.Name}'");
 
-            var requiredClass = Job.CRP + recipe.CraftType.Row;
+            var requiredClass = Job.CRP + recipe.CraftType.RowId;
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId);
 
             bool hasIngredients = GetNumberCraftable(recipe) > 0;
             bool needClassChange = requiredClass != CharacterInfo.JobID;
-            bool needEquipItem = recipe.ItemRequired.Row > 0 && (needClassChange || !IsItemEquipped(recipe.ItemRequired.Row));
+            bool needEquipItem = recipe.ItemRequired.RowId > 0 && (needClassChange || !IsItemEquipped(recipe.ItemRequired.RowId));
             bool needConsumables = NeedsConsumablesCheck(type, config);
             bool hasConsumables = HasConsumablesCheck(config);
 
@@ -158,7 +158,7 @@ public unsafe static class PreCrafting
             if (needEquipItem)
             {
                 equipAttemptLoops = 0;
-                Tasks.Add((() => TaskEquipItem(recipe.ItemRequired.Row), default));
+                Tasks.Add((() => TaskEquipItem(recipe.ItemRequired.RowId), default));
             }
 
             bool needFood = config != default && ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && !ConsumableChecker.IsFooded(config);
@@ -185,7 +185,7 @@ public unsafe static class PreCrafting
     {
         List<string> missingConsumables = MissingConsumables(config);
 
-        DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: required consumables not up and missing {string.Join(", ", missingConsumables)}");
+        DuoLog.Error($"Can't craft {recipe.ItemResult.Value.Name}: required consumables not up and missing {string.Join(", ", missingConsumables)}");
     }
 
     internal static bool NeedsConsumablesCheck(CraftType type, RecipeConfig? config)

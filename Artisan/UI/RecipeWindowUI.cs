@@ -3,7 +3,6 @@ using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.FCWorkshops;
 using Artisan.GameInterop;
-using Artisan.GameInterop.CSExt;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.UI;
@@ -20,7 +19,6 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 using OtterGui;
 using System;
 using System.Collections.Generic;
@@ -28,7 +26,6 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using System.Web;
 using static ECommons.GenericHelpers;
 
 namespace Artisan
@@ -126,7 +123,7 @@ namespace Artisan
 
                     if (Search.Length > 0 && !searched)
                     {
-                        if (LuminaSheets.RecipeSheet.Values.Count(x => Regex.Match(x.ItemResult.Value.Name.RawString, Search, RegexOptions.IgnoreCase).Success) > 0)
+                        if (LuminaSheets.RecipeSheet.Values.Count(x => Regex.Match(x.ItemResult.Value.Name.ToString(), Search, RegexOptions.IgnoreCase).Success) > 0)
                         {
                             ImGui.Begin($"###Search{searchNode->NodeId}", ImGuiWindowFlags.NoScrollbar
                                 | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
@@ -136,10 +133,10 @@ namespace Artisan
                             ImGui.SetNextItemWidth(size.Length() - 12f);
 
                             int results = 0;
-                            foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => Regex.Match(x.ItemResult.Value.Name.RawString, Search, RegexOptions.IgnoreCase).Success))
+                            foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => Regex.Match(x.ItemResult.Value.Name.ToString(), Search, RegexOptions.IgnoreCase).Success))
                             {
                                 if (results >= 24) continue;
-                                var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name} ({(Job)recipe.CraftType.Row + 8})###{recipe.RowId}");
+                                var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name} ({(Job)recipe.CraftType.RowId + 8})###{recipe.RowId}");
                                 if (selected)
                                 {
                                     var orid = Operations.GetSelectedRecipeEntry();
@@ -369,7 +366,7 @@ namespace Artisan
 
                 if (!boostedCraftsOnly || (boostedCraftsOnly && starred))
                 {
-                    if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == ItemId && x.CraftType.Row + 8 == job, out var recipe))
+                    if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.RowId == ItemId && x.CraftType.RowId + 8 == job, out var recipe))
                     {
                         var timesToAdd = requested / recipe.AmountResult;
 
@@ -428,7 +425,7 @@ namespace Artisan
 
                 if (!boostedCraftOnly || (boostedCraftOnly && starred))
                 {
-                    if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Row == ItemId && x.CraftType.Row + 8 == job, out var recipe))
+                    if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.RowId == ItemId && x.CraftType.RowId + 8 == job, out var recipe))
                     {
                         var timesToAdd = requested / recipe.AmountResult;
 
@@ -506,9 +503,9 @@ namespace Artisan
                         var project = LuminaSheets.WorkshopSequenceSheet.Values.First(x => x.ResultItem.Value.Name.ExtractText() == itemNameNode->NodeText.ExtractText());
                         var phaseNum = Convert.ToInt32(phaseProgress->NodeText.ToString().First().ToString());
 
-                        if (project.CompanyCraftPart.Count(x => x.Row > 0) == 1)
+                        if (project.CompanyCraftPart.Count(x => x.RowId > 0) == 1)
                         {
-                            var part = project.CompanyCraftPart.First(x => x.Row > 0).Value;
+                            var part = project.CompanyCraftPart.First(x => x.RowId > 0).Value;
                             var phase = part.CompanyCraftProcess[phaseNum - 1];
 
                             FCWorkshopUI.CreatePhaseList(phase.Value!, part.CompanyCraftType.Value.Name.ExtractText(), phaseNum, false, null, project);
@@ -541,9 +538,9 @@ namespace Artisan
                         var project = LuminaSheets.WorkshopSequenceSheet.Values.First(x => x.ResultItem.Value.Name.ExtractText() == itemNameNode->NodeText.ExtractText());
                         var phaseNum = Convert.ToInt32(phaseProgress->NodeText.ToString().First().ToString());
 
-                        if (project.CompanyCraftPart.Count(x => x.Row > 0) == 1)
+                        if (project.CompanyCraftPart.Count(x => x.RowId > 0) == 1)
                         {
-                            var part = project.CompanyCraftPart.First(x => x.Row > 0).Value;
+                            var part = project.CompanyCraftPart.First(x => x.RowId > 0).Value;
                             var phase = part.CompanyCraftProcess[phaseNum - 1];
 
                             FCWorkshopUI.CreatePhaseList(phase.Value!, part.CompanyCraftType.Value.Name.ExtractText(), phaseNum, true, null, project);
@@ -747,9 +744,9 @@ namespace Artisan
                     var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
                     ImGuiEx.ImGuiLineCentered("###RecipeWindowRecipeName", () => { ImGuiEx.TextUnderlined($"{recipe.ItemResult.Value.Name}"); });
                     var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
-                    var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.Row);
+                    var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.RowId);
                     stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
-                    var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.Row, recipe);
+                    var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.RowId, recipe);
                     if (config.Draw(craft))
                     {
                         Svc.Log.Debug($"Updating config for {recipe.RowId}");
@@ -789,9 +786,9 @@ namespace Artisan
 
                             foreach (ref var gs in RaptureGearsetModule.Instance()->Entries)
                             {
-                                if ((Job)gs.ClassJob == Job.CRP + recipe.CraftType.Row)
+                                if ((Job)gs.ClassJob == Job.CRP + recipe.CraftType.RowId)
                                 {
-                                    if (SimulatorUI.SimGS is null || (Job)SimulatorUI.SimGS.Value.ClassJob != Job.CRP + recipe.CraftType.Row)
+                                    if (SimulatorUI.SimGS is null || (Job)SimulatorUI.SimGS.Value.ClassJob != Job.CRP + recipe.CraftType.RowId)
                                     {
                                         SimulatorUI.SimGS = gs;
                                     }

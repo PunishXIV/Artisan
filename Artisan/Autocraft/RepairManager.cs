@@ -14,7 +14,6 @@ using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -50,10 +49,10 @@ namespace Artisan.Autocraft
             var repairResources = Svc.Data.Excel.GetSheet<ItemRepairResource>();
             foreach (var dm in repairResources)
             {
-                if (dm.Item.Row < darkMatterID)
+                if (dm.Item.RowId < darkMatterID)
                     continue;
 
-                if (InventoryManager.Instance()->GetInventoryItemCount(dm.Item.Row) > 0)
+                if (InventoryManager.Instance()->GetInventoryItemCount(dm.Item.RowId) > 0)
                     return true;
             }
             return false;
@@ -118,12 +117,12 @@ namespace Artisan.Autocraft
         {
             var item = LuminaSheets.ItemSheet[ItemId];
 
-            if (item.ClassJobRepair.Row > 0)
+            if (item.ClassJobRepair.RowId > 0)
             {
-                var actualJob = (Job)(item.ClassJobRepair.Row);
+                var actualJob = (Job)(item.ClassJobRepair.RowId);
                 var repairItem = item.ItemRepair.Value.Item;
 
-                if (!HasDarkMatterOrBetter(repairItem.Row))
+                if (!HasDarkMatterOrBetter(repairItem.RowId))
                     return false;
 
                 var jobLevel = CharacterInfo.JobLevel(actualJob);

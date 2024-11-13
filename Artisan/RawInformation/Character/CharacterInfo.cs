@@ -3,7 +3,6 @@ using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -134,7 +133,7 @@ namespace Artisan.RawInformation.Character
         {
             if (Uncompletables.Any(x => x == recipe)) return true;
             if (!LuminaSheets.RecipeSheet.ContainsKey(recipe)) return false;
-            if (LuminaSheets.RecipeSheet[recipe].SecretRecipeBook.Row > 0) return true;
+            if (LuminaSheets.RecipeSheet[recipe].SecretRecipeBook.RowId > 0) return true;
 
             return GetIsGatheringItemGathered(recipe) != 0;
         }

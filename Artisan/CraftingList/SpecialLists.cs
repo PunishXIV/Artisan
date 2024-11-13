@@ -6,7 +6,6 @@ using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -380,7 +379,7 @@ namespace Artisan.CraftingLists
             {
                 if (job.Value)
                 {
-                    recipes.AddRange(LuminaSheets.RecipeSheet.Values.Where(x => x.CraftType.Row == job.Key - 8));
+                    recipes.AddRange(LuminaSheets.RecipeSheet.Values.Where(x => x.CraftType.RowId == job.Key - 8));
 
                     if (Stats.Any(x => x.Value))
                     {
@@ -393,7 +392,7 @@ namespace Artisan.CraftingLists
                             }
                             else
                             {
-                                recipes.AddRange(LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.UnkData59.Any(y => y.BaseParam == v.Key) && x.CraftType.Row == job.Key - 8));
+                                recipes.AddRange(LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.UnkData59.Any(y => y.BaseParam == v.Key) && x.CraftType.RowId == job.Key - 8));
                             }
                         }
                     }
@@ -438,11 +437,11 @@ namespace Artisan.CraftingLists
                     {
                         if (v.Key == 1)
                         {
-                            recipes.RemoveAll(x => x.SecretRecipeBook.Row > 0);
+                            recipes.RemoveAll(x => x.SecretRecipeBook.RowId > 0);
                         }
                         else
                         {
-                            recipes.RemoveAll(x => x.SecretRecipeBook.Row == 0);
+                            recipes.RemoveAll(x => x.SecretRecipeBook.RowId == 0);
                         }
                     }
                 }
@@ -474,11 +473,11 @@ namespace Artisan.CraftingLists
                     {
                         if (v.Key == 1)
                         {
-                            recipes.RemoveAll(x => x.RecipeNotebookList.Row < 1000);
+                            recipes.RemoveAll(x => x.RecipeNotebookList.RowId < 1000);
                         }
                         else
                         {
-                            recipes.RemoveAll(x => x.RecipeNotebookList.Row > 1000);
+                            recipes.RemoveAll(x => x.RecipeNotebookList.RowId > 1000);
                         }
                     }
                 }
@@ -510,11 +509,11 @@ namespace Artisan.CraftingLists
                     {
                         if (v.Key == 1)
                         {
-                            recipes.RemoveAll(x => x.Quest.Row > 0);
+                            recipes.RemoveAll(x => x.Quest.RowId > 0);
                         }
                         else
                         {
-                            recipes.RemoveAll(x => x.Quest.Row == 0);
+                            recipes.RemoveAll(x => x.Quest.RowId == 0);
                         }
                     }
                 }
@@ -599,7 +598,7 @@ namespace Artisan.CraftingLists
             if (!string.IsNullOrEmpty(Contains))
             {
                 Regex regex = new Regex(Contains);
-                recipes.RemoveAll(x => !regex.IsMatch(x.ItemResult.Value.Name.RawString));
+                recipes.RemoveAll(x => !regex.IsMatch(x.ItemResult.Value.Name.ToString()));
             }
 
             if (recipes.Count == 0)

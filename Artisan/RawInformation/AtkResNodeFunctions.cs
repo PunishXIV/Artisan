@@ -86,7 +86,7 @@ namespace Artisan.RawInformation
 
             position += ImGuiHelpers.MainViewport.Pos;
 
-            var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.RawString.Equals(selectedCraftName)).FirstOrDefault();
+            var sheetItem = LuminaSheets.RecipeSheet?.Values.Where(x => x.ItemResult.Value.Name!.ToString().Equals(selectedCraftName)).FirstOrDefault();
             if (sheetItem == null)
                 return;
 

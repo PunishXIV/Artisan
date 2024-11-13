@@ -1,11 +1,8 @@
-﻿using Artisan.CraftingLogic.CraftData;
-using Artisan.GameInterop.CSExt;
+﻿using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Colors;
 using Dalamud.Utility;
-using ECommons.DalamudServices;
-using ECommons.ImGuiMethods;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using System;
 using System.ComponentModel;
 using System.Numerics;

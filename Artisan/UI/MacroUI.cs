@@ -123,7 +123,7 @@ namespace Artisan.UI
                 ImGuiEx.CenterColumnText("Quick Macro Assigner");
                 if (ImGui.BeginChild("###Assigner", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y), true))
                 {
-                    if (ImGui.BeginCombo($"{LuminaSheets.AddonSheet[405].Text.RawString.Replace("#", "").Replace("n°", "").Trim()}", selectedAssignMacro?.Name ?? ""))
+                    if (ImGui.BeginCombo($"{LuminaSheets.AddonSheet[405].Text.ToString().Replace("#", "").Replace("n°", "").Trim()}", selectedAssignMacro?.Name ?? ""))
                     {
                         if (ImGui.Selectable(""))
                             selectedAssignMacro = null;
@@ -212,7 +212,7 @@ namespace Artisan.UI
                     }
                     ImGui.EndListBox();
                 }
-                filteredRecipes = filteredRecipes.Where(x => quickAssignJobs[x.CraftType.Row]);
+                filteredRecipes = filteredRecipes.Where(x => quickAssignJobs[x.CraftType.RowId]);
 
                 if (filteredRecipes.Any())
                 {
@@ -255,7 +255,7 @@ namespace Artisan.UI
                             if (!anyHQ)
                                 quickAssignCannotHQ = true;
 
-                            if (ImGui.RadioButton($"{LuminaSheets.AddonSheet[3].Text.RawString.Replace(".", "")}", quickAssignCannotHQ))
+                            if (ImGui.RadioButton($"{LuminaSheets.AddonSheet[3].Text.ToString().Replace(".", "")}", quickAssignCannotHQ))
                             {
                                 quickAssignCannotHQ = true;
                             }
@@ -266,7 +266,7 @@ namespace Artisan.UI
                             if (!anyNonHQ)
                                 quickAssignCannotHQ = false;
 
-                            if (ImGui.RadioButton($"{LuminaSheets.AddonSheet[4].Text.RawString.Replace(".", "")}", !quickAssignCannotHQ))
+                            if (ImGui.RadioButton($"{LuminaSheets.AddonSheet[4].Text.ToString().Replace(".", "")}", !quickAssignCannotHQ))
                             {
                                 quickAssignCannotHQ = false;
                             }
@@ -292,7 +292,7 @@ namespace Artisan.UI
                             if (P.Config.ShowMacroAssignResults)
                             {
                                 P.TM.DelayNext(400);
-                                P.TM.Enqueue(() => Notify.Info($"Macro assigned to {recipe.ItemResult.Value.Name.RawString}."));
+                                P.TM.Enqueue(() => Notify.Info($"Macro assigned to {recipe.ItemResult.Value.Name.ToString()}."));
                             }
                             numberFound++;
                         }

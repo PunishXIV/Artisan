@@ -73,12 +73,12 @@ namespace Artisan.RawInformation.Character
         private static void AssignActionIDs(Skills skill)
         {
             var id = (uint)skill;
-            var skillName = id >= 100000 ? LuminaSheets.CraftActions[id].Name.RawString.Trim() : LuminaSheets.ActionSheet[id].Name.RawString;
+            var skillName = id >= 100000 ? LuminaSheets.CraftActions[id].Name.ToString().Trim() : LuminaSheets.ActionSheet[id].Name.ToString();
 
             for (Job i = Job.CRP; i <= Job.CUL; i++)
             {
                 var enumIndex = Array.IndexOf(Enum.GetValues(typeof(Skills)), skill);
-                var convertedId = id >= 100000 ? LuminaSheets.CraftActions.Values.FirstOrDefault(x => x.ClassJobCategory.Row == (int)i + 1 && x.Name.RawString == skillName).RowId : LuminaSheets.ActionSheet.Values.FirstOrDefault(x => x.ClassJob.Row == (int)i && x.Name.RawString == skillName).RowId;
+                var convertedId = id >= 100000 ? LuminaSheets.CraftActions.Values.FirstOrDefault(x => x.ClassJobCategory.RowId == (int)i + 1 && x.Name.ToString() == skillName).RowId : LuminaSheets.ActionSheet.Values.FirstOrDefault(x => x.ClassJob.RowId == (int)i && x.Name.ToString() == skillName).RowId;
                 ref var entry = ref _skillToAction[enumIndex, i - Job.CRP];
                 if (entry != 0)
                     throw new Exception($"Duplicate entry for {i} {skill}: {id} and {entry}");

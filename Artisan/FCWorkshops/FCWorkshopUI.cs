@@ -4,8 +4,9 @@ using Artisan.RawInformation;
 using Dalamud.Interface.Colors;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
+using ECommons.Reflection;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,7 +38,7 @@ namespace Artisan.FCWorkshops
 
 
             ImGui.Separator();
-            string preview = SelectedProject != 0 ? LuminaSheets.ItemSheet[LuminaSheets.WorkshopSequenceSheet[SelectedProject].ResultItem.Row].Name.RawString : "";
+            string preview = SelectedProject != 0 ? LuminaSheets.ItemSheet[LuminaSheets.WorkshopSequenceSheet[SelectedProject].ResultItem.RowId].Name.ToString() : "";
             if (ImGui.BeginCombo("###Workshop Project", preview))
             {
                 ImGui.Text("Search");
@@ -49,9 +50,9 @@ namespace Artisan.FCWorkshops
                     SelectedProject = 0;
                 }
 
-                foreach (var project in LuminaSheets.WorkshopSequenceSheet.Values.Where(x => x.RowId > 0).Where(x => x.ResultItem.Value.Name.RawString.Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
+                foreach (var project in LuminaSheets.WorkshopSequenceSheet.Values.Where(x => x.RowId > 0).Where(x => x.ResultItem.Value.Name.ToString().Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
                 {
-                    bool selected = ImGui.Selectable($"{project.ResultItem.Value.Name.RawString}", project.RowId == SelectedProject);
+                    bool selected = ImGui.Selectable($"{project.ResultItem.Value.Name.ToString()}", project.RowId == SelectedProject);
 
                     if (selected)
                     {
@@ -76,15 +77,15 @@ namespace Artisan.FCWorkshops
 
                         ImGuiEx.Text($"Selected project:");
                         ImGui.TableNextColumn();
-                        ImGui.Text($"{project.ResultItem.Value.Name.RawString}");
+                        ImGui.Text($"{project.ResultItem.Value.Name.ToString()}");
                         ImGui.TableNextColumn();
                         ImGuiEx.Text($"Number of parts:");
                         ImGui.TableNextColumn();
-                        ImGui.Text($"{project.CompanyCraftPart.Where(x => x.Row > 0).Count()}");
+                        ImGui.Text($"{project.CompanyCraftPart.Where(x => x.RowId > 0).Count()}");
                         ImGui.TableNextColumn();
                         ImGuiEx.Text($"Total number of phases:");
                         ImGui.TableNextColumn();
-                        ImGui.Text($"{project.CompanyCraftPart.Where(x => x.Row > 0).SelectMany(x => x.Value.CompanyCraftProcess).Where(x => x.Row > 0).Count()}");
+                        ImGui.Text($"{project.CompanyCraftPart.Where(x => x.RowId > 0).SelectMany(x => x.Value.CompanyCraftProcess).Where(x => x.RowId > 0).Count()}");
 
                         ImGui.EndTable();
                     }
@@ -98,19 +99,19 @@ namespace Artisan.FCWorkshops
                         ImGui.TableHeadersRow();
 
                         Dictionary<uint, int> TotalItems = new Dictionary<uint, int>();
-                        foreach (var item in project.CompanyCraftPart.Where(x => x.Row > 0).SelectMany(x => x.Value.CompanyCraftProcess).Where(x => x.Row > 0).SelectMany(x => x.Value.UnkData0).Where(x => x.SupplyItem > 0).GroupBy(x => x.SupplyItem))
+                        foreach (var item in project.CompanyCraftPart.Where(x => x.RowId > 0).SelectMany(x => x.Value.CompanyCraftProcess).Where(x => x.RowId > 0).SelectMany(x => x.Value.SupplyItems()).Where(x => x.SupplyItem.RowId > 0).GroupBy(x => x))
                         {
-                            if (TotalItems.ContainsKey(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row))
-                                TotalItems[LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row] += item.Sum(x => x.SetQuantity * x.SetsRequired);
+                            if (TotalItems.ContainsKey(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId))
+                                TotalItems[LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId] += item.Sum(x => x.SetQuantity * x.SetsRequired);
                             else
-                                TotalItems.TryAdd(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row, item.Sum(x => x.SetQuantity * x.SetsRequired));
+                                TotalItems.TryAdd(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId, item.Sum(x => x.SetQuantity * x.SetsRequired));
                         }
 
                         foreach (var item in TotalItems)
                         {
                             ImGui.TableNextRow();
                             ImGui.TableNextColumn();
-                            ImGui.Text($"{LuminaSheets.ItemSheet[item.Key].Name.RawString}");
+                            ImGui.Text($"{LuminaSheets.ItemSheet[item.Key].Name.ToString()}");
                             ImGui.TableNextColumn();
                             ImGui.Text($"{item.Value * NumberOfLoops}");
                             ImGui.TableNextColumn();
@@ -160,9 +161,9 @@ namespace Artisan.FCWorkshops
                 {
                     ImGui.Indent();
                     string partNum = "";
-                    foreach (var part in project.CompanyCraftPart.Where(x => x.Row > 0).Select(x => x.Value))
+                    foreach (var part in project.CompanyCraftPart.Where(x => x.RowId > 0).Select(x => x.Value))
                     {
-                        partNum = part.CompanyCraftType.Value.Name.RawString;
+                        partNum = part.CompanyCraftType.Value.Name.ToString();
                         if (ImGui.CollapsingHeader($"{partNum}"))
                         {
                             if (ImGui.BeginTable($"FCWorkshopPartsContainer###{part.RowId}", 2, ImGuiTableFlags.None))
@@ -173,11 +174,11 @@ namespace Artisan.FCWorkshops
 
                                 ImGuiEx.Text($"Part Type:");
                                 ImGui.TableNextColumn();
-                                ImGui.Text($"{part.CompanyCraftType.Value.Name.RawString}");
+                                ImGui.Text($"{part.CompanyCraftType.Value.Name.ToString()}");
                                 ImGui.TableNextColumn();
                                 ImGuiEx.Text($"Number of phases:");
                                 ImGui.TableNextColumn();
-                                ImGui.Text($"{part.CompanyCraftProcess.Where(x => x.Row > 0).Count()}");
+                                ImGui.Text($"{part.CompanyCraftProcess.Where(x => x.RowId > 0).Count()}");
                                 ImGui.TableNextColumn();
 
                                 ImGui.EndTable();
@@ -191,12 +192,12 @@ namespace Artisan.FCWorkshops
                                 ImGui.TableHeadersRow();
 
                                 Dictionary<uint, int> TotalItems = new Dictionary<uint, int>();
-                                foreach (var item in part.CompanyCraftProcess.Where(x => x.Row > 0).SelectMany(x => x.Value.UnkData0).Where(x => x.SupplyItem > 0).GroupBy(x => x.SupplyItem))
+                                foreach (var item in part.CompanyCraftProcess.Where(x => x.RowId > 0).SelectMany(x => x.Value.SupplyItems()).Where(x => x.SupplyItem.RowId > 0).GroupBy(x => x.SupplyItem))
                                 {
-                                    if (TotalItems.ContainsKey(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row))
-                                        TotalItems[LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row] += item.Sum(x => x.SetQuantity * x.SetsRequired);
+                                    if (TotalItems.ContainsKey(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId))
+                                        TotalItems[LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId] += item.Sum(x => x.SetQuantity * x.SetsRequired);
                                     else
-                                        TotalItems.TryAdd(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem).First()].Item.Row, item.Sum(x => x.SetQuantity * x.SetsRequired));
+                                        TotalItems.TryAdd(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId, item.Sum(x => x.SetQuantity * x.SetsRequired));
 
                                 }
 
@@ -204,7 +205,7 @@ namespace Artisan.FCWorkshops
                                 {
                                     ImGui.TableNextRow();
                                     ImGui.TableNextColumn();
-                                    ImGui.Text($"{LuminaSheets.ItemSheet[item.Key].Name.RawString}");
+                                    ImGui.Text($"{LuminaSheets.ItemSheet[item.Key].Name.ToString()}");
                                     ImGui.TableNextColumn();
                                     ImGui.Text($"{item.Value * NumberOfLoops}");
                                     ImGui.TableNextColumn();
@@ -257,16 +258,16 @@ namespace Artisan.FCWorkshops
                 if (ImGui.CollapsingHeader("Project Phases"))
                 {
                     string pNum = "";
-                    foreach (var part in project.CompanyCraftPart.Where(x => x.Row > 0).Select(x => x.Value))
+                    foreach (var part in project.CompanyCraftPart.Where(x => x.RowId > 0).Select(x => x.Value))
                     {
                         ImGui.Indent();
                         int phaseNum = 1;
-                        pNum = part.CompanyCraftType.Value.Name.RawString;
-                        foreach (var phase in part.CompanyCraftProcess.Where(x => x.Row > 0))
+                        pNum = part.CompanyCraftType.Value.Name.ToString();
+                        foreach (var phase in part.CompanyCraftProcess.Where(x => x.RowId > 0))
                         {
                             if (ImGui.CollapsingHeader($"{pNum} - Phase {phaseNum}"))
                             {
-                                if (ImGui.BeginTable($"###FCWorkshopPhaseContainer{phase.Row}", RetainerInfo.ATools ? 6 : 5, ImGuiTableFlags.Borders))
+                                if (ImGui.BeginTable($"###FCWorkshopPhaseContainer{phase.RowId}", RetainerInfo.ATools ? 6 : 5, ImGuiTableFlags.Borders))
                                 {
                                     ImGui.TableSetupColumn($"Item", ImGuiTableColumnFlags.WidthFixed);
                                     ImGui.TableSetupColumn($"Set Quantity", ImGuiTableColumnFlags.WidthFixed);
@@ -276,11 +277,11 @@ namespace Artisan.FCWorkshops
                                     if (RetainerInfo.ATools) ImGui.TableSetupColumn($"Retainers", ImGuiTableColumnFlags.WidthFixed);
                                     ImGui.TableHeadersRow();
 
-                                    foreach (var item in phase.Value.UnkData0.Where(x => x.SupplyItem > 0))
+                                    foreach (var item in phase.Value.SupplyItems().Where(x => x.SupplyItem.RowId > 0))
                                     {
                                         ImGui.TableNextRow();
                                         ImGui.TableNextColumn();
-                                        ImGui.Text($"{LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem].Item.Value.Name.RawString}");
+                                        ImGui.Text($"{LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem.RowId].Item.Value.Name.ToString()}");
                                         ImGui.TableNextColumn();
                                         ImGui.Text($"{item.SetQuantity}");
                                         ImGui.TableNextColumn();
@@ -288,7 +289,7 @@ namespace Artisan.FCWorkshops
                                         ImGui.TableNextColumn();
                                         ImGui.Text($"{item.SetsRequired * item.SetQuantity * NumberOfLoops}");
                                         ImGui.TableNextColumn();
-                                        int invCount = CraftingListUI.NumberOfIngredient(LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem].Item.Row);
+                                        int invCount = CraftingListUI.NumberOfIngredient(LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem.RowId].Item.RowId);
                                         ImGui.Text($"{invCount}");
                                         bool hasEnoughInInv = invCount >= (item.SetQuantity * item.SetsRequired);
                                         if (hasEnoughInInv)
@@ -300,9 +301,9 @@ namespace Artisan.FCWorkshops
                                         if (RetainerInfo.ATools)
                                         {
                                             ImGui.TableNextColumn();
-                                            ImGui.Text($"{RetainerInfo.GetRetainerItemCount(LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem].Item.Row)}");
+                                            ImGui.Text($"{RetainerInfo.GetRetainerItemCount(LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem.RowId].Item.RowId)}");
 
-                                            bool hasEnoughWithRetainer = (invCount + RetainerInfo.GetRetainerItemCount(LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem].Item.Row)) >= (item.SetQuantity * item.SetsRequired);
+                                            bool hasEnoughWithRetainer = (invCount + RetainerInfo.GetRetainerItemCount(LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem.RowId].Item.RowId)) >= (item.SetQuantity * item.SetsRequired);
                                             if (!hasEnoughInInv && hasEnoughWithRetainer)
                                             {
                                                 var color = ImGuiColors.DalamudOrange;
@@ -345,13 +346,13 @@ namespace Artisan.FCWorkshops
             if (existingList == null)
             {
                 existingList = new NewCraftingList();
-                existingList.Name = $"{CurrentProject.ResultItem.Value.Name.RawString} - Part {partNum} x{NumberOfLoops}";
+                existingList.Name = $"{CurrentProject.ResultItem.Value.Name.ToString()} - Part {partNum} x{NumberOfLoops}";
                 existingList.SetID();
                 existingList.Save(true);
             }
 
             var phaseNum = 1;
-            foreach (var phase in value.CompanyCraftProcess.Where(x => x.Row > 0))
+            foreach (var phase in value.CompanyCraftProcess.Where(x => x.RowId > 0))
             {
                 CreatePhaseList(phase.Value!, partNum, phaseNum, includePrecraft, existingList);
                 phaseNum++;
@@ -361,15 +362,15 @@ namespace Artisan.FCWorkshops
         private static void CreateProjectList(CompanyCraftSequence value, bool includePrecraft)
         {
             NewCraftingList existingList = new NewCraftingList();
-            existingList.Name = $"{CurrentProject.ResultItem.Value.Name.RawString} x{NumberOfLoops}";
+            existingList.Name = $"{CurrentProject.ResultItem.Value.Name.ToString()} x{NumberOfLoops}";
             existingList.SetID();
             existingList.Save(true);
 
-            foreach (var part in value.CompanyCraftPart.Where(x => x.Row > 0))
+            foreach (var part in value.CompanyCraftPart.Where(x => x.RowId > 0))
             {
-                string partNum = part.Value.CompanyCraftType.Value.Name.RawString;
+                string partNum = part.Value.CompanyCraftType.Value.Name.ToString();
                 var phaseNum = 1;
-                foreach (var phase in part.Value.CompanyCraftProcess.Where(x => x.Row > 0))
+                foreach (var phase in part.Value.CompanyCraftProcess.Where(x => x.RowId > 0))
                 {
                     CreatePhaseList(phase.Value!, partNum, phaseNum, includePrecraft, existingList);
                     phaseNum++;
@@ -385,27 +386,27 @@ namespace Artisan.FCWorkshops
                 existingList = new NewCraftingList();
                 if (projectOverride != null)
                 {
-                    existingList.Name = $"{projectOverride.ResultItem.Value.Name.RawString} - {partNum}, Phase {phaseNum} x{NumberOfLoops}";
+                    existingList.Name = $"{projectOverride.Value.ResultItem.Value.Name.ToString()} - {partNum}, Phase {phaseNum} x{NumberOfLoops}";
                 }
                 else
                 {
-                    existingList.Name = $"{CurrentProject.ResultItem.Value.Name.RawString} - {partNum}, Phase {phaseNum} x{NumberOfLoops}";
+                    existingList.Name = $"{CurrentProject.ResultItem.Value.Name.ToString()} - {partNum}, Phase {phaseNum} x{NumberOfLoops}";
                 }
                 existingList.SetID();
                 existingList.Save(true);
             }
 
 
-                foreach (var item in value.UnkData0.Where(x => x.SupplyItem > 0))
+                foreach (var item in value.SupplyItems().Where(x => x.SupplyItem.RowId > 0))
                 {
                     var timesToAdd = item.SetsRequired * item.SetQuantity * NumberOfLoops;
-                    var supplyItemID = LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem].Item.Value.RowId;
-                    if (LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == supplyItemID))
+                    var supplyItemID = LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem.RowId].Item.Value.RowId;
+                    if (LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.RowId == supplyItemID))
                     {
-                        var recipeID = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Row == supplyItemID);
+                        var recipeID = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.RowId == supplyItemID);
                         if (includePrecraft)
                         {
-                            Svc.Log.Debug($"I want to add {recipeID.ItemResult.Value.Name.RawString} {timesToAdd} times");
+                            Svc.Log.Debug($"I want to add {recipeID.ItemResult.Value.Name.ToString()} {timesToAdd} times");
                             CraftingListUI.AddAllSubcrafts(recipeID, existingList, timesToAdd);
                         }
 

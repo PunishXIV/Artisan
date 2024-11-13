@@ -1,5 +1,4 @@
 ﻿using Artisan.CraftingLists;
-using Artisan.RawInformation.Character;
 using System.Collections.Generic;
 using System.Linq;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;

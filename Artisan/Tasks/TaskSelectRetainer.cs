@@ -14,7 +14,6 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using SharpDX.Direct2D1.Effects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +22,6 @@ using System.Runtime.InteropServices;
 using static ECommons.GenericHelpers;
 using MemoryHelper = Dalamud.Memory.MemoryHelper;
 using ECommons.Automation.UIInput;
-using Artisan.Autocraft;
 
 
 namespace Artisan.Tasks;

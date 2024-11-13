@@ -1,6 +1,7 @@
-﻿using Artisan.RawInformation.Character;
+﻿using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 
@@ -18,9 +19,9 @@ namespace Artisan.CraftingLogic
 
         public static int GetHQChance(double percent) => HQChance[Math.Clamp((int)percent, 0, 100)];
 
-        public static int RecipeDifficulty(Recipe recipe) => recipe.RecipeLevelTable.Value?.Difficulty * recipe.DifficultyFactor / 100 ?? 0;
-        public static int RecipeMaxQuality(Recipe recipe) => (int)(recipe.RecipeLevelTable.Value?.Quality * recipe.QualityFactor / 100 ?? 0);
-        public static int RecipeDurability(Recipe recipe) => recipe.RecipeLevelTable.Value?.Durability * recipe.DurabilityFactor / 100 ?? 0;
+        public static int RecipeDifficulty(Recipe recipe) => recipe.RecipeLevelTable.Value.Difficulty * recipe.DifficultyFactor / 100;
+        public static int RecipeMaxQuality(Recipe recipe) => (int)(recipe.RecipeLevelTable.Value.Quality * recipe.QualityFactor / 100);
+        public static int RecipeDurability(Recipe recipe) => recipe.RecipeLevelTable.Value.Durability * recipe.DurabilityFactor / 100;
 
         public static bool ActionIsLengthyAnimation(this Skills id)
         {
@@ -57,19 +58,19 @@ namespace Artisan.CraftingLogic
         {
             var itemSheet = Svc.Data.GetExcelSheet<Item>();
             long sumLevelHQ = 0, sumLevel = 0, idx = 0;
-            foreach (var i in recipe.UnkData5)
+            foreach (var i in recipe.Ingredients())
             {
                 var numHQ = idx < hqCount.Length ? hqCount[idx] : 0;
                 ++idx;
 
-                if (i.AmountIngredient == 0 || i.ItemIngredient <= 0)
+                if (i.Amount == 0 || i.Item.RowId <= 0)
                     continue;
-                var item = itemSheet?.GetRow((uint)i.ItemIngredient);
-                if (item == null || !item.CanBeHq)
+                var item = itemSheet?.GetRow((uint)i.Item.RowId);
+                if (item == null || !item.Value.CanBeHq)
                     continue;
-                var ilvl = (int)item.LevelItem.Row;
-                sumLevel += ilvl * i.AmountIngredient;
-                sumLevelHQ += ilvl * Math.Clamp(numHQ, 0, i.AmountIngredient);
+                var ilvl = (int)item.Value.LevelItem.RowId;
+                sumLevel += ilvl * i.Amount;
+                sumLevelHQ += ilvl * Math.Clamp(numHQ, 0, i.Amount);
 
             }
             var left = (sumLevelHQ * RecipeMaxQuality(recipe) * recipe.MaterialQualityFactor / 100);

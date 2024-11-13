@@ -11,7 +11,6 @@ using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Table;
@@ -138,7 +137,7 @@ namespace Artisan.UI.Tables
 
             public override string ToName(Ingredient item)
             {
-                return item.Data.Name.RawString;
+                return item.Data.Name.ToString();
             }
 
             public bool ShowColour = false;
@@ -179,12 +178,12 @@ namespace Artisan.UI.Tables
                 ImGuiUtil.HoverIcon(item.Icon, Interface.LineIconSize);
                 ImGui.SameLine();
 
-                var selected = ImGui.Selectable($"{item.Data.Name.RawString}");
+                var selected = ImGui.Selectable($"{item.Data.Name.ToString()}");
                 InvokeContextMenu(item);
 
                 if (selected)
                 {
-                    Clipboard.SetText(item.Data.Name.RawString);
+                    Clipboard.SetText(item.Data.Name.ToString());
                     Notify.Success("Name copied to clipboard");
                 }
 
@@ -476,11 +475,11 @@ namespace Artisan.UI.Tables
                 => _gatherItemLocationColumWidth;
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
-                => lhs.GatherZone.PlaceName.Value.Name.RawString.CompareTo(rhs.GatherZone.PlaceName.Value.Name.RawString);
+                => lhs.GatherZone.PlaceName.Value.Name.ToString().CompareTo(rhs.GatherZone.PlaceName.Value.Name.ToString());
 
             public override void DrawColumn(Ingredient item, int idx)
             {
-                ImGui.Text(item.GatherZone.PlaceName.Value.Name.RawString);
+                ImGui.Text(item.GatherZone.PlaceName.Value.Name.ToString());
             }
 
             public override bool FilterFunc(Ingredient item)
@@ -519,7 +518,7 @@ namespace Artisan.UI.Tables
 
             public override void DrawColumn(Ingredient item, int idx)
             {
-                ImGui.Text(Svc.Data.Excel.GetSheet<ItemSearchCategory>().GetRow(item.Category).Name.RawString);
+                ImGui.Text(Svc.Data.Excel.GetSheet<ItemSearchCategory>().GetRow(item.Category).Name.ToString());
             }
 
             public override bool FilterFunc(Ingredient item)
@@ -600,7 +599,7 @@ namespace Artisan.UI.Tables
                     {
                         foreach (var i in item.UsedInMaterialsListCount.Where(x => x.Value > 0))
                         {
-                            var owned = RetainerInfo.GetRetainerItemCount(LuminaSheets.RecipeSheet[i.Key].ItemResult.Row) + CraftingListUI.NumberOfIngredient(LuminaSheets.RecipeSheet[i.Key].ItemResult.Row);
+                            var owned = RetainerInfo.GetRetainerItemCount(LuminaSheets.RecipeSheet[i.Key].ItemResult.RowId) + CraftingListUI.NumberOfIngredient(LuminaSheets.RecipeSheet[i.Key].ItemResult.RowId);
                             if (SourceList.FindFirst(x => x.CraftedRecipe?.RowId == i.Key, out var ingredient))
                             {
                                 sb.AppendLine($"{i.Value} less is required due to having {(owned > ingredient.Required ? "at least " : "")}{Math.Min(ingredient.Required, owned)}x {i.Key.NameOfRecipe()}");
@@ -618,7 +617,7 @@ namespace Artisan.UI.Tables
                             sb.AppendLine($"{i.Value.Sum(x => x.Item2)} less is required for {i.Key.NameOfRecipe()}");
                             foreach (var m in i.Value)
                             {
-                                var owned = RetainerInfo.GetRetainerItemCount(LuminaSheets.RecipeSheet[m.Item1].ItemResult.Row) + CraftingListUI.NumberOfIngredient(LuminaSheets.RecipeSheet[m.Item1].ItemResult.Row);
+                                var owned = RetainerInfo.GetRetainerItemCount(LuminaSheets.RecipeSheet[m.Item1].ItemResult.RowId) + CraftingListUI.NumberOfIngredient(LuminaSheets.RecipeSheet[m.Item1].ItemResult.RowId);
                                 if (SourceList.FindFirst(x => x.CraftedRecipe?.RowId == m.Item1, out var ingredient))
                                 {
                                     sb.AppendLine($"└ {m.Item1.NameOfRecipe()} uses {i.Key.NameOfRecipe()}, you have {(owned > ingredient.Required ? "at least " : "")}{Math.Min(ingredient.Required, owned)} {m.Item1.NameOfRecipe()} so {m.Item2}x {item.Data.Name} less is required as a result.");
@@ -757,7 +756,7 @@ namespace Artisan.UI.Tables
             {
                 if (isOnList == null)
                 {
-                    isOnList = item.OriginList.Recipes.Any(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.Row == item.Data.RowId && y.RowId == x.ID));
+                    isOnList = item.OriginList.Recipes.Any(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.RowId == item.Data.RowId && y.RowId == x.ID));
                 }
 
                 if (item.Sources.Contains(1) && isOnList.Value)
@@ -803,7 +802,7 @@ namespace Artisan.UI.Tables
 
                 try
                 {
-                    Chat.Instance.SendMessage($"/mloot {item.Data.Name.RawString}");
+                    Chat.Instance.SendMessage($"/mloot {item.Data.Name.ToString()}");
                 }
                 catch (Exception e)
                 {
@@ -876,9 +875,9 @@ namespace Artisan.UI.Tables
                 try
                 {
                     if (LuminaSheets.GatheringItemSheet!.Any(x => x.Value.Item == item.Data.RowId))
-                        Chat.Instance.SendMessage($"/gather {item.Data.Name.RawString}");
+                        Chat.Instance.SendMessage($"/gather {item.Data.Name.ToString()}");
                     else
-                        Chat.Instance.SendMessage($"/gatherfish {item.Data.Name.RawString}");
+                        Chat.Instance.SendMessage($"/gatherfish {item.Data.Name.ToString()}");
                 }
                 catch (Exception e)
                 {

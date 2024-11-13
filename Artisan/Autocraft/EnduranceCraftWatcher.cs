@@ -7,9 +7,9 @@ using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Game.Text;
 using ECommons.DalamudServices;
 using ECommons.Logging;
-using Lumina.Excel.GeneratedSheets;
 using Dalamud.Game.Text.SeStringHandling;
 using System.Linq;
+using Lumina.Excel.Sheets;
 
 namespace Artisan.Autocraft
 {
@@ -30,7 +30,7 @@ namespace Artisan.Autocraft
                 if (message.Payloads.Any(x => x.Type == PayloadType.Item))
                 {
                     var item = (ItemPayload)message.Payloads.First(x => x.Type == PayloadType.Item);
-                    if (item.Item.CanBeHq)
+                    if (Svc.Data.Excel.GetSheet<Item>().GetRow(item.RawItemId).CanBeHq)
                     {
                         if (Endurance.Enable && P.Config.EnduranceStopNQ && !item.IsHQ)
                         {

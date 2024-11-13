@@ -17,7 +17,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -240,15 +240,15 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if (recipe.SecretRecipeBook.Row != 0)
+            if (recipe.SecretRecipeBook.RowId != 0)
             {
-                if (!PlayerState.Instance()->IsSecretRecipeBookUnlocked(recipe.SecretRecipeBook.Row))
+                if (!PlayerState.Instance()->IsSecretRecipeBookUnlocked(recipe.SecretRecipeBook.RowId))
                 {
                     SeString error = new SeString(
                         new TextPayload("You haven't unlocked the recipe book "),
-                        new ItemPayload(recipe.SecretRecipeBook.Value.Item.Row),
+                        new ItemPayload(recipe.SecretRecipeBook.Value.Item.RowId),
                         new UIForegroundPayload(1),
-                        new TextPayload(recipe.SecretRecipeBook.Value.Name.RawString),
+                        new TextPayload(recipe.SecretRecipeBook.Value.Name.ToString()),
                         RawPayload.LinkTerminator,
                         UIForegroundPayload.UIForegroundOff,
                         new TextPayload(" for this recipe. Moving on."));
@@ -272,9 +272,9 @@ namespace Artisan.CraftingLists
 
             if (selectedList.SkipIfEnough && (preparing || !isCrafting))
             {
-                var ItemId = recipe.ItemResult.Row;
-                int numMats = Materials.Any(x => x.Key == recipe.ItemResult.Row) && !selectedList.SkipLiteral ? Materials.First(x => x.Key == recipe.ItemResult.Row).Value : selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Row == ItemId) * recipe.AmountResult;
-                if (numMats <= CraftingListUI.NumberOfIngredient(recipe.ItemResult.Row))
+                var ItemId = recipe.ItemResult.RowId;
+                int numMats = Materials.Any(x => x.Key == recipe.ItemResult.RowId) && !selectedList.SkipLiteral ? Materials.First(x => x.Key == recipe.ItemResult.RowId).Value : selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.RowId == ItemId) * recipe.AmountResult;
+                if (numMats <= CraftingListUI.NumberOfIngredient(recipe.ItemResult.RowId))
                 {
                     DuoLog.Error($"Skipping {recipe.ItemResult.Value.Name} due to having enough in inventory [Skip Items you already have enough of]");
 
@@ -307,7 +307,7 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if (Svc.ClientState.LocalPlayer.ClassJob.Id != recipe.CraftType.Value.RowId + 8)
+            if (Svc.ClientState.LocalPlayer.ClassJob.RowId != recipe.CraftType.Value.RowId + 8)
             {
                 PreCrafting.equipGearsetLoops = 0;
                 PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
@@ -316,15 +316,15 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            bool needEquipItem = recipe.ItemRequired.Row > 0 && !PreCrafting.IsItemEquipped(recipe.ItemRequired.Row);
+            bool needEquipItem = recipe.ItemRequired.RowId > 0 && !PreCrafting.IsItemEquipped(recipe.ItemRequired.RowId);
             if (needEquipItem)
             {
                 PreCrafting.equipAttemptLoops = 0;
-                PreCrafting.Tasks.Add((() => PreCrafting.TaskEquipItem(recipe.ItemRequired.Row), TimeSpan.FromMilliseconds(200)));
+                PreCrafting.Tasks.Add((() => PreCrafting.TaskEquipItem(recipe.ItemRequired.RowId), TimeSpan.FromMilliseconds(200)));
                 return;
             }
 
-            if (Svc.ClientState.LocalPlayer.Level < recipe.RecipeLevelTable.Value.ClassJobLevel - 5 && Svc.ClientState.LocalPlayer.ClassJob.Id == recipe.CraftType.Value.RowId + 8 && !isCrafting && !preparing)
+            if (Svc.ClientState.LocalPlayer.Level < recipe.RecipeLevelTable.Value.ClassJobLevel - 5 && Svc.ClientState.LocalPlayer.ClassJob.RowId == recipe.CraftType.Value.RowId + 8 && !isCrafting && !preparing)
             {
                 DuoLog.Error("Insufficient level to craft this item. Moving on.");
                 var currentRecipe = selectedList.ExpandedList[CurrentIndex];
@@ -429,16 +429,16 @@ namespace Artisan.CraftingLists
                 var inventoryitems = CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId);
                 var expectedNumber = 0;
                 var stillToCraft = 0;
-                var totalToCraft = selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString) * recipe.AmountResult;
-                if (Materials!.Count(x => x.Key == recipe.ItemResult.Row) == 0 || selectedList.SkipLiteral)
+                var totalToCraft = selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.ToString() == recipe.ItemResult.Value.Name.ToString()) * recipe.AmountResult;
+                if (Materials!.Count(x => x.Key == recipe.ItemResult.RowId) == 0 || selectedList.SkipLiteral)
                 {
-                    // var previousCrafted = selectedList.Items.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.RawString == recipe.ItemResult.Value.Name.RawString && selectedList.Items.IndexOf(x) < CurrentIndex) * recipe.AmountResult;
-                    stillToCraft = selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Row == recipe.ItemResult.Row && selectedList.ExpandedList.IndexOf(x) >= CurrentIndex) * recipe.AmountResult - inventoryitems;
+                    // var previousCrafted = selectedList.Items.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.ToString() == recipe.ItemResult.Value.Name.ToString() && selectedList.Items.IndexOf(x) < CurrentIndex) * recipe.AmountResult;
+                    stillToCraft = selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.RowId == recipe.ItemResult.RowId && selectedList.ExpandedList.IndexOf(x) >= CurrentIndex) * recipe.AmountResult - inventoryitems;
                     expectedNumber = stillToCraft > 0 ? Math.Min(selectedList.ExpandedList.Count(x => x == CraftingListUI.CurrentProcessedItem) * recipe.AmountResult, stillToCraft) : selectedList.ExpandedList.Count(x => x == CraftingListUI.CurrentProcessedItem);
                 }
                 else
                 {
-                    expectedNumber = Materials!.First(x => x.Key == recipe.ItemResult.Row).Value;
+                    expectedNumber = Materials!.First(x => x.Key == recipe.ItemResult.RowId).Value;
                 }
 
                 var difference = Math.Min(totalToCraft - inventoryitems, expectedNumber);
@@ -464,7 +464,7 @@ namespace Artisan.CraftingLists
             {
                 if (setIngredients == null)
                 {
-                    for (uint i = 0; i <= 5; i++)
+                    for (int i = 0; i <= 5; i++)
                     {
                         try
                         {
@@ -477,7 +477,7 @@ namespace Artisan.CraftingLists
 
                             if (node->Component->UldManager.NodeList[11]->IsVisible())
                             {
-                                var ingredient = LuminaSheets.RecipeSheet.Values.Where(x => x.RowId == Endurance.RecipeID).FirstOrDefault().UnkData5[i].ItemIngredient;
+                                var ingredient = LuminaSheets.RecipeSheet.Values.Where(x => x.RowId == Endurance.RecipeID).FirstOrDefault().Ingredients().ElementAt(i).Item;
 
                                 var btn = node->Component->UldManager.NodeList[14]->GetAsAtkComponentButton();
                                 try
@@ -498,12 +498,12 @@ namespace Artisan.CraftingLists
                             {
                                 for (int m = 0; m <= 100; m++)
                                 {
-                                    new AddonMaster.RecipeNote((IntPtr)addon).Material(i, false);
+                                    new AddonMaster.RecipeNote((IntPtr)addon).Material((uint)i, false);
                                 }
 
                                 for (int m = 0; m <= 100; m++)
                                 {
-                                    new AddonMaster.RecipeNote((IntPtr)addon).Material(i, true);
+                                    new AddonMaster.RecipeNote((IntPtr)addon).Material((uint)i, true);
                                 }
                             }
 

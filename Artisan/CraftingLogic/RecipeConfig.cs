@@ -1,7 +1,6 @@
 ﻿using Artisan.Autocraft;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 using System.Linq;
 
 namespace Artisan.CraftingLogic;

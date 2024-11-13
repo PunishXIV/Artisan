@@ -1,7 +1,6 @@
 ﻿using Artisan.GameInterop;
 using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
-using ECommons.GameHelpers;
 using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Component.GUI;

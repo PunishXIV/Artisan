@@ -7,12 +7,12 @@ using ECommons;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Lumina.Data;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Action = Lumina.Excel.GeneratedSheets.Action;
-using Status = Lumina.Excel.GeneratedSheets.Status;
+using Action = Lumina.Excel.Sheets.Action;
+using Status = Lumina.Excel.Sheets.Status;
 
 namespace Artisan.RawInformation
 {
@@ -66,10 +66,10 @@ namespace Artisan.RawInformation
         public static void Init()
         {
             RecipeSheet = Svc.Data?.GetExcelSheet<Recipe>()?
-           .Where(x => x.ItemResult.Row > 0)
+           .Where(x => x.ItemResult.RowId > 0)
                 .DistinctBy(x => x.RowId)
                 .OrderBy(x => x.RecipeLevelTable.Value.ClassJobLevel)
-                .ThenBy(x => x.ItemResult.Value.Name.RawString)
+                .ThenBy(x => x.ItemResult.Value.Name)
                 .ToDictionary(x => x.RowId, x => x);
 
             GatheringItemSheet = Svc.Data?.GetExcelSheet<GatheringItem>()?
@@ -160,7 +160,7 @@ namespace Artisan.RawInformation
         {
             if (skill == Skills.TouchCombo) return "Touch Combo";
             var id = skill.ActionId(ECommons.ExcelServices.Job.CRP);
-            return id == 0 ? "Artisan Recommendation" : id < 100000 ? LuminaSheets.ActionSheet[id].Name.RawString : LuminaSheets.CraftActions[id].Name.RawString;
+            return id == 0 ? "Artisan Recommendation" : id < 100000 ? LuminaSheets.ActionSheet[id].Name.ToString() : LuminaSheets.CraftActions[id].Name.ToString();
         }
 
         public static ushort IconOfAction(this Skills skill, ECommons.ExcelServices.Job job)
@@ -178,7 +178,7 @@ namespace Artisan.RawInformation
         public static string GetSkillDescription(this Skills skill)
         {
             var id = skill.ActionId(ECommons.ExcelServices.Job.CRP);
-            string description = id == 0 ? "" : id < 100000 ? Svc.Data.Excel.GetSheet<ActionTransient>().GetRow(id).Description : LuminaSheets.CraftActions[id].Description;
+            string description = id == 0 ? "" : id < 100000 ? Svc.Data.Excel.GetSheet<ActionTransient>().GetRow(id).Description.ToString() : LuminaSheets.CraftActions[id].Description.ToString();
             description = skill switch
             {
                 Skills.BasicSynthesis => description.Replace($": %", $": 100%/120%").Replace($"効率：", $"効率：100/120").Replace($"Effizienz: ", $"Effizienz: 100/120"),
@@ -193,7 +193,7 @@ namespace Artisan.RawInformation
         {
             if (id == 0) return "";
 
-            return LuminaSheets.StatusSheet[id].Name.RawString;
+            return LuminaSheets.StatusSheet[id].Name.ToString();
         }
 
         public static string NameOfItem(this uint id)
@@ -209,7 +209,7 @@ namespace Artisan.RawInformation
             if (!LuminaSheets.RecipeSheet.ContainsKey(id))
                 return "";
 
-            return LuminaSheets.RecipeSheet[id].ItemResult.Value.Name.RawString;
+            return LuminaSheets.RecipeSheet[id].ItemResult.Value.Name.ToString();
         }
 
         public static string NameOfQuest(this ushort id)
@@ -220,93 +220,13 @@ namespace Artisan.RawInformation
             if (id > 0)
             {
                 var digits = id.ToString().Length;
-                if (LuminaSheets.QuestSheet!.Any(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id))
+                if (LuminaSheets.QuestSheet!.Any(x => Convert.ToInt16(x.Value.Id.ToString().GetLast(digits)) == id))
                 {
-                    return LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id).Value.Name.ExtractText().Replace("", "").Trim();
+                    return LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.ToString().GetLast(digits)) == id).Value.Name.ExtractText().Replace("", "").Trim();
                 }
             }
             return "";
 
-        }
-
-        public static unsafe string GetSequenceInfo(this ushort id)
-        {
-            if (id > 0)
-            {
-                var digits = id.ToString().Length;
-                if (LuminaSheets.QuestSheet!.Any(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id))
-                {
-                    var quest = LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id).Value;
-                    var sequence = QuestManager.GetQuestSequence(id);
-                    if (sequence == 255) return "NULL";
-
-                    var lang = Svc.ClientState.ClientLanguage switch
-                    {
-                        ClientLanguage.English => Language.English,
-                        ClientLanguage.Japanese => Language.Japanese,
-                        ClientLanguage.German => Language.German,
-                        ClientLanguage.French => Language.French,
-                        _ => Language.English,
-                    };
-
-                    var path = $"quest/{id.ToString("00000")[..3]}/{quest.Id.RawString}";
-                    // FIXME: this is gross, but lumina caches incorrectly
-                    Svc.Data.Excel.RemoveSheetFromCache<QuestData>();
-                    var sheet = Svc.Data.Excel.GetSheet<QuestData>(path);
-                    var seqPath = $"SEQ_{sequence.ToString("00")}";
-                    var firstData = sheet?.Where(x => x.Id.Contains(seqPath)).FirstOrDefault();
-                    if (firstData != null)
-                    {
-                        return firstData.Text.ExtractText();
-                    }
-                }
-            }
-            return "";
-        }
-
-        public static bool ItemHasRecipe(this int id)
-        {
-            return LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Row == id);
-        }
-
-        public static string GetToDoInfo(this ushort id)
-        {
-            if (id > 0)
-            {
-                var digits = id.ToString().Length;
-                if (LuminaSheets.QuestSheet!.Any(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id))
-                {
-                    var quest = LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.RawString.GetLast(digits)) == id).Value;
-
-                    var lang = Svc.ClientState.ClientLanguage switch
-                    {
-                        ClientLanguage.English => Language.English,
-                        ClientLanguage.Japanese => Language.Japanese,
-                        ClientLanguage.German => Language.German,
-                        ClientLanguage.French => Language.French,
-                        _ => Language.English,
-                    };
-
-                    var path = $"quest/{id.ToString("00000")[..3]}/{quest.Id.RawString}";
-                    // FIXME: this is gross, but lumina caches incorrectly
-                    Svc.Data.Excel.RemoveSheetFromCache<QuestData>();
-                    var sheet = Svc.Data.Excel.GetSheet<QuestData>(path);
-                    var seqPath = $"TODO_";
-                    var firstData = sheet?.Where(x => x.Id.Contains(seqPath)).ToList();
-                    string output = "";
-                    foreach (var step in firstData?.Where(x => x.Text.Payloads.Count > 0))
-                    {
-                        foreach (var payload in step.Text?.ToDalamudString().Payloads.Where(x => x.Type == PayloadType.Unknown))
-                        {
-                            var line = step.Text.RawString[10..];
-                            output += line;
-                        }
-                    }
-                    return output;
-
-                }
-            }
-            return "";
         }
     }
 }

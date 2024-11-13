@@ -1,5 +1,4 @@
 ﻿using Lumina.Data;
-using Lumina.Excel;
 using Lumina;
 
 namespace Artisan.QuestSync

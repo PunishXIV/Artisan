@@ -33,7 +33,7 @@ public static unsafe class Crafting
     public static State CurState { get; private set; } = State.InvalidState;
     public static event Action<State>? StateChanged;
 
-    public static Lumina.Excel.GeneratedSheets.Recipe? CurRecipe { get; private set; }
+    public static Lumina.Excel.Sheets.Recipe? CurRecipe { get; private set; }
     public static CraftState? CurCraft { get; private set; }
     public static StepState? CurStep { get; private set; }
     public static bool IsTrial { get; private set; }
@@ -43,15 +43,15 @@ public static unsafe class Crafting
     public static (int Cur, int Max) QuickSynthState { get; private set; }
     public static bool QuickSynthCompleted => QuickSynthState.Cur == QuickSynthState.Max && QuickSynthState.Max > 0;
 
-    public delegate void CraftStartedDelegate(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState initialStep, bool trial);
+    public delegate void CraftStartedDelegate(Lumina.Excel.Sheets.Recipe recipe, CraftState craft, StepState initialStep, bool trial);
     public static event CraftStartedDelegate? CraftStarted;
 
     // note: step index increases for most actions (except final appraisal / careful observation / heart&soul)
-    public delegate void CraftAdvancedDelegate(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState step);
+    public delegate void CraftAdvancedDelegate(Lumina.Excel.Sheets.Recipe recipe, CraftState craft, StepState step);
     public static event CraftAdvancedDelegate? CraftAdvanced;
 
     // note: final action that completes/fails a craft does not advance step index
-    public delegate void CraftFinishedDelegate(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState finalStep, bool cancelled);
+    public delegate void CraftFinishedDelegate(Lumina.Excel.Sheets.Recipe recipe, CraftState craft, StepState finalStep, bool cancelled);
     public static event CraftFinishedDelegate? CraftFinished;
 
     public delegate void QuickSynthProgressDelegate(int cur, int max);
@@ -75,7 +75,7 @@ public static unsafe class Crafting
     }
 
     // note: this uses current character stats & equipped gear
-    public static CraftState BuildCraftStateForRecipe(CharacterStats stats, Job job, Lumina.Excel.GeneratedSheets.Recipe recipe)
+    public static CraftState BuildCraftStateForRecipe(CharacterStats stats, Job job, Lumina.Excel.Sheets.Recipe recipe)
     {
         var lt = recipe.RecipeLevelTable.Value;
         var res = new CraftState()
@@ -105,7 +105,7 @@ public static unsafe class Crafting
         if (res.CraftCollectible)
         {
             // Check regular collectibles first
-            var breakpoints = Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.CollectablesShopItem>()?.FirstOrDefault(x => x.Item.Row == recipe.ItemResult.Row)?.CollectablesShopRefine.Value;
+            var breakpoints = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.CollectablesShopItem>()?.FirstOrDefault(x => x.Item.RowId == recipe.ItemResult.RowId)?.CollectablesShopRefine.Value;
             if (breakpoints != null)
             {
                 res.CraftQualityMin1 = breakpoints.LowCollectability * 10;
@@ -114,7 +114,7 @@ public static unsafe class Crafting
             }
             else // Then check custom delivery
             {
-                var satisfaction = Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.SatisfactionSupply>()?.FirstOrDefault(x => x.Item.Row == recipe.ItemResult.Row);
+                var satisfaction = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.SatisfactionSupply>()?.FirstOrDefault(x => x.Item.RowId == recipe.ItemResult.RowId);
                 if (satisfaction != null)
                 {
                     res.CraftQualityMin1 = satisfaction.CollectabilityLow * 10;
@@ -123,10 +123,10 @@ public static unsafe class Crafting
                 }
                 else // Finally, check Ishgard Restoration
                 {
-                    var hwdSheet = Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.HWDCrafterSupply>()?.FirstOrDefault(x => x.ItemTradeIn.Any(y => y.Row == recipe.ItemResult.Row));
+                    var hwdSheet = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.HWDCrafterSupply>()?.FirstOrDefault(x => x.ItemTradeIn.Any(y => y.RowId == recipe.ItemResult.RowId));
                     if (hwdSheet != null)
                     {
-                        var index = hwdSheet.ItemTradeIn.IndexOf(x => x.Row == recipe.ItemResult.Row);
+                        var index = hwdSheet.ItemTradeIn.IndexOf(x => x.RowId == recipe.ItemResult.RowId);
                         res.CraftQualityMin1 = hwdSheet.BaseCollectableRating[index] * 10;
                         res.CraftQualityMin2 = hwdSheet.MidCollectableRating[index] * 10;
                         res.CraftQualityMin3 = hwdSheet.HighCollectableRating[index] * 10;

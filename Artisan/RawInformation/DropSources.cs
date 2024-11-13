@@ -1,5 +1,4 @@
 ﻿using ECommons.DalamudServices;
-using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -17,7 +16,7 @@ namespace Artisan.RawInformation
         {
             ItemId = ItemId;
             MonsterId = monsterId;
-            CanObtainFromRetainer = Svc.Data.GetExcelSheet<RetainerTaskNormal>()!.Any(x => x.Item.Row == ItemId);
+            CanObtainFromRetainer = Svc.Data.GetExcelSheet<RetainerTaskNormal>()!.Any(x => x.Item.RowId == ItemId);
             UsedInRecipes = LuminaSheets.RecipeSheet.Values.Any(y => y.UnkData5.Any(x => x.ItemIngredient == ItemId));
         }
 

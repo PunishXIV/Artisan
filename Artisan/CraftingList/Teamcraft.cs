@@ -6,7 +6,7 @@ using Dalamud.Utility;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using PunishLib.ImGuiMethods;
 using System;
 using System.Collections.Generic;
@@ -60,7 +60,7 @@ namespace Artisan.CraftingLists
                 var recipe = LuminaSheets.RecipeSheet[sublist[i].ID];
                 var ItemId = recipe.ItemResult.Value.RowId;
 
-                Svc.Log.Debug($"{recipe.ItemResult.Value.Name.RawString} {sublist.Count}");
+                Svc.Log.Debug($"{recipe.ItemResult.Value.Name.ToString()} {sublist.Count}");
                 ExtractRecipes(sublist, recipe);
             }
 
@@ -85,26 +85,26 @@ namespace Artisan.CraftingLists
 
         private static void ExtractRecipes(List<ListItem> sublist, Recipe recipe)
         {
-            foreach (var ing in recipe.UnkData5.Where(x => x.AmountIngredient > 0))
+            foreach (var ing in recipe.Ingredients().Where(x => x.Amount > 0))
             {
-                var subRec = CraftingListHelpers.GetIngredientRecipe((uint)ing.ItemIngredient);
+                var subRec = CraftingListHelpers.GetIngredientRecipe((uint)ing.Item.RowId);
                 if (subRec != null)
                 {
-                    if (sublist.Any(x => x.ID == subRec.RowId))
+                    if (sublist.Any(x => x.ID == subRec.Value.RowId))
                     {
-                        foreach (var subIng in subRec.UnkData5.Where(x => x.AmountIngredient > 0))
+                        foreach (var subIng in subRec.Value.Ingredients().Where(x => x.Amount > 0))
                         {
-                            var subSubRec = CraftingListHelpers.GetIngredientRecipe((uint)subIng.ItemIngredient);
+                            var subSubRec = CraftingListHelpers.GetIngredientRecipe((uint)subIng.Item.RowId);
                             if (subSubRec != null)
                             {
-                                if (sublist.Any(x => x.ID == subSubRec.RowId))
+                                if (sublist.Any(x => x.ID == subSubRec.Value.RowId))
                                 {
-                                    sublist.RemoveAll(x => x.ID == subSubRec.RowId);
+                                    sublist.RemoveAll(x => x.ID == subSubRec.Value.RowId);
                                 }
                             }
                         }
 
-                        sublist.RemoveAll(x => x.ID == subRec.RowId);
+                        sublist.RemoveAll(x => x.ID == subRec.Value.RowId);
                     }
                 }
             }
@@ -202,17 +202,17 @@ namespace Artisan.CraftingLists
                         var item = builder.ToString().Trim();
                         Svc.Log.Debug($"{numberOfItem} x {item}");
 
-                        var recipe = LuminaSheets.RecipeSheet?.Where(x => x.Value.ItemResult.Row > 0 && x.Value.ItemResult.Value.Name.RawString == item).Select(x => x.Value).FirstOrDefault();
+                        var recipe = LuminaSheets.RecipeSheet?.Where(x => x.Value.ItemResult.RowId > 0 && x.Value.ItemResult.Value.Name.ToString() == item).Select(x => x.Value).FirstOrDefault();
                         if (recipe is not null)
                         {
-                            int quantity = (int)Math.Ceiling(numberOfItem / (double)recipe.AmountResult);
-                            if (output.Recipes.Any(x => x.ID == recipe.RowId))
-                                output.Recipes.First(x => x.ID == recipe.RowId).Quantity += quantity;
+                            int quantity = (int)Math.Ceiling(numberOfItem / (double)recipe.Value.AmountResult);
+                            if (output.Recipes.Any(x => x.ID == recipe.Value.RowId))
+                                output.Recipes.First(x => x.ID == recipe.Value.RowId).Quantity += quantity;
                             else
-                                output.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = quantity, ListItemOptions = new() });
+                                output.Recipes.Add(new ListItem() { ID = recipe.Value.RowId, Quantity = quantity, ListItemOptions = new() });
 
-                            if (precraftQS && recipe.CanQuickSynth)
-                                output.Recipes.First(x => x.ID == recipe.RowId).ListItemOptions.NQOnly = true;
+                            if (precraftQS && recipe.Value.CanQuickSynth)
+                                output.Recipes.First(x => x.ID == recipe.Value.RowId).ListItemOptions.NQOnly = true;
                         }
                     }
 
@@ -239,14 +239,14 @@ namespace Artisan.CraftingLists
                         var item = builder.ToString().Trim();
                         if (DebugTab.Debug) Svc.Log.Debug($"{numberOfItem} x {item}");
 
-                        var recipe = LuminaSheets.RecipeSheet?.Where(x => x.Value.ItemResult.Row > 0 && x.Value.ItemResult.Value.Name.RawString == item).Select(x => x.Value).FirstOrDefault();
+                        var recipe = LuminaSheets.RecipeSheet?.Where(x => x.Value.ItemResult.RowId > 0 && x.Value.ItemResult.Value.Name.ToString() == item).Select(x => x.Value).FirstOrDefault();
                         if (recipe is not null)
                         {
-                            int quantity = (int)Math.Ceiling(numberOfItem / (double)recipe.AmountResult);
-                            output.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = quantity, ListItemOptions = new() });
+                            int quantity = (int)Math.Ceiling(numberOfItem / (double)recipe.Value.AmountResult);
+                            output.Recipes.Add(new ListItem() { ID = recipe.Value.RowId, Quantity = quantity, ListItemOptions = new() });
 
-                            if (finalitemQS && recipe.CanQuickSynth)
-                                output.Recipes.First(x => x.ID == recipe.RowId).ListItemOptions.NQOnly = true;
+                            if (finalitemQS && recipe.Value.CanQuickSynth)
+                                output.Recipes.First(x => x.ID == recipe.Value.RowId).ListItemOptions.NQOnly = true;
                         }
                     }
 

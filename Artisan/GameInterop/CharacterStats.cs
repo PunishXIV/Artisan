@@ -5,9 +5,10 @@ using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Runtime.CompilerServices;
+using Lumina.Excel.Sheets;
+using Artisan.RawInformation;
 
 namespace Artisan.GameInterop;
 
@@ -59,7 +60,7 @@ public unsafe struct ItemStats
         if (Data == null)
             return;
 
-        foreach (var p in Data.UnkData59)
+        foreach (var p in Data.Value.BaseParams())
         {
             if (Array.IndexOf(CharacterStatsUtils.ParamIds, p.BaseParam) is var stat && stat >= 0)
             {
@@ -68,7 +69,7 @@ public unsafe struct ItemStats
         }
         if (hq)
         {
-            foreach (var p in Data.UnkData73)
+            foreach (var p in Data.Value.BaseParamSpecials())
             {
                 if (Array.IndexOf(CharacterStatsUtils.ParamIds, p.BaseParamSpecial) is var stat && stat >= 0)
                 {
@@ -77,10 +78,10 @@ public unsafe struct ItemStats
             }
         }
 
-        var ilvl = Data.LevelItem.Value;
-        Stats[0].Max = Math.Max(Stats[0].Base, (int)(0.5 + 0.001 * CharacterStatsUtils.StatCapModifiers[Data.EquipSlotCategory.Row, 0] * ilvl.Craftsmanship));
-        Stats[1].Max = Math.Max(Stats[1].Base, (int)(0.5 + 0.001 * CharacterStatsUtils.StatCapModifiers[Data.EquipSlotCategory.Row, 1] * ilvl.Control));
-        Stats[2].Max = Math.Max(Stats[2].Base, (int)(0.5 + 0.001 * CharacterStatsUtils.StatCapModifiers[Data.EquipSlotCategory.Row, 2] * ilvl.CP));
+        var ilvl = Data.Value.LevelItem.Value;
+        Stats[0].Max = Math.Max(Stats[0].Base, (int)(0.5 + 0.001 * CharacterStatsUtils.StatCapModifiers[Data.EquipSlotCategory.RowId, 0] * ilvl.Craftsmanship));
+        Stats[1].Max = Math.Max(Stats[1].Base, (int)(0.5 + 0.001 * CharacterStatsUtils.StatCapModifiers[Data.EquipSlotCategory.RowId, 1] * ilvl.Control));
+        Stats[2].Max = Math.Max(Stats[2].Base, (int)(0.5 + 0.001 * CharacterStatsUtils.StatCapModifiers[Data.EquipSlotCategory.RowId, 2] * ilvl.CP));
 
         var sheetMat = Svc.Data.GetExcelSheet<Materia>();
         for (int i = 0; i < 5; ++i)
@@ -92,7 +93,7 @@ public unsafe struct ItemStats
             if (materiaRow == null)
                 continue;
 
-            var stat = Array.IndexOf(CharacterStatsUtils.ParamIds, materiaRow.BaseParam.Row);
+            var stat = Array.IndexOf(CharacterStatsUtils.ParamIds, materiaRow.BaseParam.RowId);
             if (stat >= 0)
                 Stats[stat].Melded += materiaRow.Value[materiaGrades[i]];
         }

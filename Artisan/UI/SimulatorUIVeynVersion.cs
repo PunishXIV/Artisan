@@ -5,7 +5,6 @@ using Dalamud.Interface.Utility.Raii;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -66,7 +65,7 @@ internal static class SimulatorUIVeynVersion
 
     private static void DrawRecipeInfo(Recipe r, CraftState craft)
     {
-        using var n = ImRaii.TreeNode($"Recipe: #{r.RowId} {r.CraftType.Row + Job.CRP} '{r.ItemResult.Value?.Name}', solver: {_selectedSolver.Name}###recipe");
+        using var n = ImRaii.TreeNode($"Recipe: #{r.RowId} {r.CraftType.RowId + Job.CRP} '{r.ItemResult.Value?.Name}', solver: {_selectedSolver.Name}###recipe");
         if (!n)
             return;
 
@@ -327,9 +326,9 @@ internal static class SimulatorUIVeynVersion
         if (recipe != null)
         {
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
-            var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.Row);
+            var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.RowId);
             stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
-            _selectedCraft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.Row, recipe);
+            _selectedCraft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.RowId, recipe);
             InitDefaultTransitionProbabilities(_selectedCraft, recipe);
             var solverDesc = CraftingProcessor.GetSolverForRecipe(config, _selectedCraft);
             _selectedSolver = new(solverDesc.Name, solverDesc.CreateSolver(_selectedCraft));
