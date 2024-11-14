@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLogic.CraftData;
+using ECommons.DalamudServices;
 using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
 using System.Collections.Generic;
@@ -68,10 +69,14 @@ namespace Artisan.RawInformation
             var output = new List<BaseParamSpecialExtension>();
             for (int i = 0; i < baseParam.BaseParamSpecial.Count; i++)
             {
-                var item = baseParam.BaseParamSpecial[i].Value;
-                var val = baseParam.BaseParamValueSpecial[i];
+                try
+                {
+                    var item = baseParam.BaseParamSpecial[i].Value;
+                    var val = baseParam.BaseParamValueSpecial[i];
 
-                output.Add(new BaseParamSpecialExtension() { BaseParamSpecial = item, BaseParamValueSpecial = val });
+                    output.Add(new BaseParamSpecialExtension() { BaseParamSpecial = item, BaseParamValueSpecial = val });
+                }
+                catch { }
             }
 
             return output;
@@ -82,10 +87,14 @@ namespace Artisan.RawInformation
             var output = new List<BaseParamExtension>();
             for (int i = 0; i < baseParam.BaseParam.Count; i++)
             {
-                var item = baseParam.BaseParam[i].Value;
-                var val = baseParam.BaseParamValue[i];
+                try
+                {
+                    var item = baseParam.BaseParam[i].Value;
+                    var val = baseParam.BaseParamValue[i];
 
-                output.Add(new BaseParamExtension() { BaseParam = item, BaseParamValue = val });
+                    output.Add(new BaseParamExtension() { BaseParam = item, BaseParamValue = val });
+                }
+                catch { }
             }
 
             return output;
@@ -111,10 +120,14 @@ namespace Artisan.RawInformation
             var output = new List<IngredientExtension>();
             for (int i = 0; i < recipe.Ingredient.Count; i++)
             {
-                var item = recipe.Ingredient[i].Value;
-                var amount = recipe.AmountIngredient[i];
+                try
+                {
+                    var item = recipe.Ingredient[i].Value;
+                    var amount = recipe.AmountIngredient[i];
 
-                output.Add(new IngredientExtension() { Item = item, Amount = amount});
+                    output.Add(new IngredientExtension() { Item = item, Amount = amount });
+                }
+                catch { }
             }
 
             return output;

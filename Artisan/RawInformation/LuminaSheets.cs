@@ -69,7 +69,7 @@ namespace Artisan.RawInformation
            .Where(x => x.ItemResult.RowId > 0)
                 .DistinctBy(x => x.RowId)
                 .OrderBy(x => x.RecipeLevelTable.Value.ClassJobLevel)
-                .ThenBy(x => x.ItemResult.Value.Name)
+                .ThenBy(x => x.ItemResult.Value.Name.ToString())
                 .ToDictionary(x => x.RowId, x => x);
 
             GatheringItemSheet = Svc.Data?.GetExcelSheet<GatheringItem>()?

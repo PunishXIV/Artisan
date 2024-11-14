@@ -10,6 +10,8 @@ using System.Runtime.CompilerServices;
 using Lumina.Excel.Sheets;
 using Artisan.RawInformation;
 using Lumina.Excel;
+using SharpDX.Direct2D1;
+using System.Linq;
 
 namespace Artisan.GameInterop;
 
@@ -63,7 +65,7 @@ public unsafe struct ItemStats
 
         foreach (var p in Data.Value.BaseParams())
         {
-            if (Array.IndexOf(CharacterStatsUtils.ParamIds, p.BaseParam) is var stat && stat >= 0)
+            if (Array.IndexOf(CharacterStatsUtils.ParamIds, p.BaseParam.RowId) is var stat && stat >= 0)
             {
                 Stats[stat].Base += p.BaseParamValue;
             }
@@ -72,7 +74,7 @@ public unsafe struct ItemStats
         {
             foreach (var p in Data.Value.BaseParamSpecials())
             {
-                if (Array.IndexOf(CharacterStatsUtils.ParamIds, p.BaseParamSpecial) is var stat && stat >= 0)
+                if (Array.IndexOf(CharacterStatsUtils.ParamIds, p.BaseParamSpecial.RowId) is var stat && stat >= 0)
                 {
                     Stats[stat].Base += p.BaseParamValueSpecial;
                 }
@@ -137,7 +139,7 @@ public unsafe struct ConsumableStats
         int i = 0;
         foreach (var p in food.Value.Params)
         {
-            var stat = Array.IndexOf(CharacterStatsUtils.ParamIds, p.BaseParam);
+            var stat = Array.IndexOf(CharacterStatsUtils.ParamIds, p.BaseParam.RowId);
             if (stat >= 0)
             {
                 var val = hq ? p.ValueHQ : p.Value;
@@ -213,7 +215,9 @@ public unsafe struct CharacterStats
         {
             var details = new ItemStats((RaptureGearsetModule.GearsetItem*)Unsafe.AsPointer(ref gs.Items[i]));
             if (details.Data != null)
+            {
                 res.AddItem(i, ref details);
+            }
         }
         res.Manipulation = CharacterInfo.IsManipulationUnlocked((Job)gs.ClassJob);
         return res;
