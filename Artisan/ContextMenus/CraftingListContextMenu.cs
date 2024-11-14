@@ -106,7 +106,7 @@ internal static class CraftingListContextMenu
                 int amountToGet = 1;
                 if (LuminaSheets.RecipeSheet[Endurance.RecipeID].ItemResult.RowId != ItemId)
                 {
-                    amountToGet = LuminaSheets.RecipeSheet[Endurance.RecipeID].UnkData5.First(y => y.ItemIngredient == ItemId).AmountIngredient;
+                    amountToGet = LuminaSheets.RecipeSheet[Endurance.RecipeID].Ingredients().First(y => y.Item.RowId == ItemId).Amount;
                 }
 
                 var menuItem = new MenuItem();
@@ -120,7 +120,7 @@ internal static class CraftingListContextMenu
 
             if (!LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.RowId == ItemId, out var recipe)) return;
 
-            bool ingredientsSubCraft = recipe.UnkData5.Any(x => CraftingListHelpers.GetIngredientRecipe((uint)x.ItemIngredient) != null);
+            bool ingredientsSubCraft = recipe.Ingredients().Any(x => CraftingListHelpers.GetIngredientRecipe(x.Item.RowId) != null);
 
             var subMenu = new MenuItem();
             subMenu.IsSubmenu = true;

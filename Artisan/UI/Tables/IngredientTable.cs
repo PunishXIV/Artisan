@@ -11,6 +11,7 @@ using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using ImGuiNET;
+using Lumina.Excel.Sheets;
 using OtterGui;
 using OtterGui.Raii;
 using OtterGui.Table;
@@ -600,7 +601,7 @@ namespace Artisan.UI.Tables
                         foreach (var i in item.UsedInMaterialsListCount.Where(x => x.Value > 0))
                         {
                             var owned = RetainerInfo.GetRetainerItemCount(LuminaSheets.RecipeSheet[i.Key].ItemResult.RowId) + CraftingListUI.NumberOfIngredient(LuminaSheets.RecipeSheet[i.Key].ItemResult.RowId);
-                            if (SourceList.FindFirst(x => x.CraftedRecipe?.RowId == i.Key, out var ingredient))
+                            if (SourceList.FindFirst(x => x.CraftedRecipe.RowId == i.Key, out var ingredient))
                             {
                                 sb.AppendLine($"{i.Value} less is required due to having {(owned > ingredient.Required ? "at least " : "")}{Math.Min(ingredient.Required, owned)}x {i.Key.NameOfRecipe()}");
                             }
@@ -618,7 +619,7 @@ namespace Artisan.UI.Tables
                             foreach (var m in i.Value)
                             {
                                 var owned = RetainerInfo.GetRetainerItemCount(LuminaSheets.RecipeSheet[m.Item1].ItemResult.RowId) + CraftingListUI.NumberOfIngredient(LuminaSheets.RecipeSheet[m.Item1].ItemResult.RowId);
-                                if (SourceList.FindFirst(x => x.CraftedRecipe?.RowId == m.Item1, out var ingredient))
+                                if (SourceList.FindFirst(x => x.CraftedRecipe.RowId == m.Item1, out var ingredient))
                                 {
                                     sb.AppendLine($"└ {m.Item1.NameOfRecipe()} uses {i.Key.NameOfRecipe()}, you have {(owned > ingredient.Required ? "at least " : "")}{Math.Min(ingredient.Required, owned)} {m.Item1.NameOfRecipe()} so {m.Item2}x {item.Data.Name} less is required as a result.");
                                 }
@@ -874,7 +875,7 @@ namespace Artisan.UI.Tables
 
                 try
                 {
-                    if (LuminaSheets.GatheringItemSheet!.Any(x => x.Value.Item == item.Data.RowId))
+                    if (LuminaSheets.GatheringItemSheet!.Any(x => x.Value.Item.RowId == item.Data.RowId))
                         Chat.Instance.SendMessage($"/gather {item.Data.Name.ToString()}");
                     else
                         Chat.Instance.SendMessage($"/gatherfish {item.Data.Name.ToString()}");

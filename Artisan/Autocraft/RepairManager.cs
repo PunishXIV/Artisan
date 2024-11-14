@@ -14,6 +14,7 @@ using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using Lumina.Excel.Sheets;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -140,10 +141,9 @@ namespace Artisan.Autocraft
             {
                 foreach (var obj in Svc.Objects.Where(x => x.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.EventNpc))
                 {
-                    var enpcsheet = Svc.Data.Excel.GetSheet<ENpcBase>().GetRow(obj.DataId);
-                    if (enpcsheet != null)
+                    if (Svc.Data.Excel.GetSheet<ENpcBase>().TryGetRow(obj.DataId, out var enpcsheet))
                     {
-                        if (enpcsheet.ENpcData.Any(x => x == 720915))
+                        if (enpcsheet.ENpcData.Any(x => x.RowId == 720915))
                         {
                             var npcDistance = Vector3.Distance(obj.Position, Svc.ClientState.LocalPlayer.Position);
                             if (npcDistance > 7)
@@ -172,7 +172,7 @@ namespace Artisan.Autocraft
                 TargetSystem.Instance()->OpenObjectInteraction(npc.Struct());
                 if (TryGetAddonByName<AddonSelectIconString>("SelectIconString", out var addonSelectIconString))
                 {
-                    var index = GenericHelpers.IndexOf(Svc.Data.Excel.GetSheet<ENpcBase>().GetRow(npc.DataId).ENpcData, x => x == 720915);
+                    var index = GenericHelpers.IndexOf(Svc.Data.Excel.GetSheet<ENpcBase>().GetRow(npc.DataId).ENpcData, x => x.RowId == 720915);
                     Callback.Fire(&addonSelectIconString->AtkUnitBase, true, index);
                 }
 

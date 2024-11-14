@@ -106,7 +106,7 @@ public unsafe static class PreCrafting
     {
         try
         {
-            Svc.Log.Debug($"Starting {type} crafting: {recipe.RowId} '{recipe.ItemResult.Value?.Name}'");
+            Svc.Log.Debug($"Starting {type} crafting: {recipe.RowId} '{recipe.ItemResult.Value.Name}'");
 
             var requiredClass = Job.CRP + recipe.CraftType.RowId;
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId);
@@ -120,12 +120,12 @@ public unsafe static class PreCrafting
             // handle errors when we're forbidden from rectifying them automatically
             if (P.Config.DontEquipItems && needClassChange)
             {
-                DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: wrong class, {requiredClass} needed");
+                DuoLog.Error($"Can't craft {recipe.ItemResult.Value.Name}: wrong class, {requiredClass} needed");
                 return;
             }
             if (P.Config.DontEquipItems && needEquipItem)
             {
-                DuoLog.Error($"Can't craft {recipe.ItemResult.Value?.Name}: required item {recipe.ItemRequired.Value?.Name} not equipped");
+                DuoLog.Error($"Can't craft {recipe.ItemResult.Value.Name}: required item {recipe.ItemRequired.Value.Name} not equipped");
                 return;
             }
             if (P.Config.AbortIfNoFoodPot && needConsumables && !hasConsumables)
@@ -151,7 +151,7 @@ public unsafe static class PreCrafting
             {
                 List<string> missingIngredients = MissingIngredients(recipe);
 
-                DuoLog.Error($"Not all ingredients for {recipe.ItemResult.Value?.Name} found.\r\nMissing: {string.Join(", ", missingIngredients)}");
+                DuoLog.Error($"Not all ingredients for {recipe.ItemResult.Value.Name} found.\r\nMissing: {string.Join(", ", missingIngredients)}");
                 return;
             }
 
@@ -223,13 +223,13 @@ public unsafe static class PreCrafting
     public static List<string> MissingIngredients(Recipe recipe)
     {
         List<string> missingIngredients = new();
-        foreach (var ing in recipe.UnkData5)
+        foreach (var ing in recipe.Ingredients())
         {
-            if (ing.AmountIngredient > 0)
+            if (ing.Amount > 0)
             {
-                if (CraftingListUI.NumberOfIngredient((uint)ing.ItemIngredient) < ing.AmountIngredient)
+                if (CraftingListUI.NumberOfIngredient(ing.Item.RowId) < ing.Amount)
                 {
-                    missingIngredients.Add(((uint)ing.ItemIngredient).NameOfItem());
+                    missingIngredients.Add(ing.Item.RowId.NameOfItem());
                 }
             }
         }

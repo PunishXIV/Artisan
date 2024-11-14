@@ -17,6 +17,7 @@ using global::Artisan.GameInterop;
 using global::Artisan.UI.Tables;
 using ImGuiNET;
 using IPC;
+using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
 using OtterGui;
 using OtterGui.Filesystem;
@@ -445,7 +446,7 @@ internal class ListEditor : Window, IDisposable
 
         var preview = SelectedRecipe is null
                           ? string.Empty
-                          : $"{SelectedRecipe.ItemResult.Value.Name.ToString()} ({LuminaSheets.ClassJobSheet[SelectedRecipe.CraftType.RowId + 8].Abbreviation.ToString()})";
+                          : $"{SelectedRecipe.Value.ItemResult.Value.Name.ToString()} ({LuminaSheets.ClassJobSheet[SelectedRecipe.Value.CraftType.RowId + 8].Abbreviation.ToString()})";
 
         if (ImGui.BeginCombo("Select Recipe", preview))
         {
@@ -481,25 +482,25 @@ internal class ListEditor : Window, IDisposable
                 SelectedListMateralsNew.Clear();
                 listMaterialsNew.Clear();
 
-                if (SelectedList.Recipes.Any(x => x.ID == SelectedRecipe.RowId))
+                if (SelectedList.Recipes.Any(x => x.ID == SelectedRecipe.Value.RowId))
                 {
-                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).Quantity += checked(timesToAdd);
+                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.Value.RowId).Quantity += checked(timesToAdd);
                 }
                 else
                 {
-                    SelectedList.Recipes.Add(new ListItem() { ID = SelectedRecipe.RowId, Quantity = checked(timesToAdd) });
+                    SelectedList.Recipes.Add(new ListItem() { ID = SelectedRecipe.Value.RowId, Quantity = checked(timesToAdd) });
                 }
 
                 if (TidyAfter)
                     CraftingListHelpers.TidyUpList(SelectedList);
 
-                if (SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).ListItemOptions is null)
+                if (SelectedList.Recipes.First(x => x.ID == SelectedRecipe.Value.RowId).ListItemOptions is null)
                 {
-                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).ListItemOptions = new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth };
+                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.Value.RowId).ListItemOptions = new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth };
                 }
                 else
                 {
-                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).ListItemOptions.NQOnly = SelectedList.AddAsQuickSynth;
+                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.Value.RowId).ListItemOptions.NQOnly = SelectedList.AddAsQuickSynth;
                 }
 
                 RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
@@ -517,28 +518,28 @@ internal class ListEditor : Window, IDisposable
                 SelectedListMateralsNew.Clear();
                 listMaterialsNew.Clear();
 
-                CraftingListUI.AddAllSubcrafts(SelectedRecipe, SelectedList, 1, timesToAdd);
+                CraftingListUI.AddAllSubcrafts(SelectedRecipe.Value, SelectedList, 1, timesToAdd);
 
-                Svc.Log.Debug($"Adding: {SelectedRecipe.ItemResult.Value.Name.ToString()} {timesToAdd} times");
-                if (SelectedList.Recipes.Any(x => x.ID == SelectedRecipe.RowId))
+                Svc.Log.Debug($"Adding: {SelectedRecipe.Value.ItemResult.Value.Name.ToString()} {timesToAdd} times");
+                if (SelectedList.Recipes.Any(x => x.ID == SelectedRecipe.Value.RowId))
                 {
-                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).Quantity += timesToAdd;
+                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.Value.RowId).Quantity += timesToAdd;
                 }
                 else
                 {
-                    SelectedList.Recipes.Add(new ListItem() { ID = SelectedRecipe.RowId, Quantity = timesToAdd });
+                    SelectedList.Recipes.Add(new ListItem() { ID = SelectedRecipe.Value.RowId, Quantity = timesToAdd });
                 }
 
                 if (TidyAfter)
                     CraftingListHelpers.TidyUpList(SelectedList);
 
-                if (SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).ListItemOptions is null)
+                if (SelectedList.Recipes.First(x => x.ID == SelectedRecipe.Value.RowId).ListItemOptions is null)
                 {
-                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).ListItemOptions = new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth };
+                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.Value.RowId).ListItemOptions = new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth };
                 }
                 else
                 {
-                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.RowId).ListItemOptions.NQOnly = SelectedList.AddAsQuickSynth;
+                    SelectedList.Recipes.First(x => x.ID == SelectedRecipe.Value.RowId).ListItemOptions.NQOnly = SelectedList.AddAsQuickSynth;
                 }
 
                 RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
@@ -566,7 +567,7 @@ internal class ListEditor : Window, IDisposable
                 var r = LuminaSheets.RecipeSheet[item.ID];
                 orderCheck.RecID = r.RowId;
                 int maxDepth = 0;
-                foreach (var ing in r.UnkData5.Where(x => x.AmountIngredient > 0).Select(x => x.ItemIngredient))
+                foreach (var ing in r.Ingredients().Where(x => x.Amount > 0).Select(x => x.Item.RowId))
                 {
                     CheckIngredientRecipe(ing, orderCheck);
                     if (orderCheck.RecipeDepth > maxDepth)
@@ -610,14 +611,14 @@ internal class ListEditor : Window, IDisposable
 
     TimeSpan listTime;
 
-    private void CheckIngredientRecipe(int ing, ListOrderCheck orderCheck)
+    private void CheckIngredientRecipe(uint ing, ListOrderCheck orderCheck)
     {
         foreach (var result in SelectedList.Recipes.Distinct().Select(x => LuminaSheets.RecipeSheet[x.ID]))
         {
             if (result.ItemResult.RowId == ing)
             {
                 orderCheck.RecipeDepth += 1;
-                foreach (var subIng in result.UnkData5.Where(x => x.AmountIngredient > 0).Select(x => x.ItemIngredient))
+                foreach (var subIng in result.Ingredients().Where(x => x.Amount > 0).Select(x => x.Item.RowId))
                 {
                     CheckIngredientRecipe(subIng, orderCheck);
                 }
@@ -630,7 +631,7 @@ internal class ListEditor : Window, IDisposable
         if (P.Config.ShowOnlyCraftable && !RetainerInfo.CacheBuilt)
         {
             if (RetainerInfo.ATools)
-                ImGui.TextWrapped($"Building Retainer Cache: {(RetainerInfo.RetainerData.Values.Any() ? RetainerInfo.RetainerData.FirstOrDefault().Value.Count : "0")}/{LuminaSheets.RecipeSheet!.Select(x => x.Value).SelectMany(x => x.UnkData5).Where(x => x.ItemIngredient != 0 && x.AmountIngredient > 0).DistinctBy(x => x.ItemIngredient).Count()}");
+                ImGui.TextWrapped($"Building Retainer Cache: {(RetainerInfo.RetainerData.Values.Any() ? RetainerInfo.RetainerData.FirstOrDefault().Value.Count : "0")}/{LuminaSheets.RecipeSheet!.Select(x => x.Value).SelectMany(x => x.Ingredients()).Where(x => x.Item.RowId != 0 && x.Amount > 0).DistinctBy(x => x.Item.RowId).Count()}");
             ImGui.TextWrapped($"Building Craftable Items List: {CraftingListUI.CraftableItems.Count}/{LuminaSheets.RecipeSheet.Count}");
             ImGui.Spacing();
         }
@@ -691,12 +692,12 @@ internal class ListEditor : Window, IDisposable
     private void DrawRecipeOptions()
     {
         {
-            List<uint> craftingJobs = LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.Name.ToString() == SelectedRecipe.ItemResult.Value.Name.ToString()).Select(x => x.CraftType.Value.RowId + 8).ToList();
+            List<uint> craftingJobs = LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.Name.ToString() == SelectedRecipe.Value.ItemResult.Value.Name.ToString()).Select(x => x.CraftType.Value.RowId + 8).ToList();
             string[]? jobstrings = LuminaSheets.ClassJobSheet.Values.Where(x => craftingJobs.Any(y => y == x.RowId)).Select(x => x.Abbreviation.ToString()).ToArray();
             ImGui.Text($"Crafted by: {string.Join(", ", jobstrings)}");
         }
 
-        var ItemsRequired = SelectedRecipe.UnkData5;
+        var ItemsRequired = SelectedRecipe.Value.Ingredients();
 
         int numRows = RetainerInfo.ATools ? 6 : 5;
         if (ImGui.BeginTable("###RecipeTable", numRows, ImGuiTableFlags.Borders))
@@ -711,21 +712,21 @@ internal class ListEditor : Window, IDisposable
             ImGui.TableHeadersRow();
             try
             {
-                foreach (var value in ItemsRequired.Where(x => x.AmountIngredient > 0))
+                foreach (var value in ItemsRequired.Where(x => x.Amount > 0))
                 {
                     jobs.Clear();
-                    string ingredient = LuminaSheets.ItemSheet[(uint)value.ItemIngredient].Name.ToString();
-                    Recipe? ingredientRecipe = CraftingListHelpers.GetIngredientRecipe((uint)value.ItemIngredient);
+                    string ingredient = LuminaSheets.ItemSheet[value.Item.RowId].Name.ToString();
+                    Recipe? ingredientRecipe = CraftingListHelpers.GetIngredientRecipe(value.Item.RowId);
                     ImGui.TableNextRow();
                     ImGui.TableNextColumn();
                     ImGuiEx.Text($"{ingredient}");
                     ImGui.TableNextColumn();
-                    ImGuiEx.Text($"{value.AmountIngredient}");
+                    ImGuiEx.Text($"{value.Amount}");
                     ImGui.TableNextColumn();
-                    var invCount = CraftingListUI.NumberOfIngredient((uint)value.ItemIngredient);
+                    var invCount = CraftingListUI.NumberOfIngredient(value.Item.RowId);
                     ImGuiEx.Text($"{invCount}");
 
-                    if (invCount >= value.AmountIngredient)
+                    if (invCount >= value.Amount)
                     {
                         var color = ImGuiColors.HealerGreen;
                         color.W -= 0.3f;
@@ -736,11 +737,11 @@ internal class ListEditor : Window, IDisposable
                     if (RetainerInfo.ATools && RetainerInfo.CacheBuilt)
                     {
                         int retainerCount = 0;
-                        retainerCount = RetainerInfo.GetRetainerItemCount((uint)value.ItemIngredient);
+                        retainerCount = RetainerInfo.GetRetainerItemCount(value.Item.RowId);
 
                         ImGuiEx.Text($"{retainerCount}");
 
-                        if (invCount + retainerCount >= value.AmountIngredient)
+                        if (invCount + retainerCount >= value.Amount)
                         {
                             var color = ImGuiColors.HealerGreen;
                             color.W -= 0.3f;
@@ -752,7 +753,7 @@ internal class ListEditor : Window, IDisposable
 
                     if (ingredientRecipe is not null)
                     {
-                        if (ImGui.Button($"Crafted###search{ingredientRecipe.RowId}"))
+                        if (ImGui.Button($"Crafted###search{ingredientRecipe.Value.RowId}"))
                         {
                             SelectedRecipe = ingredientRecipe;
                         }
@@ -767,7 +768,7 @@ internal class ListEditor : Window, IDisposable
                     {
                         try
                         {
-                            jobs.AddRange(LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult == ingredientRecipe.ItemResult).Select(x => x.CraftType.RowId + 8));
+                            jobs.AddRange(LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.RowId == ingredientRecipe.Value.ItemResult.RowId).Select(x => x.CraftType.RowId + 8));
                             string[]? jobstrings = LuminaSheets.ClassJobSheet.Values.Where(x => jobs.Any(y => y == x.RowId)).Select(x => x.Abbreviation.ToString()).ToArray();
                             ImGui.Text(string.Join(", ", jobstrings));
                         }
@@ -781,10 +782,10 @@ internal class ListEditor : Window, IDisposable
                     {
                         try
                         {
-                            var gatheringItem = LuminaSheets.GatheringItemSheet?.Where(x => x.Value.Item == value.ItemIngredient).FirstOrDefault().Value;
+                            var gatheringItem = LuminaSheets.GatheringItemSheet?.Where(x => x.Value.Item.RowId == value.Item.RowId).FirstOrDefault().Value;
                             if (gatheringItem != null)
                             {
-                                var jobs = LuminaSheets.GatheringPointBaseSheet?.Values.Where(x => x.Item.Any(y => y == gatheringItem.RowId)).Select(x => x.GatheringType).ToList();
+                                var jobs = LuminaSheets.GatheringPointBaseSheet?.Values.Where(x => x.Item.Any(y => y.RowId == gatheringItem.Value.RowId)).Select(x => x.GatheringType).ToList();
                                 List<string> tempArray = new();
                                 if (jobs!.Any(x => x.Value.RowId is 0 or 1)) tempArray.Add(LuminaSheets.ClassJobSheet[16].Abbreviation.ToString());
                                 if (jobs!.Any(x => x.Value.RowId is 2 or 3)) tempArray.Add(LuminaSheets.ClassJobSheet[17].Abbreviation.ToString());
@@ -793,14 +794,14 @@ internal class ListEditor : Window, IDisposable
                                 continue;
                             }
 
-                            var spearfish = LuminaSheets.SpearfishingItemSheet?.Where(x => x.Value.Item.Value.RowId == value.ItemIngredient).FirstOrDefault().Value;
-                            if (spearfish != null && spearfish.Item.Value.Name.ToString() == ingredient)
+                            var spearfish = LuminaSheets.SpearfishingItemSheet?.Where(x => x.Value.Item.Value.RowId == value.Item.RowId).FirstOrDefault().Value;
+                            if (spearfish != null && spearfish.Value.Item.Value.Name.ToString() == ingredient)
                             {
                                 ImGui.Text($"{LuminaSheets.ClassJobSheet[18].Abbreviation.ToString()}");
                                 continue;
                             }
 
-                            var fishSpot = LuminaSheets.FishParameterSheet?.Where(x => x.Value.Item == value.ItemIngredient).FirstOrDefault().Value;
+                            var fishSpot = LuminaSheets.FishParameterSheet?.Where(x => x.Value.Item.RowId == value.Item.RowId).FirstOrDefault().Value;
                             if (fishSpot != null)
                             {
                                 ImGui.Text($"{LuminaSheets.ClassJobSheet[18].Abbreviation.ToString()}");

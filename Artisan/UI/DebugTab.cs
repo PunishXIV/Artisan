@@ -18,6 +18,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Lumina.Excel.Sheets;
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -142,7 +143,7 @@ namespace Artisan.UI
                     ImGui.Text($"Current Quality: {Crafting.CurStep.Quality}");
                     ImGui.Text($"Max Quality: {Crafting.CurCraft.CraftQualityMax}");
                     ImGui.Text($"Quality Percent: {Calculations.GetHQChance(Crafting.CurStep.Quality * 100.0 / Crafting.CurCraft.CraftQualityMax)}");
-                    ImGui.Text($"Item name: {Crafting.CurRecipe?.ItemResult.Value?.Name}");
+                    ImGui.Text($"Item name: {Crafting.CurRecipe?.ItemResult.Value.Name}");
                     ImGui.Text($"Current Condition: {Crafting.CurStep.Condition}");
                     ImGui.Text($"Current Step: {Crafting.CurStep.Index}");
                     ImGui.Text($"Quick Synth: {Crafting.QuickSynthState.Cur} / {Crafting.QuickSynthState.Max}");
@@ -231,18 +232,15 @@ namespace Artisan.UI
                     ImGui.Text($"ATools Installed: {RetainerInfo.AToolsInstalled}");
                     ImGui.Text($"ATools Enabled: {RetainerInfo.AToolsEnabled}");
                     ImGui.Text($"ATools Allowed: {RetainerInfo.ATools}");
-                } 
+                }
 
                 if (ImGui.CollapsingHeader("Collectables"))
                 {
                     foreach (var item in LuminaSheets.ItemSheet.Values.Where(x => x.IsCollectable).OrderBy(x => x.LevelItem.RowId))
                     {
-                        if (Svc.Data.GetExcelSheet<CollectablesShopItem>().TryGetFirst(x => x.Item.RowId == item.RowId, out var collectibleSheetItem))
+                        if (Svc.Data.GetSubrowExcelSheet<CollectablesShopItem>().SelectMany(x => x).TryGetFirst(x => x.Item.RowId == item.RowId, out var collectibleSheetItem))
                         {
-                            if (collectibleSheetItem != null)
-                            {
-                                ImGui.Text($"{item.Name} - {collectibleSheetItem.CollectablesShopRewardScrip.Value.LowReward}");
-                            }
+                            ImGui.Text($"{item.Name} - {collectibleSheetItem.CollectablesShopRewardScrip.Value.LowReward}");
                         }
                     }
                 }
@@ -390,7 +388,7 @@ namespace Artisan.UI
         private static void DrawRecipeEntry(string tag, RecipeNoteRecipeEntry* e)
         {
             var recipe = Svc.Data.GetExcelSheet<Recipe>()?.GetRow(e->RecipeId);
-            using var n = ImRaii.TreeNode($"{tag}: {e->RecipeId} '{recipe?.ItemResult.Value?.Name}'###{tag}");
+            using var n = ImRaii.TreeNode($"{tag}: {e->RecipeId} '{recipe?.ItemResult.Value.Name}'###{tag}");
             if (!n)
                 return;
 
@@ -399,7 +397,7 @@ namespace Artisan.UI
             {
                 if (ing.NumTotal != 0)
                 {
-                    var item = Svc.Data.GetExcelSheet<Lumina.Excel.GeneratedSheets.Item>()?.GetRow(ing.ItemId);
+                    var item = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Item>()?.GetRow(ing.ItemId);
                     using var n1 = ImRaii.TreeNode($"Ingredient {i}: {ing.ItemId} '{item?.Name}' (ilvl={item?.LevelItem.RowId}, hq={item?.CanBeHq}), max={ing.NumTotal}, nq={ing.NumAssignedNQ}/{ing.NumAvailableNQ}, hq={ing.NumAssignedHQ}/{ing.NumAvailableHQ}###ingy{ing.ItemId}");
                     if (n1)
                     {

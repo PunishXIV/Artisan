@@ -1,5 +1,6 @@
 ﻿using ECommons;
 using ECommons.DalamudServices;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -84,7 +85,7 @@ namespace Artisan.Universalis
             var name = Svc.Data.GetExcelSheet<World>()?.FirstOrDefault(x => x.RowId == world).Name;
 
             if (name != null)
-                return name;
+                return name.Value.ExtractText();
 
             return null;
         }

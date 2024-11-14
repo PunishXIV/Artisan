@@ -112,7 +112,7 @@ public class ScriptSolverCompiler : IDisposable
 
     private Assembly Load(byte[] assembly)
     {
-        if (DalamudReflector.TryGetLocalPlugin(out var instance, out var type))
+        if (DalamudReflector.TryGetLocalPlugin(out var instance, out var _, out var type))
         {
             var loader = type.GetField("loader", ReflectionHelper.AllFlags).GetValue(instance);
             var context = loader.GetFoP<AssemblyLoadContext>("context");

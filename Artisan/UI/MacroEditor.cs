@@ -380,6 +380,6 @@ namespace Artisan.UI
             }
         }
 
-        private void OnCraftStarted(Lumina.Excel.GeneratedSheets.Recipe recipe, CraftState craft, StepState initialStep, bool trial) => IsOpen = false;
+        private void OnCraftStarted(Lumina.Excel.Sheets.Recipe recipe, CraftState craft, StepState initialStep, bool trial) => IsOpen = false;
     }
 }

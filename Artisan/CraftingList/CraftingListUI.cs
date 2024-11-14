@@ -269,7 +269,7 @@ namespace Artisan.CraftingLists
         {
             foreach (var subItem in selectedRecipe.Ingredients().Where(x => x.Amount > 0))
             {
-                var subRecipe = CraftingListHelpers.GetIngredientRecipe((uint)subItem.Item.RowId);
+                var subRecipe = CraftingListHelpers.GetIngredientRecipe(subItem.Item.RowId);
                 if (subRecipe != null)
                 {
                     AddAllSubcrafts(subRecipe.Value, selectedList, subItem.Amount * amounts, loops);
@@ -297,15 +297,15 @@ namespace Artisan.CraftingLists
 
                 foreach (var ing in recipe.Value.Ingredients().Where(x => x.Amount > 0 && x.Item.RowId != 0))
                 {
-                    var name = LuminaSheets.ItemSheet[(uint)ing.Item.RowId].Name.ToString();
-                    CraftingListHelpers.SelectedRecipesCraftable[(uint)ing.Item.RowId] = LuminaSheets.RecipeSheet!.Any(x => x.Value.ItemResult.Value.Name.ToString() == name);
+                    var name = LuminaSheets.ItemSheet[ing.Item.RowId].Name.ToString();
+                    CraftingListHelpers.SelectedRecipesCraftable[ing.Item.RowId] = LuminaSheets.RecipeSheet!.Any(x => x.Value.ItemResult.Value.Name.ToString() == name);
 
                     for (int i = 1; i <= ing.Amount; i++)
                     {
                         ingredientList.Add((int)ing.Item.RowId);
-                        if (CraftingListHelpers.GetIngredientRecipe((uint)ing.Item.RowId).Value.RowId != 0 && addSubList)
+                        if (CraftingListHelpers.GetIngredientRecipe(ing.Item.RowId).Value.RowId != 0 && addSubList)
                         {
-                            AddRecipeIngredientsToList(CraftingListHelpers.GetIngredientRecipe((uint)ing.Item.RowId), ref ingredientList);
+                            AddRecipeIngredientsToList(CraftingListHelpers.GetIngredientRecipe(ing.Item.RowId), ref ingredientList);
                         }
                     }
                 }
@@ -342,7 +342,7 @@ namespace Artisan.CraftingLists
                     }
                     else
                     {
-                        int retainerCount = RetainerInfo.GetRetainerItemCount((uint)value.Item.RowId);
+                        int retainerCount = RetainerInfo.GetRetainerItemCount(value.Item.RowId);
                         if (value.Amount > (invNumberNQ + invNumberHQ + retainerCount))
                         {
                             invNumberHQ = null;

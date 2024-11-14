@@ -14,6 +14,7 @@ using ECommons.Throttlers;
 using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -88,7 +89,7 @@ namespace Artisan.IPC
             SetupIPC(true);
         }
 
-        private static void LogoutCacheClear()
+        private static void LogoutCacheClear(int t, int c)
         {
             RetainerData.Clear();
         }

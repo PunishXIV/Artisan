@@ -153,7 +153,7 @@ namespace Artisan.UI
 
         private static void DrawAssignOptions(MacroSolverSettings.Macro macro)
         {
-            IEnumerable<Lumina.Excel.GeneratedSheets.Recipe> filteredRecipes = LuminaSheets.RecipeSheet.Values;
+            IEnumerable<Lumina.Excel.Sheets.Recipe> filteredRecipes = LuminaSheets.RecipeSheet.Values;
 
             if (ImGui.SliderInt($"{LuminaSheets.AddonSheet[335].Text}", ref quickAssignLevel, 1, 100))
             {
@@ -161,7 +161,7 @@ namespace Artisan.UI
                 quickAssignPossibleQualities.Clear();
                 quickAssignDurabilities.Clear();
             }
-            filteredRecipes = filteredRecipes.Where(x => x.RecipeLevelTable.Value?.ClassJobLevel == quickAssignLevel);
+            filteredRecipes = filteredRecipes.Where(x => x.RecipeLevelTable.Value.ClassJobLevel == quickAssignLevel);
 
             if (quickAssignPossibleDifficulties.Count == 0)
             {

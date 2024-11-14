@@ -5,6 +5,7 @@ using Dalamud.Interface.Utility.Raii;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ImGuiNET;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,8 +50,6 @@ internal static class SimulatorUIVeynVersion
     public static void Draw()
     {
         var curRecipe = GetCurrentRecipe();
-        if (curRecipe != null && curRecipe != _selectedRecipe)
-            SetSelectedRecipe(curRecipe);
 
         if (_selectedRecipe == null || _selectedCraft == null)
         {
@@ -58,14 +57,17 @@ internal static class SimulatorUIVeynVersion
             return;
         }
 
-        DrawRecipeInfo(_selectedRecipe, _selectedCraft);
+        if (curRecipe != null && curRecipe.Value.RowId != _selectedRecipe.Value.RowId)
+            SetSelectedRecipe(curRecipe);
+
+        DrawRecipeInfo(_selectedRecipe.Value, _selectedCraft);
         DrawStatistics(_selectedCraft);
         DrawSimulator(_selectedCraft);
     }
 
     private static void DrawRecipeInfo(Recipe r, CraftState craft)
     {
-        using var n = ImRaii.TreeNode($"Recipe: #{r.RowId} {r.CraftType.RowId + Job.CRP} '{r.ItemResult.Value?.Name}', solver: {_selectedSolver.Name}###recipe");
+        using var n = ImRaii.TreeNode($"Recipe: #{r.RowId} {r.CraftType.RowId + Job.CRP} '{r.ItemResult.Value.Name}', solver: {_selectedSolver.Name}###recipe");
         if (!n)
             return;
 
@@ -325,11 +327,11 @@ internal static class SimulatorUIVeynVersion
 
         if (recipe != null)
         {
-            var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
-            var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.RowId);
+            var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.Value.RowId) ?? new();
+            var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.Value.CraftType.RowId);
             stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
-            _selectedCraft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.RowId, recipe);
-            InitDefaultTransitionProbabilities(_selectedCraft, recipe);
+            _selectedCraft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.Value.CraftType.RowId, recipe.Value);
+            InitDefaultTransitionProbabilities(_selectedCraft, recipe.Value);
             var solverDesc = CraftingProcessor.GetSolverForRecipe(config, _selectedCraft);
             _selectedSolver = new(solverDesc.Name, solverDesc.CreateSolver(_selectedCraft));
         }
@@ -340,7 +342,7 @@ internal static class SimulatorUIVeynVersion
         if (recipe.IsExpert)
         {
             // TODO: this is all very unconfirmed, we really need a process to gather this data
-            var potentialConditions = recipe.RecipeLevelTable.Value?.ConditionsFlag ?? 0;
+            var potentialConditions = recipe.RecipeLevelTable.Value.ConditionsFlag;
             var manyConditions = (potentialConditions & 0x1F0) == 0x1F0; // it seems that when all conditions are available, each one has slightly lower probability?
             var haveGoodOmen = (potentialConditions & (1 << (int)Condition.GoodOmen)) != 0; // it seems that when good omen is possible, straight good is quite a bit rarer
             craft.CraftConditionProbabilities = new float[(int)Condition.Unknown];

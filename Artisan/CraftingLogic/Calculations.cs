@@ -65,7 +65,7 @@ namespace Artisan.CraftingLogic
 
                 if (i.Amount == 0 || i.Item.RowId <= 0)
                     continue;
-                var item = itemSheet?.GetRow((uint)i.Item.RowId);
+                var item = itemSheet?.GetRow(i.Item.RowId);
                 if (item == null || !item.Value.CanBeHq)
                     continue;
                 var ilvl = (int)item.Value.LevelItem.RowId;

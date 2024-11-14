@@ -19,6 +19,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using Lumina.Excel.Sheets;
 using OtterGui;
 using System;
 using System.Collections.Generic;
@@ -97,7 +98,7 @@ namespace Artisan
                 }
                 else
                 {
-                    string searchText = Svc.Data.Excel.GetSheet<Addon>().GetRow(1412).Text;
+                    string searchText = Svc.Data.Excel.GetSheet<Addon>().GetRow(1412).Text.ExtractText();
                     searchLabel->GetAsAtkTextNode()->SetText(searchText);
                     return;
                 }

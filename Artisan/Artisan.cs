@@ -115,6 +115,12 @@ public unsafe class Artisan : IDalamudPlugin
         }
     }
 
+    private void DisableEndurance(int type, int code)
+    {
+        Endurance.Enable = false;
+        CraftingListUI.Processing = false;
+    }
+
     private void ConvertCraftingLists()
     {
         foreach (var list in P.Config.CraftingLists)
@@ -178,8 +184,7 @@ public unsafe class Artisan : IDalamudPlugin
 
     private void DisableEndurance()
     {
-        Endurance.Enable = false;
-        CraftingListUI.Processing = false;
+        DisableEndurance(0, 0);
     }
 
     private void OnFrameworkUpdate(IFramework framework)
