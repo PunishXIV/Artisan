@@ -30,7 +30,7 @@ namespace Artisan.Universalis
 
         public MarketboardData? GetRegionData(ulong ItemId, ref MarketboardData output)
         {
-            var world = Svc.ClientState.LocalPlayer?.CurrentWorld.Id;
+            var world = Svc.ClientState.LocalPlayer?.CurrentWorld.RowId;
             if (world == null)
                 return null;
 
@@ -44,7 +44,7 @@ namespace Artisan.Universalis
 
         public MarketboardData? GetDCData(ulong ItemId, ref MarketboardData output)
         {
-            var world = Svc.ClientState.LocalPlayer?.CurrentWorld.Id;
+            var world = Svc.ClientState.LocalPlayer?.CurrentWorld.RowId;
             if (world == null)
                 return null;
 

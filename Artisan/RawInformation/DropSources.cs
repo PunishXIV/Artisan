@@ -18,7 +18,7 @@ namespace Artisan.RawInformation
             ItemId = ItemId;
             MonsterId = monsterId;
             CanObtainFromRetainer = Svc.Data.GetExcelSheet<RetainerTaskNormal>()!.Any(x => x.Item.RowId == ItemId);
-            UsedInRecipes = LuminaSheets.RecipeSheet.Values.Any(y => y.UnkData5.Any(x => x.ItemIngredient == ItemId));
+            UsedInRecipes = LuminaSheets.RecipeSheet.Values.Any(y => y.Ingredients().Any(x => x.Item.RowId == ItemId));
         }
 
         public bool CanObtainFromRetainer { get; set; }

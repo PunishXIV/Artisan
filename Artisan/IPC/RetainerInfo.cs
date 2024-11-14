@@ -74,7 +74,7 @@ namespace Artisan.IPC
             }
         }
 
-        private static uint firstFoundQuantity = 0;
+        private static int firstFoundQuantity = 0;
 
         public static bool CacheBuilt = ATools ? false : true;
         public static CancellationTokenSource CTSource = new();

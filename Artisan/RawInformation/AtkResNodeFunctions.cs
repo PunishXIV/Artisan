@@ -91,8 +91,8 @@ namespace Artisan.RawInformation
                 return;
 
             var currentSimulated = P.Config.CurrentSimulated;
-            if (sheetItem.MaterialQualityFactor == 0) return;
-            var maxFactor = sheetItem.MaterialQualityFactor == 0 ? 0 : Math.Floor(sheetItem.RecipeLevelTable.Value.Quality * ((double)sheetItem.MaterialQualityFactor / 100) * ((double)sheetItem.QualityFactor / 100));
+            if (sheetItem.Value.MaterialQualityFactor == 0) return;
+            var maxFactor = sheetItem.Value.MaterialQualityFactor == 0 ? 0 : Math.Floor(sheetItem.Value.RecipeLevelTable.Value.Quality * ((double)sheetItem.Value.MaterialQualityFactor / 100) * ((double)sheetItem.Value.QualityFactor / 100));
             if (currentSimulated > (int)maxFactor)
                 currentSimulated = (int)maxFactor;
 

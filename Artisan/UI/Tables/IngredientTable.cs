@@ -194,7 +194,7 @@ namespace Artisan.UI.Tables
                     foreach (var usedin in item.UsedInCrafts)
                     {
                         var recipe = LuminaSheets.RecipeSheet[usedin];
-                        var amountUsed = recipe.UnkData5.FirstOrDefault(x => x.ItemIngredient == item.Data.RowId).AmountIngredient * item.OriginList.Recipes.First(x => x.ID == recipe.RowId).Quantity;
+                        var amountUsed = recipe.Ingredients().FirstOrDefault(x => x.Item.RowId == item.Data.RowId).Amount * item.OriginList.Recipes.First(x => x.ID == recipe.RowId).Quantity;
 
                         sb.Append($"{usedin.NameOfRecipe()} - {amountUsed}\r\n");
                     }
@@ -768,9 +768,9 @@ namespace Artisan.UI.Tables
                         var idx = 0;
                         FilteredItems.Add((item, idx));
                         idx++;
-                        foreach (var ingredient in CraftingListHelpers.GetIngredientRecipe(item.Data.RowId).UnkData5.Where(x => x.AmountIngredient > 0))
+                        foreach (var ingredient in CraftingListHelpers.GetIngredientRecipe(item.Data.RowId).Value.Ingredients().Where(x => x.Amount > 0))
                         {
-                            if (Items.FindFirst(x => x.Data.RowId == ingredient.ItemIngredient, out var result))
+                            if (Items.FindFirst(x => x.Data.RowId == ingredient.Item.RowId, out var result))
                                 FilteredItems.Add((result, idx));
                             idx++;
                         }

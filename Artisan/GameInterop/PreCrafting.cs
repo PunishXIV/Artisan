@@ -503,7 +503,7 @@ public unsafe static class PreCrafting
             var re = Operations.GetSelectedRecipeEntry();
             var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
             if (recipe != null)
-                StartCrafting(recipe, eventParam is 13 ? CraftType.Normal : eventParam is 14 ? CraftType.Quick : CraftType.Trial);
+                StartCrafting(recipe.Value, eventParam is 13 ? CraftType.Normal : eventParam is 14 ? CraftType.Quick : CraftType.Trial);
             else
                 DuoLog.Error($"Somehow recipe is null. Please report this on the Discord.");
         }

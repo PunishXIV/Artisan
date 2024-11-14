@@ -16,7 +16,7 @@ namespace Artisan.RawInformation.Character
         {
             if (Svc.ClientState.LocalPlayer is null) return;
 
-            JobID = (Job)(Svc.ClientState.LocalPlayer?.ClassJob.Id ?? 0);
+            JobID = (Job)(Svc.ClientState.LocalPlayer?.ClassJob.Value.RowId ?? 0);
             CharacterLevel = Svc.ClientState.LocalPlayer?.Level;
             CurrentCP = Svc.ClientState.LocalPlayer.CurrentCp;
             MaxCP = Svc.ClientState.LocalPlayer.MaxCp;
