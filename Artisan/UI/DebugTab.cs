@@ -387,6 +387,7 @@ namespace Artisan.UI
 
         private static void DrawRecipeEntry(string tag, RecipeNoteRecipeEntry* e)
         {
+            Svc.Log.Debug($"{e->RecipeId}");
             var recipe = Svc.Data.GetExcelSheet<Recipe>()?.GetRow(e->RecipeId);
             using var n = ImRaii.TreeNode($"{tag}: {e->RecipeId} '{recipe?.ItemResult.Value.Name}'###{tag}");
             if (!n)
