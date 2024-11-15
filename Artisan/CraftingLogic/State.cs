@@ -63,6 +63,7 @@ public record class StepState
     public bool HeartAndSoulAvailable;
     public bool PrevActionFailed;
     public int ExpedienceLeft;
+    public int QuickInnoLeft;
     public bool QuickInnoAvailable;
     public bool TrainedPerfectionAvailable;
     public bool TrainedPerfectionActive;
@@ -88,6 +89,7 @@ public record class StepState
         if (FinalAppraisalLeft > 0)
             sb.Append($", FA={FinalAppraisalLeft}");
         sb.Append($", CO={CarefulObservationLeft}, HS={(HeartAndSoulActive ? "active" : HeartAndSoulAvailable ? "avail" : "none")}");
+        sb.Append($", QuickInno:{QuickInnoAvailable}/{QuickInnoLeft}/{InnovationLeft}");
         return sb.ToString();
     }
 }

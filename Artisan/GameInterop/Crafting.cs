@@ -6,6 +6,7 @@ using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using FFXIVClientStructs;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.Sheets;
@@ -278,7 +279,7 @@ public static unsafe class Crafting
 
         var canHQ = CurRecipe.Value.CanHq;
         CurCraft = BuildCraftStateForRecipe(CharacterStats.GetCurrentStats(), CharacterInfo.JobID, CurRecipe.Value);
-        CurStep = BuildStepState(synthWindow, Skills.None, false);
+        CurStep = BuildStepState(synthWindow, null, CurCraft);
         if (CurStep.Index != 1 || CurStep.Condition != Condition.Normal || CurStep.PrevComboAction != Skills.None)
             Svc.Log.Error($"Unexpected initial state: {CurStep}");
 
@@ -312,7 +313,7 @@ public static unsafe class Crafting
         if (_predictedNextStep.Progress >= CurCraft!.CraftProgress || _predictedNextStep.Durability <= 0)
         {
             // craft was finished, we won't get any status updates, so just wrap up
-            CurStep = BuildStepState(synthWindow, _predictedNextStep.PrevComboAction, _predictedNextStep.PrevActionFailed);
+            CurStep = BuildStepState(synthWindow, _predictedNextStep, CurCraft);
             _predictedNextStep = null;
             _predictionDeadline = default;
             CraftFinished?.Invoke(CurRecipe.Value!, CurCraft, CurStep, false);
@@ -321,7 +322,7 @@ public static unsafe class Crafting
         else
         {
             // action was executed, but we might not have correct statuses yet
-            var step = BuildStepState(synthWindow, _predictedNextStep.PrevComboAction, _predictedNextStep.PrevActionFailed);
+            var step = BuildStepState(synthWindow, _predictedNextStep, CurCraft);
             if (step != _predictedNextStep)
             {
                 if (DateTime.Now <= _predictionDeadline)
@@ -432,7 +433,7 @@ public static unsafe class Crafting
     private static int GetStepDurability(AddonSynthesis* synthWindow) => synthWindow->AtkUnitBase.AtkValues[7].Int;
     private static Condition GetStepCondition(AddonSynthesis* synthWindow) => (Condition)synthWindow->AtkUnitBase.AtkValues[12].Int;
 
-    private static StepState BuildStepState(AddonSynthesis* synthWindow, Skills prevAction, bool prevActionFailed) => new ()
+    private static StepState BuildStepState(AddonSynthesis* synthWindow, StepState? predictedStep, CraftState craft) => new ()
     {
         Index = GetStepIndex(synthWindow),
         Progress = GetStepProgress(synthWindow),
@@ -451,12 +452,13 @@ public static unsafe class Crafting
         CarefulObservationLeft = ActionManagerEx.CanUseSkill(Skills.CarefulObservation) ? 1 : 0,
         HeartAndSoulActive = GetStatus(Buffs.HeartAndSoul) != null,
         HeartAndSoulAvailable = ActionManagerEx.CanUseSkill(Skills.HeartAndSoul),
-        QuickInnoAvailable = ActionManagerEx.CanUseSkill(Skills.QuickInnovation),
         TrainedPerfectionActive = GetStatus(Buffs.TrainedPerfection) != null,
         TrainedPerfectionAvailable = ActionManagerEx.CanUseSkill(Skills.TrainedPerfection),
+        QuickInnoAvailable = ActionManagerEx.CanUseSkill(Skills.QuickInnovation),
+        QuickInnoLeft = !craft.Specialist ? 0 : ActionManagerEx.CanUseSkill(Skills.QuickInnovation ) ? 1 : predictedStep?.QuickInnoLeft ?? 0,
         ExpedienceLeft = GetStatus(Buffs.Expedience)?.StackCount ?? 0,
-        PrevActionFailed = prevActionFailed,
-        PrevComboAction = prevAction,
+        PrevActionFailed = predictedStep?.PrevActionFailed ?? false,
+        PrevComboAction = predictedStep?.PrevComboAction ?? Skills.None,
     };
 
     private static Dalamud.Game.ClientState.Statuses.Status? GetStatus(uint statusID) => Svc.ClientState.LocalPlayer?.StatusList.FirstOrDefault(s => s.StatusId == statusID);

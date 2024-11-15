@@ -374,7 +374,6 @@ namespace Artisan.CraftingLists
                 var invNumberNQ = invManager->GetInventoryItemCount(ingredient, false, false, false);
                 var invNumberHQ = invManager->GetInventoryItemCount(ingredient, true, false, false);
 
-                // Svc.Log.Debug($"{invNumberNQ + invNumberHQ}");
                 if (LuminaSheets.ItemSheet[ingredient].AlwaysCollectable)
                 {
                     var inventories = new List<InventoryType>
