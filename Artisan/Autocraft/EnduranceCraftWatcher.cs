@@ -30,7 +30,7 @@ namespace Artisan.Autocraft
                 if (message.Payloads.Any(x => x.Type == PayloadType.Item))
                 {
                     var item = (ItemPayload)message.Payloads.First(x => x.Type == PayloadType.Item);
-                    if (Svc.Data.Excel.GetSheet<Item>().GetRow(item.RawItemId).CanBeHq)
+                    if (Svc.Data.Excel.GetSheet<Item>().GetRow(item.Item.RowId).CanBeHq)
                     {
                         if (Endurance.Enable && P.Config.EnduranceStopNQ && !item.IsHQ)
                         {
