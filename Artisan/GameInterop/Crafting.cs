@@ -90,7 +90,7 @@ public static unsafe class Crafting
             UnlockedManipulation = stats.Manipulation,
             Specialist = stats.Specialist,
             Splendorous = stats.Splendorous,
-            CraftCollectible = recipe.ItemResult.Value.IsCollectable,
+            CraftCollectible = recipe.ItemResult.Value.AlwaysCollectable,
             CraftExpert = recipe.IsExpert,
             CraftLevel = lt.ClassJobLevel,
             CraftDurability = Calculations.RecipeDurability(recipe),
