@@ -30,15 +30,15 @@ namespace Artisan.RawInformation
                         string type = ob.DalamudBetaKind;
                         if (type is not null && !string.IsNullOrEmpty(type) && type != "release")
                         {
-                            StagingChecked = true;
-                            IsStaging = true;
-                            return true;
+                            //StagingChecked = true;
+                            //IsStaging = true;
+                            //return true;
                         }
                         else
                         {
-                            StagingChecked = true;
-                            IsStaging = false;
-                            return false;
+                            //StagingChecked = true;
+                            //IsStaging = false;
+                            //return false;
                         }
                     }
                     catch (Exception ex)
