@@ -13,6 +13,7 @@ using Lumina.Excel.Sheets;
 using OtterGui;
 using System;
 using System.Linq;
+using System.Security.Cryptography;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.GameInterop;
@@ -91,7 +92,7 @@ public static unsafe class Crafting
             Specialist = stats.Specialist,
             Splendorous = stats.Splendorous,
             CraftCollectible = recipe.ItemResult.Value.AlwaysCollectable,
-            CraftExpert = recipe.IsExpert,
+            CraftExpert = recipe.Unknown1, //Lumina needs fixing
             CraftLevel = lt.ClassJobLevel,
             CraftDurability = Calculations.RecipeDurability(recipe),
             CraftProgress = Calculations.RecipeDifficulty(recipe),
@@ -104,7 +105,7 @@ public static unsafe class Crafting
             CraftRecommendedCraftsmanship = lt.SuggestedCraftsmanship,
             CraftHQ = recipe.CanHq,
         };
-
+        
         if (res.CraftCollectible)
         {
             // Check regular collectibles first
@@ -117,22 +118,22 @@ public static unsafe class Crafting
             }
             else // Then check custom delivery
             {
-                var satisfaction = Svc.Data.GetSubrowExcelSheet<SatisfactionSupply>()?.SelectMany(x => x).FirstOrDefault(x => x.Item.RowId == recipe.ItemResult.RowId);
-                if (satisfaction != null)
+                var row2 = ECommons.GenericHelpers.FindRow<SatisfactionSupply>(x => x.Item.RowId == recipe.ItemResult.RowId);
+                if (row2 != null)
                 {
-                    res.CraftQualityMin1 = satisfaction.Value.CollectabilityLow * 10;
-                    res.CraftQualityMin2 = satisfaction.Value.CollectabilityMid * 10;
-                    res.CraftQualityMin3 = satisfaction.Value.CollectabilityHigh * 10;
+                    res.CraftQualityMin1 = row2.Value.CollectabilityLow * 10;
+                    res.CraftQualityMin2 = row2.Value.CollectabilityMid * 10;
+                    res.CraftQualityMin3 = row2.Value.CollectabilityHigh * 10;
                 }
                 else // Finally, check Ishgard Restoration
                 {
-                    var hwdSheet = Svc.Data.GetExcelSheet<HWDCrafterSupply>()?.FirstOrDefault(x => x.HWDCrafterSupplyParams.Any(y => y.ItemTradeIn.RowId == recipe.ItemResult.RowId));
-                    if (hwdSheet != null)
+                    var row3 = ECommons.GenericHelpers.FindRow<HWDCrafterSupply>(x => x.HWDCrafterSupplyParams.Any(y => y.ItemTradeIn.RowId == recipe.ItemResult.RowId));
+                    if (row3 != null)
                     {
-                        var index = hwdSheet.Value.HWDCrafterSupplyParams.IndexOf(x => x.ItemTradeIn.RowId == recipe.ItemResult.RowId);
-                        res.CraftQualityMin1 = hwdSheet.Value.HWDCrafterSupplyParams[index].BaseCollectableRating * 10;
-                        res.CraftQualityMin2 = hwdSheet.Value.HWDCrafterSupplyParams[index].MidCollectableRating * 10;
-                        res.CraftQualityMin3 = hwdSheet.Value.HWDCrafterSupplyParams[index].HighCollectableRating * 10;
+                        var index = row3.Value.HWDCrafterSupplyParams.IndexOf(x => x.ItemTradeIn.RowId == recipe.ItemResult.RowId);
+                        res.CraftQualityMin1 = row3.Value.HWDCrafterSupplyParams[index].BaseCollectableRating * 10;
+                        res.CraftQualityMin2 = row3.Value.HWDCrafterSupplyParams[index].MidCollectableRating * 10;
+                        res.CraftQualityMin3 = row3.Value.HWDCrafterSupplyParams[index].HighCollectableRating * 10;
                         res.IshgardExpert = res.CraftExpert;
                     }
                 }

@@ -8,6 +8,7 @@ using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Utility.Raii;
+using Dalamud.Utility;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
@@ -344,6 +345,8 @@ namespace Artisan.UI
                     var list = addon->UldManager.SearchNodeById(10)->GetAsAtkComponentList();
                     ImGui.Text($"{list->ListLength}");
                 }
+
+                Util.ShowObject(Svc.Data.Excel.GetSheet<Recipe>().First(x => x.RowId == Endurance.RecipeID));
             }
             catch (Exception e)
             {

@@ -26,7 +26,7 @@ namespace Artisan.RawInformation
                 using (var stream = client.GetStreamAsync(dalDeclarative).Result)
                 using (var reader = new StreamReader(stream))
                 {
-                    for (int i = 0; i <= 14; i++)
+                    for (int i = 0; i <= 4; i++)
                     {
                         var line = reader.ReadLine().Trim();
                         if (i != 4) continue;
