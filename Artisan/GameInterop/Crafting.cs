@@ -108,8 +108,8 @@ public static unsafe class Crafting
         if (res.CraftCollectible)
         {
             // Check regular collectibles first
-            var breakpoints = Svc.Data.Excel.GetSubrowSheet<CollectablesShopItem>()?.SelectMany(x => x).FirstOrDefault(x => x.Item.RowId == recipe.ItemResult.RowId).CollectablesShopRefine.Value;
-            if (breakpoints != null)
+            var row = ECommons.GenericHelpers.FindRow<CollectablesShopItem>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
+            if (row is { CollectablesShopRefine: { } breakpoints })
             {
                 res.CraftQualityMin1 = breakpoints.Value.LowCollectability * 10;
                 res.CraftQualityMin2 = breakpoints.Value.MidCollectability * 10;
