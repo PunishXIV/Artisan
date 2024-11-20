@@ -1274,7 +1274,7 @@ internal class ListEditor : Window, IDisposable
         }
 
         var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor);
-        if (!recipe.IsExpert)
+        if (!recipe.Unknown1)
             ImGuiEx.TextWrapped(hintColor, solverHint);
         else
             ImGuiEx.TextWrapped($"Please run this recipe in the simulator for results.");

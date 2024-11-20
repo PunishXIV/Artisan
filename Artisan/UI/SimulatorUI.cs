@@ -679,7 +679,7 @@ namespace Artisan.UI
             if (assumeNormalStatus)
                 return;
 
-            if (recipe.IsExpert)
+            if (recipe.Unknown1) //Todo update with Lumina fix
             {
                 // TODO: this is all very unconfirmed, we really need a process to gather this data
                 var potentialConditions = recipe.RecipeLevelTable.Value.ConditionsFlag;
@@ -970,7 +970,7 @@ namespace Artisan.UI
                 });
                 ImGuiEx.ImGuiLineCentered("ExpertInfo", () =>
                 {
-                    ImGuiEx.Text($"{(SelectedRecipe.Value.IsExpert ? "Expert Recipe" : SelectedRecipe.Value.SecretRecipeBook.RowId > 0 ? "Master Recipe" : "Normal Recipe")}");
+                    ImGuiEx.Text($"{(SelectedRecipe.Value.Unknown1 ? "Expert Recipe" : SelectedRecipe.Value.SecretRecipeBook.RowId > 0 ? "Master Recipe" : "Normal Recipe")}");
                 });
 
             }

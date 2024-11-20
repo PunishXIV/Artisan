@@ -16,6 +16,7 @@ using System.ComponentModel;
 using System.Linq;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using SharpDX.Direct2D1;
+using System.Security.Cryptography;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.GameInterop;
@@ -94,7 +95,7 @@ public static unsafe class Crafting
             Specialist = stats.Specialist,
             Splendorous = stats.Splendorous,
             CraftCollectible = recipe.ItemResult.Value.AlwaysCollectable,
-            CraftExpert = recipe.Unknown1,
+            CraftExpert = recipe.Unknown1, //Lumina needs fixing
             CraftLevel = lt.ClassJobLevel,
             CraftDurability = Calculations.RecipeDurability(recipe),
             CraftProgress = Calculations.RecipeDifficulty(recipe),
@@ -108,7 +109,7 @@ public static unsafe class Crafting
             CraftHQ = recipe.CanHq,
             CollectableMetadataKey = recipe.CollectableMetadataKey
         };
-
+        
         if (res.CraftCollectible)
         {
             switch (res.CollectableMetadataKey)
