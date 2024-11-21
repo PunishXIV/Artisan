@@ -145,8 +145,19 @@ public static unsafe class Crafting
                     if (sharlayanRow != null)
                     {
                         var it = sharlayanRow.Value.Item.First(y => y.ItemId.RowId == recipe.ItemResult.RowId);
-                        res.CraftQualityMin1 = it.CollectabilityMid;
-                        res.CraftQualityMin2 = it.CollectabilityHigh;
+                        res.CraftQualityMin1 = it.CollectabilityMid * 10;
+                        res.CraftQualityMin2 = it.CollectabilityHigh * 10;
+                    }
+                    break;
+                // Wachumeqimeqi
+                case 6:
+                    var bankaRow = ECommons.GenericHelpers.FindRow<BankaCraftWorksSupply>(x => x.Item.Any(y => y.ItemId.RowId == recipe.ItemResult.RowId));
+                    if (bankaRow != null)
+                    {
+                        var it = bankaRow.Value.Item.First(y => y.ItemId.RowId == recipe.ItemResult.RowId);
+                        res.CraftQualityMin1 = it.Collectability.Value.CollectabilityLow * 10;
+                        res.CraftQualityMin2 = it.Collectability.Value.CollectabilityMid * 10;
+                        res.CraftQualityMin3 = it.Collectability.Value.CollectabilityHigh * 10;
                     }
                     break;
                 // Check for any other Generic Collectable
