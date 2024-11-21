@@ -12,7 +12,10 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.Sheets;
 using OtterGui;
 using System;
+using System.ComponentModel;
 using System.Linq;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using SharpDX.Direct2D1;
 using System.Security.Cryptography;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
@@ -104,29 +107,23 @@ public static unsafe class Crafting
             CraftRequiredQuality = (int)recipe.RequiredQuality,
             CraftRecommendedCraftsmanship = lt.SuggestedCraftsmanship,
             CraftHQ = recipe.CanHq,
+            CollectableMetadataKey = recipe.CollectableMetadataKey
         };
         
         if (res.CraftCollectible)
         {
-            // Check regular collectibles first
-            var row = ECommons.GenericHelpers.FindRow<CollectablesShopItem>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
-            if (row is { CollectablesShopRefine: { } breakpoints })
+            switch (res.CollectableMetadataKey)
             {
-                res.CraftQualityMin1 = breakpoints.Value.LowCollectability * 10;
-                res.CraftQualityMin2 = breakpoints.Value.MidCollectability * 10;
-                res.CraftQualityMin3 = breakpoints.Value.HighCollectability * 10;
-            }
-            else // Then check custom delivery
-            {
-                var row2 = ECommons.GenericHelpers.FindRow<SatisfactionSupply>(x => x.Item.RowId == recipe.ItemResult.RowId);
-                if (row2 != null)
-                {
-                    res.CraftQualityMin1 = row2.Value.CollectabilityLow * 10;
-                    res.CraftQualityMin2 = row2.Value.CollectabilityMid * 10;
-                    res.CraftQualityMin3 = row2.Value.CollectabilityHigh * 10;
-                }
-                else // Finally, check Ishgard Restoration
-                {
+                /*
+                    1 => CollectablesShopRefine
+                    2 => HWDCrafterSupply
+                    3 => SatisfactionSupply
+                    4 => SharlayanCraftWorksSupply
+                    6 => CollectablesRefined
+                     _ => Untyped
+                 */
+                // HWD Recipes
+                case 2:
                     var row3 = ECommons.GenericHelpers.FindRow<HWDCrafterSupply>(x => x.HWDCrafterSupplyParams.Any(y => y.ItemTradeIn.RowId == recipe.ItemResult.RowId));
                     if (row3 != null)
                     {
@@ -136,7 +133,29 @@ public static unsafe class Crafting
                         res.CraftQualityMin3 = row3.Value.HWDCrafterSupplyParams[index].HighCollectableRating * 10;
                         res.IshgardExpert = res.CraftExpert;
                     }
-                }
+                    break;
+                
+                // Satisfaction Supply Recipes
+                case 3:
+                    var row2 = ECommons.GenericHelpers.FindRow<SatisfactionSupply>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
+                    if (row2.HasValue)
+                    {
+                        res.CraftQualityMin1 = row2.Value.CollectabilityLow * 10;
+                        res.CraftQualityMin2 = row2.Value.CollectabilityMid * 10;
+                        res.CraftQualityMin3 = row2.Value.CollectabilityHigh * 10;
+                    }
+                    break;
+                
+                // Check for any other Generic Collectable
+                default:
+                    var row = ECommons.GenericHelpers.FindRow<CollectablesShopItem>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
+                    if (row is { CollectablesShopRefine: { } breakpoints })
+                    {
+                        res.CraftQualityMin1 = breakpoints.Value.LowCollectability * 10;
+                        res.CraftQualityMin2 = breakpoints.Value.MidCollectability * 10;
+                        res.CraftQualityMin3 = breakpoints.Value.HighCollectability * 10;
+                    }
+                    break;
             }
 
             if (res.CraftQualityMin3 == 0)
