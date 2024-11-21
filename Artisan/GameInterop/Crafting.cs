@@ -1,22 +1,16 @@
 ﻿using Artisan.CraftingLogic;
-using Artisan.CraftingLogic.CraftData;
 using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
-using FFXIVClientStructs;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.Sheets;
 using OtterGui;
 using System;
-using System.ComponentModel;
 using System.Linq;
-using FFXIVClientStructs.FFXIV.Client.Game;
-using SharpDX.Direct2D1;
-using System.Security.Cryptography;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.GameInterop;
@@ -109,7 +103,7 @@ public static unsafe class Crafting
             CraftHQ = recipe.CanHq,
             CollectableMetadataKey = recipe.CollectableMetadataKey
         };
-        
+
         if (res.CraftCollectible)
         {
             switch (res.CollectableMetadataKey)
@@ -124,32 +118,41 @@ public static unsafe class Crafting
                  */
                 // HWD Recipes
                 case 2:
-                    var row3 = ECommons.GenericHelpers.FindRow<HWDCrafterSupply>(x => x.HWDCrafterSupplyParams.Any(y => y.ItemTradeIn.RowId == recipe.ItemResult.RowId));
-                    if (row3 != null)
+                    var hwdRow = ECommons.GenericHelpers.FindRow<HWDCrafterSupply>(x => x.HWDCrafterSupplyParams.Any(y => y.ItemTradeIn.RowId == recipe.ItemResult.RowId));
+                    if (hwdRow != null)
                     {
-                        var index = row3.Value.HWDCrafterSupplyParams.IndexOf(x => x.ItemTradeIn.RowId == recipe.ItemResult.RowId);
-                        res.CraftQualityMin1 = row3.Value.HWDCrafterSupplyParams[index].BaseCollectableRating * 10;
-                        res.CraftQualityMin2 = row3.Value.HWDCrafterSupplyParams[index].MidCollectableRating * 10;
-                        res.CraftQualityMin3 = row3.Value.HWDCrafterSupplyParams[index].HighCollectableRating * 10;
+                        var index = hwdRow.Value.HWDCrafterSupplyParams.IndexOf(x => x.ItemTradeIn.RowId == recipe.ItemResult.RowId);
+                        res.CraftQualityMin1 = hwdRow.Value.HWDCrafterSupplyParams[index].BaseCollectableRating * 10;
+                        res.CraftQualityMin2 = hwdRow.Value.HWDCrafterSupplyParams[index].MidCollectableRating * 10;
+                        res.CraftQualityMin3 = hwdRow.Value.HWDCrafterSupplyParams[index].HighCollectableRating * 10;
                         res.IshgardExpert = res.CraftExpert;
                     }
                     break;
-                
+
                 // Satisfaction Supply Recipes
                 case 3:
-                    var row2 = ECommons.GenericHelpers.FindRow<SatisfactionSupply>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
-                    if (row2.HasValue)
+                    var satisfactionRow = ECommons.GenericHelpers.FindRow<SatisfactionSupply>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
+                    if (satisfactionRow.HasValue)
                     {
-                        res.CraftQualityMin1 = row2.Value.CollectabilityLow * 10;
-                        res.CraftQualityMin2 = row2.Value.CollectabilityMid * 10;
-                        res.CraftQualityMin3 = row2.Value.CollectabilityHigh * 10;
+                        res.CraftQualityMin1 = satisfactionRow.Value.CollectabilityLow * 10;
+                        res.CraftQualityMin2 = satisfactionRow.Value.CollectabilityMid * 10;
+                        res.CraftQualityMin3 = satisfactionRow.Value.CollectabilityHigh * 10;
                     }
                     break;
-                
+                // Sharlayan
+                case 4:
+                    var sharlayanRow = ECommons.GenericHelpers.FindRow<SharlayanCraftWorksSupply>(x => x.Item.Any(y => y.ItemId.RowId == recipe.ItemResult.RowId));
+                    if (sharlayanRow != null)
+                    {
+                        var it = sharlayanRow.Value.Item.First(y => y.ItemId.RowId == recipe.ItemResult.RowId);
+                        res.CraftQualityMin1 = it.CollectabilityMid;
+                        res.CraftQualityMin2 = it.CollectabilityHigh;
+                    }
+                    break;
                 // Check for any other Generic Collectable
                 default:
-                    var row = ECommons.GenericHelpers.FindRow<CollectablesShopItem>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
-                    if (row is { CollectablesShopRefine: { } breakpoints })
+                    var genericRow = ECommons.GenericHelpers.FindRow<CollectablesShopItem>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
+                    if (genericRow is { CollectablesShopRefine: { } breakpoints })
                     {
                         res.CraftQualityMin1 = breakpoints.Value.LowCollectability * 10;
                         res.CraftQualityMin2 = breakpoints.Value.MidCollectability * 10;
@@ -453,7 +456,7 @@ public static unsafe class Crafting
     private static int GetStepDurability(AddonSynthesis* synthWindow) => synthWindow->AtkUnitBase.AtkValues[7].Int;
     private static Condition GetStepCondition(AddonSynthesis* synthWindow) => (Condition)synthWindow->AtkUnitBase.AtkValues[12].Int;
 
-    private static StepState BuildStepState(AddonSynthesis* synthWindow, StepState? predictedStep, CraftState craft) => new ()
+    private static StepState BuildStepState(AddonSynthesis* synthWindow, StepState? predictedStep, CraftState craft) => new()
     {
         Index = GetStepIndex(synthWindow),
         Progress = GetStepProgress(synthWindow),
@@ -475,7 +478,7 @@ public static unsafe class Crafting
         TrainedPerfectionActive = GetStatus(Buffs.TrainedPerfection) != null,
         TrainedPerfectionAvailable = ActionManagerEx.CanUseSkill(Skills.TrainedPerfection),
         QuickInnoAvailable = ActionManagerEx.CanUseSkill(Skills.QuickInnovation),
-        QuickInnoLeft = !craft.Specialist ? 0 : ActionManagerEx.CanUseSkill(Skills.QuickInnovation ) ? 1 : predictedStep?.QuickInnoLeft ?? 0,
+        QuickInnoLeft = !craft.Specialist ? 0 : ActionManagerEx.CanUseSkill(Skills.QuickInnovation) ? 1 : predictedStep?.QuickInnoLeft ?? 0,
         ExpedienceLeft = GetStatus(Buffs.Expedience)?.StackCount ?? 0,
         PrevActionFailed = predictedStep?.PrevActionFailed ?? false,
         PrevComboAction = predictedStep?.PrevComboAction ?? Skills.None,
