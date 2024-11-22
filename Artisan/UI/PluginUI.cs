@@ -575,6 +575,9 @@ namespace Artisan.UI
                     if (ImGui.SliderFloat("Sound Volume", ref P.Config.SoundVolume, 0f, 1f, "%.2f"))
                         P.Config.Save();
                 }
+
+                if(ImGui.InputText("Discord Webhook", ref P.Config.DiscordWebhook, 256, ImGuiInputTextFlags.EnterReturnsTrue))
+                    P.Config.Save();
             }
             if (ImGui.CollapsingHeader("Macro Settings"))
             {

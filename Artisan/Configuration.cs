@@ -149,6 +149,8 @@ namespace Artisan
         public bool UsingDiscordHooks;
         public string? DiscordWebhookUrl;
 
+        public string DiscordWebhook = "";
+
         public void Save()
         {
             Svc.PluginInterface.SavePluginConfig(this);

@@ -89,6 +89,7 @@ namespace Artisan.Autocraft
                     {
                         P.Config.CraftingX = false;
                         Endurance.Enable = false;
+                        Discord.Discord.SendEnduranceFinished();
                         if (P.Config.PlaySoundFinishEndurance)
                             SoundPlayer.PlaySound();
                         DuoLog.Information("Craft X has completed.");
