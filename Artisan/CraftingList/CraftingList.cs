@@ -462,7 +462,7 @@ namespace Artisan.CraftingLists
                 AgentRecipeNote.Instance() != null &&
                 RaptureAtkModule.Instance()->AtkModule.IsAddonReady(AgentRecipeNote.Instance()->AgentInterface.AddonId))
             {
-                if (setIngredients == null)
+                if (setIngredients == null || Endurance.IPCOverride)
                 {
                     for (int i = 0; i <= 5; i++)
                     {

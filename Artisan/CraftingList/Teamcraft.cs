@@ -2,9 +2,10 @@
 using Artisan.UI;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
-using Dalamud.Utility;
+using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using ImGuiNET;
 using Lumina.Excel.Sheets;
 using PunishLib.ImGuiMethods;
@@ -142,26 +143,33 @@ namespace Artisan.CraftingLists
                 else
                     ImGui.TextWrapped($@"These items will try to be added as quick synth due to the default setting being enabled.");
 
-                if (ImGui.Button("Import"))
+                try
                 {
-                    NewCraftingList? importedList = ParseImport(precraftQS, finalitemQS);
-                    if (importedList is not null)
+                    if (ImGui.Button("Import"))
                     {
-                        if (importedList.Name.IsNullOrEmpty())
-                            importedList.Name = importedList.Recipes.FirstOrDefault().ID.NameOfRecipe();
-                        importedList.SetID();
-                        importedList.Save();
-                        openImportWindow = false;
-                        importListName = "";
-                        importListPreCraft = "";
-                        importListItems = "";
+                        NewCraftingList? importedList = ParseImport(precraftQS, finalitemQS);
+                        if (importedList is not null)
+                        {
+                            if (importedList.Name.IsNullOrEmpty())
+                                importedList.Name = importedList.Recipes.FirstOrDefault().ID.NameOfRecipe();
+                            importedList.SetID();
+                            importedList.Save();
+                            openImportWindow = false;
+                            importListName = "";
+                            importListPreCraft = "";
+                            importListItems = "";
+
+                        }
+                        else
+                        {
+                            Notify.Error("The imported list has no items. Please check your import and try again.");
+                        }
 
                     }
-                    else
-                    {
-                        Notify.Error("The imported list has no items. Please check your import and try again.");
-                    }
-
+                }
+                catch (Exception ex)
+                {
+                    ex.Log();
                 }
                 ImGui.SameLine();
                 if (ImGui.Button("Cancel"))
@@ -202,8 +210,8 @@ namespace Artisan.CraftingLists
                         var item = builder.ToString().Trim();
                         Svc.Log.Debug($"{numberOfItem} x {item}");
 
-                        var recipe = LuminaSheets.RecipeSheet?.Where(x => x.Value.ItemResult.RowId > 0 && x.Value.ItemResult.Value.Name.ToString() == item).Select(x => x.Value).FirstOrDefault();
-                        if (recipe is not null)
+                        var recipe = GenericHelpers.FindRow<Recipe>(x => x.ItemResult.ValueNullable?.RowId > 0 && x.ItemResult.ValueNullable?.Name.ToString() == item);
+                        if (recipe?.RowId > 0)
                         {
                             int quantity = (int)Math.Ceiling(numberOfItem / (double)recipe.Value.AmountResult);
                             if (output.Recipes.Any(x => x.ID == recipe.Value.RowId))
@@ -239,11 +247,14 @@ namespace Artisan.CraftingLists
                         var item = builder.ToString().Trim();
                         if (DebugTab.Debug) Svc.Log.Debug($"{numberOfItem} x {item}");
 
-                        var recipe = LuminaSheets.RecipeSheet?.Where(x => x.Value.ItemResult.RowId > 0 && x.Value.ItemResult.Value.Name.ToString() == item).Select(x => x.Value).FirstOrDefault();
-                        if (recipe is not null)
+                        var recipe = GenericHelpers.FindRow<Recipe>(x => x.ItemResult.ValueNullable?.RowId > 0 && x.ItemResult.ValueNullable?.Name.ToString() == item);
+                        if (recipe?.RowId > 0)
                         {
                             int quantity = (int)Math.Ceiling(numberOfItem / (double)recipe.Value.AmountResult);
-                            output.Recipes.Add(new ListItem() { ID = recipe.Value.RowId, Quantity = quantity, ListItemOptions = new() });
+                            if (output.Recipes.Any(x => x.ID == recipe.Value.RowId))
+                                output.Recipes.First(x => x.ID == recipe.Value.RowId).Quantity += quantity;
+                            else
+                                output.Recipes.Add(new ListItem() { ID = recipe.Value.RowId, Quantity = quantity, ListItemOptions = new() });
 
                             if (finalitemQS && recipe.Value.CanQuickSynth)
                                 output.Recipes.First(x => x.ID == recipe.Value.RowId).ListItemOptions.NQOnly = true;

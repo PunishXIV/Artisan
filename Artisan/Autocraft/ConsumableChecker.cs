@@ -189,7 +189,7 @@ namespace Artisan.Autocraft
                     {
                         Svc.Toasts.ShowError("Food not found. Disabling Endurance.");
                         DuoLog.Error("Food not found. Disabling Endurance.");
-                        Endurance.Enable = false;
+                        Endurance.ToggleEndurance(false);
                     }
                     fooded = !P.Config.AbortIfNoFoodPot;
                 }
@@ -208,7 +208,7 @@ namespace Artisan.Autocraft
                     {
                         Svc.Toasts.ShowError("Potion not found. Disabling Endurance.");
                         DuoLog.Error("Potion not found. Disabling Endurance.");
-                        Endurance.Enable = false;
+                        Endurance.ToggleEndurance(false);
                     }
                     potted = !P.Config.AbortIfNoFoodPot;
                 }
@@ -227,7 +227,7 @@ namespace Artisan.Autocraft
                     {
                         Svc.Toasts.ShowError("Manual not found. Disabling Endurance.");
                         DuoLog.Error("Manual not found. Disabling Endurance.");
-                        Endurance.Enable = false;
+                        Endurance.ToggleEndurance(false);
                     }
                     manualed = !P.Config.AbortIfNoFoodPot;
                 }
@@ -246,7 +246,7 @@ namespace Artisan.Autocraft
                     {
                         Svc.Toasts.ShowError("Squadron Manual not found. Disabling Endurance.");
                         DuoLog.Error("Squadron Manual not found. Disabling Endurance.");
-                        Endurance.Enable = false;
+                        Endurance.ToggleEndurance(false);
                     }
                     squadronManualed = !P.Config.AbortIfNoFoodPot;
                 }

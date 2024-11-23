@@ -171,7 +171,7 @@ namespace Artisan.CraftingLists
             CraftingListFunctions.ListEndTime = GetListTimer(selectedList);
             Crafting.CraftFinished += UpdateListTimer;
             Processing = true;
-            Endurance.Enable = false;
+            Endurance.ToggleEndurance(false);
         }
 
         public static void UpdateListTimer(Recipe recipe, CraftState craft, StepState finalStep, bool cancelled)

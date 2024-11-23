@@ -32,6 +32,7 @@ namespace Artisan.Autocraft
 
     internal static unsafe class Endurance
     {
+        internal static bool IPCOverride = false;
         internal static bool SkipBuffs = false;
         internal static CircularBuffer<long> Errors = new(5);
 
@@ -62,9 +63,14 @@ namespace Artisan.Autocraft
 
         internal static void ToggleEndurance(bool enable)
         {
-            if (RecipeID > 0)
+            if (RecipeID > 0 && enable)
             {
                 Enable = enable;
+            }
+            else
+            {
+                Enable = false;
+                IPCOverride = false;
             }
         }
 
@@ -320,7 +326,7 @@ namespace Artisan.Autocraft
 
                 if (P.Config.CraftingX && P.Config.CraftX == 0 || PreCrafting.GetNumberCraftable(recipe) == 0)
                 {
-                    Enable = false;
+                    ToggleEndurance(false);
                     P.Config.CraftingX = false;
                     DuoLog.Information("Craft X has completed.");
                     if (P.Config.PlaySoundFinishEndurance)
@@ -333,7 +339,7 @@ namespace Artisan.Autocraft
                 {
                     Svc.Toasts.ShowError("No recipe has been set for Endurance mode. Disabling Endurance mode.");
                     DuoLog.Error("No recipe has been set for Endurance mode. Disabling Endurance mode.");
-                    Enable = false;
+                    ToggleEndurance(false);
                     return;
                 }
 
@@ -373,7 +379,7 @@ namespace Artisan.Autocraft
                 if (P.Config.AbortIfNoFoodPot && needConsumables && !hasConsumables)
                 {
                     PreCrafting.MissingConsumablesMessage(recipe, config);
-                    Enable = false;
+                    ToggleEndurance(false);
                     return;
                 }
 
@@ -434,7 +440,7 @@ namespace Artisan.Autocraft
                         Svc.Toasts.ShowError($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to unable to craft error.");
                         DuoLog.Error($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to unable to craft error.");
                         if (enable)
-                            Enable = false;
+                            ToggleEndurance(false);
                         if (CraftingListUI.Processing)
                             CraftingListFunctions.Paused = true;
                         PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), default));
@@ -451,7 +457,7 @@ namespace Artisan.Autocraft
                     Svc.Toasts.ShowError($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to too many errors in succession.");
                     DuoLog.Error($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to too many errors in succession.");
                     if (enable)
-                        Enable = false;
+                        ToggleEndurance(false);
                     if (CraftingListUI.Processing)
                         CraftingListFunctions.Paused = true;
                     Errors.Clear();

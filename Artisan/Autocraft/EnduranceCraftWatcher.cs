@@ -34,7 +34,7 @@ namespace Artisan.Autocraft
                     {
                         if (Endurance.Enable && P.Config.EnduranceStopNQ && !item.IsHQ)
                         {
-                            Endurance.Enable = false;
+                            Endurance.ToggleEndurance(false);
                             Svc.Toasts.ShowError("You crafted a non-HQ item. Disabling Endurance.");
                             DuoLog.Error("You crafted a non-HQ item. Disabling Endurance.");
                         }
@@ -72,13 +72,13 @@ namespace Artisan.Autocraft
             {
                 if (cancelled)
                 {
-                    Endurance.Enable = false;
+                    Endurance.ToggleEndurance(false);
                     Svc.Toasts.ShowError("You've cancelled a craft. Disabling Endurance.");
                     DuoLog.Error("You've cancelled a craft. Disabling Endurance.");
                 }
                 else if (finalStep.Progress < craft.CraftProgress && P.Config.EnduranceStopFail)
                 {
-                    Endurance.Enable = false;
+                    Endurance.ToggleEndurance(false);
                     Svc.Toasts.ShowError("You failed a craft. Disabling Endurance.");
                     DuoLog.Error("You failed a craft. Disabling Endurance.");
                 }
@@ -88,7 +88,7 @@ namespace Artisan.Autocraft
                     if (P.Config.CraftX == 0)
                     {
                         P.Config.CraftingX = false;
-                        Endurance.Enable = false;
+                        Endurance.ToggleEndurance(false);
                         if (P.Config.PlaySoundFinishEndurance)
                             SoundPlayer.PlaySound();
                         DuoLog.Information("Craft X has completed.");

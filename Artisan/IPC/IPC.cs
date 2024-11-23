@@ -68,7 +68,7 @@ namespace Artisan.IPC
 
         static void SetEnduranceStatus(bool s)
         {
-            Endurance.Enable = s;
+            Endurance.ToggleEndurance(s);
         }
 
         static bool IsListRunning()
@@ -113,6 +113,7 @@ namespace Artisan.IPC
                 P.TM.DelayNext(100);
                 P.TM.Enqueue(() =>
                 {
+                    Endurance.IPCOverride = true;
                     Endurance.RecipeID = recipeId;
                     P.Config.CraftX = amount;
                     P.Config.CraftingX = true;
