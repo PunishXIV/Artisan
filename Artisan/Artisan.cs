@@ -50,7 +50,7 @@ public unsafe class Artisan : IDalamudPlugin
 
         LuminaSheets.Init();
         P.Config = Configuration.Load();
-        P.Config.ScriptSolverConfig.Init();
+        //P.Config.ScriptSolverConfig.Init();
 
         TM = new();
         TM.TimeLimitMS = 1000;
@@ -231,7 +231,7 @@ public unsafe class Artisan : IDalamudPlugin
         ws?.RemoveAllWindows();
         ws = null!;
 
-        Config.ScriptSolverConfig?.Dispose();
+        //Config.ScriptSolverConfig?.Dispose();
         EnduranceCraftWatcher.Dispose();
         PreCrafting.Dispose();
         CraftingProcessor.Dispose();

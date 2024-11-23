@@ -669,10 +669,14 @@ namespace Artisan.UI
                     ImGui.Image(P.Config.ExpertSolverConfig.expertIcon.ImGuiHandle, new(P.Config.ExpertSolverConfig.expertIcon.Width * ImGuiHelpers.GlobalScaleSafe, ImGui.GetItemRectSize().Y), new(0, 0), new(1, 1), new(0.94f, 0.57f, 0f, 1f));
                 }
             }
-            if (ImGui.CollapsingHeader("Script Solver Settings"))
+
+            using (ImRaii.Disabled())
             {
-                if (P.Config.ScriptSolverConfig.Draw())
-                    P.Config.Save();
+                if (ImGui.CollapsingHeader("Script Solver Settings (Currently Disabled)"))
+                {
+                    if (P.Config.ScriptSolverConfig.Draw())
+                        P.Config.Save();
+                }
             }
             if (ImGui.CollapsingHeader("UI Settings"))
             {
