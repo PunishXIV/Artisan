@@ -197,7 +197,7 @@ namespace Artisan.UI
                 return;
             }
             ShowRecommendation(recommendation.Action);
-            if (P.Config.AutoMode)
+            if (P.Config.AutoMode || Endurance.IPCOverride)
             {
                 P.CTM.DelayNext(P.Config.AutoDelay);
                 P.CTM.Enqueue(() => Crafting.CurState == Crafting.State.InProgress, 3000, true, "WaitForStateToUseAction");

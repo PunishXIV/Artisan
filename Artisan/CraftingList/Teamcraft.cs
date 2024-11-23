@@ -80,7 +80,7 @@ namespace Artisan.CraftingLists
             string base64 = Convert.ToBase64String(plainTextBytes);
 
             Svc.Log.Debug($"{baseUrl}{base64}");
-            Clipboard.SetText($"{baseUrl}{base64}");
+            ImGui.SetClipboardText($"{baseUrl}{base64}");
             Notify.Success("Link copied to clipboard");
         }
 

@@ -206,7 +206,7 @@ internal class ListEditor : Window, IDisposable
 
         if (ImGui.Button("Export List"))
         {
-            Clipboard.SetText(JsonConvert.SerializeObject(P.Config.NewCraftingLists.Where(x => x.ID == SelectedList.ID).First()));
+            ImGui.SetClipboardText(JsonConvert.SerializeObject(P.Config.NewCraftingLists.Where(x => x.ID == SelectedList.ID).First()));
             Notify.Success("List exported to clipboard.");
         }
 
@@ -894,7 +894,7 @@ internal class ListEditor : Window, IDisposable
 
                 if (!string.IsNullOrEmpty(sb.ToString()))
                 {
-                    Clipboard.SetText(sb.ToString());
+                    ImGui.SetClipboardText(sb.ToString());
                     Notify.Success($"Required items copied to clipboard.");
                 }
                 else
@@ -915,7 +915,7 @@ internal class ListEditor : Window, IDisposable
 
                 if (!string.IsNullOrEmpty(sb.ToString()))
                 {
-                    Clipboard.SetText(sb.ToString());
+                    ImGui.SetClipboardText(sb.ToString());
                     Notify.Success($"Remaining items copied to clipboard.");
                 }
                 else

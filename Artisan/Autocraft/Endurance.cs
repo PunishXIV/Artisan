@@ -69,6 +69,7 @@ namespace Artisan.Autocraft
             }
             else
             {
+                Svc.Log.Debug("Endurance toggled off");
                 Enable = false;
                 IPCOverride = false;
             }
@@ -421,7 +422,22 @@ namespace Artisan.Autocraft
                                 P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(SetIngredients), "EnduranceSetIngredientsLayout");
 
                             P.TM.Enqueue(() => Operations.RepeatActualCraft(), "EnduranceNormalStart");
-                            P.TM.Enqueue(() => Crafting.CurState is Crafting.State.WaitStart, 1500, "EnduranceNormalWaitStart");
+                            P.TM.Enqueue(() => Crafting.CurState is Crafting.State.WaitStart, 2000, "EnduranceNormalWaitStart");
+                            P.TM.Enqueue(() =>
+                            {
+                                if (Crafting.CurState is not Crafting.State.QuickCraft and not Crafting.State.InProgress and not Crafting.State.WaitStart)
+                                {
+                                    if (!IPCOverride)
+                                    {
+                                        DuoLog.Error($"Unable to start crafting. Disabling Endurance. {(!P.Config.MaxQuantityMode ? "Please enable Max Quantity mode or set your ingredients before starting." : "")}");
+                                    }
+                                    else
+                                    {
+                                        DuoLog.Error($"Something has gone wrong whilst another plugin tried to control Artisan. Disabling Endurance.");
+                                    }
+                                    ToggleEndurance(false);
+                                }
+                            });
                         }
                     }
 

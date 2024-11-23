@@ -233,6 +233,12 @@ namespace Artisan.UI
                     ImGui.Text($"ATools Installed: {RetainerInfo.AToolsInstalled}");
                     ImGui.Text($"ATools Enabled: {RetainerInfo.AToolsEnabled}");
                     ImGui.Text($"ATools Allowed: {RetainerInfo.ATools}");
+
+                    if (ImGui.Button("Artisan Craft X"))
+                    {
+                        IPC.IPC.CraftX(Endurance.RecipeID, 1);
+                    }
+                    ImGui.Text($"IPC Override: {Endurance.IPCOverride}");
                 }
 
                 if (ImGui.CollapsingHeader("Collectables"))

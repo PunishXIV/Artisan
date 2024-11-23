@@ -115,7 +115,7 @@ namespace Artisan.UI
 
                 if (ImGui.Button("Export Macro###ExportButton"))
                 {
-                    Clipboard.SetText(JsonConvert.SerializeObject(SelectedMacro));
+                    ImGui.SetClipboardText(JsonConvert.SerializeObject(SelectedMacro));
                     Notify.Success("Macro Copied to Clipboard.");
                 }
 

@@ -116,7 +116,7 @@ namespace Artisan.CraftingLists
             {
                 try
                 {
-                    var clipboard = Clipboard.GetText();
+                    var clipboard = ImGui.GetClipboardText();
                     if (clipboard != string.Empty)
                     {
                         if (clipboard.TryParseJson<NewCraftingList>(out var import))

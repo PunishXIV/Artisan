@@ -184,7 +184,7 @@ namespace Artisan.UI.Tables
 
                 if (selected)
                 {
-                    Clipboard.SetText(item.Data.Name.ToString());
+                    ImGui.SetClipboardText(item.Data.Name.ToString());
                     Notify.Success("Name copied to clipboard");
                 }
 
