@@ -5,7 +5,6 @@ using Dalamud.Interface.Components;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using ImGuiNET;
 using Lumina.Excel.Sheets;
 using PunishLib.ImGuiMethods;
@@ -14,7 +13,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
-using System.Windows.Forms;
 
 namespace Artisan.CraftingLists
 {
@@ -61,7 +59,7 @@ namespace Artisan.CraftingLists
                 var recipe = LuminaSheets.RecipeSheet[sublist[i].ID];
                 var ItemId = recipe.ItemResult.Value.RowId;
 
-                Svc.Log.Debug($"{recipe.ItemResult.Value.Name.ToString()} {sublist.Count}");
+                Svc.Log.Debug($"{recipe.ItemResult.Value.Name.ToDalamudString().ToString()} {sublist.Count}");
                 ExtractRecipes(sublist, recipe);
             }
 
@@ -150,7 +148,7 @@ namespace Artisan.CraftingLists
                         NewCraftingList? importedList = ParseImport(precraftQS, finalitemQS);
                         if (importedList is not null)
                         {
-                            if (importedList.Name.IsNullOrEmpty())
+                            if (GenericHelpers.IsNullOrEmpty(importedList.Name))
                                 importedList.Name = importedList.Recipes.FirstOrDefault().ID.NameOfRecipe();
                             importedList.SetID();
                             importedList.Save();
@@ -210,7 +208,7 @@ namespace Artisan.CraftingLists
                         var item = builder.ToString().Trim();
                         Svc.Log.Debug($"{numberOfItem} x {item}");
 
-                        var recipe = GenericHelpers.FindRow<Recipe>(x => x.ItemResult.ValueNullable?.RowId > 0 && x.ItemResult.ValueNullable?.Name.ToString() == item);
+                        var recipe = GenericHelpers.FindRow<Recipe>(x => x.ItemResult.ValueNullable?.RowId > 0 && x.ItemResult.ValueNullable?.Name.ToDalamudString().ToString() == item);
                         if (recipe?.RowId > 0)
                         {
                             int quantity = (int)Math.Ceiling(numberOfItem / (double)recipe.Value.AmountResult);
@@ -247,7 +245,7 @@ namespace Artisan.CraftingLists
                         var item = builder.ToString().Trim();
                         if (DebugTab.Debug) Svc.Log.Debug($"{numberOfItem} x {item}");
 
-                        var recipe = GenericHelpers.FindRow<Recipe>(x => x.ItemResult.ValueNullable?.RowId > 0 && x.ItemResult.ValueNullable?.Name.ToString() == item);
+                        var recipe = GenericHelpers.FindRow<Recipe>(x => x.ItemResult.ValueNullable?.RowId > 0 && x.ItemResult.ValueNullable?.Name.ToDalamudString().ToString() == item);
                         if (recipe?.RowId > 0)
                         {
                             int quantity = (int)Math.Ceiling(numberOfItem / (double)recipe.Value.AmountResult);

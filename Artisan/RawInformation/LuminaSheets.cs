@@ -1,12 +1,5 @@
-﻿using Artisan.QuestSync;
-using Artisan.RawInformation.Character;
-using Dalamud.Game;
-using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Utility;
-using ECommons;
+﻿using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
-using FFXIVClientStructs.FFXIV.Client.Game;
-using Lumina.Data;
 using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
@@ -69,7 +62,7 @@ namespace Artisan.RawInformation
            .Where(x => x.ItemResult.RowId > 0)
                 .DistinctBy(x => x.RowId)
                 .OrderBy(x => x.RecipeLevelTable.Value.ClassJobLevel)
-                .ThenBy(x => x.ItemResult.Value.Name.ToString())
+                .ThenBy(x => x.ItemResult.Value.Name.ToDalamudString().ToString())
                 .ToDictionary(x => x.RowId, x => x);
 
             GatheringItemSheet = Svc.Data?.GetExcelSheet<GatheringItem>()?
@@ -209,7 +202,7 @@ namespace Artisan.RawInformation
             if (!LuminaSheets.RecipeSheet.ContainsKey(id))
                 return "";
 
-            return LuminaSheets.RecipeSheet[id].ItemResult.Value.Name.ToString();
+            return LuminaSheets.RecipeSheet[id].ItemResult.Value.Name.ToDalamudString().ToString();
         }
 
         public static string NameOfQuest(this ushort id)

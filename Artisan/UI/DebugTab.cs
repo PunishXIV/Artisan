@@ -8,7 +8,6 @@ using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Utility.Raii;
-using Dalamud.Utility;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
@@ -144,7 +143,7 @@ namespace Artisan.UI
                     ImGui.Text($"Current Quality: {Crafting.CurStep.Quality}");
                     ImGui.Text($"Max Quality: {Crafting.CurCraft.CraftQualityMax}");
                     ImGui.Text($"Quality Percent: {Calculations.GetHQChance(Crafting.CurStep.Quality * 100.0 / Crafting.CurCraft.CraftQualityMax)}");
-                    ImGui.Text($"Item name: {Crafting.CurRecipe?.ItemResult.Value.Name}");
+                    ImGui.Text($"Item name: {Crafting.CurRecipe?.ItemResult.Value.Name.ToDalamudString()}");
                     ImGui.Text($"Current Condition: {Crafting.CurStep.Condition}");
                     ImGui.Text($"Current Step: {Crafting.CurStep.Index}");
                     ImGui.Text($"Quick Synth: {Crafting.QuickSynthState.Cur} / {Crafting.QuickSynthState.Max}");
@@ -398,7 +397,7 @@ namespace Artisan.UI
         {
             Svc.Log.Debug($"{e->RecipeId}");
             var recipe = Svc.Data.GetExcelSheet<Recipe>()?.GetRow(e->RecipeId);
-            using var n = ImRaii.TreeNode($"{tag}: {e->RecipeId} '{recipe?.ItemResult.Value.Name}'###{tag}");
+            using var n = ImRaii.TreeNode($"{tag}: {e->RecipeId} '{recipe?.ItemResult.Value.Name.ToDalamudString()}'###{tag}");
             if (!n)
                 return;
 

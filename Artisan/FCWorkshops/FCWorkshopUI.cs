@@ -4,7 +4,6 @@ using Artisan.RawInformation;
 using Dalamud.Interface.Colors;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
-using ECommons.Reflection;
 using ImGuiNET;
 using Lumina.Excel.Sheets;
 using System;
@@ -406,7 +405,7 @@ namespace Artisan.FCWorkshops
                         var recipeID = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.RowId == supplyItemID);
                         if (includePrecraft)
                         {
-                            Svc.Log.Debug($"I want to add {recipeID.ItemResult.Value.Name.ToString()} {timesToAdd} times");
+                            Svc.Log.Debug($"I want to add {recipeID.ItemResult.Value.Name.ToDalamudString().ToString()} {timesToAdd} times");
                             CraftingListUI.AddAllSubcrafts(recipeID, existingList, timesToAdd);
                         }
 

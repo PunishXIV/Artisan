@@ -13,7 +13,6 @@ using Newtonsoft.Json;
 using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.CraftingLogic;
-using System.Windows.Forms;
 
 namespace Artisan.UI
 {

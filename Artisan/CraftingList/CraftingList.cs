@@ -276,7 +276,7 @@ namespace Artisan.CraftingLists
                 int numMats = Materials.Any(x => x.Key == recipe.ItemResult.RowId) && !selectedList.SkipLiteral ? Materials.First(x => x.Key == recipe.ItemResult.RowId).Value : selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.RowId == ItemId) * recipe.AmountResult;
                 if (numMats <= CraftingListUI.NumberOfIngredient(recipe.ItemResult.RowId))
                 {
-                    DuoLog.Error($"Skipping {recipe.ItemResult.Value.Name} due to having enough in inventory [Skip Items you already have enough of]");
+                    DuoLog.Error($"Skipping {recipe.ItemResult.Value.Name.ToDalamudString()} due to having enough in inventory [Skip Items you already have enough of]");
 
                     var currentRecipe = selectedList.ExpandedList[CurrentIndex];
                     while (currentRecipe == selectedList.ExpandedList[CurrentIndex])
@@ -293,7 +293,7 @@ namespace Artisan.CraftingLists
 
             if (!HasItemsForRecipe(CraftingListUI.CurrentProcessedItem) && (preparing || !isCrafting))
             {
-                DuoLog.Error($"Insufficient materials for {recipe.ItemResult.Value.Name.ExtractText()}. Moving on.");
+                DuoLog.Error($"Insufficient materials for {recipe.ItemResult.Value.Name.ToDalamudString().ExtractText()}. Moving on.");
                 var currentRecipe = selectedList.ExpandedList[CurrentIndex];
 
                 while (currentRecipe == selectedList.ExpandedList[CurrentIndex])
@@ -429,10 +429,10 @@ namespace Artisan.CraftingLists
                 var inventoryitems = CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId);
                 var expectedNumber = 0;
                 var stillToCraft = 0;
-                var totalToCraft = selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.ToString() == recipe.ItemResult.Value.Name.ToString()) * recipe.AmountResult;
+                var totalToCraft = selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.ToDalamudString().ToString() == recipe.ItemResult.Value.Name.ToDalamudString().ToString()) * recipe.AmountResult;
                 if (Materials!.Count(x => x.Key == recipe.ItemResult.RowId) == 0 || selectedList.SkipLiteral)
                 {
-                    // var previousCrafted = selectedList.Items.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.ToString() == recipe.ItemResult.Value.Name.ToString() && selectedList.Items.IndexOf(x) < CurrentIndex) * recipe.AmountResult;
+                    // var previousCrafted = selectedList.Items.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.ToDalamudString().ToString() == recipe.ItemResult.Value.Name.ToDalamudString().ToString() && selectedList.Items.IndexOf(x) < CurrentIndex) * recipe.AmountResult;
                     stillToCraft = selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.RowId == recipe.ItemResult.RowId && selectedList.ExpandedList.IndexOf(x) >= CurrentIndex) * recipe.AmountResult - inventoryitems;
                     expectedNumber = stillToCraft > 0 ? Math.Min(selectedList.ExpandedList.Count(x => x == CraftingListUI.CurrentProcessedItem) * recipe.AmountResult, stillToCraft) : selectedList.ExpandedList.Count(x => x == CraftingListUI.CurrentProcessedItem);
                 }
@@ -442,7 +442,7 @@ namespace Artisan.CraftingLists
                 }
 
                 var difference = Math.Min(totalToCraft - inventoryitems, expectedNumber);
-                Svc.Log.Debug($"{recipe.ItemResult.Value.Name} {expectedNumber} {difference}");
+                Svc.Log.Debug($"{recipe.ItemResult.Value.Name.ToDalamudString()} {expectedNumber} {difference}");
                 double numberToCraft = Math.Ceiling((double)difference / recipe.AmountResult);
 
                 count = (int)numberToCraft;

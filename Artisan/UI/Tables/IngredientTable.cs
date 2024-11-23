@@ -2,7 +2,6 @@
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Interface.Colors;
-using Dalamud.Utility;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
@@ -21,7 +20,6 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Artisan.UI.Tables
 {

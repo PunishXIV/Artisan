@@ -10,8 +10,6 @@ using System.Runtime.CompilerServices;
 using Lumina.Excel.Sheets;
 using Artisan.RawInformation;
 using Lumina.Excel;
-using SharpDX.Direct2D1;
-using System.Linq;
 
 namespace Artisan.GameInterop;
 

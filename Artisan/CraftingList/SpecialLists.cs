@@ -1,7 +1,6 @@
 ﻿using Artisan.QuestSync;
 using Artisan.RawInformation;
 using Dalamud.Interface.Components;
-using Dalamud.Utility;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
@@ -599,7 +598,7 @@ namespace Artisan.CraftingLists
             if (!string.IsNullOrEmpty(Contains))
             {
                 Regex regex = new Regex(Contains);
-                recipes.RemoveAll(x => !regex.IsMatch(x.ItemResult.Value.Name.ToString()));
+                recipes.RemoveAll(x => !regex.IsMatch(x.ItemResult.Value.Name.ToDalamudString().ToString()));
             }
 
             if (recipes.Count == 0)

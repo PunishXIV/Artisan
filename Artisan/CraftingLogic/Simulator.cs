@@ -1,7 +1,6 @@
 ﻿using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Colors;
-using Dalamud.Utility;
 using Lumina.Excel.Sheets;
 using System;
 using System.ComponentModel;
