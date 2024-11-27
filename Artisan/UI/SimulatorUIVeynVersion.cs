@@ -339,7 +339,7 @@ internal static class SimulatorUIVeynVersion
 
     private static void InitDefaultTransitionProbabilities(CraftState craft, Recipe recipe)
     {
-        if (recipe.Unknown1)
+        if (recipe.IsExpert)
         {
             // TODO: this is all very unconfirmed, we really need a process to gather this data
             var potentialConditions = recipe.RecipeLevelTable.Value.ConditionsFlag;

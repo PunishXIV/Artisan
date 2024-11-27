@@ -24,23 +24,33 @@ namespace Artisan.RawInformation
 
             if (DalamudReflector.TryGetDalamudStartInfo(out var startinfo, Svc.PluginInterface))
             {
-                HttpClient client = new HttpClient();
-                var dalDeclarative = "https://raw.githubusercontent.com/goatcorp/dalamud-declarative/refs/heads/main/config.yaml";
-                using (var stream = client.GetStreamAsync(dalDeclarative).Result)
-                using (var reader = new StreamReader(stream))
+                try
                 {
-                    for (int i = 0; i <= 4; i++)
+                    HttpClient client = new HttpClient();
+                    var dalDeclarative = "https://raw.githubusercontent.com/goatcorp/dalamud-declarative/refs/heads/main/config.yaml";
+                    using (var stream = client.GetStreamAsync(dalDeclarative).Result)
+                    using (var reader = new StreamReader(stream))
                     {
-                        var line = reader.ReadLine().Trim();
-                        if (i != 4) continue;
-                        var version = line.Split(":").Last().Trim().Replace("'", "");
-                        if (version != startinfo.GameVersion.ToString())
+                        for (int i = 0; i <= 4; i++)
                         {
-                            StagingChecked = true;
-                            IsStaging = false;
-                            return false;
+                            var line = reader.ReadLine().Trim();
+                            if (i != 4) continue;
+                            var version = line.Split(":").Last().Trim().Replace("'", "");
+                            if (version != startinfo.GameVersion.ToString())
+                            {
+                                StagingChecked = true;
+                                IsStaging = false;
+                                return false;
+                            }
                         }
                     }
+                }
+                catch
+                {
+                    // Something has gone wrong with checking the Dalamud github file, just allow plugin load anyway
+                    StagingChecked = true;
+                    IsStaging = false;
+                    return false;
                 }
 
                 if (File.Exists(startinfo.ConfigurationPath))

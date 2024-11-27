@@ -89,7 +89,7 @@ public static unsafe class Crafting
             Specialist = stats.Specialist,
             Splendorous = stats.Splendorous,
             CraftCollectible = recipe.ItemResult.Value.AlwaysCollectable,
-            CraftExpert = recipe.Unknown1, //Lumina needs fixing
+            CraftExpert = recipe.IsExpert,
             CraftLevel = lt.ClassJobLevel,
             CraftDurability = Calculations.RecipeDurability(recipe),
             CraftProgress = Calculations.RecipeDifficulty(recipe),

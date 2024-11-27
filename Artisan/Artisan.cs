@@ -53,7 +53,7 @@ public unsafe class Artisan : IDalamudPlugin
         //P.Config.ScriptSolverConfig.Init();
 
         TM = new();
-        TM.TimeLimitMS = 1000;
+        TM.TimeLimitMS = 1000 * 60;
         CTM = new();
 #if !DEBUG
         TM.ShowDebug = false;
