@@ -9,7 +9,7 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog": "- Fix Expert recipe recognition.",
+  "Changelog": "- Timing updates.",
   "RepoUrl": "https://github.com/PunishXIV/Artisan",
   "DalamudApiLevel": 11,
   "DownloadLinkTesting" : "https://love.puni.sh/plugins/Artisan/Testing/latest.zip"

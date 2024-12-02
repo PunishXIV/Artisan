@@ -35,6 +35,7 @@ namespace Artisan.Autocraft
         internal static bool IPCOverride = false;
         internal static bool SkipBuffs = false;
         internal static CircularBuffer<long> Errors = new(5);
+        static CircularBuffer<long> FailedStarts = new(5);
 
         internal static List<int>? HQData = null;
 
@@ -421,21 +422,29 @@ namespace Artisan.Autocraft
                             else
                                 P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(SetIngredients), "EnduranceSetIngredientsLayout");
 
-                            P.TM.Enqueue(() => Operations.RepeatActualCraft(), "EnduranceNormalStart");
-                            P.TM.Enqueue(() => Crafting.CurState is Crafting.State.WaitStart, 10000, "EnduranceNormalWaitStart");
+                            P.TM.Enqueue(() => Operations.RepeatActualCraft(), 500, "EnduranceNormalStart");
+                            P.TM.Enqueue(() => Crafting.CurState is Crafting.State.WaitStart, 500, "EnduranceNormalWaitStart");
                             P.TM.Enqueue(() =>
                             {
-                                if (Crafting.CurState is not Crafting.State.QuickCraft and not Crafting.State.InProgress and not Crafting.State.WaitStart)
+                                if (FailedStarts.Count() >= 5 && FailedStarts.All(x => x > Environment.TickCount64 - (10 * 1000)))
                                 {
-                                    if (!IPCOverride)
+                                    FailedStarts.Clear();
+                                    if (Crafting.CurState is not Crafting.State.QuickCraft and not Crafting.State.InProgress and not Crafting.State.WaitStart)
                                     {
-                                        DuoLog.Error($"Unable to start crafting. Disabling Endurance. {(!P.Config.MaxQuantityMode ? "Please enable Max Quantity mode or set your ingredients before starting." : "")}");
+                                        if (!IPCOverride)
+                                        {
+                                            DuoLog.Error($"Unable to start crafting. Disabling Endurance. {(!P.Config.MaxQuantityMode ? "Please enable Max Quantity mode or set your ingredients before starting." : "")}");
+                                        }
+                                        else
+                                        {
+                                            DuoLog.Error($"Something has gone wrong whilst another plugin tried to control Artisan. Disabling Endurance.");
+                                        }
+                                        ToggleEndurance(false);
                                     }
-                                    else
-                                    {
-                                        DuoLog.Error($"Something has gone wrong whilst another plugin tried to control Artisan. Disabling Endurance.");
-                                    }
-                                    ToggleEndurance(false);
+                                }
+                                else
+                                {
+                                    FailedStarts.PushBack(Environment.TickCount64);
                                 }
                             });
                         }
