@@ -14,6 +14,8 @@ namespace Artisan.RawInformation
 
         public static Dictionary<uint, Recipe>? RecipeSheet;
 
+        public static ILookup<string, Recipe>? recipeLookup;
+
         public static Dictionary<uint, GatheringItem>? GatheringItemSheet;
 
         public static Dictionary<uint, SpearfishingItem>? SpearfishingItemSheet;
@@ -64,6 +66,10 @@ namespace Artisan.RawInformation
                 .OrderBy(x => x.RecipeLevelTable.Value.ClassJobLevel)
                 .ThenBy(x => x.ItemResult.Value.Name.ToDalamudString().ToString())
                 .ToDictionary(x => x.RowId, x => x);
+
+            // Preprocess the recipe data into a lookup table (ILookup) for faster access.
+            recipeLookup = LuminaSheets.RecipeSheet.Values
+                .ToLookup(x => x.ItemResult.Value.Name.ToDalamudString().ToString());
 
             GatheringItemSheet = Svc.Data?.GetExcelSheet<GatheringItem>()?
                 .Where(x => x.GatheringItemLevel.Value.GatheringItemLevel > 0)

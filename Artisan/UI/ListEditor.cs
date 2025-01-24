@@ -1132,16 +1132,17 @@ internal class ListEditor : Window, IDisposable
             ImGui.TextWrapped("This item cannot be quick synthed.");
         }
 
-        if (LuminaSheets.RecipeSheet.Values
-                .Where(x => x.ItemResult.Value.Name.ToDalamudString().ToString() == selectedListItem.NameOfRecipe()).Count() > 1)
+        // Retrieve the list of recipes matching the selected recipe name from the preprocessed lookup table.
+        var matchingRecipes = LuminaSheets.recipeLookup[selectedListItem.NameOfRecipe()].ToList();
+
+        if (matchingRecipes.Count > 1)
         {
             var pre = $"{LuminaSheets.ClassJobSheet[recipe.CraftType.RowId + 8].Abbreviation.ToString()}";
             ImGui.TextWrapped("Switch crafted job");
             ImGuiEx.SetNextItemFullWidth(-30);
             if (ImGui.BeginCombo("###SwitchJobCombo", pre))
             {
-                foreach (var altJob in LuminaSheets.RecipeSheet.Values.Where(
-                             x => x.ItemResult.Value.Name.ToDalamudString().ToString() == selectedListItem.NameOfRecipe()))
+                foreach (var altJob in matchingRecipes)
                 {
                     var altJ = $"{LuminaSheets.ClassJobSheet[altJob.CraftType.RowId + 8].Abbreviation.ToString()}";
                     if (ImGui.Selectable($"{altJ}"))
