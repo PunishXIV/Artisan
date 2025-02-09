@@ -276,7 +276,7 @@ namespace Artisan.CraftingLists
                 int numMats = Materials.Any(x => x.Key == recipe.ItemResult.RowId) && !selectedList.SkipLiteral ? Materials.First(x => x.Key == recipe.ItemResult.RowId).Value : selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.RowId == ItemId) * recipe.AmountResult;
                 if (numMats <= CraftingListUI.NumberOfIngredient(recipe.ItemResult.RowId))
                 {
-                    DuoLog.Error($"Skipping {recipe.ItemResult.Value.Name.ToDalamudString()} due to having enough in inventory [Skip Items you already have enough of]");
+                    DuoLog.Information($"Skipping {recipe.ItemResult.Value.Name.ToDalamudString()} due to having enough in inventory [Skip Items you already have enough of]");
 
                     var currentRecipe = selectedList.ExpandedList[CurrentIndex];
                     while (currentRecipe == selectedList.ExpandedList[CurrentIndex])
