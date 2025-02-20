@@ -1111,7 +1111,7 @@ internal class ListEditor : Window, IDisposable
             ImGui.SameLine();
             if (ImGui.Button("Apply To all###QuickSynthAll"))
             {
-                foreach (var r in SelectedList.Recipes)
+                foreach (var r in SelectedList.Recipes.Where(n => LuminaSheets.RecipeSheet[n.ID].CanQuickSynth))
                 {
                     if (r.ListItemOptions == null)
                     { r.ListItemOptions = new(); }
