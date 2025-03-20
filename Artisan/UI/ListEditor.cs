@@ -1120,7 +1120,7 @@ internal class ListEditor : Window, IDisposable
             ImGui.SameLine();
             if (ImGui.Button("Apply To all###QuickSynthAll"))
             {
-                foreach (var r in SelectedList.Recipes)
+                foreach (var r in SelectedList.Recipes.Where(n => LuminaSheets.RecipeSheet[n.ID].CanQuickSynth))
                 {
                     if (r.ListItemOptions == null)
                     { r.ListItemOptions = new(); }
@@ -1141,16 +1141,17 @@ internal class ListEditor : Window, IDisposable
             ImGui.TextWrapped("This item cannot be quick synthed.");
         }
 
-        if (LuminaSheets.RecipeSheet.Values
-                .Where(x => x.ItemResult.RowId == LuminaSheets.RecipeSheet[selectedListItem].ItemResult.RowId).Count() > 1)
+        // Retrieve the list of recipes matching the selected recipe name from the preprocessed lookup table.
+        var matchingRecipes = LuminaSheets.recipeLookup[selectedListItem.NameOfRecipe()].ToList();
+
+        if (matchingRecipes.Count > 1)
         {
             var pre = $"{LuminaSheets.ClassJobSheet[recipe.CraftType.RowId + 8].Abbreviation.ToString()}";
             ImGui.TextWrapped("Switch crafted job");
             ImGuiEx.SetNextItemFullWidth(-30);
             if (ImGui.BeginCombo("###SwitchJobCombo", pre))
             {
-                foreach (var altJob in LuminaSheets.RecipeSheet.Values.Where(
-                             x => x.ItemResult.RowId == LuminaSheets.RecipeSheet[selectedListItem].ItemResult.RowId))
+                foreach (var altJob in matchingRecipes)
                 {
                     var altJ = $"{LuminaSheets.ClassJobSheet[altJob.CraftType.RowId + 8].Abbreviation.ToString()}";
                     if (ImGui.Selectable($"{altJ}"))
