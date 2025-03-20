@@ -11,6 +11,7 @@ using Dalamud.Interface.Utility.Raii;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using ECommons.GameHelpers;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -351,7 +352,6 @@ namespace Artisan.UI
                     ImGui.Text($"{list->ListLength}");
                 }
 
-                Util.ShowObject(Svc.Data.Excel.GetSheet<Recipe>().First(x => x.RowId == Endurance.RecipeID));
             }
             catch (Exception e)
             {

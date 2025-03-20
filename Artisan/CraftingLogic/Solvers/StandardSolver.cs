@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using ECommons.DalamudServices;
+using System.Collections.Generic;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 using Skills = Artisan.RawInformation.Character.Skills;
 
@@ -44,8 +45,10 @@ namespace Artisan.CraftingLogic.Solvers
             }
             else
             {
-                if (WillActFail(craft, step, rec.Action) && Simulator.CanUseAction(craft, step, Skills.MastersMend)) rec.Action = Skills.MastersMend;
-                if (WillActFail(craft, step, rec.Action) && Simulator.CanUseAction(craft, step, Skills.ImmaculateMend) && craft.CraftDurability >= 70) rec.Action = Skills.ImmaculateMend;
+                var stepClone = rec.Action;
+                if (WillActFail(craft, step, stepClone) && Simulator.CanUseAction(craft, step, Skills.MastersMend)) rec.Action = Skills.MastersMend;
+                if (WillActFail(craft, step, stepClone) && Simulator.CanUseAction(craft, step, Skills.ImmaculateMend) && craft.CraftDurability >= 70) rec.Action = Skills.ImmaculateMend;
+
             }
 
             if ((rec.Action is not Skills.MastersMend or Skills.ImmaculateMend) &&

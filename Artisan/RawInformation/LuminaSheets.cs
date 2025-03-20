@@ -171,7 +171,7 @@ namespace Artisan.RawInformation
         public static string GetSkillDescription(this Skills skill)
         {
             var id = skill.ActionId(ECommons.ExcelServices.Job.CRP);
-            string description = id == 0 ? "" : id < 100000 ? Svc.Data.Excel.GetSheet<ActionTransient>().GetRow(id).Description.ToString() : LuminaSheets.CraftActions[id].Description.ToString();
+            string description = id == 0 ? "" : id < 100000 ? Svc.Data.Excel.GetSheet<ActionTransient>().GetRow(id).Description.ToDalamudString().ToString() : LuminaSheets.CraftActions[id].Description.ToDalamudString().ToString();
             description = skill switch
             {
                 Skills.BasicSynthesis => description.Replace($": %", $": 100%/120%").Replace($"効率：", $"効率：100/120").Replace($"Effizienz: ", $"Effizienz: 100/120"),

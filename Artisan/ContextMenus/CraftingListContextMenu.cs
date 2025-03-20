@@ -27,7 +27,7 @@ internal static class CraftingListContextMenu
     public const int RecipeNoteContextItemId = 0x398;
     public const int AgentItemContextItemId = 0x28;
     public const int GatheringNoteContextItemId = 0xA0;
-    public const int ItemSearchContextItemId = 0x1740;
+    public const int ItemSearchContextItemId = 0x17D0;
     public const int ChatLogContextItemId = 0x948;
 
     public const int SubmarinePartsMenuContextItemId = 0x54;
@@ -80,8 +80,7 @@ internal static class CraftingListContextMenu
         {
             uint? itemId;
             itemId = GetGameObjectItemId(args);
-
-
+            Svc.Log.Debug($"{itemId}");
             if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.RowId == itemId)) return;
 
             var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.RowId == itemId).RowId;
@@ -93,6 +92,20 @@ internal static class CraftingListContextMenu
             menuItem.OnClicked += clickedArgs => CraftingListFunctions.OpenRecipeByID(recipeId, true);
 
             args.AddMenuItem(menuItem);
+
+            if (!LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.RowId == itemId, out var recipe)) return;
+
+            bool ingredientsSubCraft = recipe.Ingredients().Any(x => CraftingListHelpers.GetIngredientRecipe(x.Item.RowId) != null);
+
+            var subMenu = new MenuItem();
+            subMenu.IsSubmenu = true;
+            subMenu.Name = "Artisan Crafting List";
+            subMenu.PrefixChar = 'A';
+            subMenu.PrefixColor = 706;
+
+            subMenu.OnClicked += args => OpenArtisanCraftingListSubmenu(args, itemId.Value, recipe.CraftType.RowId, ingredientsSubCraft);
+
+            args.AddMenuItem(subMenu);
         }
 
         if (args.AddonName == "RecipeNote")
