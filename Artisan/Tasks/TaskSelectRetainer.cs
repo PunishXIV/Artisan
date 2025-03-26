@@ -380,7 +380,7 @@ internal unsafe static class RetainerHandlers
         var list = new List<string>();
         for (int i = 0; i < addon->PopupMenu.PopupMenu.EntryCount; i++)
         {
-            list.Add(MemoryHelper.ReadSeStringNullTerminated((nint)addon->PopupMenu.PopupMenu.EntryNames[i]).ExtractText());
+            list.Add(MemoryHelper.ReadSeStringNullTerminated((nint)addon->PopupMenu.PopupMenu.EntryNames[i].Value).ExtractText());
         }
         return list;
     }

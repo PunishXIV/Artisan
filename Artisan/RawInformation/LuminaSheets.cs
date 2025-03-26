@@ -32,8 +32,6 @@ namespace Artisan.RawInformation
 
         public static Dictionary<uint, CraftAction>? CraftActions;
 
-        public static Dictionary<uint, CraftLevelDifference>? CraftLevelDifference;
-
         public static Dictionary<uint, RecipeLevelTable>? RecipeLevelTableSheet;
 
         public static Dictionary<uint, Addon>? AddonSheet;
@@ -94,9 +92,6 @@ namespace Artisan.RawInformation
                        .ToDictionary(i => i.RowId, i => i);
 
             CraftActions = Svc.Data?.GetExcelSheet<CraftAction>()?
-                       .ToDictionary(i => i.RowId, i => i);
-
-            CraftLevelDifference = Svc.Data?.GetExcelSheet<CraftLevelDifference>()?
                        .ToDictionary(i => i.RowId, i => i);
 
             RecipeLevelTableSheet = Svc.Data?.GetExcelSheet<RecipeLevelTable>()?
