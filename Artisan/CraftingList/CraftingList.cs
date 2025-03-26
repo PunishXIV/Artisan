@@ -1,5 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.GameInterop;
+using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Game.ClientState.Conditions;
@@ -516,44 +517,28 @@ namespace Artisan.CraftingLists
                 }
                 else
                 {
-                    for (uint i = 0; i <= 5; i++)
+                    if (setIngredients != null)
                     {
-                        try
+                        var curRec = Operations.GetSelectedRecipeEntry();
+                        int i = 0;
+                        foreach (ref var ingredient in curRec->IngredientsSpan)
                         {
-                            var node = addon->AtkUnitBase.UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
-                            if (node->Component->UldManager.NodeListCount < 16)
+                            try
+                            {
+                                if (ingredient.ItemId == 0)
+                                    break;
+                                var nq = setIngredients[i].NQSet;
+                                var hq = setIngredients[i].HQSet;
+
+                                ingredient.SetSpecific(nq, hq, false);
+                                Svc.Log.Debug($"{nq} {hq} {ingredient.ItemId.NameOfItem()} {ingredient.NumAssignedNQ} {ingredient.NumAssignedHQ}");
+                                i++;
+                            }
+                            catch (Exception e)
+                            {
+                                e.Log();
                                 return false;
-
-                            if (node is null || !node->AtkResNode.IsVisible())
-                            {
-                                continue;
                             }
-
-                            var hqSetButton = node->Component->UldManager.NodeList[6]->GetAsAtkComponentNode();
-                            var nqSetButton = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode();
-
-                            var hqSetText = hqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
-                            var nqSetText = nqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
-
-                            int hqSet = Convert.ToInt32(hqSetText.ToString().GetNumbers());
-                            int nqSet = Convert.ToInt32(nqSetText.ToString().GetNumbers());
-
-                            if (setIngredients.Any(y => y.IngredientSlot == i))
-                            {
-                                for (int h = hqSet; h < setIngredients.First(x => x.IngredientSlot == i).HQSet; h++)
-                                {
-                                    new AddonMaster.RecipeNote((IntPtr)addon).Material(i, true);
-                                }
-
-                                for (int h = nqSet; h < setIngredients.First(x => x.IngredientSlot == i).NQSet; h++)
-                                {
-                                    new AddonMaster.RecipeNote((IntPtr)addon).Material(i, false);
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            return false;
                         }
                     }
                 }

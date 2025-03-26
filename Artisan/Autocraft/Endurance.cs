@@ -13,7 +13,6 @@ using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using ImGuiNET;
 using Lumina.Excel.Sheets;
 using System;
@@ -205,83 +204,37 @@ namespace Artisan.Autocraft
 
         internal static void DrawRecipeData()
         {
-            var addonPtr = Svc.GameGui.GetAddonByName("RecipeNote", 1);
-            if (TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon))
+            var curRec = Operations.GetSelectedRecipeEntry();
+            if (curRec is null || curRec->RecipeId == 0)
+                return;
+
+            RecipeID = curRec->RecipeId;
+            try
             {
-                if (addonPtr == IntPtr.Zero)
+                for (int i = 0; i < curRec->IngredientsSpan.Length; i++)
                 {
-                    return;
-                }
+                    var ing = curRec->IngredientsSpan[i];
+                    if (ing.ItemId == 0)
+                        break;
+                    var nq = ing.NumAssignedNQ;
+                    var hq = ing.NumAssignedHQ;
 
-                if (addon->AtkUnitBase.IsVisible && addon->AtkUnitBase.UldManager.NodeListCount >= 49)
-                {
-                    try
+                    SetIngredients[i] = new EnduranceIngredients()
                     {
-                        if (addon->AtkUnitBase.UldManager.NodeList[88]->IsVisible())
-                        {
-                            RecipeID = 0;
-                            return;
-                        }
+                        NQSet = nq,
+                        HQSet = hq,
+                    };
 
-                        if (addon->SelectedRecipeName is null)
-                            return;
-
-                        var selectedRecipe = Operations.GetSelectedRecipeEntry();
-                        if (selectedRecipe == null)
-                        {
-                            RecipeID = 0;
-                            return;
-                        }
-
-                        if (addon->AtkUnitBase.UldManager.NodeList[49]->IsVisible())
-                        {
-                            RecipeID = selectedRecipe->RecipeId;
-                        }
-                        Array.Clear(SetIngredients);
-
-                        for (int i = 0; i <= 5; i++)
-                        {
-                            try
-                            {
-                                var node = addon->AtkUnitBase.UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
-                                if (node->Component->UldManager.NodeListCount < 16)
-                                    return;
-
-                                if (node is null || !node->AtkResNode.IsVisible())
-                                {
-                                    break;
-                                }
-
-                                var hqSetButton = node->Component->UldManager.NodeList[6]->GetAsAtkComponentNode();
-                                var nqSetButton = node->Component->UldManager.NodeList[9]->GetAsAtkComponentNode();
-
-                                var hqSetText = hqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
-                                var nqSetText = nqSetButton->Component->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText;
-
-                                int hqSet = Convert.ToInt32(hqSetText.ToString().GetNumbers());
-                                int nqSet = Convert.ToInt32(nqSetText.ToString().GetNumbers());
-
-                                EnduranceIngredients ingredients = new EnduranceIngredients()
-                                {
-                                    IngredientSlot = i,
-                                    HQSet = hqSet,
-                                    NQSet = nqSet,
-                                };
-
-                                SetIngredients[i] = ingredients;
-                            }
-                            catch (Exception)
-                            {
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Svc.Log.Error(ex, "Setting Recipe ID");
-                        RecipeID = 0;
-                    }
+                    //Svc.Log.Debug($"Assigned {nq}NQ, {hq}HQ {ing.ItemId.NameOfItem()}");
                 }
             }
+            catch (Exception ex)
+            {
+                Svc.Log.Error(ex, "Setting Recipe ID");
+                RecipeID = 0;
+            }
+
+
         }
 
         internal static void Init()

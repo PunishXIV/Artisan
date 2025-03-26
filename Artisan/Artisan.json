@@ -9,8 +9,8 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog": "- Timing updates.",
+  "Changelog": "- Patch update.",
   "RepoUrl": "https://github.com/PunishXIV/Artisan",
-  "DalamudApiLevel": 11,
+  "DalamudApiLevel": 12,
   "DownloadLinkTesting" : "https://love.puni.sh/plugins/Artisan/Testing/latest.zip"
 }
