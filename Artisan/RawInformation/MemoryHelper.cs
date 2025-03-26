@@ -270,7 +270,7 @@ namespace Artisan.RawInformation
 
             var len = Math.Max(utf8String->BufUsed, utf8String->StringLength);
 
-            return ReadSeString((IntPtr)ptr, (int)len);
+            return ReadSeString((IntPtr)ptr.Value, (int)len);
         }
 
         #endregion

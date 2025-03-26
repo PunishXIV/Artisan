@@ -20,7 +20,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
-		<TargetFramework>net8.0-windows</TargetFramework>
+		<TargetFramework>net9.0-windows</TargetFramework>
 		<Platforms>x64</Platforms>
 		<Nullable>enable</Nullable>
 		<LangVersion>preview</LangVersion>
@@ -33,7 +33,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-		<TargetFramework>net8.0-windows</TargetFramework>
+		<TargetFramework>net9.0-windows</TargetFramework>
 		<Platforms>x64</Platforms>
 		<Nullable>enable</Nullable>
 		<LangVersion>preview</LangVersion>
@@ -87,7 +87,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="2.1.13" />
+    <PackageReference Include="DalamudPackager" Version="12.0.0" />
     <PackageReference Include="Discord.Net.Webhook" Version="3.15.3" />
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
     <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.10.0" />
@@ -128,6 +128,10 @@
     </Reference>
 	  <Reference Include="Dalamud.Common">
 		  <HintPath>$(DalamudLibPath)Dalamud.Common.dll</HintPath>
+		  <Private>False</Private>
+	  </Reference>
+	  <Reference Include="InteropGenerator.Runtime">
+		  <HintPath>$(DalamudLibPath)InteropGenerator.Runtime.dll</HintPath>
 		  <Private>False</Private>
 	  </Reference>
   </ItemGroup>

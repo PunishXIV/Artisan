@@ -490,7 +490,7 @@ public static unsafe class Crafting
         TrainedPerfectionAvailable = ActionManagerEx.CanUseSkill(Skills.TrainedPerfection),
         QuickInnoAvailable = ActionManagerEx.CanUseSkill(Skills.QuickInnovation),
         QuickInnoLeft = !craft.Specialist ? 0 : ActionManagerEx.CanUseSkill(Skills.QuickInnovation) ? 1 : predictedStep?.QuickInnoLeft ?? 0,
-        ExpedienceLeft = GetStatus(Buffs.Expedience)?.StackCount ?? 0,
+        ExpedienceLeft = GetStatus(Buffs.Expedience)?.Param ?? 0,
         PrevActionFailed = predictedStep?.PrevActionFailed ?? false,
         PrevComboAction = predictedStep?.PrevComboAction ?? Skills.None,
     };
