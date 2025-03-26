@@ -44,7 +44,7 @@ public unsafe static class PreCrafting
 
     static PreCrafting()
     {
-        _clickButton = Svc.Hook.HookFromSignature<ClickSynthesisButton>("40 55 53 56 57 41 57 48 8D 6C 24 ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 0F 48 8B 7D 7F", ClickSynthButtons);
+        _clickButton = Svc.Hook.HookFromSignature<ClickSynthesisButton>("40 55 53 56 57 41 56 48 8D 6C 24 D1 48 81 EC C0 00 00 00", ClickSynthButtons);
         _clickButton.Enable();
 
         _fireCallbackHook = Svc.Hook.HookFromSignature<FireCallbackDelegate>("E8 ?? ?? ?? ?? 0F B6 E8 8B 44 24 20", CallbackDetour);
@@ -498,7 +498,7 @@ public unsafe static class PreCrafting
 
     private static void ClickSynthButtons(void* thisPtr, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* atkEventData)
     {
-        if (eventType == AtkEventType.ButtonClick && eventParam is 13 or 14 or 15)
+        if (eventType == AtkEventType.ButtonClick && eventParam is 14 or 15 or 16)
         {
             var re = Operations.GetSelectedRecipeEntry();
             var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
