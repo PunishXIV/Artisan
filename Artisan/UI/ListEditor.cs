@@ -126,6 +126,7 @@ internal class ListEditor : Window, IDisposable
     {
         token = source.Token;
         Table = null;
+        P.UniversalsisClient.PlayerWorld = Svc.ClientState.LocalPlayer?.CurrentWorld.RowId;
         if (RegenerateTask == null || RegenerateTask.IsCompleted)
         {
             Svc.Log.Debug($"Starting regeneration");

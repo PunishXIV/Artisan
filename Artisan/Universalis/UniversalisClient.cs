@@ -13,7 +13,7 @@ namespace Artisan.Universalis
     {
         private const string Endpoint = "https://universalis.app/api/v2/";
         private readonly HttpClient httpClient;
-
+        public uint? PlayerWorld;
         public UniversalisClient()
         {
             this.httpClient = new HttpClient
@@ -30,7 +30,7 @@ namespace Artisan.Universalis
 
         public MarketboardData? GetRegionData(ulong ItemId, ref MarketboardData output)
         {
-            var world = Svc.ClientState.LocalPlayer?.CurrentWorld.RowId;
+            var world = PlayerWorld;
             if (world == null)
                 return null;
 
@@ -44,7 +44,7 @@ namespace Artisan.Universalis
 
         public MarketboardData? GetDCData(ulong ItemId, ref MarketboardData output)
         {
-            var world = Svc.ClientState.LocalPlayer?.CurrentWorld.RowId;
+            var world = PlayerWorld;
             if (world == null)
                 return null;
 
