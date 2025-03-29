@@ -429,8 +429,6 @@ namespace Artisan.IPC
 
         public static void RestockFromRetainers(NewCraftingList list)
         {
-            if (GetReachableRetainerBell() == null) return;
-
             Dictionary<int, int> requiredItems = new();
             Dictionary<uint, int> materialList = new();
 

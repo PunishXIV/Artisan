@@ -5,6 +5,7 @@ using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.UI;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility.Raii;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
@@ -90,9 +91,12 @@ namespace Artisan.CraftingLists
                     }
                     else
                     {
-                        if (ImGui.Button("Restock Inventory From Retainers", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
+                        using (ImRaii.Disabled(RetainerInfo.GetReachableRetainerBell() == null))
                         {
-                            Task.Run(() => RetainerInfo.RestockFromRetainers(selectedList));
+                            if (ImGui.Button("Restock Inventory From Retainers", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
+                            {
+                                Task.Run(() => RetainerInfo.RestockFromRetainers(selectedList));
+                            }
                         }
                     }
                 }
