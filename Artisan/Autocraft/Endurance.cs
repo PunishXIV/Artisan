@@ -411,22 +411,22 @@ namespace Artisan.Autocraft
         {
             if (Enable || (CraftingListUI.Processing && !CraftingListFunctions.Paused))
             {
-                foreach (uint errorId in UnableToCraftErrors)
-                {
-                    if (message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == errorId).Text.ExtractText())
-                    {
-                        Svc.Toasts.ShowError($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to unable to craft error.");
-                        DuoLog.Error($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to unable to craft error.");
-                        if (enable)
-                            ToggleEndurance(false);
-                        if (CraftingListUI.Processing)
-                            CraftingListFunctions.Paused = true;
-                        PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), default));
+                //foreach (uint errorId in UnableToCraftErrors)
+                //{
+                //    if (message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == errorId).Text.ExtractText())
+                //    {
+                //        Svc.Toasts.ShowError($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to unable to craft error.");
+                //        DuoLog.Error($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to unable to craft error.");
+                //        if (enable)
+                //            ToggleEndurance(false);
+                //        if (CraftingListUI.Processing)
+                //            CraftingListFunctions.Paused = true;
+                //        PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), default));
 
-                        P.TM.Abort();
-                        CraftingListFunctions.CLTM.Abort();
-                    }
-                }
+                //        P.TM.Abort();
+                //        CraftingListFunctions.CLTM.Abort();
+                //    }
+                //}
 
                 Errors.PushBack(Environment.TickCount64);
                 Svc.Log.Warning($"Error Warnings [{Errors.Count(x => x > Environment.TickCount64 - 10 * 1000)}]: {message}");
