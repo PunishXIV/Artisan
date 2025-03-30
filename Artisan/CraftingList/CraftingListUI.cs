@@ -16,6 +16,7 @@ using ImGuiNET;
 using Lumina.Excel.Sheets;
 using OtterGui;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -27,16 +28,16 @@ namespace Artisan.CraftingLists
     {
         internal static string Search = string.Empty;
         public static unsafe InventoryManager* invManager = InventoryManager.Instance();
-        public static Dictionary<Recipe, bool> CraftableItems = new();
-        internal static Dictionary<int, int> SelectedRecipeRawIngredients = new();
+        public static ConcurrentDictionary<Recipe, bool> CraftableItems = new();
+        internal static ConcurrentDictionary<int, int> SelectedRecipeRawIngredients = new();
         internal static bool keyboardFocus = true;
         internal static string newListName = string.Empty;
         internal static NewCraftingList selectedList = new();
         internal static List<uint> jobs = new();
         internal static List<int> rawIngredientsList = new();
-        internal static Dictionary<int, int> subtableList = new();
+        internal static ConcurrentDictionary<int, int> subtableList = new();
         internal static List<int> listMaterials = new();
-        internal static Dictionary<int, int> listMaterialsNew = new();
+        internal static ConcurrentDictionary<int, int> listMaterialsNew = new();
         public static bool Processing;
         public static uint CurrentProcessedItem;
         public static int CurrentProcessedItemIndex;
@@ -91,7 +92,8 @@ namespace Artisan.CraftingLists
                     }
                     else
                     {
-                        using (ImRaii.Disabled(RetainerInfo.GetReachableRetainerBell() == null))
+                        bool disable = RetainerInfo.GetReachableRetainerBell() == null;
+                        using (ImRaii.Disabled(disable))
                         {
                             if (ImGui.Button("Restock Inventory From Retainers", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
                             {
