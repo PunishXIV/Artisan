@@ -39,6 +39,19 @@ public class MacroSolverSettings
         public bool ExcludeMalleable = false;
         public bool ExcludePrimed = false;
         public bool ExcludeGoodOmen = false;
+        public bool ReplaceOnExclude = false;
+        public Skills ReplacementAction = Skills.None;
+
+        public bool HasExcludeCondition =>  ExcludeNormal ||
+                                            ExcludeGood ||
+                                            ExcludePoor  ||
+                                            ExcludeExcellent ||
+                                            ExcludeCentered ||
+                                            ExcludeSturdy ||
+                                            ExcludePliant||
+                                            ExcludeMalleable ||
+                                            ExcludePrimed ||
+                                            ExcludeGoodOmen;
     }
 
     public List<Macro> Macros = new();
