@@ -377,6 +377,7 @@ namespace Artisan.UI
                         var steps = MacroUI.ParseMacro(_rawMacro);
                         if (steps.Count > 0 && !SelectedMacro.Steps.SequenceEqual(steps))
                         {
+                            selectedStepIndex=steps.Count-1;
                             SelectedMacro.Steps = steps;
                             P.Config.Save();
                             DuoLog.Information($"Macro Updated");
@@ -388,6 +389,7 @@ namespace Artisan.UI
                         var steps = MacroUI.ParseMacro(_rawMacro);
                         if (steps.Count > 0 && !SelectedMacro.Steps.SequenceEqual(steps))
                         {
+                            selectedStepIndex=steps.Count-1;
                             SelectedMacro.Steps = steps;
                             P.Config.Save();
                             DuoLog.Information($"Macro Updated");
