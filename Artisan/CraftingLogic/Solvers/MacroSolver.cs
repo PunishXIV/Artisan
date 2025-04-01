@@ -52,6 +52,27 @@ public class MacroSolver : Solver
             var s = _macro.Steps[_nextStep++];
             var action = s.Action;
 
+            if ((s.ExcludeNormal && step.Condition == Condition.Normal) ||
+                (s.ExcludeGood && step.Condition == Condition.Good) ||
+                (s.ExcludePoor && step.Condition == Condition.Poor) ||
+                (s.ExcludeExcellent && step.Condition == Condition.Excellent) ||
+                (s.ExcludeCentered && step.Condition == Condition.Centered) ||
+                (s.ExcludeSturdy && step.Condition == Condition.Sturdy) ||
+                (s.ExcludePliant && step.Condition == Condition.Pliant) ||
+                (s.ExcludeMalleable && step.Condition == Condition.Malleable) ||
+                (s.ExcludePrimed && step.Condition == Condition.Primed) ||
+                (s.ExcludeGoodOmen && step.Condition == Condition.GoodOmen))
+            {
+                if (s.ReplaceOnExclude)
+                {
+                    action = s.ReplacementAction;
+                }
+                else
+                {
+                    continue;
+                }
+            }
+
             if (_macro.Options.SkipQualityIfMet && step.Quality >= craft.CraftQualityMin3 && ActionIsQuality(action))
             {
                 continue;
@@ -67,19 +88,6 @@ public class MacroSolver : Solver
                 continue;
             }
 
-            if ((s.ExcludeNormal && step.Condition == Condition.Normal) ||
-                (s.ExcludeGood && step.Condition == Condition.Good) ||
-                (s.ExcludePoor && step.Condition == Condition.Poor) ||
-                (s.ExcludeExcellent && step.Condition == Condition.Excellent) ||
-                (s.ExcludeCentered && step.Condition == Condition.Centered) ||
-                (s.ExcludeSturdy && step.Condition == Condition.Sturdy) ||
-                (s.ExcludePliant && step.Condition == Condition.Pliant) ||
-                (s.ExcludeMalleable && step.Condition == Condition.Malleable) ||
-                (s.ExcludePrimed && step.Condition == Condition.Primed) ||
-                (s.ExcludeGoodOmen && step.Condition == Condition.GoodOmen))
-            {
-                continue;
-            }
 
             if (action == Skills.TouchCombo)
             {
