@@ -182,7 +182,7 @@ namespace Artisan.UI
                     for (int i = 0; i < SelectedMacro.Steps.Count; i++)
                     {
                         var step = SelectedMacro.Steps[i];
-                        var selectedAction = ImGui.Selectable($"{i + 1}. {(step.Action == Skills.None ? "Artisan Recommendation" : step.Action.NameOfAction())}{(step.HasExcludeCondition? " | ":"")}{(step.HasExcludeCondition&&step.ReplaceOnExclude?step.ReplacementAction.NameOfAction() : step.HasExcludeCondition?"skip":"")}###selectedAction{i}", i == selectedStepIndex);
+                        var selectedAction = ImGui.Selectable($"{i + 1}. {(step.Action == Skills.None ? "Artisan Recommendation" : step.Action.NameOfAction())}{(step.HasExcludeCondition? " | ":"")}{(step.HasExcludeCondition&&step.ReplaceOnExclude?step.ReplacementAction.NameOfAction() : step.HasExcludeCondition?"Skip":"")}###selectedAction{i}", i == selectedStepIndex);
                         if (selectedAction)
                             selectedStepIndex = i;
                     }
