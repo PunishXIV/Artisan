@@ -9,8 +9,8 @@
   "Tags": [
     "crafting"
   ],
-  "Changelog": "",
+  "Changelog": "- Adds new 'Replace instead of Skipping' option for macros (by Erisen8974)\n- Fix crashing when lists menu is open with a list selected and leaving an area.",
   "RepoUrl": "https://github.com/PunishXIV/Artisan",
   "DalamudApiLevel": 12,
-  "DownloadLinkTesting" : "https://love.puni.sh/plugins/Artisan/Testing/latest.zip"
+  "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip"
 }

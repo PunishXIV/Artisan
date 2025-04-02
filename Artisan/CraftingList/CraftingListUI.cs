@@ -9,6 +9,7 @@ using Dalamud.Interface.Utility.Raii;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using ECommons.GameHelpers;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -92,7 +93,7 @@ namespace Artisan.CraftingLists
                     }
                     else
                     {
-                        bool disable = RetainerInfo.GetReachableRetainerBell() == null;
+                        bool disable = !Player.Available ? false : RetainerInfo.GetReachableRetainerBell() == null;
                         using (ImRaii.Disabled(disable))
                         {
                             if (ImGui.Button("Restock Inventory From Retainers", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
