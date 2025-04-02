@@ -105,7 +105,7 @@ namespace Artisan.CraftingLogic.Solvers
                 if (CalculateNewProgress(craft, step, Skills.BasicSynthesis) >= craft.CraftProgress - Simulator.BaseProgress(craft))
                     return Skills.BasicSynthesis;
             }
-            if (Simulator.CanUseAction(craft, step, Skills.Groundwork) && step.Durability >= Simulator.GetDurabilityCost(step, Skills.Groundwork) && !carefulCanFinish)
+            if (Simulator.CanUseAction(craft, step, Skills.Groundwork) && step.Durability > Simulator.GetDurabilityCost(step, Skills.Groundwork) && !carefulCanFinish)
             {
                 return Skills.Groundwork;
             }
