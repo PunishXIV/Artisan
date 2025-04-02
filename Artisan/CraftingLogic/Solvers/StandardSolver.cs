@@ -1,4 +1,5 @@
 ﻿using ECommons.DalamudServices;
+using System;
 using System.Collections.Generic;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 using Skills = Artisan.RawInformation.Character.Skills;
@@ -98,14 +99,13 @@ namespace Artisan.CraftingLogic.Solvers
                 return Skills.PrudentSynthesis;
             }
 
-            bool carefulCanFinish = Simulator.CanUseAction(craft, step, Skills.CarefulSynthesis) && CanFinishCraft(craft, step, Skills.CarefulSynthesis) && step.FinalAppraisalLeft > 0;
-
             if (!_qualityStarted && !progOnly)
             {
                 if (CalculateNewProgress(craft, step, Skills.BasicSynthesis) >= craft.CraftProgress - Simulator.BaseProgress(craft))
                     return Skills.BasicSynthesis;
             }
-            if (Simulator.CanUseAction(craft, step, Skills.Groundwork) && step.Durability >= Simulator.GetDurabilityCost(step, Skills.Groundwork) && !carefulCanFinish)
+
+            if (Simulator.CanUseAction(craft, step, Skills.Groundwork) && step.Durability > Simulator.GetDurabilityCost(step, Skills.Groundwork))
             {
                 return Skills.Groundwork;
             }
@@ -279,7 +279,8 @@ namespace Artisan.CraftingLogic.Solvers
 
         private static bool WillActFail(CraftState craft, StepState step, Skills act)
         {
-            return step.Durability - Simulator.GetDurabilityCost(step, act) <= 0 && CalculateNewProgress(craft, step, act) < craft.CraftProgress;
+            bool result = step.Durability - Simulator.GetDurabilityCost(step, act) <= 0 && CalculateNewProgress(craft, step, act) < craft.CraftProgress;
+            return result;
         }
 
         private static bool GoingForQuality(CraftState craft, StepState step, out int maxQuality)
@@ -375,9 +376,9 @@ namespace Artisan.CraftingLogic.Solvers
             }
         }
 
-        public static int CalculateNewProgress(CraftState craft, StepState step, Skills action) => step.Progress + Simulator.CalculateProgress(craft, step, action);
+        public static int CalculateNewProgress(CraftState craft, StepState step, Skills action) => step.FinalAppraisalLeft > 0 ? Math.Min(step.Progress + Simulator.CalculateProgress(craft, step, action), craft.CraftProgress -1) : step.Progress + Simulator.CalculateProgress(craft, step, action);
         public static int CalculateNewQuality(CraftState craft, StepState step, Skills action) => step.Quality + Simulator.CalculateQuality(craft, step, action);
-        public static bool CanFinishCraft(CraftState craft, StepState step, Skills act) => CalculateNewProgress(craft, step, act) >= craft.CraftProgress && step.FinalAppraisalLeft == 0;
+        public static bool CanFinishCraft(CraftState craft, StepState step, Skills act) => CalculateNewProgress(craft, step, act) >= craft.CraftProgress;
 
         public static int GreatStridesByregotCombo(CraftState craft, StepState step)
         {
