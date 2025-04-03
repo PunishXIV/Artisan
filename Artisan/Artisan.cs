@@ -163,7 +163,7 @@ public unsafe class Artisan : IDalamudPlugin
 
     private void Condition_ConditionChange(ConditionFlag flag, bool value)
     {
-        
+
         if (P.Config.RequestToStopDuty)
         {
             if (flag == ConditionFlag.WaitingForDutyFinder && value)
@@ -300,15 +300,34 @@ public unsafe class Artisan : IDalamudPlugin
                         }
                         else
                         {
-                            DuoLog.Error("List ID does not exist.");
+                            DuoLog.Error("List does not exist by ID.");
+                            return;
+                        }
+                    }
+                    else if (P.Config.NewCraftingLists.Any(x => x.Name.Equals(subcommands[1], StringComparison.CurrentCultureIgnoreCase)))
+                    {
+                        if (subcommands.Length >= 3 && subcommands[2].ToLower() == "start")
+                        {
+                            if (!Endurance.Enable)
+                            {
+                                CraftingListUI.selectedList = P.Config.NewCraftingLists.First(x => x.Name.Equals(subcommands[1], StringComparison.CurrentCultureIgnoreCase));
+                                CraftingListUI.StartList();
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            CraftingListUI.selectedList = P.Config.NewCraftingLists.First(x => x.Name.Equals(subcommands[1], StringComparison.CurrentCultureIgnoreCase));
+                            ListEditor editor = new(CraftingListUI.selectedList.ID);
                             return;
                         }
                     }
                     else
                     {
-                        DuoLog.Error("Unable to parse ID as a number.");
+                        DuoLog.Error("List does not exist by name.");
                         return;
                     }
+
                 }
                 else
                 {
