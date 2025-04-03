@@ -68,8 +68,8 @@ public unsafe class Artisan : IDalamudPlugin
         {
             HelpMessage = "Opens the Artisan menu.\n" +
             "/artisan lists → Open Lists.\n" +
-            "/artisan lists <ID> → Opens specific list by ID.\n" +
-            "/artisan lists <ID> start → Starts specific list by ID.\n" +
+            "/artisan lists <ID or Name> → Opens specific list by ID.\n" +
+            "/artisan lists <ID or Name> start → Starts specific list by ID.\n" +
             "/artisan macros → Open Macros.\n" +
             "/artisan macros <ID> → Opens specific macro by ID.\n" +
             "/artisan endurance → Open Endurance.\n" +
