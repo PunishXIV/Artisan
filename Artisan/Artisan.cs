@@ -68,8 +68,8 @@ public unsafe class Artisan : IDalamudPlugin
         {
             HelpMessage = "Opens the Artisan menu.\n" +
             "/artisan lists → Open Lists.\n" +
-            "/artisan lists <ID> → Opens specific list by ID.\n" +
-            "/artisan lists <ID> start → Starts specific list by ID.\n" +
+            "/artisan lists <ID or Name> → Opens specific list by ID.\n" +
+            "/artisan lists <ID or Name> start → Starts specific list by ID.\n" +
             "/artisan macros → Open Macros.\n" +
             "/artisan macros <ID> → Opens specific macro by ID.\n" +
             "/artisan endurance → Open Endurance.\n" +
@@ -163,7 +163,7 @@ public unsafe class Artisan : IDalamudPlugin
 
     private void Condition_ConditionChange(ConditionFlag flag, bool value)
     {
-        
+
         if (P.Config.RequestToStopDuty)
         {
             if (flag == ConditionFlag.WaitingForDutyFinder && value)
@@ -300,14 +300,43 @@ public unsafe class Artisan : IDalamudPlugin
                         }
                         else
                         {
-                            DuoLog.Error("List ID does not exist.");
+                            DuoLog.Error("List does not exist by ID.");
                             return;
                         }
                     }
                     else
                     {
-                        DuoLog.Error("Unable to parse ID as a number.");
-                        return;
+                        // Check if the last argument is "start" and we want to start the list
+                        bool isStartCommand = subcommands.Length >= 3 && subcommands[^1].ToLower() == "start";
+                        
+                        string listNameToFind = string.Join(" ", subcommands.Skip(1).Take(isStartCommand ? subcommands.Length - 2 : subcommands.Length - 1));
+                        
+                        var matchingList = P.Config.NewCraftingLists.FirstOrDefault(x => 
+                            x.Name.Equals(listNameToFind, StringComparison.CurrentCultureIgnoreCase));
+                            
+                        if (matchingList != null)
+                        {
+                            if (isStartCommand)
+                            {
+                                if (!Endurance.Enable)
+                                {
+                                    CraftingListUI.selectedList = matchingList;
+                                    CraftingListUI.StartList();
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                CraftingListUI.selectedList = matchingList;
+                                ListEditor editor = new(CraftingListUI.selectedList.ID);
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            DuoLog.Error("List does not exist by name.");
+                            return;
+                        }
                     }
                 }
                 else
