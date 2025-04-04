@@ -304,30 +304,40 @@ public unsafe class Artisan : IDalamudPlugin
                             return;
                         }
                     }
-                    else if (P.Config.NewCraftingLists.Any(x => x.Name.Equals(subcommands[1], StringComparison.CurrentCultureIgnoreCase)))
+                    else
                     {
-                        if (subcommands.Length >= 3 && subcommands[2].ToLower() == "start")
+                        // Check if the last argument is "start" and we want to start the list
+                        bool isStartCommand = subcommands.Length >= 3 && subcommands[^1].ToLower() == "start";
+                        
+                        string listNameToFind = string.Join(" ", subcommands.Skip(1).Take(isStartCommand ? subcommands.Length - 2 : subcommands.Length - 1));
+                        
+                        var matchingList = P.Config.NewCraftingLists.FirstOrDefault(x => 
+                            x.Name.Equals(listNameToFind, StringComparison.CurrentCultureIgnoreCase));
+                            
+                        if (matchingList != null)
                         {
-                            if (!Endurance.Enable)
+                            if (isStartCommand)
                             {
-                                CraftingListUI.selectedList = P.Config.NewCraftingLists.First(x => x.Name.Equals(subcommands[1], StringComparison.CurrentCultureIgnoreCase));
-                                CraftingListUI.StartList();
+                                if (!Endurance.Enable)
+                                {
+                                    CraftingListUI.selectedList = matchingList;
+                                    CraftingListUI.StartList();
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                CraftingListUI.selectedList = matchingList;
+                                ListEditor editor = new(CraftingListUI.selectedList.ID);
                                 return;
                             }
                         }
                         else
                         {
-                            CraftingListUI.selectedList = P.Config.NewCraftingLists.First(x => x.Name.Equals(subcommands[1], StringComparison.CurrentCultureIgnoreCase));
-                            ListEditor editor = new(CraftingListUI.selectedList.ID);
+                            DuoLog.Error("List does not exist by name.");
                             return;
                         }
                     }
-                    else
-                    {
-                        DuoLog.Error("List does not exist by name.");
-                        return;
-                    }
-
                 }
                 else
                 {
