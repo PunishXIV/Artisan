@@ -94,11 +94,6 @@ namespace Artisan.CraftingLogic.Solvers
                 return Skills.IntensiveSynthesis;
             }
 
-            if (Simulator.CanUseAction(craft, step, Skills.PrudentSynthesis) && step.RemainingCP < 88) // TODO: what's up with this cp condition?
-            {
-                return Skills.PrudentSynthesis;
-            }
-
             if (!_qualityStarted && !progOnly)
             {
                 if (CalculateNewProgress(craft, step, Skills.BasicSynthesis) >= craft.CraftProgress - Simulator.BaseProgress(craft))
@@ -108,6 +103,11 @@ namespace Artisan.CraftingLogic.Solvers
             if (Simulator.CanUseAction(craft, step, Skills.Groundwork) && step.Durability > Simulator.GetDurabilityCost(step, Skills.Groundwork))
             {
                 return Skills.Groundwork;
+            }
+
+            if (Simulator.CanUseAction(craft, step, Skills.PrudentSynthesis))
+            {
+                return Skills.PrudentSynthesis;
             }
 
             if (Simulator.CanUseAction(craft, step, Skills.CarefulSynthesis))
