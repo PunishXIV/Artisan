@@ -87,10 +87,18 @@ namespace Artisan.UI
         {
             if (DalamudInfo.IsOnStaging())
             {
-                ImGui.Text($"Artisan is not designed to work on non-release versions of Dalamud. Please type /xlbranch, click 'release' and then 'Pick & Restart'.");
-                return;
-            }
+                var scale = ImGui.GetIO().FontGlobalScale;
+                ImGui.GetIO().FontGlobalScale = scale * 1.5f;
+                using (var f = ImRaii.PushFont(ImGui.GetFont()))
+                {
+                    ImGuiEx.TextWrapped($"Listen buddy, you're on Dalamud staging, there's every chance any problems you might encounter is specific to Dalamud's testing and not Artisan. I don't make this plugin to work on staging, so don't expect any fixes unless the problem makes it to Dalamud release.");
+                    ImGui.Separator();
 
+                    ImGui.Spacing();
+                    ImGui.GetIO().FontGlobalScale = scale;
+                }
+
+            }
             var region = ImGui.GetContentRegionAvail();
             var itemSpacing = ImGui.GetStyle().ItemSpacing;
 
@@ -230,7 +238,8 @@ namespace Artisan.UI
                                 break;
                             default:
                                 break;
-                        };
+                        }
+                        ;
                     }
                 }
             }
@@ -914,7 +923,7 @@ namespace Artisan.UI
                 {
                     ImGuiEx.ImGuiLineCentered("###EnduranceNewSetting", () =>
                     {
-                        ImGui.Image(img.ImGuiHandle, new Vector2(img.Width,img.Height));
+                        ImGui.Image(img.ImGuiHandle, new Vector2(img.Width, img.Height));
                     });
                 }
 
