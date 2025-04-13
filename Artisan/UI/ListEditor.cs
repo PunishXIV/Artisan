@@ -236,6 +236,9 @@ internal class ListEditor : Window, IDisposable
 
             if (RetainerInfo.AToolsInstalled && !RetainerInfo.AToolsEnabled)
                 ImGuiEx.Text(ImGuiColors.DalamudYellow, $"Please enable Allagan Tools for retainer features.");
+
+            if (RetainerInfo.AToolsEnabled)
+                ImGuiEx.Text(ImGuiColors.DalamudYellow, $"You have turned off Allagan Tools integration.");
         }
 
         if (ImGui.BeginTabBar("CraftingListEditor", ImGuiTabBarFlags.None))
@@ -649,7 +652,7 @@ internal class ListEditor : Window, IDisposable
 
         if (P.Config.ShowOnlyCraftable && RetainerInfo.CacheBuilt)
         {
-            foreach (var recipe in CraftingListUI.CraftableItems.Where(x => x.Value).Select(x => x.Key).Where(x => Regex.Match(x.ItemResult.Value.Name.GetText(true), Search).Success))
+            foreach (var recipe in CraftingListUI.CraftableItems.Where(x => x.Value).Select(x => x.Key).Where(x => Regex.Match(x.ItemResult.Value.Name.GetText(true), Search, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase).Success))
             {
                 ImGui.PushID((int)recipe.RowId);
                 if (!RecipeLabels.ContainsKey(recipe.RowId))
@@ -675,7 +678,7 @@ internal class ListEditor : Window, IDisposable
                 try
                 {
                     if (recipe.ItemResult.RowId == 0) continue;
-                    if (!string.IsNullOrEmpty(Search) && !Regex.Match(recipe.ItemResult.Value.Name.GetText(true), Search).Success) continue;
+                    if (!string.IsNullOrEmpty(Search) && !Regex.Match(recipe.ItemResult.Value.Name.GetText(true), Search, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase).Success) continue;
                     if (!RecipeLabels.ContainsKey(recipe.RowId))
                     {
                         RecipeLabels[recipe.RowId] = $"{recipe.ItemResult.Value.Name.ToDalamudString()} ({LuminaSheets.ClassJobSheet[recipe.CraftType.RowId + 8].Abbreviation} {recipe.RecipeLevelTable.Value.ClassJobLevel})";
