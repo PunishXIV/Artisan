@@ -60,7 +60,7 @@ public unsafe struct ItemStats
         Data = Svc.Data.GetExcelSheet<Item>()?.GetRow(ItemId);
         if (Data == null)
             return;
-
+         
         foreach (var p in Data.Value.BaseParams())
         {
             if (Array.IndexOf(CharacterStatsUtils.ParamIds, p.BaseParam.RowId) is var stat && stat >= 0)

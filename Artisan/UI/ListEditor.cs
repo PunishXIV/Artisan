@@ -90,6 +90,8 @@ internal class ListEditor : Window, IDisposable
 
     IngredientHelpers IngredientHelper = new();
 
+    private bool hqSim = false;
+
     public ListEditor(int listId)
         : base($"List Editor###{listId}")
     {
@@ -1287,7 +1289,9 @@ internal class ListEditor : Window, IDisposable
             P.Config.Save();
         }
 
-        var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor);
+        ImGui.Checkbox($"Assume Max Starting Quality (for simulator)", ref hqSim);
+
+        var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor, hqSim);
         if (!recipe.IsExpert)
             ImGuiEx.TextWrapped(hintColor, solverHint);
         else
