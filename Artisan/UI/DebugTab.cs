@@ -437,6 +437,8 @@ namespace Artisan.UI
                 var startingQuality = Calculations.GetStartingQuality(recipe.Value, e->GetAssignedHQIngredients());
                 using var n2 = ImRaii.TreeNode($"Starting quality: {startingQuality}/{Calculations.RecipeMaxQuality(recipe.Value)}", ImGuiTreeNodeFlags.Leaf);
             }
+
+            Util.ShowObject(recipe);
         }
 
         private static void DrawEquippedGear()

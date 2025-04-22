@@ -276,6 +276,12 @@ public unsafe static class PreCrafting
                     Svc.Log.Debug("Closing recipe menu to exit crafting state");
                     Callback.Fire(&addon->AtkUnitBase, true, -1);
                 }
+                var addon2 = (AtkUnitBase*)Svc.GameGui.GetAddonByName("WKSRecipeNotebook");
+                if (addon2 != null && addon2->IsVisible)
+                {
+                    Svc.Log.Debug("Closing recipe menu to exit crafting state");
+                    Callback.Fire(addon2, true, -1);
+                }
                 return TaskResult.Retry;
         }
 
@@ -446,6 +452,7 @@ public unsafe static class PreCrafting
 
     public static TaskResult TaskSelectRecipe(Recipe recipe)
     {
+        if (recipe.Number == 0) return TaskResult.Done;
         var re = Operations.GetSelectedRecipeEntry();
         if (re != null && re->RecipeId == recipe.RowId)
             return TaskResult.Done;

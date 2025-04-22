@@ -164,6 +164,11 @@ namespace Artisan.CraftingLists
             return TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) && addon->AtkUnitBase.IsVisible && Operations.GetSelectedRecipeEntry() != null;
         }
 
+        public static unsafe bool CosmicLogOpen()
+        {
+            return TryGetAddonByName<AtkUnitBase>("WKSRecipeNotebook", out var cosmicaddon) && cosmicaddon->IsVisible;
+        }
+
         public static unsafe void OpenRecipeByID(uint recipeID, bool skipThrottle = false)
         {
             if (Crafting.CurState != Crafting.State.IdleNormal) return;
@@ -457,6 +462,18 @@ namespace Artisan.CraftingLists
             var recipe = Operations.GetSelectedRecipeEntry();
             if (recipe == null)
                 return false;
+
+            if (TryGetAddonByName<AtkUnitBase>("WKSRecipeNotebook", out var cosmicAddon) &&
+                cosmicAddon->IsVisible)
+            {
+                var hqBtn = cosmicAddon->UldManager.NodeList[17]->GetAsAtkComponentButton();
+                var nqBtn = cosmicAddon->UldManager.NodeList[18]->GetAsAtkComponentButton();
+
+                nqBtn->ClickAddonButton(cosmicAddon);
+                hqBtn->ClickAddonButton(cosmicAddon);
+
+                return true;
+            }
 
             if (TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) &&
                 addon->AtkUnitBase.IsVisible &&

@@ -5,7 +5,9 @@ using ECommons.Automation;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using Lumina.Excel.Sheets;
 using System;
+using static ECommons.GenericHelpers;
 
 namespace Artisan.GameInterop;
 
@@ -121,14 +123,28 @@ public static unsafe class Operations
                 return false;
         }
 
-        var addon = (AddonRecipeNote*)Svc.GameGui.GetAddonByName("RecipeNote");
-        if (addon == null)
-            return false;
+        if (TryGetAddonByName<AtkUnitBase>("WKSRecipeNotebook", out var cosmicAddon))
+        {
+            if (cosmicAddon == null)
+                return false;
 
-        Svc.Log.Debug($"Starting actual craft");
-        Callback.Fire(&addon->AtkUnitBase, true, 8);
-        PreCrafting.Tasks.Clear();
-        return true;
+            Svc.Log.Debug($"Starting actual cosmic craft");
+            Callback.Fire(cosmicAddon, true, 6);
+            PreCrafting.Tasks.Clear();
+            return true;
+
+        }
+        else
+        {
+            var addon = (AddonRecipeNote*)Svc.GameGui.GetAddonByName("RecipeNote");
+            if (addon == null)
+                return false;
+
+            Svc.Log.Debug($"Starting actual craft");
+            Callback.Fire(&addon->AtkUnitBase, true, 8);
+            PreCrafting.Tasks.Clear();
+            return true;
+        }
     }
 
     // get recipe currently selected in recipenote, with all the necessary safety checks

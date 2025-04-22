@@ -360,7 +360,7 @@ namespace Artisan.Autocraft
                     {
                         PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromMilliseconds(200)));
 
-                        if (!CraftingListFunctions.RecipeWindowOpen()) return;
+                        if (!CraftingListFunctions.RecipeWindowOpen() && !CraftingListFunctions.CosmicLogOpen()) return;
 
                         if (type == PreCrafting.CraftType.Quick)
                         {
@@ -370,6 +370,7 @@ namespace Artisan.Autocraft
                         else if (type == PreCrafting.CraftType.Normal)
                         {
                             P.TM.DelayNext(200);
+
                             if (P.Config.MaxQuantityMode)
                                 P.TM.Enqueue(() => CraftingListFunctions.SetIngredients(), "EnduranceSetIngredientsNonLayout");
                             else
@@ -400,6 +401,7 @@ namespace Artisan.Autocraft
                                     FailedStarts.PushBack(Environment.TickCount64);
                                 }
                             });
+
                         }
                     }
 
