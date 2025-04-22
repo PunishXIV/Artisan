@@ -50,15 +50,14 @@ internal static class SimulatorUIVeynVersion
     public static void Draw()
     {
         var curRecipe = GetCurrentRecipe();
+        if (curRecipe != null && curRecipe.Value.RowId != _selectedRecipe?.RowId)
+            SetSelectedRecipe(curRecipe);
 
         if (_selectedRecipe == null || _selectedCraft == null)
         {
             ImGui.TextUnformatted($"Please select a recipe to use simulator");
             return;
         }
-
-        if (curRecipe != null && curRecipe.Value.RowId != _selectedRecipe.Value.RowId)
-            SetSelectedRecipe(curRecipe);
 
         DrawRecipeInfo(_selectedRecipe.Value, _selectedCraft);
         DrawStatistics(_selectedCraft);
@@ -67,7 +66,7 @@ internal static class SimulatorUIVeynVersion
 
     private static void DrawRecipeInfo(Recipe r, CraftState craft)
     {
-        using var n = ImRaii.TreeNode($"Recipe: #{r.RowId} {r.CraftType.RowId + Job.CRP} '{r.ItemResult.Value.Name}', solver: {_selectedSolver.Name}###recipe");
+        using var n = ImRaii.TreeNode($"Recipe: #{r.RowId} {r.CraftType.RowId + Job.CRP} '{r.ItemResult.Value.Name.ToDalamudString()}', solver: {_selectedSolver.Name}###recipe");
         if (!n)
             return;
 

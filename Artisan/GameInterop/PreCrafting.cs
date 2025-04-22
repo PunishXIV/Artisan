@@ -44,7 +44,7 @@ public unsafe static class PreCrafting
 
     static PreCrafting()
     {
-        _clickButton = Svc.Hook.HookFromSignature<ClickSynthesisButton>("40 55 53 56 57 41 57 48 8D 6C 24 ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 0F 48 8B 7D 7F", ClickSynthButtons);
+        _clickButton = Svc.Hook.HookFromSignature<ClickSynthesisButton>("40 55 53 56 57 41 56 48 8D 6C 24 D1 48 81 EC C0 00 00 00", ClickSynthButtons);
         _clickButton.Enable();
 
         _fireCallbackHook = Svc.Hook.HookFromSignature<FireCallbackDelegate>("E8 ?? ?? ?? ?? 0F B6 E8 8B 44 24 20", CallbackDetour);
@@ -106,7 +106,7 @@ public unsafe static class PreCrafting
     {
         try
         {
-            Svc.Log.Debug($"Starting {type} crafting: {recipe.RowId} '{recipe.ItemResult.Value.Name}'");
+            Svc.Log.Debug($"Starting {type} crafting: {recipe.RowId} '{recipe.ItemResult.Value.Name.ToDalamudString()}'");
 
             var requiredClass = Job.CRP + recipe.CraftType.RowId;
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId);
@@ -120,12 +120,12 @@ public unsafe static class PreCrafting
             // handle errors when we're forbidden from rectifying them automatically
             if (P.Config.DontEquipItems && needClassChange)
             {
-                DuoLog.Error($"Can't craft {recipe.ItemResult.Value.Name}: wrong class, {requiredClass} needed");
+                DuoLog.Error($"Can't craft {recipe.ItemResult.Value.Name.ToDalamudString()}: wrong class, {requiredClass} needed");
                 return;
             }
             if (P.Config.DontEquipItems && needEquipItem)
             {
-                DuoLog.Error($"Can't craft {recipe.ItemResult.Value.Name}: required item {recipe.ItemRequired.Value.Name} not equipped");
+                DuoLog.Error($"Can't craft {recipe.ItemResult.Value.Name.ToDalamudString()}: required item {recipe.ItemRequired.Value.Name} not equipped");
                 return;
             }
             if (P.Config.AbortIfNoFoodPot && needConsumables && !hasConsumables)
@@ -151,7 +151,7 @@ public unsafe static class PreCrafting
             {
                 List<string> missingIngredients = MissingIngredients(recipe);
 
-                DuoLog.Error($"Not all ingredients for {recipe.ItemResult.Value.Name} found.\r\nMissing: {string.Join(", ", missingIngredients)}");
+                DuoLog.Error($"Not all ingredients for {recipe.ItemResult.Value.Name.ToDalamudString()} found.\r\nMissing: {string.Join(", ", missingIngredients)}");
                 return;
             }
 
@@ -185,7 +185,7 @@ public unsafe static class PreCrafting
     {
         List<string> missingConsumables = MissingConsumables(config);
 
-        DuoLog.Error($"Can't craft {recipe.ItemResult.Value.Name}: required consumables not up and missing {string.Join(", ", missingConsumables)}");
+        DuoLog.Error($"Can't craft {recipe.ItemResult.Value.Name.ToDalamudString()}: required consumables not up and missing {string.Join(", ", missingConsumables)}");
     }
 
     internal static bool NeedsConsumablesCheck(CraftType type, RecipeConfig? config)
@@ -498,12 +498,12 @@ public unsafe static class PreCrafting
 
     private static void ClickSynthButtons(void* thisPtr, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* atkEventData)
     {
-        if (eventType == AtkEventType.ButtonClick && eventParam is 13 or 14 or 15)
+        if (eventType == AtkEventType.ButtonClick && eventParam is 14 or 15 or 16)
         {
             var re = Operations.GetSelectedRecipeEntry();
             var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
             if (recipe != null)
-                StartCrafting(recipe.Value, eventParam is 13 ? CraftType.Normal : eventParam is 14 ? CraftType.Quick : CraftType.Trial);
+                StartCrafting(recipe.Value, eventParam is 14 ? CraftType.Normal : eventParam is 15 ? CraftType.Quick : CraftType.Trial);
             else
                 DuoLog.Error($"Somehow recipe is null. Please report this on the Discord.");
         }

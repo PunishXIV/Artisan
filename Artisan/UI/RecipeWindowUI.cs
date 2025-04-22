@@ -124,7 +124,7 @@ namespace Artisan
 
                     if (Search.Length > 0 && !searched)
                     {
-                        if (LuminaSheets.RecipeSheet.Values.Count(x => Regex.Match(x.ItemResult.Value.Name.ToString(), Search, RegexOptions.IgnoreCase).Success) > 0)
+                        if (LuminaSheets.RecipeSheet.Values.Count(x => Regex.Match(x.ItemResult.Value.Name.ToDalamudString().ToString(), Search, RegexOptions.IgnoreCase).Success) > 0)
                         {
                             ImGui.Begin($"###Search{searchNode->NodeId}", ImGuiWindowFlags.NoScrollbar
                                 | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
@@ -134,10 +134,10 @@ namespace Artisan
                             ImGui.SetNextItemWidth(size.Length() - 12f);
 
                             int results = 0;
-                            foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => Regex.Match(x.ItemResult.Value.Name.ToString(), Search, RegexOptions.IgnoreCase).Success))
+                            foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => Regex.Match(x.ItemResult.Value.Name.ToDalamudString().ToString(), Search, RegexOptions.IgnoreCase).Success))
                             {
                                 if (results >= 24) continue;
-                                var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name} ({(Job)recipe.CraftType.RowId + 8})###{recipe.RowId}");
+                                var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.ToDalamudString()} ({(Job)recipe.CraftType.RowId + 8})###{recipe.RowId}");
                                 if (selected)
                                 {
                                     var orid = Operations.GetSelectedRecipeEntry();
@@ -743,7 +743,7 @@ namespace Artisan
                 if (Endurance.RecipeID != 0)
                 {
                     var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
-                    ImGuiEx.ImGuiLineCentered("###RecipeWindowRecipeName", () => { ImGuiEx.TextUnderlined($"{recipe.ItemResult.Value.Name}"); });
+                    ImGuiEx.ImGuiLineCentered("###RecipeWindowRecipeName", () => { ImGuiEx.TextUnderlined($"{recipe.ItemResult.Value.Name.ToDalamudString().ToString()}"); });
                     var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
                     var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.RowId);
                     stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));

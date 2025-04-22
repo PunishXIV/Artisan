@@ -10,8 +10,6 @@ using System.Runtime.CompilerServices;
 using Lumina.Excel.Sheets;
 using Artisan.RawInformation;
 using Lumina.Excel;
-using SharpDX.Direct2D1;
-using System.Linq;
 
 namespace Artisan.GameInterop;
 
@@ -31,7 +29,7 @@ public unsafe static class CharacterStatsUtils
             var row = sheet.GetRow(ParamIds[(int)stat])!;
             for (int i = 1; i < 23; ++i)
             {
-                res[i, (int)stat] = row.ReadInt32Column(i + 3);
+                res[i, (int)stat] = row.ReadInt16Column(i + 3);
             }
         }
         return res;
@@ -56,13 +54,13 @@ public unsafe struct ItemStats
     public ItemStats(uint ItemId, bool hq, Span<ushort> materia, Span<byte> materiaGrades)
     {
         HQ = hq;
-        if (ItemId == 0)
+        if (ItemId == 0 || ItemId == 8575) //Eternity ring is weird?
             return;
 
         Data = Svc.Data.GetExcelSheet<Item>()?.GetRow(ItemId);
         if (Data == null)
             return;
-
+         
         foreach (var p in Data.Value.BaseParams())
         {
             if (Array.IndexOf(CharacterStatsUtils.ParamIds, p.BaseParam.RowId) is var stat && stat >= 0)
@@ -94,6 +92,10 @@ public unsafe struct ItemStats
 
             var materiaRow = sheetMat?.GetRow(materia[i]);
             if (materiaRow == null)
+                continue;
+
+            var baseParamRow = materiaRow.Value.BaseParam.ValueNullable;
+            if (baseParamRow is null || baseParamRow.Value.RowId == 0)
                 continue;
 
             var stat = Array.IndexOf(CharacterStatsUtils.ParamIds, materiaRow.Value.BaseParam.RowId);

@@ -1,4 +1,4 @@
-﻿using Artisan.Autocraft;
+using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.FCWorkshops;
 using Artisan.RawInformation;
@@ -8,7 +8,6 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using Dalamud.Utility;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
@@ -17,7 +16,6 @@ using PunishLib.ImGuiMethods;
 using System;
 using System.IO;
 using System.Numerics;
-using System.Windows.Forms;
 using ThreadLoadImageHandler = ECommons.ImGuiMethods.ThreadLoadImageHandler;
 
 namespace Artisan.UI
@@ -87,12 +85,28 @@ namespace Artisan.UI
 
         public override void Draw()
         {
+//<<<<<<< aleksi234-patch-1
             //if (DalamudInfo.IsOnStaging())
             //{
             //    ImGui.Text($"Artisan is not designed to work on non-release versions of Dalamud. Please type /xlbranch, click 'release' and then 'Pick & Restart'.");
             //    return;
             //}
+            //=======
+            //if (DalamudInfo.IsOnStaging())
+            //{
+            //    var scale = ImGui.GetIO().FontGlobalScale;
+            //    ImGui.GetIO().FontGlobalScale = scale * 1.5f;
+            //    using (var f = ImRaii.PushFont(ImGui.GetFont()))
+            //    {
+            //        ImGuiEx.TextWrapped($"Listen buddy, you're on Dalamud staging, there's every chance any problems you might encounter is specific to Dalamud's testing and not Artisan. I don't make this plugin to work on staging, so don't expect any fixes unless the problem makes it to Dalamud release.");
+            //        ImGui.Separator();
 
+            //        ImGui.Spacing();
+            //        ImGui.GetIO().FontGlobalScale = scale;
+            //    }
+main
+
+            }
             var region = ImGui.GetContentRegionAvail();
             var itemSpacing = ImGui.GetStyle().ItemSpacing;
 
@@ -232,7 +246,8 @@ namespace Artisan.UI
                                 break;
                             default:
                                 break;
-                        };
+                        }
+                        ;
                     }
                 }
             }
@@ -670,10 +685,14 @@ namespace Artisan.UI
                     ImGui.Image(P.Config.ExpertSolverConfig.expertIcon.ImGuiHandle, new(P.Config.ExpertSolverConfig.expertIcon.Width * ImGuiHelpers.GlobalScaleSafe, ImGui.GetItemRectSize().Y), new(0, 0), new(1, 1), new(0.94f, 0.57f, 0f, 1f));
                 }
             }
-            if (ImGui.CollapsingHeader("Script Solver Settings"))
+
+            using (ImRaii.Disabled())
             {
-                if (P.Config.ScriptSolverConfig.Draw())
-                    P.Config.Save();
+                if (ImGui.CollapsingHeader("Script Solver Settings (Currently Disabled)"))
+                {
+                    if (P.Config.ScriptSolverConfig.Draw())
+                        P.Config.Save();
+                }
             }
             if (ImGui.CollapsingHeader("UI Settings"))
             {
@@ -735,7 +754,7 @@ namespace Artisan.UI
 
                 if (IconButtons.IconTextButton(FontAwesomeIcon.Clipboard, "Copy Theme"))
                 {
-                    Clipboard.SetText("DS1H4sIAAAAAAAACq1YS3PbNhD+Kx2ePR6AeJG+xXYbH+KOJ3bHbW60REusaFGlKOXhyX/v4rEACEqumlY+ECD32/cuFn7NquyCnpOz7Cm7eM1+zy5yvfnDPL+fZTP4at7MHVntyMi5MGTwBLJn+HqWLZB46Ygbx64C5kQv/nRo8xXQ3AhZZRdCv2jdhxdHxUeqrJO3Ftslb5l5u/Fa2rfEvP0LWBkBPQiSerF1Cg7wApBn2c5wOMv2juNn9/zieH09aP63g+Kqyr1mI91mHdj5mj3UX4bEG+b5yT0fzRPoNeF1s62e2np+EuCxWc+7z5cLr1SuuCBlkTvdqBCEKmaQxCHJeZmXnFKlgMHVsmnnEZ5IyXMiFUfjwt6yCHvDSitx1212m4gHV0QURY4saMEYl6Q4rsRl18/rPuCZQ+rFJxeARwyAJb5fVmD4NBaJEK3eL331UscuAgflOcY0J5zLUioHpHmhCC0lCuSBwU23r3sfF/0N0wKdoxcGFqHezYZmHypJIkgiSCJIalc8NEM7Utb6ErWlwngt9aUoFRWSB3wilRUl5SRwISUFvhJt9lvDrMgLIjgLzK66tq0228j0H+R3W693l1UfmUd9kqA79MKn9/2sB9lPI8hbofb073vdh1BbQYRgqKzfGbTfTWVqHmnMOcXUpI6BXhzGJjEQCNULmy4x9GpZz1a3Vb8KqaIDz4RPVGZin6dlZPKDSS29baAyRqYfzVGnr0ekaaowTbEw9MLjLnfD0GGT1unHSSlKr2lRyqLA2qU5ESovi6m+lkvqYiZ1/ygxyqrgjDKF8Yr2lp1pd4R7dokhvOBUQk37TCVKQbX4TMVtyuymruKWJCURVEofClYWbNpWCQfFifDwsWnYyXXS8ZxDOI+H0uLToPzrhKg3VV8N3amt1dP/t5goW/E85pg2pB8N8sd623yr3/dNOPYVstELg9cLA8zFCJKapQpEYkPVi9CMA/L/Uv8hrk1hmg9WKKMQXyIxnGFrm6i06MkhBHlIiQ8rI0xx4k/rsLWBsWpbTmmhqFIypcvUHTRgQ859V/bbKaPf1s/dbBcfD0R6NnCWwg/dS3lB4MfQMSrnCY9EK8qEw9uUl4YdHjRQRVFTuu5mq2a9uOvrfVOH0SDHqtXxMjDfi1RA/fyyGb7G5y5KdJg8EnTXdsOHZl1vQyJJQrlCQTDsEBi80HdhO+VwrEP48hwdTRp202yHbgGzhRfu03/UCA4gjglDd44mUT2D2i4UH9coSy8mfjEYN54NfbcOOIZnn15M7YqAH5rFEmdl3eJ8r0N5E9zH0fz71nQQyN+1/zSP6yR2A/l93dazoY6n5DdyiumWc91Xi+u+2zxU/aI+Jipq2QD5tdrfgO3t2P5jcqz9gLEXAEjgFHzcMJUgr5uXyDQsNSxZtCvX81s3r1qLOw0EztC3ORiEs4vssu9W9fqn2263HqpmncFF016PqklGjh1kjQ2NUyUJH08mcIk9gSrqn+jg0XFoqeqTrmDPwQv+PDEr6wl3oljaxcRSRTCyMc/lJJ/lAcnNhMr3WWZ+ES3exrXE+HJ2yNOrowkb97A2cExdXcrYjaFToVDfGSMqnCaDa0pi/vzNMyLG/wQEyzmzfhx7KAwJUn93Fz6v5shD8B+DRAG4Oh+QHYapovAd3/OEQzuiDSdE4c8wjJHh7iiBFFozvP3+NxT8RWGlEQAA");
+                    ImGui.SetClipboardText("DS1H4sIAAAAAAAACq1YS3PbNhD+Kx2ePR6AeJG+xXYbH+KOJ3bHbW60REusaFGlKOXhyX/v4rEACEqumlY+ECD32/cuFn7NquyCnpOz7Cm7eM1+zy5yvfnDPL+fZTP4at7MHVntyMi5MGTwBLJn+HqWLZB46Ygbx64C5kQv/nRo8xXQ3AhZZRdCv2jdhxdHxUeqrJO3Ftslb5l5u/Fa2rfEvP0LWBkBPQiSerF1Cg7wApBn2c5wOMv2juNn9/zieH09aP63g+Kqyr1mI91mHdj5mj3UX4bEG+b5yT0fzRPoNeF1s62e2np+EuCxWc+7z5cLr1SuuCBlkTvdqBCEKmaQxCHJeZmXnFKlgMHVsmnnEZ5IyXMiFUfjwt6yCHvDSitx1212m4gHV0QURY4saMEYl6Q4rsRl18/rPuCZQ+rFJxeARwyAJb5fVmD4NBaJEK3eL331UscuAgflOcY0J5zLUioHpHmhCC0lCuSBwU23r3sfF/0N0wKdoxcGFqHezYZmHypJIkgiSCJIalc8NEM7Utb6ErWlwngt9aUoFRWSB3wilRUl5SRwISUFvhJt9lvDrMgLIjgLzK66tq0228j0H+R3W693l1UfmUd9kqA79MKn9/2sB9lPI8hbofb073vdh1BbQYRgqKzfGbTfTWVqHmnMOcXUpI6BXhzGJjEQCNULmy4x9GpZz1a3Vb8KqaIDz4RPVGZin6dlZPKDSS29baAyRqYfzVGnr0ekaaowTbEw9MLjLnfD0GGT1unHSSlKr2lRyqLA2qU5ESovi6m+lkvqYiZ1/ygxyqrgjDKF8Yr2lp1pd4R7dokhvOBUQk37TCVKQbX4TMVtyuymruKWJCURVEofClYWbNpWCQfFifDwsWnYyXXS8ZxDOI+H0uLToPzrhKg3VV8N3amt1dP/t5goW/E85pg2pB8N8sd623yr3/dNOPYVstELg9cLA8zFCJKapQpEYkPVi9CMA/L/Uv8hrk1hmg9WKKMQXyIxnGFrm6i06MkhBHlIiQ8rI0xx4k/rsLWBsWpbTmmhqFIypcvUHTRgQ859V/bbKaPf1s/dbBcfD0R6NnCWwg/dS3lB4MfQMSrnCY9EK8qEw9uUl4YdHjRQRVFTuu5mq2a9uOvrfVOH0SDHqtXxMjDfi1RA/fyyGb7G5y5KdJg8EnTXdsOHZl1vQyJJQrlCQTDsEBi80HdhO+VwrEP48hwdTRp202yHbgGzhRfu03/UCA4gjglDd44mUT2D2i4UH9coSy8mfjEYN54NfbcOOIZnn15M7YqAH5rFEmdl3eJ8r0N5E9zH0fz71nQQyN+1/zSP6yR2A/l93dazoY6n5DdyiumWc91Xi+u+2zxU/aI+Jipq2QD5tdrfgO3t2P5jcqz9gLEXAEjgFHzcMJUgr5uXyDQsNSxZtCvX81s3r1qLOw0EztC3ORiEs4vssu9W9fqn2263HqpmncFF016PqklGjh1kjQ2NUyUJH08mcIk9gSrqn+jg0XFoqeqTrmDPwQv+PDEr6wl3oljaxcRSRTCyMc/lJJ/lAcnNhMr3WWZ+ES3exrXE+HJ2yNOrowkb97A2cExdXcrYjaFToVDfGSMqnCaDa0pi/vzNMyLG/wQEyzmzfhx7KAwJUn93Fz6v5shD8B+DRAG4Oh+QHYapovAd3/OEQzuiDSdE4c8wjJHh7iiBFFozvP3+NxT8RWGlEQAA");
                     Notify.Success("Theme copied to clipboard");
                 }
 
@@ -816,10 +835,10 @@ namespace Artisan.UI
                 }
 
                 ImGui.PushItemWidth(400);
-                if (ImGui.SliderFloat("Delay Between Crafts", ref P.Config.ListCraftThrottle2, 0.2f, 2f, "%.1f"))
+                if (ImGui.SliderFloat("Delay Between Crafts", ref P.Config.ListCraftThrottle2, 0f, 2f, "%.1f"))
                 {
-                    if (P.Config.ListCraftThrottle2 < 0.2f)
-                        P.Config.ListCraftThrottle2 = 0.2f;
+                    if (P.Config.ListCraftThrottle2 < 0f)
+                        P.Config.ListCraftThrottle2 = 0f;
 
                     if (P.Config.ListCraftThrottle2 > 2f)
                         P.Config.ListCraftThrottle2 = 2f;
@@ -912,7 +931,7 @@ namespace Artisan.UI
                 {
                     ImGuiEx.ImGuiLineCentered("###EnduranceNewSetting", () =>
                     {
-                        ImGui.Image(img.ImGuiHandle, new Vector2(img.Width,img.Height));
+                        ImGui.Image(img.ImGuiHandle, new Vector2(img.Width, img.Height));
                     });
                 }
 

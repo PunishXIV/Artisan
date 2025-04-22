@@ -7,7 +7,6 @@ using Artisan.RawInformation.Character;
 using Artisan.UI.ImGUI;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
-using Dalamud.Utility;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
@@ -59,8 +58,9 @@ namespace Artisan.UI
                     {
                         var val = gs->Value;
                         string name = val.NameString;
+                        bool materiaDiff = gs->Value.Items.ToArray().Any(x => x.Flags.HasFlag(GearsetItemFlag.MateriaDiffers));
 
-                        return $"{name} (ilvl {val.ItemLevel})";
+                        return $"{name} (ilvl {val.ItemLevel}){(materiaDiff ? " Warning: Detected Materia difference. Please update gearset" : "")}";
                     }
                 }
             }
@@ -678,7 +678,7 @@ namespace Artisan.UI
             if (assumeNormalStatus)
                 return;
 
-            if (recipe.IsExpert)
+            if (recipe.IsExpert) //Todo update with Lumina fix
             {
                 // TODO: this is all very unconfirmed, we really need a process to gather this data
                 var potentialConditions = recipe.RecipeLevelTable.Value.ConditionsFlag;
@@ -881,10 +881,11 @@ namespace Artisan.UI
                     var gs = RaptureGearsetModule.Instance()->Entries.ToArray().First(x => RaptureGearsetModule.Instance()->IsValidGearset(x.Id) && x.ClassJob == SelectedRecipe?.CraftType.RowId + 8);
                     SimGS = gs;
                     string name = gs.NameString;
+                    bool materiaDiff = gs.Items.ToArray().Any(x => x.Flags.HasFlag(GearsetItemFlag.MateriaDiffers));
                     ImGuiEx.Text($"Gearset");
                     ImGui.SameLine(120f);
                     ImGuiEx.SetNextItemFullWidth();
-                    ImGuiEx.Text($"{name} (ilvl {SimGS?.ItemLevel})");
+                    ImGuiEx.Text($"{name} (ilvl {SimGS?.ItemLevel}){(materiaDiff ? " Warning: Detected Materia difference. Please update gearset" : "")}");
                     return;
                 }
 
@@ -908,7 +909,8 @@ namespace Artisan.UI
                         continue;
 
                     string name = gs.NameString;
-                    var selected = ImGui.Selectable($"{name} (ilvl {gs.ItemLevel})###GS{gs.Id}");
+                    bool materiaDiff = gs.Items.ToArray().Any(x => x.Flags.HasFlag(GearsetItemFlag.MateriaDiffers));
+                    var selected = ImGui.Selectable($"{name} (ilvl {gs.ItemLevel}){(materiaDiff ? " Warning: Detected Materia difference. Please update gearset" : "")}##GS{gs.Id}");
 
                     if (selected)
                     {
@@ -1074,7 +1076,7 @@ namespace Artisan.UI
         {
             var preview = SelectedRecipe is null
                                       ? string.Empty
-                                      : $"{SelectedRecipe?.ItemResult.Value.Name.ToString()} ({LuminaSheets.ClassJobSheet[SelectedRecipe.Value.CraftType.RowId + 8].Abbreviation.ToString()})";
+                                      : $"{SelectedRecipe?.ItemResult.Value.Name.ToDalamudString().ToString()} ({LuminaSheets.ClassJobSheet[SelectedRecipe.Value.CraftType.RowId + 8].Abbreviation.ToString()})";
 
             ImGuiEx.Text($"Select Recipe");
             ImGui.SameLine(120f.Scale());
@@ -1093,10 +1095,10 @@ namespace Artisan.UI
                     }
 
 
-                    foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.Name.ToString().Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
+                    foreach (var recipe in LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.Name.ToDalamudString().ToString().Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
                     {
                         ImGui.PushID($"###simRecipe{recipe.RowId}");
-                        var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.ToString()} ({LuminaSheets.ClassJobSheet[recipe.CraftType.RowId + 8].Abbreviation.ToString()} {recipe.RecipeLevelTable.Value.ClassJobLevel})", recipe.RowId == SelectedRecipe?.RowId);
+                        var selected = ImGui.Selectable($"{recipe.ItemResult.Value.Name.ToDalamudString().ToString()} ({LuminaSheets.ClassJobSheet[recipe.CraftType.RowId + 8].Abbreviation.ToString()} {recipe.RecipeLevelTable.Value.ClassJobLevel})", recipe.RowId == SelectedRecipe?.RowId);
 
                         if (selected)
                         {

@@ -1,7 +1,6 @@
 ﻿using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Colors;
-using Dalamud.Utility;
 using Lumina.Excel.Sheets;
 using System;
 using System.ComponentModel;
@@ -49,16 +48,17 @@ public static class Simulator
     }
 
     public static StepState CreateInitial(CraftState craft, int startingQuality)
-        => new() { 
-            Index = 1, 
-            Durability = craft.CraftDurability, 
-            Quality = startingQuality, 
-            RemainingCP = craft.StatCP, 
-            CarefulObservationLeft = craft.Specialist ? 3 : 0, 
+        => new()
+        {
+            Index = 1,
+            Durability = craft.CraftDurability,
+            Quality = startingQuality,
+            RemainingCP = craft.StatCP,
+            CarefulObservationLeft = craft.Specialist ? 3 : 0,
             HeartAndSoulAvailable = craft.Specialist,
             QuickInnoLeft = craft.Specialist ? 1 : 0,
-            TrainedPerfectionAvailable = craft.StatLevel >= MinLevel(Skills.TrainedPerfection), 
-            Condition = Condition.Normal 
+            TrainedPerfectionAvailable = craft.StatLevel >= MinLevel(Skills.TrainedPerfection),
+            Condition = Condition.Normal
         };
 
     public static CraftStatus Status(CraftState craft, StepState step)
@@ -101,14 +101,15 @@ public static class Simulator
         }
     }
 
-    public unsafe static string SimulatorResult(Recipe recipe, RecipeConfig config, CraftState craft, out Vector4 hintColor)
+    public unsafe static string SimulatorResult(Recipe recipe, RecipeConfig config, CraftState craft, out Vector4 hintColor, bool assumeMaxStartingQuality = false)
     {
         hintColor = ImGuiColors.DalamudWhite;
         var solver = CraftingProcessor.GetSolverForRecipe(config, craft).CreateSolver(craft);
         if (solver == null) return "No valid solver found.";
         var rd = RecipeNoteRecipeData.Ptr();
         var re = rd != null ? rd->FindRecipeById(recipe.RowId) : null;
-        var startingQuality = re != null ? Calculations.GetStartingQuality(recipe, re->GetAssignedHQIngredients()) : 0;
+        var shqf = (float)recipe.MaterialQualityFactor / 100;
+        var startingQuality = assumeMaxStartingQuality ? (int)(Calculations.RecipeMaxQuality(recipe) * shqf) : re != null ? Calculations.GetStartingQuality(recipe, re->GetAssignedHQIngredients()) : 0;
         var time = SolverUtils.EstimateCraftTime(solver, craft, startingQuality);
         var result = SolverUtils.SimulateSolverExecution(solver, craft, startingQuality);
         var status = result != null ? Status(craft, result) : CraftStatus.InProgress;
@@ -232,7 +233,7 @@ public static class Simulator
         var cost = action switch
         {
             Skills.BasicSynthesis or Skills.CarefulSynthesis or Skills.RapidSynthesis or Skills.IntensiveSynthesis or Skills.MuscleMemory => 10,
-            Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.PreciseTouch or Skills.Reflect => 10,
+            Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.PreciseTouch or Skills.Reflect or Skills.RefinedTouch => 10,
             Skills.ByregotsBlessing or Skills.DelicateSynthesis => 10,
             Skills.Groundwork or Skills.PreparatoryTouch => 20,
             Skills.PrudentSynthesis or Skills.PrudentTouch => 5,
@@ -339,7 +340,7 @@ public static class Simulator
         var cost = action switch
         {
             Skills.BasicSynthesis or Skills.CarefulSynthesis or Skills.RapidSynthesis or Skills.IntensiveSynthesis or Skills.MuscleMemory => 10,
-            Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.DaringTouch or Skills.PreciseTouch or Skills.Reflect => 10,
+            Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.DaringTouch or Skills.PreciseTouch or Skills.Reflect or Skills.RefinedTouch => 10,
             Skills.ByregotsBlessing or Skills.DelicateSynthesis => 10,
             Skills.Groundwork or Skills.PreparatoryTouch => 20,
             Skills.PrudentSynthesis or Skills.PrudentTouch => 5,

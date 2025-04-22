@@ -292,7 +292,7 @@ namespace Artisan.UI
                             if (P.Config.ShowMacroAssignResults)
                             {
                                 P.TM.DelayNext(400);
-                                P.TM.Enqueue(() => Notify.Info($"Macro assigned to {recipe.ItemResult.Value.Name.ToString()}."));
+                                P.TM.Enqueue(() => Notify.Info($"Macro assigned to {recipe.ItemResult.Value.Name.ToDalamudString().ToString()}."));
                             }
                             numberFound++;
                         }

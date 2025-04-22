@@ -1,12 +1,10 @@
 ﻿using Artisan.CraftingLogic;
-using Artisan.CraftingLogic.CraftData;
 using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
-using FFXIVClientStructs;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.Sheets;
@@ -103,39 +101,75 @@ public static unsafe class Crafting
             CraftRequiredQuality = (int)recipe.RequiredQuality,
             CraftRecommendedCraftsmanship = lt.SuggestedCraftsmanship,
             CraftHQ = recipe.CanHq,
+            CollectableMetadataKey = recipe.CollectableMetadataKey
         };
 
         if (res.CraftCollectible)
         {
-            // Check regular collectibles first
-            var breakpoints = Svc.Data.Excel.GetSubrowSheet<CollectablesShopItem>()?.SelectMany(x => x).FirstOrDefault(x => x.Item.RowId == recipe.ItemResult.RowId).CollectablesShopRefine.Value;
-            if (breakpoints != null)
+            switch (res.CollectableMetadataKey)
             {
-                res.CraftQualityMin1 = breakpoints.Value.LowCollectability * 10;
-                res.CraftQualityMin2 = breakpoints.Value.MidCollectability * 10;
-                res.CraftQualityMin3 = breakpoints.Value.HighCollectability * 10;
-            }
-            else // Then check custom delivery
-            {
-                var satisfaction = Svc.Data.GetSubrowExcelSheet<SatisfactionSupply>()?.SelectMany(x => x).FirstOrDefault(x => x.Item.RowId == recipe.ItemResult.RowId);
-                if (satisfaction != null)
-                {
-                    res.CraftQualityMin1 = satisfaction.Value.CollectabilityLow * 10;
-                    res.CraftQualityMin2 = satisfaction.Value.CollectabilityMid * 10;
-                    res.CraftQualityMin3 = satisfaction.Value.CollectabilityHigh * 10;
-                }
-                else // Finally, check Ishgard Restoration
-                {
-                    var hwdSheet = Svc.Data.GetExcelSheet<HWDCrafterSupply>()?.FirstOrDefault(x => x.HWDCrafterSupplyParams.Any(y => y.ItemTradeIn.RowId == recipe.ItemResult.RowId));
-                    if (hwdSheet != null)
+                /*
+                    1 => CollectablesShopRefine
+                    2 => HWDCrafterSupply
+                    3 => SatisfactionSupply
+                    4 => SharlayanCraftWorksSupply
+                    6 => CollectablesRefined
+                     _ => Untyped
+                 */
+                // HWD Recipes
+                case 2:
+                    var hwdRow = ECommons.GenericHelpers.FindRow<HWDCrafterSupply>(x => x.HWDCrafterSupplyParams.Any(y => y.ItemTradeIn.RowId == recipe.ItemResult.RowId));
+                    if (hwdRow != null)
                     {
-                        var index = hwdSheet.Value.HWDCrafterSupplyParams.IndexOf(x => x.ItemTradeIn.RowId == recipe.ItemResult.RowId);
-                        res.CraftQualityMin1 = hwdSheet.Value.HWDCrafterSupplyParams[index].BaseCollectableRating * 10;
-                        res.CraftQualityMin2 = hwdSheet.Value.HWDCrafterSupplyParams[index].MidCollectableRating * 10;
-                        res.CraftQualityMin3 = hwdSheet.Value.HWDCrafterSupplyParams[index].HighCollectableRating * 10;
+                        var index = hwdRow.Value.HWDCrafterSupplyParams.IndexOf(x => x.ItemTradeIn.RowId == recipe.ItemResult.RowId);
+                        res.CraftQualityMin1 = hwdRow.Value.HWDCrafterSupplyParams[index].BaseCollectableRating * 10;
+                        res.CraftQualityMin2 = hwdRow.Value.HWDCrafterSupplyParams[index].MidCollectableRating * 10;
+                        res.CraftQualityMin3 = hwdRow.Value.HWDCrafterSupplyParams[index].HighCollectableRating * 10;
                         res.IshgardExpert = res.CraftExpert;
                     }
-                }
+                    break;
+
+                // Satisfaction Supply Recipes
+                case 3:
+                    var satisfactionRow = ECommons.GenericHelpers.FindRow<SatisfactionSupply>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
+                    if (satisfactionRow.HasValue)
+                    {
+                        res.CraftQualityMin1 = satisfactionRow.Value.CollectabilityLow * 10;
+                        res.CraftQualityMin2 = satisfactionRow.Value.CollectabilityMid * 10;
+                        res.CraftQualityMin3 = satisfactionRow.Value.CollectabilityHigh * 10;
+                    }
+                    break;
+                // Sharlayan
+                case 4:
+                    var sharlayanRow = ECommons.GenericHelpers.FindRow<SharlayanCraftWorksSupply>(x => x.Item.Any(y => y.ItemId.RowId == recipe.ItemResult.RowId));
+                    if (sharlayanRow != null)
+                    {
+                        var it = sharlayanRow.Value.Item.First(y => y.ItemId.RowId == recipe.ItemResult.RowId);
+                        res.CraftQualityMin1 = it.CollectabilityMid * 10;
+                        res.CraftQualityMin2 = it.CollectabilityHigh * 10;
+                    }
+                    break;
+                // Wachumeqimeqi
+                case 6:
+                    var bankaRow = ECommons.GenericHelpers.FindRow<BankaCraftWorksSupply>(x => x.Item.Any(y => y.ItemId.RowId == recipe.ItemResult.RowId));
+                    if (bankaRow != null)
+                    {
+                        var it = bankaRow.Value.Item.First(y => y.ItemId.RowId == recipe.ItemResult.RowId);
+                        res.CraftQualityMin1 = it.Collectability.Value.CollectabilityLow * 10;
+                        res.CraftQualityMin2 = it.Collectability.Value.CollectabilityMid * 10;
+                        res.CraftQualityMin3 = it.Collectability.Value.CollectabilityHigh * 10;
+                    }
+                    break;
+                // Check for any other Generic Collectable
+                default:
+                    var genericRow = ECommons.GenericHelpers.FindRow<CollectablesShopItem>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
+                    if (genericRow is { CollectablesShopRefine: { } breakpoints })
+                    {
+                        res.CraftQualityMin1 = breakpoints.Value.LowCollectability * 10;
+                        res.CraftQualityMin2 = breakpoints.Value.MidCollectability * 10;
+                        res.CraftQualityMin3 = breakpoints.Value.HighCollectability * 10;
+                    }
+                    break;
             }
 
             if (res.CraftQualityMin3 == 0)
@@ -335,7 +369,7 @@ public static unsafe class Crafting
                     $"     had {CurStep}\n" +
                     $"expected {_predictedNextStep}\n" +
                     $"     got {step}\n" +
-                    $"   stats Craft:{CharacterInfo.Craftsmanship}, Control:{CharacterInfo.Control}, CP:{CharacterInfo.CurrentCP}/{CharacterInfo.MaxCP}, crafting #{CurRecipe?.RowId} '{CurRecipe?.ItemResult.Value.Name}'");
+                    $"   stats Craft:{CharacterInfo.Craftsmanship}, Control:{CharacterInfo.Control}, CP:{CharacterInfo.CurrentCP}/{CharacterInfo.MaxCP}, crafting #{CurRecipe?.RowId} '{CurRecipe?.ItemResult.Value.Name.ToDalamudString()}'");
             }
             CurStep = step;
             _predictedNextStep = null;
@@ -433,7 +467,7 @@ public static unsafe class Crafting
     private static int GetStepDurability(AddonSynthesis* synthWindow) => synthWindow->AtkUnitBase.AtkValues[7].Int;
     private static Condition GetStepCondition(AddonSynthesis* synthWindow) => (Condition)synthWindow->AtkUnitBase.AtkValues[12].Int;
 
-    private static StepState BuildStepState(AddonSynthesis* synthWindow, StepState? predictedStep, CraftState craft) => new ()
+    private static StepState BuildStepState(AddonSynthesis* synthWindow, StepState? predictedStep, CraftState craft) => new()
     {
         Index = GetStepIndex(synthWindow),
         Progress = GetStepProgress(synthWindow),
@@ -455,8 +489,8 @@ public static unsafe class Crafting
         TrainedPerfectionActive = GetStatus(Buffs.TrainedPerfection) != null,
         TrainedPerfectionAvailable = ActionManagerEx.CanUseSkill(Skills.TrainedPerfection),
         QuickInnoAvailable = ActionManagerEx.CanUseSkill(Skills.QuickInnovation),
-        QuickInnoLeft = !craft.Specialist ? 0 : ActionManagerEx.CanUseSkill(Skills.QuickInnovation ) ? 1 : predictedStep?.QuickInnoLeft ?? 0,
-        ExpedienceLeft = GetStatus(Buffs.Expedience)?.StackCount ?? 0,
+        QuickInnoLeft = !craft.Specialist ? 0 : ActionManagerEx.CanUseSkill(Skills.QuickInnovation) ? 1 : predictedStep?.QuickInnoLeft ?? 0,
+        ExpedienceLeft = GetStatus(Buffs.Expedience)?.Param ?? 0,
         PrevActionFailed = predictedStep?.PrevActionFailed ?? false,
         PrevComboAction = predictedStep?.PrevComboAction ?? Skills.None,
     };

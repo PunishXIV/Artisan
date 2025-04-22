@@ -5,10 +5,11 @@ using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.UI;
 using Dalamud.Interface.Colors;
-using Dalamud.Utility;
+using Dalamud.Interface.Utility.Raii;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using ECommons.GameHelpers;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -16,11 +17,11 @@ using ImGuiNET;
 using Lumina.Excel.Sheets;
 using OtterGui;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Artisan.CraftingLists
 {
@@ -28,16 +29,16 @@ namespace Artisan.CraftingLists
     {
         internal static string Search = string.Empty;
         public static unsafe InventoryManager* invManager = InventoryManager.Instance();
-        public static Dictionary<Recipe, bool> CraftableItems = new();
-        internal static Dictionary<int, int> SelectedRecipeRawIngredients = new();
+        public static ConcurrentDictionary<Recipe, bool> CraftableItems = new();
+        internal static ConcurrentDictionary<int, int> SelectedRecipeRawIngredients = new();
         internal static bool keyboardFocus = true;
         internal static string newListName = string.Empty;
         internal static NewCraftingList selectedList = new();
         internal static List<uint> jobs = new();
         internal static List<int> rawIngredientsList = new();
-        internal static Dictionary<int, int> subtableList = new();
+        internal static ConcurrentDictionary<int, int> subtableList = new();
         internal static List<int> listMaterials = new();
-        internal static Dictionary<int, int> listMaterialsNew = new();
+        internal static ConcurrentDictionary<int, int> listMaterialsNew = new();
         public static bool Processing;
         public static uint CurrentProcessedItem;
         public static int CurrentProcessedItemIndex;
@@ -92,9 +93,13 @@ namespace Artisan.CraftingLists
                     }
                     else
                     {
-                        if (ImGui.Button("Restock Inventory From Retainers", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
+                        bool disable = !Player.Available ? false : RetainerInfo.GetReachableRetainerBell() == null;
+                        using (ImRaii.Disabled(disable))
                         {
-                            Task.Run(() => RetainerInfo.RestockFromRetainers(selectedList));
+                            if (ImGui.Button("Restock Inventory From Retainers", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
+                            {
+                                Task.Run(() => RetainerInfo.RestockFromRetainers(selectedList));
+                            }
                         }
                     }
                 }
@@ -116,7 +121,7 @@ namespace Artisan.CraftingLists
             {
                 try
                 {
-                    var clipboard = Clipboard.GetText();
+                    var clipboard = ImGui.GetClipboardText();
                     if (clipboard != string.Empty)
                     {
                         if (clipboard.TryParseJson<NewCraftingList>(out var import))
@@ -171,7 +176,7 @@ namespace Artisan.CraftingLists
             CraftingListFunctions.ListEndTime = GetListTimer(selectedList);
             Crafting.CraftFinished += UpdateListTimer;
             Processing = true;
-            Endurance.Enable = false;
+            Endurance.ToggleEndurance(false);
         }
 
         public static void UpdateListTimer(Recipe recipe, CraftState craft, StepState finalStep, bool cancelled)
@@ -298,7 +303,7 @@ namespace Artisan.CraftingLists
                 foreach (var ing in recipe.Value.Ingredients().Where(x => x.Amount > 0 && x.Item.RowId != 0))
                 {
                     var name = LuminaSheets.ItemSheet[ing.Item.RowId].Name.ToString();
-                    CraftingListHelpers.SelectedRecipesCraftable[ing.Item.RowId] = LuminaSheets.RecipeSheet!.Any(x => x.Value.ItemResult.Value.Name.ToString() == name);
+                    CraftingListHelpers.SelectedRecipesCraftable[ing.Item.RowId] = LuminaSheets.RecipeSheet!.Any(x => x.Value.ItemResult.Value.Name.ToDalamudString().ToString() == name);
 
                     for (int i = 1; i <= ing.Amount; i++)
                     {
@@ -410,7 +415,7 @@ namespace Artisan.CraftingLists
 
         public static Recipe? GetIngredientRecipe(string ingredient)
         {
-            return LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Value.Name.ToString() == ingredient) ? LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Value.Name.ToString() == ingredient) : null;
+            return LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Value.Name.ToDalamudString().ToString() == ingredient) ? LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Value.Name.ToDalamudString().ToString() == ingredient) : null;
         }
     }
 }

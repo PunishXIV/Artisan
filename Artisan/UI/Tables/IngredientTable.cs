@@ -2,7 +2,6 @@
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Dalamud.Interface.Colors;
-using Dalamud.Utility;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
@@ -21,7 +20,6 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Artisan.UI.Tables
 {
@@ -184,7 +182,7 @@ namespace Artisan.UI.Tables
 
                 if (selected)
                 {
-                    Clipboard.SetText(item.Data.Name.ToString());
+                    ImGui.SetClipboardText(item.Data.Name.ToString());
                     Notify.Success("Name copied to clipboard");
                 }
 
@@ -420,6 +418,7 @@ namespace Artisan.UI.Tables
                     using var smallBtnStyle = ImRaii.PushStyle(ImGuiStyleVar.FramePadding, new Vector2(ImGui.GetStyle().FramePadding.X, 0));
                     if (ImGui.Button($"Fetch Prices"))
                     {
+                        P.UniversalsisClient.PlayerWorld = Svc.ClientState.LocalPlayer?.CurrentWorld.RowId;
                         if (P.Config.LimitUnversalisToDC)
                             Task.Run(() => P.UniversalsisClient.GetDCData(item.Data.RowId, ref item.MarketboardData));
                         else

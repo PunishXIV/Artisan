@@ -11,6 +11,7 @@ using Dalamud.Interface.Utility.Raii;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using ECommons.GameHelpers;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -143,7 +144,7 @@ namespace Artisan.UI
                     ImGui.Text($"Current Quality: {Crafting.CurStep.Quality}");
                     ImGui.Text($"Max Quality: {Crafting.CurCraft.CraftQualityMax}");
                     ImGui.Text($"Quality Percent: {Calculations.GetHQChance(Crafting.CurStep.Quality * 100.0 / Crafting.CurCraft.CraftQualityMax)}");
-                    ImGui.Text($"Item name: {Crafting.CurRecipe?.ItemResult.Value.Name}");
+                    ImGui.Text($"Item name: {Crafting.CurRecipe?.ItemResult.Value.Name.ToDalamudString()}");
                     ImGui.Text($"Current Condition: {Crafting.CurStep.Condition}");
                     ImGui.Text($"Current Step: {Crafting.CurStep.Index}");
                     ImGui.Text($"Quick Synth: {Crafting.QuickSynthState.Cur} / {Crafting.QuickSynthState.Max}");
@@ -232,6 +233,12 @@ namespace Artisan.UI
                     ImGui.Text($"ATools Installed: {RetainerInfo.AToolsInstalled}");
                     ImGui.Text($"ATools Enabled: {RetainerInfo.AToolsEnabled}");
                     ImGui.Text($"ATools Allowed: {RetainerInfo.ATools}");
+
+                    if (ImGui.Button("Artisan Craft X"))
+                    {
+                        IPC.IPC.CraftX(Endurance.RecipeID, 1);
+                    }
+                    ImGui.Text($"IPC Override: {Endurance.IPCOverride}");
                 }
 
                 if (ImGui.CollapsingHeader("Collectables"))
@@ -344,6 +351,7 @@ namespace Artisan.UI
                     var list = addon->UldManager.SearchNodeById(10)->GetAsAtkComponentList();
                     ImGui.Text($"{list->ListLength}");
                 }
+
             }
             catch (Exception e)
             {
@@ -389,7 +397,7 @@ namespace Artisan.UI
         {
             Svc.Log.Debug($"{e->RecipeId}");
             var recipe = Svc.Data.GetExcelSheet<Recipe>()?.GetRow(e->RecipeId);
-            using var n = ImRaii.TreeNode($"{tag}: {e->RecipeId} '{recipe?.ItemResult.Value.Name}'###{tag}");
+            using var n = ImRaii.TreeNode($"{tag}: {e->RecipeId} '{recipe?.ItemResult.Value.Name.ToDalamudString()}'###{tag}");
             if (!n)
                 return;
 

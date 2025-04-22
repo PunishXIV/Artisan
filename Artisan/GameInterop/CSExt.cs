@@ -1,5 +1,6 @@
 ﻿using ECommons;
 using ECommons.Automation;
+using ECommons.DalamudServices;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -93,7 +94,7 @@ public unsafe struct RecipeNoteRecipeData
 
     [FieldOffset(0x000)] public RecipeNoteRecipeEntry* Recipes; // note: can be null
     [FieldOffset(0x008)] public int RecipesCount;
-    [FieldOffset(0x428)] public ushort SelectedIndex;
+    [FieldOffset(0x438)] public ushort SelectedIndex;
 
     public RecipeNoteRecipeEntry* FindRecipeById(uint id)
     {

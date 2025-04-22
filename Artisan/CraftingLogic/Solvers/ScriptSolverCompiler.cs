@@ -25,10 +25,10 @@ public class ScriptSolverCompiler : IDisposable
 
     public ScriptSolverCompiler()
     {
-        _compilerThread = new(ThreadProc);
-        _compilerThread.Name = "Artisan Script Compiler";
-        // note that we can only start compilation after plugin is fully constructed
-        Svc.Framework.RunOnTick(_compilerThread.Start);
+        //_compilerThread = new(ThreadProc);
+        //_compilerThread.Name = "Artisan Script Compiler";
+        //// note that we can only start compilation after plugin is fully constructed
+        //Svc.Framework.RunOnTick(_compilerThread.Start);
     }
 
     public void Dispose()

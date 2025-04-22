@@ -60,7 +60,7 @@ namespace Artisan.UI
                 ImGui.Spacing();
                 if (CraftingListUI.CurrentProcessedItem != 0)
                 {
-                    ImGuiEx.TextV($"Crafting: {LuminaSheets.RecipeSheet[CraftingListUI.CurrentProcessedItem].ItemResult.Value.Name.ToString()}");
+                    ImGuiEx.TextV($"Crafting: {LuminaSheets.RecipeSheet[CraftingListUI.CurrentProcessedItem].ItemResult.Value.Name.ToDalamudString().ToString()}");
                     ImGuiEx.TextV($"Current Item Progress: {CraftingListUI.CurrentProcessedItemCount} / {CraftingListUI.CurrentProcessedItemListCount}");
                     ImGuiEx.TextV($"Overall List Progress: {CraftingListFunctions.CurrentIndex + 1} / {CraftingListUI.selectedList.ExpandedList.Count}");
 

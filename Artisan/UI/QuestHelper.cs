@@ -4,7 +4,6 @@ using Artisan.GameInterop;
 using Artisan.QuestSync;
 using Artisan.RawInformation;
 using Dalamud.Interface.Windowing;
-using ECommons;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 using System;

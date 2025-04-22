@@ -13,7 +13,6 @@ using Newtonsoft.Json;
 using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.CraftingLogic;
-using System.Windows.Forms;
 
 namespace Artisan.UI
 {
@@ -115,7 +114,7 @@ namespace Artisan.UI
 
                 if (ImGui.Button("Export Macro###ExportButton"))
                 {
-                    Clipboard.SetText(JsonConvert.SerializeObject(SelectedMacro));
+                    ImGui.SetClipboardText(JsonConvert.SerializeObject(SelectedMacro));
                     Notify.Success("Macro Copied to Clipboard.");
                 }
 
@@ -183,7 +182,7 @@ namespace Artisan.UI
                     for (int i = 0; i < SelectedMacro.Steps.Count; i++)
                     {
                         var step = SelectedMacro.Steps[i];
-                        var selectedAction = ImGui.Selectable($"{i + 1}. {(step.Action == Skills.None ? "Artisan Recommendation" : step.Action.NameOfAction())}###selectedAction{i}", i == selectedStepIndex);
+                        var selectedAction = ImGui.Selectable($"{i + 1}. {(step.Action == Skills.None ? "Artisan Recommendation" : step.Action.NameOfAction())}{(step.HasExcludeCondition? " | ":"")}{(step.HasExcludeCondition&&step.ReplaceOnExclude?step.ReplacementAction.NameOfAction() : step.HasExcludeCondition?"Skip":"")}###selectedAction{i}", i == selectedStepIndex);
                         if (selectedAction)
                             selectedStepIndex = i;
                     }
@@ -220,7 +219,7 @@ namespace Artisan.UI
                         ImGui.Spacing();
                         ImGuiEx.CenterColumnText($"Skip on these conditions", true);
 
-                        ImGui.BeginChild("ConditionalExcludes", new Vector2(ImGui.GetContentRegionAvail().X, 100f), false, ImGuiWindowFlags.AlwaysAutoResize);
+                        ImGui.BeginChild("ConditionalExcludes", new Vector2(ImGui.GetContentRegionAvail().X, step.HasExcludeCondition?200f:100f), false, ImGuiWindowFlags.AlwaysAutoResize);
                         ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0, 0));
                         ImGui.Columns(3, null, false);
                         if (ImGui.Checkbox($"Normal", ref step.ExcludeNormal))
@@ -252,7 +251,50 @@ namespace Artisan.UI
 
                         ImGui.Columns(1);
                         ImGui.PopStyleVar();
+
+                        if (step.HasExcludeCondition)
+                        {
+                            ImGuiEx.CenterColumnText($"Exclude options", true);
+                            if (ImGui.Checkbox($"Instead of skipping replace with:", ref step.ReplaceOnExclude))
+                                P.Config.Save();
+
+                            if (step.ReplaceOnExclude)
+                            {
+                                if (ImGui.BeginCombo("###Select Replacement", step.ReplacementAction.NameOfAction()))
+                                {
+                                    if (ImGui.Selectable($"Artisan Recommendation"))
+                                    {
+                                        step.ReplacementAction = Skills.None;
+                                        P.Config.Save();
+                                    }
+
+                                    ImGuiComponents.HelpMarker("Uses a recommendation from the appropriate default solver, i.e Standard Recipe Solver for regular recipes, Expert Recipe Solver for expert recipes.");
+
+                                    if (ImGui.Selectable($"Touch Combo"))
+                                    {
+                                        step.ReplacementAction = Skills.TouchCombo;
+                                        P.Config.Save();
+                                    }
+
+                                    ImGuiComponents.HelpMarker("This will use the appropriate step of the 3-step touch combo, depending on the last action actually used. Useful if upgrading quality actions or skipping on conditions.");
+
+                                    ImGui.Separator();
+
+                                    foreach (var opt in Enum.GetValues(typeof(Skills)).Cast<Skills>().OrderBy(SheetExtensions.NameOfAction))
+                                    {
+                                        if (ImGui.Selectable(opt.NameOfAction()))
+                                        {
+                                            step.ReplacementAction = opt;
+                                            P.Config.Save();
+                                        }
+                                    }
+
+                                    ImGui.EndCombo();
+                                }
+                            }
+                        }
                         ImGui.EndChild();
+
                         if (ImGui.Button("Delete Action (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                         {
                             SelectedMacro.Steps.RemoveAt(selectedStepIndex);
@@ -335,6 +377,7 @@ namespace Artisan.UI
                         var steps = MacroUI.ParseMacro(_rawMacro);
                         if (steps.Count > 0 && !SelectedMacro.Steps.SequenceEqual(steps))
                         {
+                            selectedStepIndex=steps.Count-1;
                             SelectedMacro.Steps = steps;
                             P.Config.Save();
                             DuoLog.Information($"Macro Updated");
@@ -346,6 +389,7 @@ namespace Artisan.UI
                         var steps = MacroUI.ParseMacro(_rawMacro);
                         if (steps.Count > 0 && !SelectedMacro.Steps.SequenceEqual(steps))
                         {
+                            selectedStepIndex=steps.Count-1;
                             SelectedMacro.Steps = steps;
                             P.Config.Save();
                             DuoLog.Information($"Macro Updated");
