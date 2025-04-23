@@ -15,6 +15,7 @@ using ECommons.GameHelpers;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.Game.WKS;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -366,6 +367,8 @@ namespace Artisan.UI
             {
                 TeleportToGCTown();
             }
+
+            
         }
 
         public unsafe static void TeleportToGCTown()
@@ -395,7 +398,6 @@ namespace Artisan.UI
 
         private static void DrawRecipeEntry(string tag, RecipeNoteRecipeEntry* e)
         {
-            Svc.Log.Debug($"{e->RecipeId}");
             var recipe = Svc.Data.GetExcelSheet<Recipe>()?.GetRow(e->RecipeId);
             using var n = ImRaii.TreeNode($"{tag}: {e->RecipeId} '{recipe?.ItemResult.Value.Name.ToDalamudString()}'###{tag}");
             if (!n)
@@ -438,7 +440,7 @@ namespace Artisan.UI
                 using var n2 = ImRaii.TreeNode($"Starting quality: {startingQuality}/{Calculations.RecipeMaxQuality(recipe.Value)}", ImGuiTreeNodeFlags.Leaf);
             }
 
-            Util.ShowObject(recipe);
+            Util.ShowObject(recipe.Value.RecipeLevelTable.Value);
         }
 
         private static void DrawEquippedGear()

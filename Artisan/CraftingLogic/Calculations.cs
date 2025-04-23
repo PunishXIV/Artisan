@@ -23,6 +23,10 @@ namespace Artisan.CraftingLogic
         public static int RecipeMaxQuality(Recipe recipe) => (int)(recipe.RecipeLevelTable.Value.Quality * recipe.QualityFactor / 100);
         public static int RecipeDurability(Recipe recipe) => recipe.RecipeLevelTable.Value.Durability * recipe.DurabilityFactor / 100;
 
+        public static int RecipeDifficulty(Recipe recipe, RecipeLevelTable leveltable) => leveltable.Difficulty * recipe.DifficultyFactor / 100;
+        public static int RecipeMaxQuality(Recipe recipe, RecipeLevelTable leveltable) => (int)(leveltable.Quality * recipe.QualityFactor / 100);
+        public static int RecipeDurability(Recipe recipe, RecipeLevelTable leveltable) => leveltable.Durability * recipe.DurabilityFactor / 100;
+
         public static bool ActionIsLengthyAnimation(this Skills id)
         {
             switch (id)

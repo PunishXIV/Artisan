@@ -136,6 +136,8 @@ namespace Artisan.CraftingLists
         {
             if (list.Recipes.Count == 0 && !isNew) return false;
 
+            list.Recipes.RemoveAll(x => LuminaSheets.RecipeSheet?.First(y => y.Value.RowId == x.ID).Value.Number == 0);
+
             list.SkipIfEnough = P.Config.DefaultListSkip;
             list.Materia = P.Config.DefaultListMateria;
             list.Repair = P.Config.DefaultListRepair;

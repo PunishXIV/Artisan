@@ -28,7 +28,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -656,6 +655,7 @@ internal class ListEditor : Window, IDisposable
         {
             foreach (var recipe in CraftingListUI.CraftableItems.Where(x => x.Value).Select(x => x.Key).Where(x => Regex.Match(x.ItemResult.Value.Name.GetText(true), Search, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase).Success))
             {
+                if (recipe.Number == 0) continue;
                 ImGui.PushID((int)recipe.RowId);
                 if (!RecipeLabels.ContainsKey(recipe.RowId))
                 {
@@ -680,6 +680,7 @@ internal class ListEditor : Window, IDisposable
                 try
                 {
                     if (recipe.ItemResult.RowId == 0) continue;
+                    if (recipe.Number == 0) continue;
                     if (!string.IsNullOrEmpty(Search) && !Regex.Match(recipe.ItemResult.Value.Name.GetText(true), Search, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase).Success) continue;
                     if (!RecipeLabels.ContainsKey(recipe.RowId))
                     {
@@ -1358,6 +1359,7 @@ internal class RecipeSelector : ItemSelector<ListItem>
             if (LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.RowId == id))
             {
                 var recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.RowId == id);
+                if (recipe.Number == 0) return false;
                 if (List.Recipes.Any(x => x.ID == recipe.RowId))
                 {
                     List.Recipes.First(x => x.ID == recipe.RowId).Quantity += 1;
@@ -1376,6 +1378,7 @@ internal class RecipeSelector : ItemSelector<ListItem>
                     x => x.ItemResult.Value.Name.ToDalamudString().ToString().Equals(name, StringComparison.CurrentCultureIgnoreCase),
                     out var recipe))
             {
+                if (recipe.Number == 0) return false;
                 if (List.Recipes.Any(x => x.ID == recipe.RowId))
                 {
                     List.Recipes.First(x => x.ID == recipe.RowId).Quantity += 1;

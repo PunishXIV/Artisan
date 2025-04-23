@@ -312,7 +312,7 @@ internal static class CraftingListContextMenu
         {
             recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.RowId == ItemId);
         }
-
+        if (recipe.Number == 0) return;
         if (withPrecraft)
             CraftingListUI.AddAllSubcrafts(recipe, CraftingListUI.selectedList, 1, P.Config.ContextMenuLoops);
 
