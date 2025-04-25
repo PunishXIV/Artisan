@@ -437,7 +437,7 @@ public static unsafe class Crafting
         return synthWindow;
     }
 
-    private static AtkUnitBase* GetCosmicAddon()
+    public static AtkUnitBase* GetCosmicAddon()
     {
         var cosmicAddon = (AtkUnitBase*)Svc.GameGui.GetAddonByName("WKSRecipeNotebook");
         if (cosmicAddon == null)

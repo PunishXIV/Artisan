@@ -153,6 +153,7 @@ namespace Artisan.RawInformation
         public static string NameOfAction(this Skills skill)
         {
             if (skill == Skills.TouchCombo) return "Touch Combo";
+            if (skill == Skills.TouchComboRefined) return "Touch Combo (Refined Touch Route)";
             var id = skill.ActionId(ECommons.ExcelServices.Job.CRP);
             return id == 0 ? "Artisan Recommendation" : id < 100000 ? LuminaSheets.ActionSheet[id].Name.ToString() : LuminaSheets.CraftActions[id].Name.ToString();
         }

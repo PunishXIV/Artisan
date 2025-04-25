@@ -311,7 +311,7 @@ namespace Artisan.UI
                 ImGui.InputInt("Debug Value", ref DebugValue);
                 if (ImGui.Button($"Open Recipe"))
                 {
-                    AgentRecipeNote.Instance()->OpenRecipeByRecipeId((uint)DebugValue);
+                    PreCrafting.TaskSelectRecipe(Svc.Data.GetExcelSheet<Recipe>().GetRow((uint)DebugValue));
                 }
 
                 ImGui.Text($"Item Count? {CraftingListUI.NumberOfIngredient((uint)DebugValue)}");

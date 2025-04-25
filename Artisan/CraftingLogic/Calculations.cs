@@ -32,6 +32,7 @@ namespace Artisan.CraftingLogic
             switch (id)
             {
                 case Skills.TouchCombo:
+                case Skills.TouchComboRefined:
                 case Skills.BasicSynthesis:
                 case Skills.RapidSynthesis:
                 case Skills.MuscleMemory:

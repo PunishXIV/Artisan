@@ -9,6 +9,7 @@ namespace Artisan.RawInformation.Character
     {
         None = 0,
         TouchCombo = 1,
+        TouchComboRefined = 2,
 
         BasicSynthesis = 100001, // 120p progress, 10dur cost
         CarefulSynthesis = 100203, // 180p progress, 7cp + 10 dur cost
@@ -67,7 +68,7 @@ namespace Artisan.RawInformation.Character
         {
             foreach (Skills skill in (Skills[])Enum.GetValues(typeof(Skills)))
             {
-                if (skill == Skills.None || skill == Skills.TouchCombo) continue;
+                if (skill is Skills.None or Skills.TouchCombo or Skills.TouchComboRefined) continue;
                 AssignActionIDs(skill);
             }
         }

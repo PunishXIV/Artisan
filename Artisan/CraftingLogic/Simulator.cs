@@ -427,6 +427,12 @@ public static class Simulator
         return Skills.BasicTouch;
     }
 
+    internal static Skills NextTouchComboRefined(StepState step, CraftState craft)
+    {
+        if (step.PrevComboAction == Skills.BasicTouch && craft.StatLevel >= MinLevel(Skills.RefinedTouch)) return Skills.RefinedTouch;
+        return Skills.BasicTouch;
+    }
+
     public static Condition GetNextCondition(CraftState craft, StepState step, float roll) => step.Condition switch
     {
         Condition.Normal => GetTransitionByRoll(craft, step, roll),

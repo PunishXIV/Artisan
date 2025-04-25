@@ -60,7 +60,7 @@ public unsafe static class PreCrafting
     {
         try
         {
-            if (a2 == 25)
+            if (a2 == 25 && a3 == 0)
             {
                 StartCraftingFromSynth(14);
                 return 0;
@@ -484,7 +484,30 @@ public unsafe static class PreCrafting
         if (re != null && re->RecipeId == recipe.RowId)
             return TaskResult.Done;
 
-        AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipe.RowId);
+        if (recipe.Number == 0)
+        {
+            var addon = Crafting.GetCosmicAddon();
+            if (addon == null)
+            {
+                AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipe.RowId);
+                addon = Crafting.GetCosmicAddon();
+            }
+
+            if (addon == null)
+                return TaskResult.Retry;
+
+            for (int i = 0; i <= 6; i++)
+            {
+                Callback.Fire(addon, false, 0, i);
+                re = Operations.GetSelectedRecipeEntry();
+                if (re != null && re->RecipeId == recipe.RowId)
+                    return TaskResult.Done;
+            }
+        }
+        else
+        {
+            AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipe.RowId);
+        }
         return TaskResult.Retry;
     }
 
