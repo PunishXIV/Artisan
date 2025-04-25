@@ -81,6 +81,7 @@ public static unsafe class Crafting
         var lt = recipe.RecipeLevelTable.Value;
         var res = new CraftState()
         {
+            ItemId = recipe.ItemResult.RowId,
             StatCraftsmanship = stats.Craftsmanship,
             StatControl = stats.Control,
             StatCP = stats.CP,

@@ -50,6 +50,10 @@
   </PropertyGroup>
 	
   <ItemGroup>
+    <None Remove="raphael-cli.exe" />
+  </ItemGroup>
+	
+  <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
     <None Update="Images\artisan-icon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -134,6 +138,12 @@
 		  <HintPath>$(DalamudLibPath)InteropGenerator.Runtime.dll</HintPath>
 		  <Private>False</Private>
 	  </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="raphael-cli.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
 </Project>

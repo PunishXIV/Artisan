@@ -520,8 +520,12 @@ namespace Artisan.UI
                     var act = Enum.GetValues(typeof(Skills)).Cast<Skills>().FirstOrDefault(s => s.NameOfAction().Equals(action, StringComparison.CurrentCultureIgnoreCase));
                     if (act == default)
                     {
-                        DuoLog.Error($"Unable to parse action: {action}");
-                        continue;
+                        act = Enum.GetValues(typeof(Skills)).Cast<Skills>().FirstOrDefault(s => s.NameOfAction().Replace(" ", "").Replace("'", "").Equals(action, StringComparison.CurrentCultureIgnoreCase));
+                        if (act == default)
+                        {
+                            DuoLog.Error($"Unable to parse action: {action}");
+                            continue;
+                        }
                     }
                     res.Add(new() { Action = act });
                 }
