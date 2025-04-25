@@ -7,19 +7,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using Artisan.UI;
 using ECommons.DalamudServices;
+using SharpDX.DXGI;
 
 namespace Artisan.CraftingLogic.Solvers
 {
     public class RaphaelSolverDefintion : ISolverDefinition
     {
-        private readonly ConcurrentDictionary<string, Task> _tasks = [];
-        private readonly ConcurrentDictionary<string, string> _cache = [];
-
         public Solver Create(CraftState craft, int flavour)
         {
             var key = $"{craft.CraftProgress}-{craft.CraftQualityMax}-{craft.CraftDurability}--{craft.StatCraftsmanship}-{craft.StatControl}-{craft.StatCP}";
-            Svc.Log.Debug($"Creating solver {key}");
-            var output = _cache.GetValueOrDefault(key);
+            var output = RaphaelCache.Cache.GetValueOrDefault(key);
 
             if (output == null) throw new System.Exception("Shouldn't be called");
 
@@ -42,24 +39,27 @@ namespace Artisan.CraftingLogic.Solvers
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
             var key = $"{craft.CraftProgress}-{craft.CraftQualityMax}-{craft.CraftDurability}--{craft.StatCraftsmanship}-{craft.StatControl}-{craft.StatCP}";
-            if (_cache.TryGetValue(key, out string? value))
+            if (RaphaelCache.Cache.TryGetValue(key, out string? value))
             {
                 yield return new(this, 0, 2, "Raphael Recipe Solver");
             }
             else
             {
-                if (_cache.ContainsKey(key))
+                Svc.Log.Information("Recipe doesnt exist in cache");
+                if (RaphaelCache.Cache.TryGetValue(key, out var output))
                 {
-                    _tasks.Remove(key, out var _);
-
-                    yield return new(this, 0, 2, "Raphael Recipe Solver", "");
-                }
-                else if (_tasks.ContainsKey(key))
-                {
+                    Svc.Log.Information("Recipe has finished processing, deleting task");
+                    RaphaelCache.Tasks.Remove(key, out var _);
                     yield return new(this, 0, 2, "Raphael Recipe Solver", "Unsupported, waiting for process to solve...");
                 }
-                else if (!_tasks.ContainsKey(key) && !_cache.ContainsKey(key))
+                else if (RaphaelCache.Tasks.ContainsKey(key))
                 {
+                    Svc.Log.Information("Recipe is being processed by Raphael");
+                    yield return new(this, 0, 2, "Raphael Recipe Solver", "Unsupported, waiting for process to solve...");
+                }
+                else if (!RaphaelCache.Tasks.ContainsKey(key) && !RaphaelCache.Cache.ContainsKey(key))
+                {
+                    Svc.Log.Information("Spawning Raphael process");
                     var manipulation = craft.UnlockedManipulation ? "--manipulation" : "";
                     var process = new Process()
                     {
@@ -73,17 +73,26 @@ namespace Artisan.CraftingLogic.Solvers
                         }
                     };
 
+                    Svc.Log.Information(process.StartInfo.Arguments);
+
                     var task = Task.Run(() =>
                     {
                         process.Start();
-                        _cache.TryAdd(key, process.StandardOutput.ReadToEnd().Replace("\"", "").Replace("[", "").Replace("]", "").Replace(",", "\r\n"));
+                        var output = process.StandardOutput.ReadToEnd();
+                        RaphaelCache.Cache.TryAdd(key, output.Replace("\"", "").Replace("[", "").Replace("]", "").Replace(",", "\r\n"));
                     });
 
-                    _tasks.TryAdd(key, task);
+                    RaphaelCache.Tasks.TryAdd(key, task);
 
                     yield return new(this, 0, 2, "Raphael Recipe Solver", "Unsupported, creating process to solve...");
                 }
             }
         }
+    }
+
+    internal static class RaphaelCache
+    {
+        internal static readonly ConcurrentDictionary<string, Task> Tasks = [];
+        internal static readonly ConcurrentDictionary<string, string> Cache = [];
     }
 }
