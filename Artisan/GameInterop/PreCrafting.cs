@@ -1,6 +1,7 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
+using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Game.ClientState.Conditions;
@@ -496,12 +497,23 @@ public unsafe static class PreCrafting
             if (addon == null)
                 return TaskResult.Retry;
 
-            for (int i = 0; i <= 6; i++)
+            var rd = RecipeNoteRecipeData.Ptr();
+            if (rd == null)
+                return TaskResult.Retry;
+
+            for (int i = 0; i < rd->RecipesCount; i++)
             {
-                Callback.Fire(addon, false, 0, i);
-                re = Operations.GetSelectedRecipeEntry();
-                if (re != null && re->RecipeId == recipe.RowId)
+                try
+                {
+                    Callback.Fire(addon, false, 0, i);
+                    re = Operations.GetSelectedRecipeEntry();
+                    if (re != null && re->RecipeId == recipe.RowId)
+                        return TaskResult.Done;
+                }
+                catch (Exception ex)
+                {
                     return TaskResult.Done;
+                }
             }
         }
         else
