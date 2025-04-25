@@ -48,7 +48,9 @@ namespace Artisan.RawInformation.Character
         HeartAndSoul = 100419, // next good-only action can be used without condition, does not tick buffs or change conditions
         QuickInnovation = 100459, // grants one stack of innovation, 0 cp, specialist
         ImmaculateMend = 100467, // Full durability, 112 cp
-        TrainedPerfection = 100475 // Reduces next action durability loss to 0, 0 cp, once per craft
+        TrainedPerfection = 100475, // Reduces next action durability loss to 0, 0 cp, once per craft
+
+        MaterialMiracle = 41269, // Cosmic exploration, lasts 45s (ugh), converts normal crafting conditions into expert crafting conditions, only 1 version of this action
     }
 
     public static class SkillActionMap
@@ -59,7 +61,7 @@ namespace Artisan.RawInformation.Character
         public static Skills ActionToSkill(uint actionId) => _actionToSkill.GetValueOrDefault(actionId);
 
         public static int Level(this Skills skill) => skill.ActionId(Job.CRP) >= 100000 ? LuminaSheets.CraftActions[skill.ActionId(Job.CRP)].ClassJobLevel : LuminaSheets.ActionSheet[skill.ActionId(Job.CRP)].ClassJobLevel;
-        public static uint ActionId(this Skills skill, Job job) => job is >= Job.CRP and <= Job.CUL ? _skillToAction[Math.Max(Array.IndexOf(Enum.GetValues(typeof(Skills)), skill), (int)Skills.None), job - Job.CRP] : 0;
+        public static uint ActionId(this Skills skill, Job job) => skill is Skills.MaterialMiracle ? (uint)Skills.MaterialMiracle : job is >= Job.CRP and <= Job.CUL ? _skillToAction[Math.Max(Array.IndexOf(Enum.GetValues(typeof(Skills)), skill), (int)Skills.None), job - Job.CRP] : 0;
 
         static SkillActionMap()
         {

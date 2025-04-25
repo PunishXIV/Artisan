@@ -72,6 +72,7 @@ namespace Artisan.Autocraft
                 Svc.Log.Debug("Endurance toggled off");
                 Enable = false;
                 IPCOverride = false;
+                PreCrafting.Tasks.Clear();
             }
         }
 

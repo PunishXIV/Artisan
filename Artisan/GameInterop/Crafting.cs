@@ -80,7 +80,7 @@ public static unsafe class Crafting
     public static CraftState BuildCraftStateForRecipe(CharacterStats stats, Job job, Recipe recipe)
     {
         stats.Level = stats.Level == default ? CharacterInfo.JobLevel(job) : stats.Level;
-        var lt = recipe.Number == 0 ? Svc.Data.GetExcelSheet<RecipeLevelTable>().First(x => x.ClassJobLevel == stats.Level) : recipe.RecipeLevelTable.Value;
+        var lt = recipe.Number == 0 && stats.Level < 100 ? Svc.Data.GetExcelSheet<RecipeLevelTable>().First(x => x.ClassJobLevel == stats.Level) : recipe.RecipeLevelTable.Value;
         var res = new CraftState()
         {
             StatCraftsmanship = stats.Craftsmanship,
@@ -103,7 +103,8 @@ public static unsafe class Crafting
             CraftRequiredQuality = (int)recipe.RequiredQuality,
             CraftRecommendedCraftsmanship = lt.SuggestedCraftsmanship,
             CraftHQ = recipe.CanHq,
-            CollectableMetadataKey = recipe.CollectableMetadataKey
+            CollectableMetadataKey = recipe.CollectableMetadataKey,
+            IsCosmic = recipe.Number == 0
         };
 
         if (res.CraftCollectible)
@@ -116,6 +117,7 @@ public static unsafe class Crafting
                     3 => SatisfactionSupply
                     4 => SharlayanCraftWorksSupply
                     6 => CollectablesRefined
+                    7 => Cosmic, but it scales so not a sheet
                      _ => Untyped
                  */
                 // HWD Recipes
@@ -161,6 +163,11 @@ public static unsafe class Crafting
                         res.CraftQualityMin2 = it.Collectability.Value.CollectabilityMid * 10;
                         res.CraftQualityMin3 = it.Collectability.Value.CollectabilityHigh * 10;
                     }
+                    break;
+                case 7:
+                    res.CraftQualityMin1 = res.CraftQualityMax;
+                    res.CraftQualityMin2 = res.CraftQualityMax;
+                    res.CraftQualityMin3 = res.CraftQualityMax;
                     break;
                 // Check for any other Generic Collectable
                 default:
@@ -391,7 +398,8 @@ public static unsafe class Crafting
         _predictedNextStep = null;
         _predictionDeadline = default;
         CurRecipe = null;
-        CurCraft = null;
+        P.TM.DelayNext(200);
+        P.TM.Enqueue(() => CurCraft = null);
         CurStep = null;
         IsTrial = false;
         return Svc.Condition[ConditionFlag.PreparingToCraft] ? State.IdleBetween : State.IdleNormal;
@@ -559,6 +567,8 @@ public static unsafe class Crafting
                     Svc.Log.Error($"Unexpected state {CurState} when receiving {*payload} message");
                 if (_predictedNextStep != null)
                     Svc.Log.Error($"Unexpected non-null predicted-next when receiving {*payload} message");
+                if (CurCraft is not null && CurCraft.IsCosmic && Endurance.Enable)
+                    Endurance.ToggleEndurance(false);
                 break;
             case CraftingEventHandler.OperationId.AdvanceCraftAction:
             case CraftingEventHandler.OperationId.AdvanceNormalAction:

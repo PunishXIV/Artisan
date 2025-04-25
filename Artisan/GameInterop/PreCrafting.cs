@@ -36,7 +36,10 @@ public unsafe static class PreCrafting
     private static Hook<ClickSynthesisButton> _clickButton;
 
     private delegate void* FireCallbackDelegate(AtkUnitBase* atkUnitBase, int valueCount, AtkValue* atkValues, byte updateVisibility);
-    private static Hook<FireCallbackDelegate> _fireCallbackHook;
+    private static Hook<FireCallbackDelegate> _gearsetCallback;
+
+    delegate nint AddonWKSRecipeNote_ReceiveEventDelegate(nint a1, ushort a2, uint a3, nint a4, nint a5);
+    private static Hook<AddonWKSRecipeNote_ReceiveEventDelegate> _cosmicCallback;
 
     public enum TaskResult { Done, Retry, Abort }
     public static List<(Func<TaskResult> task, TimeSpan retryDelay)> Tasks = new();
@@ -45,16 +48,35 @@ public unsafe static class PreCrafting
     static PreCrafting()
     {
         _clickButton = Svc.Hook.HookFromSignature<ClickSynthesisButton>("40 55 53 56 57 41 56 48 8D 6C 24 D1 48 81 EC C0 00 00 00", ClickSynthButtons);
-        _clickButton.Enable();
+        _clickButton?.Enable();
 
-        _fireCallbackHook = Svc.Hook.HookFromSignature<FireCallbackDelegate>("E8 ?? ?? ?? ?? 0F B6 E8 8B 44 24 20", CallbackDetour);
+        _gearsetCallback = Svc.Hook.HookFromSignature<FireCallbackDelegate>("E8 ?? ?? ?? ?? 0F B6 E8 8B 44 24 20", CallbackDetour);
+
+        _cosmicCallback = Svc.Hook.HookFromSignature<AddonWKSRecipeNote_ReceiveEventDelegate>("4C 8B DC 49 89 6B 20 41 56 48 83 EC 60", ClickCosmicButton);
+        _cosmicCallback?.Enable();
     }
 
+    private static nint ClickCosmicButton(nint a1, ushort a2, uint a3, nint a4, nint a5)
+    {
+        try
+        {
+            if (a2 == 25)
+            {
+                StartCraftingFromSynth(14);
+                return 0;
+            }
+        }
+        catch( Exception ex)
+        {
+            ex.Log();
+        }
+        return _cosmicCallback.Original(a1, a2, a3, a4, a5);
+    }
 
     private static void* CallbackDetour(AtkUnitBase* atkUnitBase, int valueCount, AtkValue* atkValues, byte updateVisibility)
     {
         var name = atkUnitBase->NameString.TrimEnd();
-        if (name.Substring(0, 11) == "SelectYesno")
+        if (name.Length >= 11 && name.Substring(0, 11) == "SelectYesno")
         {
             var result = atkValues[0];
             if (result.Int == 1)
@@ -68,16 +90,17 @@ public unsafe static class PreCrafting
                 Tasks.Clear();
             }
 
-            _fireCallbackHook.Disable();
+            _gearsetCallback.Disable();
 
         }
-        return _fireCallbackHook.Original(atkUnitBase, valueCount, atkValues, updateVisibility);
+        return _gearsetCallback.Original(atkUnitBase, valueCount, atkValues, updateVisibility);
     }
 
     public static void Dispose()
     {
         _clickButton?.Dispose();
-        _fireCallbackHook?.Dispose();
+        _gearsetCallback?.Dispose();
+        _cosmicCallback?.Dispose();
     }
 
     public static void Update()
@@ -255,6 +278,11 @@ public unsafe static class PreCrafting
             if (int.TryParse(addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory->NodeText.ToString(), out int output))
                 return output;
         }
+        if (TryGetAddonByName<AtkUnitBase>("WKSRecipeNotebook", out var cosmic) && cosmic->UldManager.NodeList[24] != null)
+        {
+            if (int.TryParse(cosmic->UldManager.NodeList[24]->GetAsAtkTextNode()->NodeText.ToString(), out int output))
+                return output;
+        }
         return -1;
     }
 
@@ -315,7 +343,7 @@ public unsafe static class PreCrafting
                     else
                     {
                         equipGearsetLoops++;
-                        _fireCallbackHook?.Enable();
+                        _gearsetCallback?.Enable();
                         var r = gearsets->EquipGearset(gs.Id);
                         return r < 0 ? TaskResult.Abort : TaskResult.Retry;
                     }
@@ -452,7 +480,6 @@ public unsafe static class PreCrafting
 
     public static TaskResult TaskSelectRecipe(Recipe recipe)
     {
-        if (recipe.Number == 0) return TaskResult.Done;
         var re = Operations.GetSelectedRecipeEntry();
         if (re != null && re->RecipeId == recipe.RowId)
             return TaskResult.Done;
@@ -463,6 +490,18 @@ public unsafe static class PreCrafting
 
     public static TaskResult TaskStartCraft(CraftType type)
     {
+        if (TryGetAddonByName<AtkUnitBase>("WKSRecipeNotebook", out var cosmicAddon))
+        {
+            if (cosmicAddon == null)
+                return TaskResult.Retry;
+
+            Svc.Log.Debug($"Starting actual cosmic craft");
+            Callback.Fire(cosmicAddon, true, 6);
+
+            return TaskResult.Done;
+
+        }
+
         var addon = (AddonRecipeNote*)Svc.GameGui.GetAddonByName("RecipeNote");
         if (addon == null)
             return TaskResult.Retry;
@@ -507,17 +546,22 @@ public unsafe static class PreCrafting
     {
         if (eventType == AtkEventType.ButtonClick && eventParam is 14 or 15 or 16)
         {
-            var re = Operations.GetSelectedRecipeEntry();
-            var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
-            if (recipe != null)
-                StartCrafting(recipe.Value, eventParam is 14 ? CraftType.Normal : eventParam is 15 ? CraftType.Quick : CraftType.Trial);
-            else
-                DuoLog.Error($"Somehow recipe is null. Please report this on the Discord.");
+            StartCraftingFromSynth(eventParam);
         }
         else
         {
             _clickButton?.OriginalDisposeSafe(thisPtr, eventType, eventParam, atkEvent, atkEventData);
         }
 
+    }
+
+    private static void StartCraftingFromSynth(int eventParam)
+    {
+        var re = Operations.GetSelectedRecipeEntry();
+        var recipe = re != null ? Svc.Data.GetExcelSheet<Recipe>()?.GetRow(re->RecipeId) : null;
+        if (recipe != null)
+            StartCrafting(recipe.Value, eventParam is 14 ? CraftType.Normal : eventParam is 15 ? CraftType.Quick : CraftType.Trial);
+        else
+            DuoLog.Error($"Somehow recipe is null. Please report this on the Discord.");
     }
 }
