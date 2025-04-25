@@ -278,6 +278,14 @@ namespace Artisan.UI
 
                                     ImGuiComponents.HelpMarker("This will use the appropriate step of the 3-step touch combo, depending on the last action actually used. Useful if upgrading quality actions or skipping on conditions.");
 
+                                    if (ImGui.Selectable($"Touch Combo (Refined Touch Route)"))
+                                    {
+                                        step.ReplacementAction = Skills.TouchComboRefined;
+                                        P.Config.Save();
+                                    }
+
+                                    ImGuiComponents.HelpMarker($"Similar to the other touch combo, this will alternate between Basic Touch & Refined Touch depending on the previous action used.");
+
                                     ImGui.Separator();
 
                                     foreach (var opt in Enum.GetValues(typeof(Skills)).Cast<Skills>().OrderBy(SheetExtensions.NameOfAction))
@@ -320,6 +328,14 @@ namespace Artisan.UI
                             }
 
                             ImGuiComponents.HelpMarker("This will use the appropriate step of the 3-step touch combo, depending on the last action actually used. Useful if upgrading quality actions or skipping on conditions.");
+
+                            if (ImGui.Selectable($"Touch Combo (Refined Touch Route)"))
+                            {
+                                step.Action = Skills.TouchComboRefined;
+                                P.Config.Save();
+                            }
+
+                            ImGuiComponents.HelpMarker($"Similar to the other touch combo, this will alternate between Basic Touch & Refined Touch depending on the previous action used.");
 
                             ImGui.Separator();
 

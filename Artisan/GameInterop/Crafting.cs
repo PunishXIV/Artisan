@@ -1,4 +1,5 @@
-﻿using Artisan.CraftingLogic;
+﻿using Artisan.Autocraft;
+using Artisan.CraftingLogic;
 using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
 using Dalamud.Game.ClientState.Conditions;
@@ -78,31 +79,33 @@ public static unsafe class Crafting
     // note: this uses current character stats & equipped gear
     public static CraftState BuildCraftStateForRecipe(CharacterStats stats, Job job, Recipe recipe)
     {
-        var lt = recipe.RecipeLevelTable.Value;
+        stats.Level = stats.Level == default ? CharacterInfo.JobLevel(job) : stats.Level;
+        var lt = recipe.Number == 0 && stats.Level < 100 ? Svc.Data.GetExcelSheet<RecipeLevelTable>().First(x => x.ClassJobLevel == stats.Level) : recipe.RecipeLevelTable.Value;
         var res = new CraftState()
         {
             ItemId = recipe.ItemResult.RowId,
             StatCraftsmanship = stats.Craftsmanship,
             StatControl = stats.Control,
             StatCP = stats.CP,
-            StatLevel = stats.Level == default ? CharacterInfo.JobLevel(job) : stats.Level,
+            StatLevel = stats.Level,
             UnlockedManipulation = stats.Manipulation,
             Specialist = stats.Specialist,
             Splendorous = stats.Splendorous,
             CraftCollectible = recipe.ItemResult.Value.AlwaysCollectable,
             CraftExpert = recipe.IsExpert,
             CraftLevel = lt.ClassJobLevel,
-            CraftDurability = Calculations.RecipeDurability(recipe),
-            CraftProgress = Calculations.RecipeDifficulty(recipe),
+            CraftDurability = recipe.Number == 0 ? Calculations.RecipeDurability(recipe, lt) : Calculations.RecipeDurability(recipe),
+            CraftProgress = recipe.Number == 0 ? Calculations.RecipeDifficulty(recipe, lt) : Calculations.RecipeDifficulty(recipe),
             CraftProgressDivider = lt.ProgressDivider,
             CraftProgressModifier = lt.ProgressModifier,
             CraftQualityDivider = lt.QualityDivider,
             CraftQualityModifier = lt.QualityModifier,
-            CraftQualityMax = Calculations.RecipeMaxQuality(recipe),
+            CraftQualityMax = recipe.Number == 0 ? Calculations.RecipeMaxQuality(recipe, lt) : Calculations.RecipeMaxQuality(recipe),
             CraftRequiredQuality = (int)recipe.RequiredQuality,
             CraftRecommendedCraftsmanship = lt.SuggestedCraftsmanship,
             CraftHQ = recipe.CanHq,
-            CollectableMetadataKey = recipe.CollectableMetadataKey
+            CollectableMetadataKey = recipe.CollectableMetadataKey,
+            IsCosmic = recipe.Number == 0
         };
 
         if (res.CraftCollectible)
@@ -115,6 +118,7 @@ public static unsafe class Crafting
                     3 => SatisfactionSupply
                     4 => SharlayanCraftWorksSupply
                     6 => CollectablesRefined
+                    7 => Cosmic, but it scales so not a sheet
                      _ => Untyped
                  */
                 // HWD Recipes
@@ -160,6 +164,11 @@ public static unsafe class Crafting
                         res.CraftQualityMin2 = it.Collectability.Value.CollectabilityMid * 10;
                         res.CraftQualityMin3 = it.Collectability.Value.CollectabilityHigh * 10;
                     }
+                    break;
+                case 7:
+                    res.CraftQualityMin1 = res.CraftQualityMax;
+                    res.CraftQualityMin2 = res.CraftQualityMax;
+                    res.CraftQualityMin3 = res.CraftQualityMax;
                     break;
                 // Check for any other Generic Collectable
                 default:
@@ -313,13 +322,14 @@ public static unsafe class Crafting
             return State.InvalidState; // failed to find recipe, bail out...
 
         var canHQ = CurRecipe.Value.CanHq;
-        CurCraft = BuildCraftStateForRecipe(CharacterStats.GetCurrentStats(), CharacterInfo.JobID, CurRecipe.Value);
+        CurCraft = BuildCraftStateForRecipe(CharacterStats.GetCurrentStats(), CharacterInfo.JobID, CurRecipe!.Value);
         CurStep = BuildStepState(synthWindow, null, CurCraft);
         if (CurStep.Index != 1 || CurStep.Condition != Condition.Normal || CurStep.PrevComboAction != Skills.None)
             Svc.Log.Error($"Unexpected initial state: {CurStep}");
 
         IsTrial = synthWindow->AtkUnitBase.AtkValues[1] is { Type: FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool, Byte: 1 };
         CraftStarted?.Invoke(CurRecipe.Value, CurCraft, CurStep, IsTrial);
+        Svc.Log.Debug($"{CurCraft?.IsCosmic}");
         return State.InProgress;
     }
 
@@ -389,7 +399,8 @@ public static unsafe class Crafting
         _predictedNextStep = null;
         _predictionDeadline = default;
         CurRecipe = null;
-        CurCraft = null;
+        P.TM.DelayNext(200);
+        P.TM.Enqueue(() => CurCraft = null);
         CurStep = null;
         IsTrial = false;
         return Svc.Condition[ConditionFlag.PreparingToCraft] ? State.IdleBetween : State.IdleNormal;
@@ -425,6 +436,15 @@ public static unsafe class Crafting
         }
 
         return synthWindow;
+    }
+
+    public static AtkUnitBase* GetCosmicAddon()
+    {
+        var cosmicAddon = (AtkUnitBase*)Svc.GameGui.GetAddonByName("WKSRecipeNotebook");
+        if (cosmicAddon == null)
+            return null; // not ready
+
+        return cosmicAddon;
     }
 
     private static AtkUnitBase* GetQuickSynthAddon()
@@ -468,33 +488,36 @@ public static unsafe class Crafting
     private static int GetStepDurability(AddonSynthesis* synthWindow) => synthWindow->AtkUnitBase.AtkValues[7].Int;
     private static Condition GetStepCondition(AddonSynthesis* synthWindow) => (Condition)synthWindow->AtkUnitBase.AtkValues[12].Int;
 
-    private static StepState BuildStepState(AddonSynthesis* synthWindow, StepState? predictedStep, CraftState craft) => new()
+    private static StepState BuildStepState(AddonSynthesis* synthWindow, StepState? predictedStep, CraftState craft)
     {
-        Index = GetStepIndex(synthWindow),
-        Progress = GetStepProgress(synthWindow),
-        Quality = GetStepQuality(synthWindow),
-        Durability = GetStepDurability(synthWindow),
-        RemainingCP = (int)CharacterInfo.CurrentCP,
-        Condition = GetStepCondition(synthWindow),
-        IQStacks = GetStatus(Buffs.InnerQuiet)?.Param ?? 0,
-        WasteNotLeft = GetStatus(Buffs.WasteNot2)?.Param ?? GetStatus(Buffs.WasteNot)?.Param ?? 0,
-        ManipulationLeft = GetStatus(Buffs.Manipulation)?.Param ?? 0,
-        GreatStridesLeft = GetStatus(Buffs.GreatStrides)?.Param ?? 0,
-        InnovationLeft = GetStatus(Buffs.Innovation)?.Param ?? 0,
-        VenerationLeft = GetStatus(Buffs.Veneration)?.Param ?? 0,
-        MuscleMemoryLeft = GetStatus(Buffs.MuscleMemory)?.Param ?? 0,
-        FinalAppraisalLeft = GetStatus(Buffs.FinalAppraisal)?.Param ?? 0,
-        CarefulObservationLeft = ActionManagerEx.CanUseSkill(Skills.CarefulObservation) ? 1 : 0,
-        HeartAndSoulActive = GetStatus(Buffs.HeartAndSoul) != null,
-        HeartAndSoulAvailable = ActionManagerEx.CanUseSkill(Skills.HeartAndSoul),
-        TrainedPerfectionActive = GetStatus(Buffs.TrainedPerfection) != null,
-        TrainedPerfectionAvailable = ActionManagerEx.CanUseSkill(Skills.TrainedPerfection),
-        QuickInnoAvailable = ActionManagerEx.CanUseSkill(Skills.QuickInnovation),
-        QuickInnoLeft = !craft.Specialist ? 0 : ActionManagerEx.CanUseSkill(Skills.QuickInnovation) ? 1 : predictedStep?.QuickInnoLeft ?? 0,
-        ExpedienceLeft = GetStatus(Buffs.Expedience)?.Param ?? 0,
-        PrevActionFailed = predictedStep?.PrevActionFailed ?? false,
-        PrevComboAction = predictedStep?.PrevComboAction ?? Skills.None,
-    };
+        var ret = new StepState();
+        ret.Index = GetStepIndex(synthWindow);
+        ret.Progress = GetStepProgress(synthWindow);
+        ret.Quality = GetStepQuality(synthWindow);
+        ret.Durability = GetStepDurability(synthWindow);
+        ret.RemainingCP = (int)CharacterInfo.CurrentCP;
+        ret.Condition = GetStepCondition(synthWindow);
+        ret.IQStacks = GetStatus(Buffs.InnerQuiet)?.Param ?? 0;
+        ret.WasteNotLeft = GetStatus(Buffs.WasteNot2)?.Param ?? GetStatus(Buffs.WasteNot)?.Param ?? 0;
+        ret.ManipulationLeft = GetStatus(Buffs.Manipulation)?.Param ?? 0;
+        ret.GreatStridesLeft = GetStatus(Buffs.GreatStrides)?.Param ?? 0;
+        ret.InnovationLeft = GetStatus(Buffs.Innovation)?.Param ?? 0;
+        ret.VenerationLeft = GetStatus(Buffs.Veneration)?.Param ?? 0;
+        ret.MuscleMemoryLeft = GetStatus(Buffs.MuscleMemory)?.Param ?? 0;
+        ret.FinalAppraisalLeft = GetStatus(Buffs.FinalAppraisal)?.Param ?? 0;
+        ret.CarefulObservationLeft = ActionManagerEx.CanUseSkill(Skills.CarefulObservation) ? 1 : 0;
+        ret.HeartAndSoulActive = GetStatus(Buffs.HeartAndSoul) != null;
+        ret.HeartAndSoulAvailable = ActionManagerEx.CanUseSkill(Skills.HeartAndSoul);
+        ret.TrainedPerfectionActive = GetStatus(Buffs.TrainedPerfection) != null;
+        ret.TrainedPerfectionAvailable = ActionManagerEx.CanUseSkill(Skills.TrainedPerfection);
+        ret.QuickInnoAvailable = ActionManagerEx.CanUseSkill(Skills.QuickInnovation);
+        ret.QuickInnoLeft = !craft.Specialist ? 0 : ActionManagerEx.CanUseSkill(Skills.QuickInnovation) ? 1 : predictedStep?.QuickInnoLeft ?? 0;
+        ret.ExpedienceLeft = GetStatus(Buffs.Expedience)?.Param ?? 0;
+        ret.PrevActionFailed = predictedStep?.PrevActionFailed ?? false;
+        ret.PrevComboAction = predictedStep?.PrevComboAction ?? Skills.None;
+
+        return ret;
+    }
 
     private static Dalamud.Game.ClientState.Statuses.Status? GetStatus(uint statusID) => Svc.ClientState.LocalPlayer?.StatusList.FirstOrDefault(s => s.StatusId == statusID);
 
@@ -545,6 +568,8 @@ public static unsafe class Crafting
                     Svc.Log.Error($"Unexpected state {CurState} when receiving {*payload} message");
                 if (_predictedNextStep != null)
                     Svc.Log.Error($"Unexpected non-null predicted-next when receiving {*payload} message");
+                if (CurCraft is not null && CurCraft.IsCosmic && Endurance.Enable)
+                    Endurance.ToggleEndurance(false);
                 break;
             case CraftingEventHandler.OperationId.AdvanceCraftAction:
             case CraftingEventHandler.OperationId.AdvanceNormalAction:

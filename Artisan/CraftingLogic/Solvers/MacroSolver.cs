@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLists;
+using SharpDX.DirectWrite;
 using System.Collections.Generic;
 using System.Linq;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
@@ -92,6 +93,11 @@ public class MacroSolver : Solver
             if (action == Skills.TouchCombo)
             {
                 action = Simulator.NextTouchCombo(step, craft);
+            }
+
+            if (action == Skills.TouchComboRefined)
+            {
+                action = Simulator.NextTouchComboRefined(step, craft);
             }
 
             if (action == Skills.None)

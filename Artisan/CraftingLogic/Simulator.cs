@@ -1,6 +1,7 @@
 ﻿using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Colors;
+using ECommons.DalamudServices;
 using Lumina.Excel.Sheets;
 using System;
 using System.ComponentModel;
@@ -423,6 +424,12 @@ public static class Simulator
     {
         if (step.PrevComboAction == Skills.BasicTouch && craft.StatLevel >= MinLevel(Skills.StandardTouch)) return Skills.StandardTouch;
         if (step.PrevComboAction == Skills.StandardTouch && craft.StatLevel >= MinLevel(Skills.AdvancedTouch)) return Skills.AdvancedTouch;
+        return Skills.BasicTouch;
+    }
+
+    internal static Skills NextTouchComboRefined(StepState step, CraftState craft)
+    {
+        if (step.PrevComboAction == Skills.BasicTouch && craft.StatLevel >= MinLevel(Skills.RefinedTouch)) return Skills.RefinedTouch;
         return Skills.BasicTouch;
     }
 

@@ -64,6 +64,14 @@ public class ExpertSolver : Solver
 
     public static Recommendation SolveNextStep(ExpertSolverSettings cfg, CraftState craft, StepState step)
     {
+        // see what we need to finish the craft
+        var remainingProgress = craft.CraftProgress - step.Progress;
+        var estBasicSynthProgress = Simulator.BaseProgress(craft) * 120 / 100;
+        var estCarefulSynthProgress = Simulator.BaseProgress(craft) * 180 / 100; // minimal, assuming no procs/buffs
+        var reservedCPForProgress = remainingProgress <= estBasicSynthProgress ? 0 : 7;
+        var progressDeficit = remainingProgress - estCarefulSynthProgress; // if >0, we need more progress before we can start finisher
+        var cpAvailableForQuality = step.RemainingCP - reservedCPForProgress;
+
         var qualityTarget = craft.IshgardExpert && cfg.MaxIshgardRecipes ? craft.CraftQualityMax : craft.CraftQualityMin3; // TODO: reconsider, this is a bit of a hack
         if (step.Index == 1)
         {
@@ -72,19 +80,11 @@ public class ExpertSolver : Solver
             // - mume is worth ~800p of progress (assuming we spend the buff on rapid), which is approximately equal to 3.2 rapids, which is 32 dura or ~76.8cp
             // - reflect is worth ~2 prudents of iq stacks minus 100p of quality, which is approximately equal to 50cp + 10 dura or ~74cp minus value of quality
             // so on paper mume seems to be better
-            return new(cfg.UseReflectOpener ? Skills.Reflect : Skills.MuscleMemory, "opener");
+            return new(cfg.UseReflectOpener || Simulator.CalculateProgress(craft, step, Skills.MuscleMemory) >= craft.CraftProgress ? Skills.Reflect : Skills.MuscleMemory, "opener");
         }
 
         if (step.MuscleMemoryLeft > 0) // mume still active - means we have very little progress and want more progress asap
             return new(SafeCraftAction(craft, step, SolveOpenerMuMe(cfg, craft, step)), "mume");
-
-        // see what we need to finish the craft
-        var remainingProgress = craft.CraftProgress - step.Progress;
-        var estBasicSynthProgress = Simulator.BaseProgress(craft) * 120 / 100;
-        var estCarefulSynthProgress = Simulator.BaseProgress(craft) * 180 / 100; // minimal, assuming no procs/buffs
-        var reservedCPForProgress = remainingProgress <= estBasicSynthProgress ? 0 : 7;
-        var progressDeficit = remainingProgress - estCarefulSynthProgress; // if >0, we need more progress before we can start finisher
-        var cpAvailableForQuality = step.RemainingCP - reservedCPForProgress;
 
         // see if we can do byregot right now and top up quality
         var finishQualityAction = SolveFinishQuality(craft, step, cpAvailableForQuality, qualityTarget);

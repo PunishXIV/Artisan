@@ -36,6 +36,7 @@ public record class CraftState
     //public int CraftRecommendedControl;
     public float[] CraftConditionProbabilities = { }; // TODO: this assumes that new condition does not depend on prev - this is what my preliminary findings suggest (except for forced transitions)
     public byte CollectableMetadataKey;
+    public bool IsCosmic;
 
     public uint ItemId;
 

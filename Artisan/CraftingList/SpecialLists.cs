@@ -379,7 +379,7 @@ namespace Artisan.CraftingLists
             {
                 if (job.Value)
                 {
-                    recipes.AddRange(LuminaSheets.RecipeSheet.Values.Where(x => x.CraftType.RowId == job.Key - 8));
+                    recipes.AddRange(LuminaSheets.RecipeSheet.Values.Where(x => x.Number > 0 && x.CraftType.RowId == job.Key - 8));
 
                     if (Stats.Any(x => x.Value))
                     {

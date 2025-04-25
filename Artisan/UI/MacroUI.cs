@@ -370,11 +370,22 @@ namespace Artisan.UI
         {
             Skills previousAction = Skills.None;
             int output = 0;
+            int tcr = 0;
             foreach (var step in m.Steps)
             {
                 if (step.Action == Skills.TouchCombo)
                 {
                     output += 18;
+                }
+                if (step.Action == Skills.TouchComboRefined)
+                {
+                    if (tcr % 2 == 1)
+                        output += 18;
+                    else
+                        output += 24;
+
+                    tcr++;
+
                 }
                 output += Simulator.GetBaseCPCost(step.Action, previousAction);
                 previousAction = step.Action;
