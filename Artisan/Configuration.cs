@@ -150,7 +150,7 @@ namespace Artisan
         public bool UsingDiscordHooks;
         public string? DiscordWebhookUrl;
 
-        public ConcurrentDictionary<string, string> RaphaelCache = [];
+        public ConcurrentDictionary<string, string> RaphaelSolverCache = [];
 
         public void Save()
         {

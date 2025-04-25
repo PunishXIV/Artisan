@@ -1,17 +1,10 @@
-﻿using System;
+﻿using Artisan.UI;
+using ECommons.DalamudServices;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
-using Artisan.GameInterop.CSExt;
-using Artisan.UI;
-using ECommons.DalamudServices;
-using Lumina.Excel.Sheets;
-using SharpDX.DXGI;
 
 namespace Artisan.CraftingLogic.Solvers
 {
@@ -19,8 +12,8 @@ namespace Artisan.CraftingLogic.Solvers
     {
         public Solver Create(CraftState craft, int flavour)
         {
-            var key = $"{craft.CraftProgress}-{craft.CraftQualityMax}-{craft.CraftDurability}--{craft.StatCraftsmanship}-{craft.StatControl}-{craft.StatCP}";
-            var output = P.Config.RaphaelCache.GetValueOrDefault(key);
+            var key = RaphaelCache.GetKey(craft);
+            var output = P.Config.RaphaelSolverCache.GetValueOrDefault(key);
 
             if (output == null) throw new System.Exception("Shouldn't be called");
 
@@ -43,7 +36,7 @@ namespace Artisan.CraftingLogic.Solvers
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
             var key = RaphaelCache.GetKey(craft);
-            if (P.Config.RaphaelCache.TryGetValue(key, out string? value))
+            if (P.Config.RaphaelSolverCache.TryGetValue(key, out string? value))
             {
                 yield return new(this, -1, 2, "Raphael Recipe Solver");
             }
@@ -57,9 +50,11 @@ namespace Artisan.CraftingLogic.Solvers
         public static void Build(CraftState craft)
         {
             var key = GetKey(craft);
-            
-            if (CLIExists() && !Tasks.ContainsKey(key) && !P.Config.RaphaelCache.ContainsKey(key))
+
+            if (CLIExists() && !Tasks.ContainsKey(key))
             {
+                P.Config.RaphaelSolverCache.TryRemove(key, out _);
+
                 Svc.Log.Information("Spawning Raphael process");
 
                 var manipulation = craft.UnlockedManipulation ? "--manipulation" : "";
@@ -82,7 +77,7 @@ namespace Artisan.CraftingLogic.Solvers
                 {
                     process.Start();
                     var output = process.StandardOutput.ReadToEnd();
-                    P.Config.RaphaelCache.TryAdd(key, output.Replace("\"", "").Replace("[", "").Replace("]", "").Replace(",", "\r\n"));
+                    P.Config.RaphaelSolverCache[key] = output.Replace("\"", "").Replace("[", "").Replace("]", "").Replace(",", "\r\n");
                     P.Config.Save();
                     Tasks.Remove(key, out var _);
                 });
@@ -93,10 +88,10 @@ namespace Artisan.CraftingLogic.Solvers
 
         public static string GetKey(CraftState craft)
         {
-            return $"{craft.CraftProgress}-{craft.CraftQualityMax}-{craft.CraftDurability}--{craft.StatCraftsmanship}-{craft.StatControl}-{craft.StatCP}";
+            return $"{craft.RecipeId}";
         }
 
-        public static bool HasSolution(CraftState craft) => P.Config.RaphaelCache.TryGetValue(GetKey(craft), out var _);
+        public static bool HasSolution(CraftState craft) => P.Config.RaphaelSolverCache.TryGetValue(GetKey(craft), out var _);
         public static bool InProgress(CraftState craft) => Tasks.TryGetValue(GetKey(craft), out var _);
 
         internal static bool CLIExists()

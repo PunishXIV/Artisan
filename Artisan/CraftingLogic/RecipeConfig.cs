@@ -3,6 +3,7 @@ using Artisan.CraftingLogic.Solvers;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
 using System.Linq;
+using System.Numerics;
 
 namespace Artisan.CraftingLogic;
 
@@ -187,21 +188,30 @@ public class RecipeConfig
 
         if (RaphaelCache.CLIExists())
         {
-            if (RaphaelCache.HasSolution(craft)) return changed;
+            if (RaphaelCache.HasSolution(craft))
+            {
+                ImGuiEx.TextCentered($"Raphael Solution Has Been Generated. (Click to Switch)");
+                if (ImGui.IsItemClicked())
+                {
+                    var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).First(x => x.Name == "Raphael Recipe Solver");
+                    SolverType = opt.Def.GetType().FullName!;
+                    SolverFlavour = opt.Flavour;
+                    changed = true;
+                }
+            }
 
             var inProgress = RaphaelCache.InProgress(craft);
-
-
+            
             if (!inProgress)
             {
-                if (ImGui.Button("Build Raphael Solution"))
+                if (ImGui.Button("Build Raphael Solution", new Vector2(ImGui.GetContentRegionAvail().X, 25f.Scale())))
                 {
                     RaphaelCache.Build(craft);
                 }
             }
             else
             {
-                if (ImGui.Button("Cancel Raphael Generation"))
+                if (ImGui.Button("Cancel Raphael Generation", new Vector2(ImGui.GetContentRegionAvail().X, 25f.Scale())))
                 {
                     RaphaelCache.Tasks.Clear();
                 }
@@ -209,7 +219,7 @@ public class RecipeConfig
 
             if (inProgress)
             {
-                ImGui.Text("Loading...");
+                ImGuiEx.TextCentered("Generating...");
             }
         }
 
