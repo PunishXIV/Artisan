@@ -83,6 +83,9 @@ public static unsafe class Crafting
         var lt = recipe.Number == 0 && stats.Level < 100 ? Svc.Data.GetExcelSheet<RecipeLevelTable>().First(x => x.ClassJobLevel == stats.Level) : recipe.RecipeLevelTable.Value;
         var res = new CraftState()
         {
+            ItemId = recipe.ItemResult.RowId,
+            RecipeId = recipe.RowId, // for future cli update
+            Recipe = recipe,
             StatCraftsmanship = stats.Craftsmanship,
             StatControl = stats.Control,
             StatCP = stats.CP,

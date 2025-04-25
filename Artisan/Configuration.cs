@@ -7,6 +7,7 @@ using Dalamud.Configuration;
 using ECommons.DalamudServices;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 
@@ -148,6 +149,8 @@ namespace Artisan
         public bool ReplaceSearch = true;
         public bool UsingDiscordHooks;
         public string? DiscordWebhookUrl;
+
+        public ConcurrentDictionary<string, string> RaphaelCache = [];
 
         public void Save()
         {

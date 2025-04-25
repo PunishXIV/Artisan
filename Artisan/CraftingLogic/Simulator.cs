@@ -107,10 +107,7 @@ public static class Simulator
         hintColor = ImGuiColors.DalamudWhite;
         var solver = CraftingProcessor.GetSolverForRecipe(config, craft).CreateSolver(craft);
         if (solver == null) return "No valid solver found.";
-        var rd = RecipeNoteRecipeData.Ptr();
-        var re = rd != null ? rd->FindRecipeById(recipe.RowId) : null;
-        var shqf = (float)recipe.MaterialQualityFactor / 100;
-        var startingQuality = assumeMaxStartingQuality ? (int)(Calculations.RecipeMaxQuality(recipe) * shqf) : re != null ? Calculations.GetStartingQuality(recipe, re->GetAssignedHQIngredients()) : 0;
+        var startingQuality = GetStartingQuality(recipe, assumeMaxStartingQuality);
         var time = SolverUtils.EstimateCraftTime(solver, craft, startingQuality);
         var result = SolverUtils.SimulateSolverExecution(solver, craft, startingQuality);
         var status = result != null ? Status(craft, result) : CraftStatus.InProgress;
@@ -148,6 +145,15 @@ public static class Simulator
         };
 
         return solverHint;
+    }
+
+    private unsafe static int GetStartingQuality(Recipe recipe, bool assumeMaxStartingQuality)
+    {
+        var rd = RecipeNoteRecipeData.Ptr();
+        var re = rd != null ? rd->FindRecipeById(recipe.RowId) : null;
+        var shqf = (float)recipe.MaterialQualityFactor / 100;
+        var startingQuality = assumeMaxStartingQuality ? (int)(Calculations.RecipeMaxQuality(recipe) * shqf) : re != null ? Calculations.GetStartingQuality(recipe, re->GetAssignedHQIngredients()) : 0;
+        return startingQuality;
     }
 
     public static (ExecuteResult, StepState) Execute(CraftState craft, StepState step, Skills action, float actionSuccessRoll, float nextStateRoll)

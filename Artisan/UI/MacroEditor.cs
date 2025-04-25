@@ -288,7 +288,7 @@ namespace Artisan.UI
 
                                     ImGui.Separator();
 
-                                    foreach (var opt in Enum.GetValues(typeof(Skills)).Cast<Skills>().OrderBy(SheetExtensions.NameOfAction))
+                                    foreach (var opt in Enum.GetValues(typeof(Skills)).Cast<Skills>().OrderBy(y => y.NameOfAction()))
                                     {
                                         if (ImGui.Selectable(opt.NameOfAction()))
                                         {
@@ -339,7 +339,7 @@ namespace Artisan.UI
 
                             ImGui.Separator();
 
-                            foreach (var opt in Enum.GetValues(typeof(Skills)).Cast<Skills>().OrderBy(SheetExtensions.NameOfAction))
+                            foreach (var opt in Enum.GetValues(typeof(Skills)).Cast<Skills>().OrderBy(y => y.NameOfAction()))
                             {
                                 if (ImGui.Selectable(opt.NameOfAction()))
                                 {

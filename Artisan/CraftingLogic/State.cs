@@ -38,6 +38,11 @@ public record class CraftState
     public byte CollectableMetadataKey;
     public bool IsCosmic;
 
+    public uint ItemId;
+    public uint RecipeId;
+
+    public Lumina.Excel.Sheets.Recipe Recipe;
+
     public static float[] NormalCraftConditionProbabilities(int statLevel) => [1, statLevel >= 63 ? 0.25f : 0.2f, 0.04f];
     public static float[] EWRelicT1CraftConditionProbabilities() => [1, 0.03f, 0, 0, 0.12f, 0.12f, 0.12f, 0, 0, 0.12f];
     public static float[] EWRelicT2CraftConditionProbabilities() => [1, 0.04f, 0, 0, 0, 0.15f, 0.12f, 0.12f, 0.15f, 0.12f];

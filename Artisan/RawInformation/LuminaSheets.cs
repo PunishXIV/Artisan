@@ -1,4 +1,5 @@
 ﻿using Artisan.RawInformation.Character;
+using Dalamud.Common;
 using ECommons.DalamudServices;
 using Lumina.Excel.Sheets;
 using System;
@@ -150,12 +151,12 @@ namespace Artisan.RawInformation
 
     public static class SheetExtensions
     {
-        public static string NameOfAction(this Skills skill)
+        public static string NameOfAction(this Skills skill, bool raphParseEn = false)
         {
             if (skill == Skills.TouchCombo) return "Touch Combo";
             if (skill == Skills.TouchComboRefined) return "Touch Combo (Refined Touch Route)";
             var id = skill.ActionId(ECommons.ExcelServices.Job.CRP);
-            return id == 0 ? "Artisan Recommendation" : id < 100000 ? LuminaSheets.ActionSheet[id].Name.ToString() : LuminaSheets.CraftActions[id].Name.ToString();
+            return id == 0 ? "Artisan Recommendation" : id < 100000 ? Svc.Data.GetExcelSheet<Action>(raphParseEn ? Dalamud.Game.ClientLanguage.English : Svc.ClientState.ClientLanguage)[id].Name.ToString() : Svc.Data.GetExcelSheet<CraftAction>(raphParseEn ? Dalamud.Game.ClientLanguage.English : Svc.ClientState.ClientLanguage)[id].Name.ToString();
         }
 
         public static ushort IconOfAction(this Skills skill, ECommons.ExcelServices.Job job)
