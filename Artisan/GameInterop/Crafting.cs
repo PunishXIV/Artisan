@@ -84,6 +84,8 @@ public static unsafe class Crafting
         var res = new CraftState()
         {
             ItemId = recipe.ItemResult.RowId,
+            RecipeId = recipe.RowId, // for future cli update
+            Recipe = recipe,
             StatCraftsmanship = stats.Craftsmanship,
             StatControl = stats.Control,
             StatCP = stats.CP,

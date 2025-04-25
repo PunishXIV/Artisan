@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using Artisan.CraftingLogic.Solvers;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
 using System.Linq;
@@ -182,6 +183,23 @@ public class RecipeConfig
             }
 
             ImGui.EndCombo();
+        }
+
+        if (RaphaelCache.HasSolution(craft)) return changed;
+
+        var inProgress = RaphaelCache.InProgress(craft);
+        if (inProgress)
+            ImGui.BeginDisabled();
+
+        if(ImGui.Button("Build raphael solution"))
+        {
+            RaphaelCache.Build(craft);
+        }
+
+        if (inProgress)
+        {
+            ImGui.Text("Loading...");
+            ImGui.EndDisabled();
         }
 
         return changed;
