@@ -90,7 +90,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         public static string GetKey(CraftState craft)
         {
-            return $"{craft.RecipeId}";
+            return $"{craft.CraftLevel}/{craft.CraftProgress}/{craft.CraftQualityMax}/{craft.CraftDurability}-{craft.StatCraftsmanship}/{craft.StatControl}/{craft.StatCP}-{(craft.CraftExpert?"Expert":"Standard")}";
         }
 
         public static bool HasSolution(CraftState craft) => P.Config.RaphaelSolverCache.TryGetValue(GetKey(craft), out var _);
