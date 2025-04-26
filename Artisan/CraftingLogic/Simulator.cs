@@ -147,7 +147,7 @@ public static class Simulator
         return solverHint;
     }
 
-    private unsafe static int GetStartingQuality(Recipe recipe, bool assumeMaxStartingQuality)
+    public unsafe static int GetStartingQuality(Recipe recipe, bool assumeMaxStartingQuality)
     {
         var rd = RecipeNoteRecipeData.Ptr();
         var re = rd != null ? rd->FindRecipeById(recipe.RowId) : null;
