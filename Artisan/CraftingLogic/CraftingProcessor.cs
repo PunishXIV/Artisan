@@ -128,6 +128,19 @@ public static class CraftingProcessor
             ActiveSolver = new(autoSolver.Name, _activeSolver);
         }
 
+        if (_activeSolver is ICraftValidator validator)
+        {
+            Svc.Log.Information("Validation");
+            var validation = validator.Validate(craft);
+            if (!validation)
+            {
+                SolverFailed?.Invoke(recipe, "You have mismatched stats");
+                _activeSolver = null;
+                ActiveSolver = new("");
+                return;
+            }
+        }
+
         SolverStarted?.Invoke(recipe, ActiveSolver, craft, initialStep);
 
         _nextRec = _activeSolver.Solve(craft, initialStep);

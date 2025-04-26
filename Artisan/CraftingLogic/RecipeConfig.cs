@@ -220,27 +220,25 @@ public class RecipeConfig
             }
 
             var inProgress = RaphaelCache.InProgress(craft);
+            var raphChanges = false;
 
             if (inProgress)
                 ImGui.BeginDisabled();
-            var checkboxChanged = false;
 
             if (P.Config.RaphaelSolverConfig.AllowHQConsiderations)
-                checkboxChanged |= ImGui.Checkbox("Allow Quality Considerations", ref TempConfigs[key].HQConsiderations);
+                raphChanges |= ImGui.Checkbox("Allow Quality Considerations", ref TempConfigs[key].HQConsiderations);
             if (P.Config.RaphaelSolverConfig.AllowEnsureReliability)
-                checkboxChanged |= ImGui.Checkbox("Ensure reliability", ref TempConfigs[key].EnsureReliability);
+                raphChanges |= ImGui.Checkbox("Ensure reliability", ref TempConfigs[key].EnsureReliability);
             if (P.Config.RaphaelSolverConfig.AllowBackloadProgress)
-                checkboxChanged |= ImGui.Checkbox("Backload progress", ref TempConfigs[key].BackloadProgress);
+                raphChanges |= ImGui.Checkbox("Backload progress", ref TempConfigs[key].BackloadProgress);
             if (P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist)
-                checkboxChanged |= ImGui.Checkbox("Allow heart and soul usage", ref TempConfigs[key].HeartAndSoul);
+                raphChanges |= ImGui.Checkbox("Allow heart and soul usage", ref TempConfigs[key].HeartAndSoul);
             if (P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist)
-                checkboxChanged |= ImGui.Checkbox("Allow quick innovation usage", ref TempConfigs[key].QuickInno);
+                raphChanges |= ImGui.Checkbox("Allow quick innovation usage", ref TempConfigs[key].QuickInno);
 
-            if (checkboxChanged)
+            if (raphChanges)
             {
-                Svc.Log.Debug("Clearing macro due to settings changes");
-                TempConfigs[key].Macro = ""; // clear macro if settings have changed
-                TempConfigs[key].HasChanges = true;
+                CleanRaphaelMacro(key);
                 changed = true;
             }
 
@@ -270,5 +268,12 @@ public class RecipeConfig
         }
 
         return changed;
+    }
+    
+    private void CleanRaphaelMacro(string key)
+    {
+        Svc.Log.Debug("Clearing macro due to settings changes");
+        TempConfigs[key].Macro = ""; // clear macro if settings have changed
+        TempConfigs[key].HasChanges = true;
     }
 }

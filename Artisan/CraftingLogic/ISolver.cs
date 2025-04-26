@@ -24,6 +24,11 @@ public abstract class Solver
     public abstract Recommendation Solve(CraftState craft, StepState step); // note that this function potentially mutates state!
 }
 
+public interface ICraftValidator
+{
+    public bool Validate(CraftState craft);
+}
+
 // a simple wrapper around solver that allows creating clones on-demand, but does not allow calling solve directly
 public struct SolverRef
 {

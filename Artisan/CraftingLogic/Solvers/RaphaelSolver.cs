@@ -32,7 +32,7 @@ namespace Artisan.CraftingLogic.Solvers
                     UpgradeQualityActions = false,
                     MinCP = output.MinCP,
                     MinControl = output.MinControl,
-                    MinCraftsmanship = output.MinCraftsmanship,
+                    ExactCraftsmanship = output.ExactCraftsmanship,
                 }
             }, craft);
         }
@@ -119,7 +119,7 @@ namespace Artisan.CraftingLogic.Solvers
                         EnsureReliability = config.EnsureReliability,
                         MinCP = craft.StatCP,
                         MinControl = craft.StatControl,
-                        MinCraftsmanship = craft.StatCraftsmanship,
+                        ExactCraftsmanship = craft.StatCraftsmanship,
                         Macro = output.Replace("\"", "").Replace("[", "").Replace("]", "").Replace(",", "\r\n").Replace("2", "II").Replace("MasterMend", "MastersMend")
                     };
                     P.Config.Save();
@@ -196,7 +196,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         public int MinCP = 0;
         public int MinControl = 0;
-        public int MinCraftsmanship = 0;
+        public int ExactCraftsmanship = 0;
 
         [NonSerialized]
         public bool HasChanges = false;
