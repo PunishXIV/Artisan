@@ -13,6 +13,7 @@ using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using global::Artisan.CraftingLogic;
+using global::Artisan.CraftingLogic.Solvers;
 using global::Artisan.GameInterop;
 using global::Artisan.UI.Tables;
 using ImGuiNET;

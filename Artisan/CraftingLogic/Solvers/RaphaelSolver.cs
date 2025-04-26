@@ -206,5 +206,8 @@ namespace Artisan.CraftingLogic.Solvers
         public int MinCP = 0;
         public int MinControl = 0;
         public int MinCraftsmanship = 0;
+
+        [NonSerialized]
+        public bool HasChanges = false;
     }
 }

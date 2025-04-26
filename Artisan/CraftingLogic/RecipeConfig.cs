@@ -215,9 +215,13 @@ public class RecipeConfig
             }
             else
             {
-                if (!TempConfigs.ContainsKey(key))
+                if (!TempConfigs.ContainsKey(key) && solution == null)
                 {
                     TempConfigs.Add(key, new());
+                }
+                else if (!TempConfigs.ContainsKey(key))
+                {
+                    TempConfigs.Add(key, solution!);
                 }
             }
 
@@ -227,7 +231,7 @@ public class RecipeConfig
                 ImGui.BeginDisabled();
             var checkboxChanged = false;
 
-            if(P.Config.RaphaelSolverConfig.AllowHQConsiderations)
+            if (P.Config.RaphaelSolverConfig.AllowHQConsiderations)
                 checkboxChanged |= ImGui.Checkbox("Allow Quality Considerations", ref TempConfigs[key].HQConsiderations);
             if (P.Config.RaphaelSolverConfig.AllowEnsureReliability)
                 checkboxChanged |= ImGui.Checkbox("Ensure reliability", ref TempConfigs[key].EnsureReliability);
@@ -238,10 +242,11 @@ public class RecipeConfig
             if (P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist)
                 checkboxChanged |= ImGui.Checkbox("Allow quick innovation usage", ref TempConfigs[key].QuickInno);
 
-            if(checkboxChanged)
+            if (checkboxChanged)
             {
                 Svc.Log.Debug("Clearing macro due to settings changes");
                 TempConfigs[key].Macro = ""; // clear macro if settings have changed
+                TempConfigs[key].HasChanges = true;
                 changed = true;
             }
 
