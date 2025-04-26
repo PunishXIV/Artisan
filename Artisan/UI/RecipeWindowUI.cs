@@ -918,13 +918,8 @@ namespace Artisan
                     var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.RowId, recipe);
                     if (config.Draw(craft))
                     {
-                        Svc.Log.Debug($"Updating config for {recipe.RowId}.");
                         P.Config.RecipeConfigs[recipe.RowId] = config;
-
-                        var key = RaphaelCache.GetKey(craft);
-
                         P.Config.Save();
-                        config.TempConfigs.Clear();
                     }
 
                     if (!P.Config.HideRecipeWindowSimulator)

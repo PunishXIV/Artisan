@@ -197,10 +197,8 @@ public class RecipeConfig
             var hasSolution = RaphaelCache.HasSolution(craft, out var solution);
             var key = RaphaelCache.GetKey(craft);
 
-            if (!TempConfigs.ContainsKey(key) && solution != null)
-            {
+            if (!TempConfigs.ContainsKey(key))
                 TempConfigs.Add(key, new());
-            }
 
             if (hasSolution)
             {
@@ -222,21 +220,17 @@ public class RecipeConfig
                 ImGui.BeginDisabled();
 
             if (P.Config.RaphaelSolverConfig.AllowHQConsiderations)
-                raphChanges |= ImGui.Checkbox("Allow Quality Considerations", ref TempConfigs[key].HQConsiderations);
+                raphChanges |= ImGui.Checkbox($"Allow Quality Considerations##{key}Quality", ref TempConfigs[key].HQConsiderations);
             if (P.Config.RaphaelSolverConfig.AllowEnsureReliability)
-                raphChanges |= ImGui.Checkbox("Ensure reliability", ref TempConfigs[key].EnsureReliability);
+                raphChanges |= ImGui.Checkbox($"Ensure reliability##{key}Reliability", ref TempConfigs[key].EnsureReliability);
             if (P.Config.RaphaelSolverConfig.AllowBackloadProgress)
-                raphChanges |= ImGui.Checkbox("Backload progress", ref TempConfigs[key].BackloadProgress);
+                raphChanges |= ImGui.Checkbox($"Backload progress##{key}Progress", ref TempConfigs[key].BackloadProgress);
             if (P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist)
-                raphChanges |= ImGui.Checkbox("Allow heart and soul usage", ref TempConfigs[key].HeartAndSoul);
+                raphChanges |= ImGui.Checkbox($"Allow heart and soul usage##{key}HS", ref TempConfigs[key].HeartAndSoul);
             if (P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist)
-                raphChanges |= ImGui.Checkbox("Allow quick innovation usage", ref TempConfigs[key].QuickInno);
+                raphChanges |= ImGui.Checkbox($"Allow quick innovation usage##{key}QI", ref TempConfigs[key].QuickInno);
 
-            if (raphChanges)
-            {
-                CleanRaphaelMacro(key);
-                changed = true;
-            }
+            changed |= raphChanges;
 
             if (inProgress)
                 ImGui.EndDisabled();
