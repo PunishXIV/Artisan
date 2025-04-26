@@ -2,8 +2,11 @@
 using Artisan.CraftingLogic.Solvers;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System;
+using ECommons.DalamudServices;
 
 namespace Artisan.CraftingLogic;
 
@@ -17,6 +20,9 @@ public class RecipeConfig
     public uint RequiredSquadronManual = 0;
     public bool RequiredFoodHQ = true;
     public bool RequiredPotionHQ = true;
+
+    [NonSerialized]
+    public Dictionary<string, RaphaelSolutionConfig> TempConfigs = new();
 
     public bool Draw(CraftState craft)
     {
@@ -188,8 +194,16 @@ public class RecipeConfig
 
         if (RaphaelCache.CLIExists())
         {
-            if (RaphaelCache.HasSolution(craft))
+            var hasSolution = RaphaelCache.HasSolution(craft, out var solution);
+            var key = RaphaelCache.GetKey(craft);
+
+            if (hasSolution)
             {
+                if (!TempConfigs.ContainsKey(key))
+                {
+                    TempConfigs.Add(key, solution!);
+                }
+
                 ImGuiEx.TextCentered($"Raphael Solution Has Been Generated. (Click to Switch)");
                 if (ImGui.IsItemClicked())
                 {
@@ -199,21 +213,54 @@ public class RecipeConfig
                     changed = true;
                 }
             }
+            else
+            {
+                if (!TempConfigs.ContainsKey(key))
+                {
+                    TempConfigs.Add(key, new());
+                }
+            }
 
             var inProgress = RaphaelCache.InProgress(craft);
-            
+
+            if (inProgress)
+                ImGui.BeginDisabled();
+            var checkboxChanged = false;
+
+            if(P.Config.RaphaelSolverConfig.AllowHQConsiderations)
+                checkboxChanged |= ImGui.Checkbox("Allow Quality Considerations", ref TempConfigs[key].HQConsiderations);
+            if (P.Config.RaphaelSolverConfig.AllowEnsureReliability)
+                checkboxChanged |= ImGui.Checkbox("Ensure reliability", ref TempConfigs[key].EnsureReliability);
+            if (P.Config.RaphaelSolverConfig.AllowBackloadProgress)
+                checkboxChanged |= ImGui.Checkbox("Backload progress", ref TempConfigs[key].BackloadProgress);
+            if (P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist)
+                checkboxChanged |= ImGui.Checkbox("Allow heart and soul usage", ref TempConfigs[key].HeartAndSoul);
+            if (P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist)
+                checkboxChanged |= ImGui.Checkbox("Allow quick innovation usage", ref TempConfigs[key].QuickInno);
+
+            if(checkboxChanged)
+            {
+                Svc.Log.Debug("Clearing macro due to settings changes");
+                TempConfigs[key].Macro = ""; // clear macro if settings have changed
+                changed = true;
+            }
+
+            if (inProgress)
+                ImGui.EndDisabled();
+
             if (!inProgress)
             {
                 if (ImGui.Button("Build Raphael Solution", new Vector2(ImGui.GetContentRegionAvail().X, 25f.Scale())))
                 {
-                    RaphaelCache.Build(craft);
+                    RaphaelCache.Build(craft, TempConfigs[key]);
                 }
             }
             else
             {
                 if (ImGui.Button("Cancel Raphael Generation", new Vector2(ImGui.GetContentRegionAvail().X, 25f.Scale())))
                 {
-                    RaphaelCache.Tasks.Clear();
+                    RaphaelCache.Tasks.TryRemove(key, out var task);
+                    task.Item1.Cancel();
                 }
             }
 

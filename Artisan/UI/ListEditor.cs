@@ -1288,6 +1288,7 @@ internal class ListEditor : Window, IDisposable
         {
             P.Config.RecipeConfigs[selectedListItem] = config;
             P.Config.Save();
+            config.TempConfigs.Clear();
         }
 
         ImGui.Checkbox($"Assume Max Starting Quality (for simulator)", ref hqSim);
