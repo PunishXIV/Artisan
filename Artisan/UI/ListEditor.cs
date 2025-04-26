@@ -1289,6 +1289,13 @@ internal class ListEditor : Window, IDisposable
             P.Config.RecipeConfigs[selectedListItem] = config;
             P.Config.Save();
         }
+        
+        ImGuiEx.TextV("Requirements:");
+        ImGui.SameLine();
+        using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(0, ImGui.GetStyle().ItemSpacing.Y));
+        ImGui.SameLine(137.6f.Scale());
+        ImGui.TextWrapped($"Difficulty: {craft.CraftProgress} | Durability: {craft.CraftDurability} | Quality: {(craft.CraftCollectible ? craft.CraftQualityMin3 : craft.CraftQualityMax)}");
+        ImGuiComponents.HelpMarker($"Shows the crafting requirements: Progress needed to complete the craft, how much Durability the recipe has, and Quality target required to reach the highest Quality level (In case of a Collectible). Use this information to select an appropriate macro, if desired.");
 
         ImGui.Checkbox($"Assume Max Starting Quality (for simulator)", ref hqSim);
 
