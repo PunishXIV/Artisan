@@ -49,7 +49,10 @@ public static class Simulator
     }
 
     public static StepState CreateInitial(CraftState craft, int startingQuality)
-        => new()
+    {
+        craft.StartingQuality = startingQuality;
+
+        return new()
         {
             Index = 1,
             Durability = craft.CraftDurability,
@@ -61,6 +64,7 @@ public static class Simulator
             TrainedPerfectionAvailable = craft.StatLevel >= MinLevel(Skills.TrainedPerfection),
             Condition = Condition.Normal
         };
+    }
 
     public static CraftStatus Status(CraftState craft, StepState step)
     {

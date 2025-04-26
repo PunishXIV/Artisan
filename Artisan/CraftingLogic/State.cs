@@ -38,6 +38,8 @@ public record class CraftState
     public byte CollectableMetadataKey;
     public bool IsCosmic;
 
+    public int StartingQuality;
+
     public uint ItemId;
     public uint RecipeId;
 

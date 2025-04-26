@@ -1,5 +1,5 @@
 ﻿using Artisan.CraftingLists;
-using SharpDX.DirectWrite;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
@@ -31,10 +31,18 @@ public class MacroSolver : Solver
     private Solver? _fallback;
     private int _nextStep;
 
-    public MacroSolver(MacroSolverSettings.Macro m, CraftState craft)
+    public MacroSolver(MacroSolverSettings.Macro m, CraftState craft, Type? skipFallbackSolverType = null)
     {
         _macro = m;
-        _fallback = CraftingProcessor.GetAvailableSolversForRecipe(craft, false, typeof(MacroSolverDefinition)).MaxBy(f => f.Priority).CreateSolver(craft);
+        _fallback = CraftingProcessor.GetAvailableSolversForRecipe(
+                craft, 
+                false, 
+                skipFallbackSolverType is null 
+                    ? [typeof(MacroSolverDefinition)] 
+                    : [typeof(MacroSolverDefinition), skipFallbackSolverType]
+            )
+            .MaxBy(f => f.Priority)
+            .CreateSolver(craft);
     }
 
     public override Solver Clone()

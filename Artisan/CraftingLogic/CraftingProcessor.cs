@@ -40,7 +40,7 @@ public static class CraftingProcessor
         _solverDefs.Add(new ExpertSolverDefinition());
         _solverDefs.Add(new MacroSolverDefinition());
         _solverDefs.Add(new ScriptSolverDefinition());
-        _solverDefs.Add(new RaphaelSolverDefintion());
+        _solverDefs.Add(new RaphaelSolverDefinition());
 
         Crafting.CraftStarted += OnCraftStarted;
         Crafting.CraftAdvanced += OnCraftAdvanced;
@@ -54,11 +54,13 @@ public static class CraftingProcessor
         Crafting.CraftFinished -= OnCraftFinished;
     }
 
-    public static IEnumerable<ISolverDefinition.Desc> GetAvailableSolversForRecipe(CraftState craft, bool returnUnsupported, Type? skipSolver = null)
+    public static IEnumerable<ISolverDefinition.Desc> GetAvailableSolversForRecipe(CraftState craft, bool returnUnsupported, Type[]? skipSolvers = null)
     {
+        skipSolvers ??= [];
+
         foreach (var solver in _solverDefs)
         {
-            if (solver.GetType() == skipSolver)
+            if (skipSolvers.Contains(solver.GetType()))
                 continue;
 
             foreach (var f in solver.Flavours(craft))
@@ -68,6 +70,7 @@ public static class CraftingProcessor
                     yield return f;
                 }
             }
+
             yield return default;
         }
     }

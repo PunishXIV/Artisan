@@ -186,7 +186,7 @@ public class RecipeConfig
             ImGui.EndCombo();
         }
 
-        if (RaphaelCache.CLIExists())
+        if (RaphaelCache.CliExists.Value)
         {
             if (RaphaelCache.HasSolution(craft))
             {
@@ -213,7 +213,7 @@ public class RecipeConfig
             {
                 if (ImGui.Button("Cancel Raphael Generation", new Vector2(ImGui.GetContentRegionAvail().X, 25f.Scale())))
                 {
-                    RaphaelCache.Tasks.Clear();
+                    RaphaelCache.ActiveBuildTasks.Clear();
                 }
             }
 

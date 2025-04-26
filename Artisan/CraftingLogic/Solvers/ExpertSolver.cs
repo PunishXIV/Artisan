@@ -11,7 +11,7 @@ public class ExpertSolverDefinition : ISolverDefinition
     public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
     {
         if (craft.CraftExpert)
-            yield return new(this, 0, 2, "Expert Recipe Solver", craft.StatLevel >= 90 ? "" : "Requires Level 90");
+            yield return new(this, 0, 3, "Expert Recipe Solver", craft.StatLevel >= 90 ? "" : "Requires Level 90");
     }
 
     public Solver Create(CraftState craft, int flavour) => new ExpertSolver();

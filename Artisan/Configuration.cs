@@ -151,6 +151,8 @@ namespace Artisan
         public string? DiscordWebhookUrl;
 
         public ConcurrentDictionary<string, string> RaphaelSolverCache = [];
+        public bool RaphaelAutoBuild = true;
+        public uint RaphaelMaxCacheSize = 1_000;
 
         public void Save()
         {
