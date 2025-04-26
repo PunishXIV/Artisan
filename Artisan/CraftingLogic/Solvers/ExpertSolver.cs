@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation.Character;
+using ECommons.DalamudServices;
 using System.Collections.Generic;
 
 namespace Artisan.CraftingLogic.Solvers;
@@ -80,7 +81,7 @@ public class ExpertSolver : Solver
             // - mume is worth ~800p of progress (assuming we spend the buff on rapid), which is approximately equal to 3.2 rapids, which is 32 dura or ~76.8cp
             // - reflect is worth ~2 prudents of iq stacks minus 100p of quality, which is approximately equal to 50cp + 10 dura or ~74cp minus value of quality
             // so on paper mume seems to be better
-            return new(cfg.UseReflectOpener || Simulator.CalculateProgress(craft, step, Skills.MuscleMemory) >= craft.CraftProgress ? Skills.Reflect : Skills.MuscleMemory, "opener");
+            return new(cfg.UseReflectOpener || Simulator.CalculateProgress(craft, step, Skills.MuscleMemory) >= craft.CraftProgress || craft.CraftDurability <= 20 ? Skills.Reflect : Skills.MuscleMemory, "opener");
         }
 
         if (step.MuscleMemoryLeft > 0) // mume still active - means we have very little progress and want more progress asap
@@ -129,7 +130,7 @@ public class ExpertSolver : Solver
             if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForManip && step.ManipulationLeft == 0)
                 return Skills.Manipulation;
         }
-        else if (step.Condition == Condition.Centered)
+        else if (step.Condition == Condition.Centered && Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) < step.Durability)
         {
             // centered rapid is very good value, even disregarding last-chance or veneration concerns
             return Skills.RapidSynthesis;
@@ -144,22 +145,25 @@ public class ExpertSolver : Solver
             // last-chance/preferred intensive or rapid, regardless of veneration
             return SolveOpenerMuMeTouch(craft, step, cfg.MuMeIntensiveMalleable || cfg.MuMeIntensiveLastResort && lastChance);
         }
-        else if (step.Condition == Condition.Good && cfg.MuMeIntensiveGood)
+        else if (step.Condition == Condition.Good && cfg.MuMeIntensiveGood && Simulator.GetDurabilityCost(step, Skills.IntensiveSynthesis) < step.Durability)
         {
             // good and we want to spend on intensive
             return Skills.IntensiveSynthesis;
         }
 
         // ok we have a normal/ignored condition
+        if (Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) >= step.Durability && step.ManipulationLeft == 0)
+            return Skills.Manipulation;
         if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForVene && step.VenerationLeft == 0)
             return Skills.Veneration;
         if (cfg.MuMeAllowObserve && step.MuscleMemoryLeft > 1 && step.Durability < craft.CraftDurability)
             return Skills.Observe; // conserve durability rather than gamble away
+
         return SolveOpenerMuMeTouch(craft, step, cfg.MuMeIntensiveLastResort && lastChance);
     }
 
     private static Skills SolveOpenerMuMeTouch(CraftState craft, StepState step, bool intensive)
-        => !intensive ? Skills.RapidSynthesis : Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis) ? Skills.IntensiveSynthesis : step.HeartAndSoulAvailable ? Skills.HeartAndSoul : Skills.RapidSynthesis;
+        =>  !intensive ? Skills.RapidSynthesis : Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis) ? Skills.IntensiveSynthesis : step.HeartAndSoulAvailable ? Skills.HeartAndSoul : Skills.RapidSynthesis;
 
     private static Recommendation SolveMid(ExpertSolverSettings cfg, CraftState craft, StepState step, int progressDeficit, int availableCP)
     {
