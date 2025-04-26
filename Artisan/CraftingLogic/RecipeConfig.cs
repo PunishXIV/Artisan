@@ -197,12 +197,17 @@ public class RecipeConfig
             var hasSolution = RaphaelCache.HasSolution(craft, out var solution);
             var key = RaphaelCache.GetKey(craft);
 
+            if (!TempConfigs.ContainsKey(key) && solution == null)
+            {
+                TempConfigs.Add(key, new());
+            }
+            else if (!TempConfigs.ContainsKey(key))
+            {
+                TempConfigs.Add(key, solution!);
+            }
+
             if (hasSolution)
             {
-                if (!TempConfigs.ContainsKey(key))
-                {
-                    TempConfigs.Add(key, solution!);
-                }
 
                 ImGuiEx.TextCentered($"Raphael Solution Has Been Generated. (Click to Switch)");
                 if (ImGui.IsItemClicked())
@@ -211,17 +216,6 @@ public class RecipeConfig
                     SolverType = opt.Def.GetType().FullName!;
                     SolverFlavour = opt.Flavour;
                     changed = true;
-                }
-            }
-            else
-            {
-                if (!TempConfigs.ContainsKey(key) && solution == null)
-                {
-                    TempConfigs.Add(key, new());
-                }
-                else if (!TempConfigs.ContainsKey(key))
-                {
-                    TempConfigs.Add(key, solution!);
                 }
             }
 
