@@ -151,15 +151,6 @@ namespace Artisan.CraftingLogic.Solvers
         {
             return File.Exists(Path.Join(Path.GetDirectoryName(Svc.PluginInterface.AssemblyLocation.FullName), "raphael-cli.exe"));
         }
-
-        internal static double RamSnapshot()
-        {
-
-            var availableMemoryInBytes = new PerformanceCounter("Memory", "Available Bytes").NextValue();
-            var availableMemoryInGB = availableMemoryInBytes / (1024 * 1024 * 1024);
-
-            return Math.Round(availableMemoryInGB, 1);
-        }
     }
 
     public class RaphaelSolverSettings
