@@ -1,11 +1,15 @@
-﻿using Artisan.UI;
+﻿using Artisan.GameInterop;
+using Artisan.RawInformation;
+using Artisan.UI;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using ImGuiNET;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -114,6 +118,32 @@ namespace Artisan.CraftingLogic.Solvers
                             MinCraftsmanship = craft.StatCraftsmanship,
                         }
                     };
+                    if (P.Config.RaphaelSolverConfig.AutoSwitch)
+                    {
+                        if (!P.Config.RaphaelSolverConfig.AutoSwitchOnAll)
+                        {
+                            Svc.Log.Debug("Switching to Raphael solver");
+                            var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).First(x => x.Name == $"Raphael Recipe Solver {key}");
+                            var config = P.Config.RecipeConfigs.GetValueOrDefault(craft.Recipe.RowId);
+                            config.SolverType = opt.Def.GetType().FullName!;
+                            config.SolverFlavour = opt.Flavour;
+                            P.Config.RecipeConfigs[craft.Recipe.RowId] = config;
+                        }
+                        else
+                        {
+                            var crafts = AllValidCrafts(key, craft.Recipe.CraftType.RowId).ToList();
+                            Svc.Log.Debug($"Applying solver to {crafts.Count()} recipes.");
+                            var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).First(x => x.Name == $"Raphael Recipe Solver {key}");
+                            foreach (var c in crafts)
+                            {
+                                Svc.Log.Debug($"Switching {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) to Raphael solver");
+                                var config = P.Config.RecipeConfigs.GetValueOrDefault(c.Recipe.RowId) ?? new();
+                                config.SolverType = opt.Def.GetType().FullName!;
+                                config.SolverFlavour = opt.Flavour;
+                                P.Config.RecipeConfigs[c.Recipe.RowId] = config;
+                            }
+                        }
+                    }
                     P.Config.Save();
                     Tasks.Remove(key, out var _);
                 }, cts.Token);
@@ -125,6 +155,28 @@ namespace Artisan.CraftingLogic.Solvers
         public static string GetKey(CraftState craft)
         {
             return $"{craft.CraftLevel}/{craft.CraftProgress}/{craft.CraftQualityMax}/{craft.CraftDurability}-{craft.StatCraftsmanship}/{craft.StatControl}/{craft.StatCP}-{(craft.CraftExpert ? "Expert" : "Standard")}";
+        }
+
+        public static IEnumerable<CraftState> AllValidCrafts(string key, uint craftType)
+        {
+            var parts = key.Split('/');
+            if (parts.Length != 6)
+                yield return new();
+
+            var lvl = int.Parse(parts[0]);
+            var prog = int.Parse(parts[1]);
+            var qual = int.Parse(parts[2]);
+            var dur = int.Parse(parts[3].Split('-')[0]);
+
+            var recipes = LuminaSheets.RecipeSheet.Values.Where(x => x.CraftType.RowId == craftType && x.RecipeLevelTable.Value.ClassJobLevel == lvl);
+            foreach (var recipe in recipes)
+            {
+                var state = Crafting.BuildCraftStateForRecipe(default, Job.CRP + recipe.CraftType.RowId, recipe);
+                if (prog == state.CraftProgress &&
+                    qual == state.CraftQualityMax &&
+                    dur == state.CraftDurability)
+                    yield return state;
+            }
         }
 
         public static bool HasSolution(CraftState craft, out MacroSolverSettings.Macro? raphaelSolutionConfig)
@@ -153,6 +205,8 @@ namespace Artisan.CraftingLogic.Solvers
         public bool ShowSpecialistSettings = false;
         public bool ExactCraftsmanship = false;
         public bool AutoGenerate = false;
+        public bool AutoSwitch = false;
+        public bool AutoSwitchOnAll = false;
 
         public bool Draw()
         {
@@ -167,6 +221,13 @@ namespace Artisan.CraftingLogic.Solvers
             changed |= ImGui.Checkbox("Allow backloading of progress in macro generation", ref AllowBackloadProgress);
             changed |= ImGui.Checkbox("Show specialist options when available", ref ShowSpecialistSettings);
             changed |= ImGui.Checkbox($"Automatically generate a solution if a valid one hasn't been created.", ref AutoGenerate);
+            changed |= ImGui.Checkbox($"Automatically switch to the Raphael Solver once a solution has been created.", ref AutoSwitch);
+            if (AutoSwitch)
+            {
+                ImGui.Indent();
+                changed |= ImGui.Checkbox($"Apply to all valid crafts", ref AutoSwitchOnAll);
+                ImGui.Unindent();
+            }
 
             if (ImGui.Button($"Clear raphael macro cache (Currently {P.Config.RaphaelSolverCacheV2.Count} stored)"))
             {
