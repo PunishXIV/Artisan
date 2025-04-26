@@ -164,6 +164,7 @@ namespace Artisan.UI
                     ImGui.Text($"Current Rec: {CraftingProcessor.NextRec.Action.NameOfAction()}");
                     ImGui.Text($"Previous Action: {Crafting.CurStep.PrevComboAction.NameOfAction()}");
                     ImGui.Text($"Can insta delicate: {Crafting.CurStep.Index == 1 && StandardSolver.CanFinishCraft(Crafting.CurCraft, Crafting.CurStep, Skills.DelicateSynthesis) && StandardSolver.CalculateNewQuality(Crafting.CurCraft, Crafting.CurStep, Skills.DelicateSynthesis) >= Crafting.CurCraft.CraftQualityMin3}");
+                    ImGui.Text($"Flags: {Crafting.CurCraft.ConditionFlags}");
                 }
 
                 if (ImGui.CollapsingHeader("Spiritbonds"))

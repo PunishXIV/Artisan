@@ -10,11 +10,11 @@ namespace Artisan.CraftingLogic.CraftData
         Excellent = 4,
         Poor = 8,
         Centered = 16,
-        Pliant = 32,
-        Sturdy = 64,
+        Sturdy = 32,
+        Pliant = 64,
         Malleable = 128,
         Primed = 256,
-        GoodOmen,
+        GoodOmen = 512,
 
         Unknown
     }

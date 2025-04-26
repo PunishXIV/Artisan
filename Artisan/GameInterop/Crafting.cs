@@ -107,7 +107,9 @@ public static unsafe class Crafting
             CraftRecommendedCraftsmanship = lt.SuggestedCraftsmanship,
             CraftHQ = recipe.CanHq,
             CollectableMetadataKey = recipe.CollectableMetadataKey,
-            IsCosmic = recipe.Number == 0
+            IsCosmic = recipe.Number == 0,
+            ConditionFlags = (Condition)lt.ConditionsFlag
+
         };
 
         if (res.CraftCollectible)
