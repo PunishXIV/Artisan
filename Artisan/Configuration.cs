@@ -151,7 +151,7 @@ namespace Artisan
         public bool UsingDiscordHooks;
         public string? DiscordWebhookUrl;
         public RaphaelSolverSettings RaphaelSolverConfig = new();
-        public ConcurrentDictionary<string, MacroSolverSettings.Macro> RaphaelSolverCache = [];
+        public ConcurrentDictionary<string, MacroSolverSettings.Macro> RaphaelSolverCacheV2 = [];
 
         public void Save()
         {
@@ -160,6 +160,7 @@ namespace Artisan
 
         public static Configuration Load()
         {
+            var fallback = Svc.PluginInterface.GetPluginConfig() as Configuration ?? new();
             try
             {
                 var contents = File.ReadAllText(Svc.PluginInterface.ConfigFile.FullName);
@@ -171,7 +172,7 @@ namespace Artisan
             catch (Exception e)
             {
                 Svc.Log.Error($"Failed to load config from {Svc.PluginInterface.ConfigFile.FullName}: {e}");
-                return new();
+                return fallback;
             }
         }
 
@@ -217,28 +218,6 @@ namespace Artisan
                     }
                     json["RecipeConfigs"] = cvt;
                 }
-            }
-            else if (version == 1)
-            {
-                var raphaelMacros = json["RaphaelSolverCache"] as JObject;
-                var oldDict = raphaelMacros.ToObject<Dictionary<string, string>>();
-
-                if (oldDict != null)
-                {
-                    json["RaphaelSolverCache"] = JObject.FromObject(oldDict.ToDictionary(x => x.Key, x => new RaphaelSolutionConfig()
-                    {
-                        Macro = x.Value.Replace("2", "II").Replace("MasterMend", "MastersMend")
-                    }));
-                }
-                json["Version"] = JToken.FromObject(2);
-            }
-            
-            if (version <= 1)
-            {
-                // change raphael cache from strings to macros 
-                // can convert it instead of delete?? would need the craft info
-                json[nameof(RaphaelSolverCache)] = new JObject();
-                json[nameof(Version)] = 2;
             }
         }
     }

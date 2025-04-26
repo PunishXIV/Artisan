@@ -209,7 +209,7 @@ public class RecipeConfig
                 var curStats = CharacterStats.GetCurrentStats();
                 //Svc.Log.Debug($"{curStats.Craftsmanship}/{craft.StatCraftsmanship} - {curStats.Control}/{craft.StatControl} - {curStats.CP}/{craft.StatCP}");
                 if ((craft.StatCraftsmanship != curStats.Craftsmanship ||
-                    craft.StatControl != curStats.Control || 
+                    craft.StatControl != curStats.Control ||
                     craft.StatCP != curStats.CP) && solverIsRaph)
                 {
                     ImGuiEx.Text(ImGuiColors.DalamudRed, $"Your current stats do not match the generated result.\nThis solver won't be used until they match\n(This may be resolved after using consumables).");
@@ -224,6 +224,19 @@ public class RecipeConfig
                         SolverFlavour = opt.Flavour;
                         changed = true;
                     }
+                }
+            }
+            else
+            {
+                if (P.Config.RaphaelSolverConfig.AutoGenerate && CraftingProcessor.GetAvailableSolversForRecipe(craft, true).Count() > 0)
+                {
+                    TempConfigs[key].HQConsiderations = P.Config.RaphaelSolverConfig.AllowHQConsiderations;
+                    TempConfigs[key].EnsureReliability = P.Config.RaphaelSolverConfig.AllowEnsureReliability;
+                    TempConfigs[key].BackloadProgress = P.Config.RaphaelSolverConfig.AllowBackloadProgress;
+                    TempConfigs[key].HeartAndSoul = P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist;
+                    TempConfigs[key].QuickInno = P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist;
+
+                    RaphaelCache.Build(craft, TempConfigs[key]);
                 }
             }
 

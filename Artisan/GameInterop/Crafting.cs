@@ -1,5 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLogic;
+using Artisan.CraftingLogic.CraftData;
 using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
 using Dalamud.Game.ClientState.Conditions;
@@ -108,7 +109,7 @@ public static unsafe class Crafting
             CraftHQ = recipe.CanHq,
             CollectableMetadataKey = recipe.CollectableMetadataKey,
             IsCosmic = recipe.Number == 0,
-            ConditionFlags = (Condition)lt.ConditionsFlag
+            ConditionFlags = (ConditionFlags)lt.ConditionsFlag
 
         };
 

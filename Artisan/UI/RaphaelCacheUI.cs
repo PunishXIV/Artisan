@@ -23,20 +23,20 @@ namespace Artisan.UI
             ImGui.Spacing();
             if (ImGui.Button("Clear Raphael Cache (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
             {
-                P.Config.RaphaelSolverCache.Clear();
+                P.Config.RaphaelSolverCacheV2.Clear();
                 P.Config.Save();
             }
 
             ImGui.InputText($"Search", ref _search, 300);
 
-            if (P.Config.RaphaelSolverCache.Count > 0)
+            if (P.Config.RaphaelSolverCacheV2.Count > 0)
             {
                 if (ImGui.BeginChild("##selector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y), true))
                 {
                     ImGuiEx.TextUnderlined($"Level/Progress/Quality/Durability-Craftsmanship/Control/CP-Type");
-                    foreach (var key in P.Config.RaphaelSolverCache.Keys)
+                    foreach (var key in P.Config.RaphaelSolverCacheV2.Keys)
                     {
-                        var m = P.Config.RaphaelSolverCache[key];
+                        var m = P.Config.RaphaelSolverCacheV2[key];
                         if (!m.Name.Contains(_search, System.StringComparison.CurrentCultureIgnoreCase)) continue;
                         var selected = ImGui.Selectable($"{m.Name}###{m.ID}");
 

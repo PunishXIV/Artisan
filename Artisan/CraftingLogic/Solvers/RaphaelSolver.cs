@@ -17,20 +17,20 @@ namespace Artisan.CraftingLogic.Solvers
         public Solver Create(CraftState craft, int flavour)
         {
             var key = RaphaelCache.GetKey(craft);
-            RaphaelCache.HasSolution(craft, out var output);
-
-            if (output == null) throw new System.Exception("Shouldn't be called");
-
-            return new MacroSolver(output, craft);
+            if (RaphaelCache.HasSolution(craft, out var output))
+            {
+                return new MacroSolver(output!, craft);
+            }
+            return craft.CraftExpert ? new ExpertSolver() : new StandardSolver(false);
         }
 
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
             var key = RaphaelCache.GetKey(craft);
 
-            if (P.Config.RaphaelSolverCache.ContainsKey(key))
+            if (P.Config.RaphaelSolverCacheV2.ContainsKey(key))
             {
-                yield return new(this, -1, 2, $"Raphael Recipe Solver {key}");
+                yield return new(this, 3, 0, $"Raphael Recipe Solver {key}");
             }
         }
     }
@@ -45,7 +45,7 @@ namespace Artisan.CraftingLogic.Solvers
 
             if (CLIExists() && !Tasks.ContainsKey(key))
             {
-                P.Config.RaphaelSolverCache.TryRemove(key, out _);
+                P.Config.RaphaelSolverCacheV2.TryRemove(key, out _);
 
                 Svc.Log.Information("Spawning Raphael process");
 
@@ -99,7 +99,7 @@ namespace Artisan.CraftingLogic.Solvers
                 {
                     process.Start();
                     var output = process.StandardOutput.ReadToEnd();
-                    P.Config.RaphaelSolverCache[key] = new MacroSolverSettings.Macro()
+                    P.Config.RaphaelSolverCacheV2[key] = new MacroSolverSettings.Macro()
                     {
                         ID = (int)craft.RecipeId,
                         Name = key,
@@ -124,12 +124,12 @@ namespace Artisan.CraftingLogic.Solvers
 
         public static string GetKey(CraftState craft)
         {
-            return $"{craft.CraftLevel}/{craft.CraftProgress}/{craft.CraftQualityMax}/{craft.CraftDurability}-{craft.StatCraftsmanship}/{craft.StatControl}/{craft.StatCP}-{(craft.CraftExpert?"Expert":"Standard")}";
+            return $"{craft.CraftLevel}/{craft.CraftProgress}/{craft.CraftQualityMax}/{craft.CraftDurability}-{craft.StatCraftsmanship}/{craft.StatControl}/{craft.StatCP}-{(craft.CraftExpert ? "Expert" : "Standard")}";
         }
 
         public static bool HasSolution(CraftState craft, out MacroSolverSettings.Macro? raphaelSolutionConfig)
         {
-            if (P.Config.RaphaelSolverCache.TryGetValue(GetKey(craft), out raphaelSolutionConfig))
+            if (P.Config.RaphaelSolverCacheV2.TryGetValue(GetKey(craft), out raphaelSolutionConfig))
             {
                 return raphaelSolutionConfig?.Steps.Count > 0;
             }
@@ -152,6 +152,7 @@ namespace Artisan.CraftingLogic.Solvers
         public bool AllowBackloadProgress = false;
         public bool ShowSpecialistSettings = false;
         public bool ExactCraftsmanship = false;
+        public bool AutoGenerate = false;
 
         public bool Draw()
         {
@@ -165,10 +166,11 @@ namespace Artisan.CraftingLogic.Solvers
             ImGui.TextColored(new System.Numerics.Vector4(255, 0, 0, 1), "Ensuring reliability may not always work and is very CPU and RAM intensive, suggested RAM at least 16GB+ spare.");
             changed |= ImGui.Checkbox("Allow backloading of progress in macro generation", ref AllowBackloadProgress);
             changed |= ImGui.Checkbox("Show specialist options when available", ref ShowSpecialistSettings);
+            changed |= ImGui.Checkbox($"Automatically generate a solution if a valid one hasn't been created.", ref AutoGenerate);
 
-            if (ImGui.Button($"Clear raphael macro cache (Currently {P.Config.RaphaelSolverCache.Count} stored)"))
+            if (ImGui.Button($"Clear raphael macro cache (Currently {P.Config.RaphaelSolverCacheV2.Count} stored)"))
             {
-                P.Config.RaphaelSolverCache.Clear();
+                P.Config.RaphaelSolverCacheV2.Clear();
                 changed |= true;
             }
 

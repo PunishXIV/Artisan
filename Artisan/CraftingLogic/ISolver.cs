@@ -8,7 +8,10 @@ public interface ISolverDefinition
 {
     public record struct Desc(ISolverDefinition Def, int Flavour, int Priority, string Name, string UnsupportedReason = "")
     {
-        public Solver? CreateSolver(CraftState craft) => this == default ? null : Def.Create(craft, Flavour);
+        public Solver? CreateSolver(CraftState craft)
+        {
+            return this == default ? null : Def.Create(craft, Flavour);
+        }
     }
 
     public IEnumerable<Desc> Flavours(CraftState craft);

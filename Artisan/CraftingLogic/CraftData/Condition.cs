@@ -2,8 +2,25 @@
 
 namespace Artisan.CraftingLogic.CraftData
 {
-    [Flags]
+
     public enum Condition
+    {
+        Normal,
+        Good,
+        Excellent,
+        Poor,
+        Centered,
+        Sturdy,
+        Pliant,
+        Malleable,
+        Primed,
+        GoodOmen,
+
+        Unknown
+    }
+
+    [Flags]
+    public enum ConditionFlags
     {
         Normal = 1,
         Good = 2,
@@ -16,6 +33,5 @@ namespace Artisan.CraftingLogic.CraftData
         Primed = 256,
         GoodOmen = 512,
 
-        Unknown
     }
 }

@@ -521,7 +521,7 @@ public class ExpertSolver : Solver
             if (step.ManipulationLeft > 0)
                 return Skills.Observe; // just regen a bit...
             // TODO: consider careful observation to bait pliant - this sounds much worse than using them to try baiting good byregot
-            if (cfg.MidBaitPliantWithObservePreQuality && craft.ConditionFlags.HasFlag(Condition.Pliant))
+            if (cfg.MidBaitPliantWithObservePreQuality && craft.ConditionFlags.HasFlag(ConditionFlags.Pliant))
                 return Skills.Observe; // try baiting pliant - this will save us 48cp at the cost of ~7+24cp
             if (step.Durability <= criticalDurabilityThreshold)
                 return Skills.Manipulation; // bait the bullet and manip on normal
@@ -556,7 +556,7 @@ public class ExpertSolver : Solver
             // - observe and wait for pliant, then do normal half-combos (~31cp to save ~48cp)
             // - inno + finesse - quite expensive cp-wise (600p for 146=18+4*32cp = 4.11p/cp), but slightly more effective than using full-cost manip + focused+observe (450p for 116=96/2+18+2*25cp = 3.88p/cp)
             var freeCP = availableCP - (88 + 18 + 32 + 24); // we need at least this much cp to do a normal mm + inno + gs + byregot
-            if (cfg.MidBaitPliantWithObserveAfterIQ && freeCP >= 7 && craft.ConditionFlags.HasFlag(Condition.Pliant))
+            if (cfg.MidBaitPliantWithObserveAfterIQ && freeCP >= 7 && craft.ConditionFlags.HasFlag(ConditionFlags.Pliant))
                 return Skills.Observe; // try baiting pliant - this will save us 48cp at the cost of ~7+24cp
             if (freeCP >= 18 + 4 * 32) // inno + 4xfinesse
                 return Skills.None;
