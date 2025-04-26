@@ -38,7 +38,19 @@ namespace Artisan.Autocraft
 
         internal static List<int>? HQData = null;
 
-        internal static ushort RecipeID = 0;
+        internal static ushort RecipeID
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    P.Config.CraftingX = false;
+                    P.Config.CraftX = 0;
+                }
+                field = value;
+            }
+        }
 
         internal static EnduranceIngredients[] SetIngredients = new EnduranceIngredients[6];
 

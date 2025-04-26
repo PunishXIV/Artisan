@@ -187,10 +187,11 @@ namespace Artisan
                     if (!P.Config.HideRecipeWindowSimulator)
                     {
                         var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor);
+                        var solver = CraftingProcessor.GetSolverForRecipe(config, craft);
 
-                        if (!recipe.IsExpert)
+                        if (solver.Name != "Expert Recipe Solver")
                             ImGuiEx.TextWrapped(hintColor, solverHint);
-                        else
+                        else 
                             ImGuiEx.TextWrapped($"Please run this recipe in the simulator for results.");
 
                         if (ImGui.IsItemClicked())
@@ -925,8 +926,9 @@ namespace Artisan
                     if (!P.Config.HideRecipeWindowSimulator)
                     {
                         var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor);
+                        var solver = CraftingProcessor.GetSolverForRecipe(config, craft);
 
-                        if (!recipe.IsExpert)
+                        if (solver.Name != "Expert Recipe Solver")
                             ImGuiEx.TextWrapped(hintColor, solverHint);
                         else
                             ImGuiEx.TextWrapped($"Please run this recipe in the simulator for results.");
