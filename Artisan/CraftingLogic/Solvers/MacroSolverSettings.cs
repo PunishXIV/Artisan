@@ -21,6 +21,7 @@ public class MacroSolverSettings
         public bool UpgradeProgressActions = false;
         public bool SkipObservesIfNotPoor = false;
         public int MinCraftsmanship = 0;
+        public int ExactCraftsmanship = 0;
         public int MinControl = 0;
         public int MinCP = 0;
     }

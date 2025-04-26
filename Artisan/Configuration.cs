@@ -10,6 +10,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Artisan
 {
@@ -19,7 +20,7 @@ namespace Artisan
         public int Version { get; set; } = 2;
         public bool AutoMode
         {
-            get => autoMode; 
+            get => autoMode;
             set
             {
                 if (value)
@@ -91,7 +92,7 @@ namespace Artisan
 
         public float SoundVolume = 0.25f;
 
-        public bool DefaultListMateria = false;   
+        public bool DefaultListMateria = false;
         public bool DefaultListSkip = false;
         public bool DefaultListSkipLiteral = false;
         public bool DefaultListRepair = false;
@@ -149,7 +150,7 @@ namespace Artisan
         public bool ReplaceSearch = true;
         public bool UsingDiscordHooks;
         public string? DiscordWebhookUrl;
-
+        public RaphaelSolverSettings RaphaelSolverConfig = new();
         public ConcurrentDictionary<string, MacroSolverSettings.Macro> RaphaelSolverCache = [];
 
         public void Save()
@@ -216,6 +217,20 @@ namespace Artisan
                     }
                     json["RecipeConfigs"] = cvt;
                 }
+            }
+            else if (version == 1)
+            {
+                var raphaelMacros = json["RaphaelSolverCache"] as JObject;
+                var oldDict = raphaelMacros.ToObject<Dictionary<string, string>>();
+
+                if (oldDict != null)
+                {
+                    json["RaphaelSolverCache"] = JObject.FromObject(oldDict.ToDictionary(x => x.Key, x => new RaphaelSolutionConfig()
+                    {
+                        Macro = x.Value.Replace("2", "II").Replace("MasterMend", "MastersMend")
+                    }));
+                }
+                json["Version"] = JToken.FromObject(2);
             }
             
             if (version <= 1)

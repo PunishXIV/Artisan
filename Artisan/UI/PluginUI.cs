@@ -686,6 +686,12 @@ namespace Artisan.UI
                 }
             }
 
+            if (ImGui.CollapsingHeader("Raphael Solver Settings"))
+            {
+                if (P.Config.RaphaelSolverConfig.Draw())
+                    P.Config.Save();
+            }
+
             using (ImRaii.Disabled())
             {
                 if (ImGui.CollapsingHeader("Script Solver Settings (Currently Disabled)"))
