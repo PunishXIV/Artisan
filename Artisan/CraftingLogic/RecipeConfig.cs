@@ -7,6 +7,8 @@ using System.Linq;
 using System.Numerics;
 using System;
 using ECommons.DalamudServices;
+using Artisan.GameInterop;
+using Dalamud.Interface.Colors;
 
 namespace Artisan.CraftingLogic;
 
@@ -202,11 +204,20 @@ public class RecipeConfig
 
             if (hasSolution)
             {
+                var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).First(x => x.Name == $"Raphael Recipe Solver {key}");
+
+                var curStats = CharacterStats.GetCurrentStats();
+                //Svc.Log.Debug($"{curStats.Craftsmanship}/{craft.StatCraftsmanship} - {curStats.Control}/{craft.StatControl} - {curStats.CP}/{craft.StatCP}");
+                if ((craft.StatCraftsmanship != curStats.Craftsmanship ||
+                    craft.StatControl != curStats.Control || 
+                    craft.StatCP != curStats.CP) && SolverType == opt.Def.GetType().FullName!)
+                {
+                    ImGuiEx.Text(ImGuiColors.DalamudRed, $"Your current stats do not match the generated result.\nThis solver won't be used until they match\n(This may be resolved after using consumables).");
+                }
 
                 ImGuiEx.TextCentered($"Raphael Solution Has Been Generated. (Click to Switch)");
                 if (ImGui.IsItemClicked())
                 {
-                    var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).First(x => x.Name == $"Raphael Recipe Solver {RaphaelCache.GetKey(craft)}");
                     SolverType = opt.Def.GetType().FullName!;
                     SolverFlavour = opt.Flavour;
                     changed = true;

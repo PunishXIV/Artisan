@@ -151,7 +151,7 @@ namespace Artisan.CraftingLogic.Solvers
         public bool AllowEnsureReliability = false;
         public bool AllowBackloadProgress = false;
         public bool ShowSpecialistSettings = false;
-
+        public bool ExactCraftsmanship = false;
 
         public bool Draw()
         {
