@@ -19,6 +19,11 @@ namespace Artisan.UI
                 return;
             }
             ImGui.Spacing();
+            if (ImGui.Button("Clear Raphael Cache (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
+            {
+                P.Config.RaphaelSolverCache.Clear();
+                P.Config.Save();
+            }
 
             if (P.Config.RaphaelSolverCache.Count > 0)
             {
