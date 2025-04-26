@@ -24,9 +24,11 @@ namespace Artisan.UI
         private int selectedStepIndex = -1;
         private bool Raweditor = false;
         private static string _rawMacro = string.Empty;
+        private bool raphael_cache = false;
 
-        public MacroEditor(MacroSolverSettings.Macro macro) : base($"Macro Editor###{macro.ID}", ImGuiWindowFlags.None)
+        public MacroEditor(MacroSolverSettings.Macro macro, bool raphael_cache=false) : base($"Macro Editor###{macro.ID}", ImGuiWindowFlags.None)
         {
+            this.raphael_cache=raphael_cache;
             SelectedMacro = macro;
             selectedStepIndex = macro.Steps.Count - 1;
             this.IsOpen = true;
@@ -91,10 +93,21 @@ namespace Artisan.UI
                 }
                 if (ImGui.Button("Delete Macro (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
                 {
-                    P.Config.MacroSolverConfig.Macros.Remove(SelectedMacro);
-                    foreach (var e in P.Config.RecipeConfigs)
-                        if (e.Value.SolverType == typeof(MacroSolverDefinition).FullName && e.Value.SolverFlavour == SelectedMacro.ID)
-                            P.Config.RecipeConfigs.Remove(e.Key); // TODO: do we want to preserve other configs?..
+                    if(raphael_cache)
+                    {
+                        //really should be just one but is it for sure??
+                        foreach(var kv in P.Config.RaphaelSolverCache.Where(kv => kv.Value == SelectedMacro))
+                        {
+                            P.Config.RaphaelSolverCache.TryRemove(kv);
+                        }
+                    }
+                    else
+                    {
+                        P.Config.MacroSolverConfig.Macros.Remove(SelectedMacro);
+                        foreach (var e in P.Config.RecipeConfigs)
+                            if (e.Value.SolverType == typeof(MacroSolverDefinition).FullName && e.Value.SolverFlavour == SelectedMacro.ID)
+                                P.Config.RecipeConfigs.Remove(e.Key); // TODO: do we want to preserve other configs?..
+                    }
                     P.Config.Save();
                     SelectedMacro = new();
                     selectedStepIndex = -1;

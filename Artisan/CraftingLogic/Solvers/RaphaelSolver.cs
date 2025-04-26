@@ -17,28 +17,16 @@ namespace Artisan.CraftingLogic.Solvers
 
             if (output == null) throw new System.Exception("Shouldn't be called");
 
-            return new MacroSolver(new MacroSolverSettings.Macro()
-            {
-                Name = key,
-                Steps = MacroUI.ParseMacro(output.Replace("2", "II").Replace("MasterMend", "MastersMend"), true),
-                Options = new()
-                {
-                    SkipQualityIfMet = true,
-                    UpgradeProgressActions = false,
-                    UpgradeQualityActions = false,
-                    MinCP = craft.StatCP,
-                    MinControl = craft.StatControl,
-                    MinCraftsmanship = craft.StatCraftsmanship,
-                }
-            }, craft);
+            return new MacroSolver(output, craft);
         }
 
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
             var key = RaphaelCache.GetKey(craft);
-            if (P.Config.RaphaelSolverCache.TryGetValue(key, out string? value))
+
+            if (P.Config.RaphaelSolverCache.ContainsKey(key))
             {
-                yield return new(this, -1, 2, "Raphael Recipe Solver");
+                yield return new(this, -1, 2, $"Raphael Recipe Solver {key}");
             }
         }
     }
@@ -77,7 +65,21 @@ namespace Artisan.CraftingLogic.Solvers
                 {
                     process.Start();
                     var output = process.StandardOutput.ReadToEnd();
-                    P.Config.RaphaelSolverCache[key] = output.Replace("\"", "").Replace("[", "").Replace("]", "").Replace(",", "\r\n");
+                    P.Config.RaphaelSolverCache[key] = new MacroSolverSettings.Macro()
+                    {
+                        ID = (int)craft.RecipeId,
+                        Name = key,
+                        Steps = MacroUI.ParseMacro(output.Replace("\"", "").Replace("[", "").Replace("]", "").Replace(",", "\r\n").Replace("2", "II").Replace("MasterMend", "MastersMend"), true),
+                        Options = new()
+                        {
+                            SkipQualityIfMet = true,
+                            UpgradeProgressActions = false,
+                            UpgradeQualityActions = false,
+                            MinCP = craft.StatCP,
+                            MinControl = craft.StatControl,
+                            MinCraftsmanship = craft.StatCraftsmanship,
+                        }
+                    };
                     P.Config.Save();
                     Tasks.Remove(key, out var _);
                 });

@@ -16,7 +16,7 @@ namespace Artisan
     [Serializable]
     public class Configuration : IPluginConfiguration
     {
-        public int Version { get; set; } = 1;
+        public int Version { get; set; } = 2;
         public bool AutoMode
         {
             get => autoMode; 
@@ -150,7 +150,7 @@ namespace Artisan
         public bool UsingDiscordHooks;
         public string? DiscordWebhookUrl;
 
-        public ConcurrentDictionary<string, string> RaphaelSolverCache = [];
+        public ConcurrentDictionary<string, MacroSolverSettings.Macro> RaphaelSolverCache = [];
 
         public void Save()
         {
@@ -216,6 +216,14 @@ namespace Artisan
                     }
                     json["RecipeConfigs"] = cvt;
                 }
+            }
+            
+            if (version <= 1)
+            {
+                // change raphael cache from strings to macros 
+                // can convert it instead of delete?? would need the craft info
+                json[nameof(RaphaelSolverCache)] = new JObject();
+                json[nameof(Version)] = 2;
             }
         }
     }
