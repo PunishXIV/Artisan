@@ -161,6 +161,11 @@ namespace Artisan.UI
                             OpenWindow = OpenWindow.Macro;
                         }
                         ImGui.Spacing();
+                        if (ImGui.Selectable("Raphael Cache", OpenWindow == OpenWindow.RaphaelCache))
+                        {
+                            OpenWindow = OpenWindow.RaphaelCache;
+                        }
+                        ImGui.Spacing();
                         if (ImGui.Selectable("Crafting Lists", OpenWindow == OpenWindow.Lists))
                         {
                             OpenWindow = OpenWindow.Lists;
@@ -221,6 +226,9 @@ namespace Artisan.UI
                                 break;
                             case OpenWindow.Macro:
                                 MacroUI.Draw();
+                                break;
+                            case OpenWindow.RaphaelCache:
+                                RaphaelCacheUI.Draw();
                                 break;
                             case OpenWindow.FCWorkshop:
                                 FCWorkshopUI.Draw();
@@ -953,5 +961,6 @@ namespace Artisan.UI
         SpecialList = 8,
         Overview = 9,
         Simulator = 10,
+        RaphaelCache = 11,
     }
 }

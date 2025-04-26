@@ -193,7 +193,7 @@ public class RecipeConfig
                 ImGuiEx.TextCentered($"Raphael Solution Has Been Generated. (Click to Switch)");
                 if (ImGui.IsItemClicked())
                 {
-                    var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).First(x => x.Name == "Raphael Recipe Solver");
+                    var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).First(x => x.Name == $"Raphael Recipe Solver {RaphaelCache.GetKey(craft)}");
                     SolverType = opt.Def.GetType().FullName!;
                     SolverFlavour = opt.Flavour;
                     changed = true;
