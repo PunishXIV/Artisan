@@ -205,25 +205,29 @@ public class RecipeConfig
             if (hasSolution)
             {
                 var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).First(x => x.Name == $"Raphael Recipe Solver {key}");
-
+                var solverIsRaph = SolverType == opt.Def.GetType().FullName!;
                 var curStats = CharacterStats.GetCurrentStats();
                 //Svc.Log.Debug($"{curStats.Craftsmanship}/{craft.StatCraftsmanship} - {curStats.Control}/{craft.StatControl} - {curStats.CP}/{craft.StatCP}");
                 if ((craft.StatCraftsmanship != curStats.Craftsmanship ||
                     craft.StatControl != curStats.Control || 
-                    craft.StatCP != curStats.CP) && SolverType == opt.Def.GetType().FullName!)
+                    craft.StatCP != curStats.CP) && solverIsRaph)
                 {
                     ImGuiEx.Text(ImGuiColors.DalamudRed, $"Your current stats do not match the generated result.\nThis solver won't be used until they match\n(This may be resolved after using consumables).");
                 }
 
-                ImGuiEx.TextCentered($"Raphael Solution Has Been Generated. (Click to Switch)");
-                if (ImGui.IsItemClicked())
+                if (!solverIsRaph)
                 {
-                    SolverType = opt.Def.GetType().FullName!;
-                    SolverFlavour = opt.Flavour;
-                    changed = true;
+                    ImGuiEx.TextCentered($"Raphael Solution Has Been Generated. (Click to Switch)");
+                    if (ImGui.IsItemClicked())
+                    {
+                        SolverType = opt.Def.GetType().FullName!;
+                        SolverFlavour = opt.Flavour;
+                        changed = true;
+                    }
                 }
             }
 
+            ImGui.Separator();
             var inProgress = RaphaelCache.InProgress(craft);
             var raphChanges = false;
 
