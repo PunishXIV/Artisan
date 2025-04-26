@@ -1,5 +1,6 @@
 ﻿using Artisan.GameInterop;
 using ECommons.DalamudServices;
+using ECommons.ImGuiMethods;
 using ImGuiNET;
 using System.Linq;
 using System.Numerics;
@@ -8,6 +9,7 @@ namespace Artisan.UI
 {
     internal static class RaphaelCacheUI
     {
+        private static string _search = string.Empty;
         internal static void Draw()
         {
             ImGui.TextWrapped("This tab will allow you to view macros in the Raphael integration cache.");
@@ -25,13 +27,17 @@ namespace Artisan.UI
                 P.Config.Save();
             }
 
+            ImGui.InputText($"Search", ref _search, 300);
+
             if (P.Config.RaphaelSolverCache.Count > 0)
             {
                 if (ImGui.BeginChild("##selector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y), true))
                 {
+                    ImGuiEx.TextUnderlined($"Level/Progress/Quality/Durability-Craftsmanship/Control/CP-Type");
                     foreach (var key in P.Config.RaphaelSolverCache.Keys)
                     {
                         var m = P.Config.RaphaelSolverCache[key];
+                        if (!m.Name.Contains(_search, System.StringComparison.CurrentCultureIgnoreCase)) continue;
                         var selected = ImGui.Selectable($"{m.Name}###{m.ID}");
 
                         if (selected && !P.ws.Windows.Any(x => x.WindowName.Contains(m.ID.ToString())))
