@@ -216,10 +216,9 @@ public class RecipeConfig
                 var solverIsRaph = SolverType == opt?.Def.GetType().FullName!;
                 var curStats = CharacterStats.GetCurrentStats();
                 //Svc.Log.Debug($"{curStats.Craftsmanship}/{craft.StatCraftsmanship} - {curStats.Control}/{craft.StatControl} - {curStats.CP}/{craft.StatCP}");
-                if ((craft.StatCraftsmanship != curStats.Craftsmanship ||
-                    craft.StatCP < curStats.CP) && solverIsRaph)
+                if (craft.StatCraftsmanship != curStats.Craftsmanship && solverIsRaph)
                 {
-                    ImGuiEx.Text(ImGuiColors.DalamudRed, $"Your current stats do not match the generated result.\nThis solver won't be used until they match\n(This may be resolved after using consumables).");
+                    ImGuiEx.Text(ImGuiColors.DalamudRed, $"Your current Craftsmanship does not match the generated result.\nThis solver won't be used until they match.\n(You may just need to have the correct buffs applied)");
                 }
 
                 if (!solverIsRaph)

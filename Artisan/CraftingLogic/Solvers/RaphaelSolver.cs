@@ -1,6 +1,7 @@
 ﻿using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.UI;
+using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ImGuiNET;
@@ -30,7 +31,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
-            if (RaphaelCache.HasSolution(craft, out _))
+            if (RaphaelCache.HasSolution(craft, out var solution) && solution.Steps.Count > 0)
             yield return new(this, 3, 0, $"Raphael Recipe Solver");
         }
     }
@@ -186,7 +187,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         public static bool HasSolution(CraftState craft, out MacroSolverSettings.Macro? raphaelSolutionConfig)
         {
-            foreach (var solution in P.Config.RaphaelSolverCacheV2)
+            foreach (var solution in P.Config.RaphaelSolverCacheV2.OrderByDescending(x => KeyParts(x.Key).Control))
             {
                 var solKey = KeyParts(solution.Key);
                 if (solKey.Level == craft.CraftLevel &&
