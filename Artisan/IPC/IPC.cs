@@ -1,6 +1,7 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.RawInformation;
+using Dalamud.Game.ClientState.Conditions;
 using ECommons.DalamudServices;
 using ECommons.Logging;
 using OtterGui;
@@ -130,7 +131,7 @@ namespace Artisan.IPC
 
         public static bool IsBusy()
         {
-            return P.TM.NumQueuedTasks > 0 || P.CTM.NumQueuedTasks > 0;
+            return P.TM.NumQueuedTasks > 0 || P.CTM.NumQueuedTasks > 0 || Svc.Condition[ConditionFlag.PreparingToCraft] || Svc.Condition[ConditionFlag.Crafting] || Svc.Condition[ConditionFlag.MeldingMateria];
         }
 
         public enum ArtisanMode
