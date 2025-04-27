@@ -30,6 +30,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
+            if (RaphaelCache.HasSolution(craft, out _))
             yield return new(this, 3, 0, $"Raphael Recipe Solver");
         }
     }
