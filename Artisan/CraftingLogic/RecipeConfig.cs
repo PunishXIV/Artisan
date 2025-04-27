@@ -1,15 +1,21 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLogic.Solvers;
+using Artisan.GameInterop;
+using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
+using Artisan.UI;
+using Dalamud.Interface.Colors;
+using ECommons;
+using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using ImGuiNET;
+using Lumina.Excel.Sheets;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System;
-using ECommons.DalamudServices;
-using Artisan.GameInterop;
-using Dalamud.Interface.Colors;
-using ECommons;
 
 namespace Artisan.CraftingLogic;
 
@@ -27,14 +33,21 @@ public class RecipeConfig
     [NonSerialized]
     public Dictionary<string, RaphaelSolutionConfig> TempConfigs = new();
 
-    public bool Draw(CraftState craft)
+    public bool Draw(uint recipeId)
     {
+        var recipe = LuminaSheets.RecipeSheet[recipeId];
+        ImGuiEx.LineCentered($"###RecipeName{recipeId}", () => { ImGuiEx.TextUnderlined($"{recipe.ItemResult.Value.Name.ToDalamudString().ToString()}"); });
+        var config = this;
+        var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.RowId);
+        stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ), CharacterInfo.FCCraftsmanshipbuff);
+        var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.RowId, recipe);
         bool changed = false;
         changed |= DrawFood();
         changed |= DrawPotion();
         changed |= DrawManual();
         changed |= DrawSquadronManual();
         changed |= DrawSolver(craft);
+        DrawSimulator(craft);
         return changed;
     }
 
@@ -287,7 +300,69 @@ public class RecipeConfig
 
         return changed;
     }
-    
+
+    public unsafe void DrawSimulator(CraftState craft)
+    {
+        if (!P.Config.HideRecipeWindowSimulator)
+        {
+            var recipe = craft.Recipe;
+            var config = this;
+            var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor);
+            var solver = CraftingProcessor.GetSolverForRecipe(config, craft);
+
+            if (solver.Name != "Expert Recipe Solver")
+                ImGuiEx.TextWrapped(hintColor, solverHint);
+            else
+                ImGuiEx.TextWrapped($"Please run this recipe in the simulator for results.");
+
+            if (ImGui.IsItemClicked())
+            {
+                P.PluginUi.OpenWindow = UI.OpenWindow.Simulator;
+                P.PluginUi.IsOpen = true;
+                SimulatorUI.SelectedRecipe = recipe;
+                SimulatorUI.ResetSim();
+                if (config.RequiredPotion > 0)
+                {
+                    SimulatorUI.SimMedicine ??= new();
+                    SimulatorUI.SimMedicine.Id = config.RequiredPotion;
+                    SimulatorUI.SimMedicine.ConsumableHQ = config.RequiredPotionHQ;
+                    SimulatorUI.SimMedicine.Stats = new ConsumableStats(config.RequiredPotion, config.RequiredPotionHQ);
+                }
+                if (config.RequiredFood > 0)
+                {
+                    SimulatorUI.SimFood ??= new();
+                    SimulatorUI.SimFood.Id = config.RequiredFood;
+                    SimulatorUI.SimFood.ConsumableHQ = config.RequiredFoodHQ;
+                    SimulatorUI.SimFood.Stats = new ConsumableStats(config.RequiredFood, config.RequiredFoodHQ);
+                }
+
+                foreach (ref var gs in RaptureGearsetModule.Instance()->Entries)
+                {
+                    if ((Job)gs.ClassJob == Job.CRP + recipe.CraftType.RowId)
+                    {
+                        if (SimulatorUI.SimGS is null || (Job)SimulatorUI.SimGS.Value.ClassJob != Job.CRP + recipe.CraftType.RowId)
+                        {
+                            SimulatorUI.SimGS = gs;
+                        }
+
+                        if (SimulatorUI.SimGS.Value.ItemLevel < gs.ItemLevel)
+                            SimulatorUI.SimGS = gs;
+                    }
+                }
+
+                var rawSolver = CraftingProcessor.GetSolverForRecipe(config, craft);
+                SimulatorUI._selectedSolver = new(rawSolver.Name, rawSolver.Def.Create(craft, rawSolver.Flavour));
+            }
+
+            if (ImGui.IsItemHovered())
+            {
+                ImGuiEx.Tooltip($"Click to open in simulator");
+            }
+
+
+        }
+    }
+
     private void CleanRaphaelMacro(string key)
     {
         Svc.Log.Debug("Clearing macro due to settings changes");

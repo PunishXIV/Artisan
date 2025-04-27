@@ -328,7 +328,7 @@ internal static class SimulatorUIVeynVersion
         {
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.Value.RowId) ?? new();
             var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.Value.CraftType.RowId);
-            stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
+            stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ), CharacterInfo.FCCraftsmanshipbuff);
             _selectedCraft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.Value.CraftType.RowId, recipe.Value);
             InitDefaultTransitionProbabilities(_selectedCraft, recipe.Value);
             var solverDesc = CraftingProcessor.GetSolverForRecipe(config, _selectedCraft);
