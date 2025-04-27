@@ -15,6 +15,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using global::Artisan.CraftingLogic;
 using global::Artisan.CraftingLogic.Solvers;
 using global::Artisan.GameInterop;
+using global::Artisan.RawInformation.Character;
 using global::Artisan.UI.Tables;
 using ImGuiNET;
 using IPC;
@@ -1283,7 +1284,7 @@ internal class ListEditor : Window, IDisposable
         }
 
         var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.RowId);
-        stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
+        stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ), CharacterInfo.FCCraftsmanshipbuff);
         var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.RowId, recipe);
         if (config.DrawSolver(craft))
         {

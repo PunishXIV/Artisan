@@ -1,4 +1,5 @@
-﻿using Dalamud.Utility.Signatures;
+﻿using Dalamud.Game.ClientState.Statuses;
+using Dalamud.Utility.Signatures;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -22,6 +23,7 @@ namespace Artisan.RawInformation.Character
             MaxCP = Svc.ClientState.LocalPlayer.MaxCp;
             Craftsmanship = PlayerState.Instance()->Attributes[70];
             Control = PlayerState.Instance()->Attributes[71];
+            FCCraftsmanshipbuff = Svc.ClientState.LocalPlayer?.StatusList.FirstOrDefault(x => x.StatusId == 356);
         }
 
         public static byte? CharacterLevel;
@@ -35,6 +37,8 @@ namespace Artisan.RawInformation.Character
         public static unsafe int Craftsmanship;
 
         public static unsafe int Control;
+
+        public static unsafe Dalamud.Game.ClientState.Statuses.Status? FCCraftsmanshipbuff;
 
         public static unsafe int JobLevel(Job job) => PlayerState.Instance()->ClassJobLevels[Svc.Data.GetExcelSheet<ClassJob>()?.GetRow((uint)job).ExpArrayIndex ?? 0];
 

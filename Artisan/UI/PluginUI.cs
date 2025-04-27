@@ -12,9 +12,11 @@ using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
+using Lumina.Excel.Sheets;
 using PunishLib.ImGuiMethods;
 using System;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using ThreadLoadImageHandler = ECommons.ImGuiMethods.ThreadLoadImageHandler;
 
@@ -589,6 +591,16 @@ namespace Artisan.UI
                 {
                     if (ImGui.SliderFloat("Sound Volume", ref P.Config.SoundVolume, 0f, 1f, "%.2f"))
                         P.Config.Save();
+                }
+
+                if (ImGuiEx.ButtonCtrl("Reset Cosmic Exploration Crafting Configs"))
+                {
+                    var copy = P.Config.RecipeConfigs;
+                    foreach (var c in copy)
+                    {
+                        if (Svc.Data.GetExcelSheet<Recipe>().GetRow(c.Key).Number == 0)
+                            P.Config.RecipeConfigs.Remove(c.Key);
+                    }
                 }
             }
             if (ImGui.CollapsingHeader("Macro Settings"))

@@ -171,75 +171,13 @@ namespace Artisan
                 }
                 if (Endurance.RecipeID != 0)
                 {
-                    var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
-                    ImGuiEx.ImGuiLineCentered("###CosmucRecipeWindowRecipeName", () => { ImGuiEx.TextUnderlined($"{recipe.ItemResult.Value.Name.ToDalamudString().ToString()}"); });
-                    var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
-                    var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.RowId);
-                    stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
-                    var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.RowId, recipe);
-                    if (config.Draw(craft))
+                    var config = P.Config.RecipeConfigs.GetValueOrDefault(Endurance.RecipeID) ?? new();
+                    if (config.Draw(Endurance.RecipeID))
                     {
-                        Svc.Log.Debug($"Updating config for {recipe.RowId}");
-                        P.Config.RecipeConfigs[recipe.RowId] = config;
+                        Svc.Log.Debug($"Updating config for {Endurance.RecipeID}");
+                        P.Config.RecipeConfigs[Endurance.RecipeID] = config;
                         P.Config.Save();
                     }
-
-                    if (!P.Config.HideRecipeWindowSimulator)
-                    {
-                        var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor);
-
-                        if (!recipe.IsExpert)
-                            ImGuiEx.TextWrapped(hintColor, solverHint);
-                        else
-                            ImGuiEx.TextWrapped($"Please run this recipe in the simulator for results.");
-
-                        if (ImGui.IsItemClicked())
-                        {
-                            P.PluginUi.OpenWindow = UI.OpenWindow.Simulator;
-                            P.PluginUi.IsOpen = true;
-                            SimulatorUI.SelectedRecipe = recipe;
-                            SimulatorUI.ResetSim();
-                            if (config.RequiredPotion > 0)
-                            {
-                                SimulatorUI.SimMedicine ??= new();
-                                SimulatorUI.SimMedicine.Id = config.RequiredPotion;
-                                SimulatorUI.SimMedicine.ConsumableHQ = config.RequiredPotionHQ;
-                                SimulatorUI.SimMedicine.Stats = new ConsumableStats(config.RequiredPotion, config.RequiredPotionHQ);
-                            }
-                            if (config.RequiredFood > 0)
-                            {
-                                SimulatorUI.SimFood ??= new();
-                                SimulatorUI.SimFood.Id = config.RequiredFood;
-                                SimulatorUI.SimFood.ConsumableHQ = config.RequiredFoodHQ;
-                                SimulatorUI.SimFood.Stats = new ConsumableStats(config.RequiredFood, config.RequiredFoodHQ);
-                            }
-
-                            foreach (ref var gs in RaptureGearsetModule.Instance()->Entries)
-                            {
-                                if ((Job)gs.ClassJob == Job.CRP + recipe.CraftType.RowId)
-                                {
-                                    if (SimulatorUI.SimGS is null || (Job)SimulatorUI.SimGS.Value.ClassJob != Job.CRP + recipe.CraftType.RowId)
-                                    {
-                                        SimulatorUI.SimGS = gs;
-                                    }
-
-                                    if (SimulatorUI.SimGS.Value.ItemLevel < gs.ItemLevel)
-                                        SimulatorUI.SimGS = gs;
-                                }
-                            }
-
-                            var rawSolver = CraftingProcessor.GetSolverForRecipe(config, craft);
-                            SimulatorUI._selectedSolver = new(rawSolver.Name, rawSolver.Def.Create(craft, rawSolver.Flavour));
-                        }
-
-                        if (ImGui.IsItemHovered())
-                        {
-                            ImGuiEx.Tooltip($"Click to open in simulator");
-                        }
-
-
-                    }
-
                 }
 
                 ImGui.End();
@@ -910,80 +848,20 @@ namespace Artisan
                 }
                 if (Endurance.RecipeID != 0)
                 {
-                    var recipe = LuminaSheets.RecipeSheet[Endurance.RecipeID];
-                    ImGuiEx.ImGuiLineCentered("###RecipeWindowRecipeName", () => { ImGuiEx.TextUnderlined($"{recipe.ItemResult.Value.Name.ToDalamudString().ToString()}"); });
-                    var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
-                    var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.RowId);
-                    stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ));
-                    var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.RowId, recipe);
-                    if (config.Draw(craft))
+                    var config = P.Config.RecipeConfigs.GetValueOrDefault(Endurance.RecipeID) ?? new();
+                    if (config.Draw(Endurance.RecipeID))
                     {
-                        P.Config.RecipeConfigs[recipe.RowId] = config;
+                        P.Config.RecipeConfigs[Endurance.RecipeID] = config;
                         P.Config.Save();
                     }
-
-                    if (!P.Config.HideRecipeWindowSimulator)
-                    {
-                        var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor);
-
-                        if (!recipe.IsExpert)
-                            ImGuiEx.TextWrapped(hintColor, solverHint);
-                        else
-                            ImGuiEx.TextWrapped($"Please run this recipe in the simulator for results.");
-
-                        if (ImGui.IsItemClicked())
-                        {
-                            P.PluginUi.OpenWindow = UI.OpenWindow.Simulator;
-                            P.PluginUi.IsOpen = true;
-                            SimulatorUI.SelectedRecipe = recipe;
-                            SimulatorUI.ResetSim();
-                            if (config.RequiredPotion > 0)
-                            {
-                                SimulatorUI.SimMedicine ??= new();
-                                SimulatorUI.SimMedicine.Id = config.RequiredPotion;
-                                SimulatorUI.SimMedicine.ConsumableHQ = config.RequiredPotionHQ;
-                                SimulatorUI.SimMedicine.Stats = new ConsumableStats(config.RequiredPotion, config.RequiredPotionHQ);
-                            }
-                            if (config.RequiredFood > 0)
-                            {
-                                SimulatorUI.SimFood ??= new();
-                                SimulatorUI.SimFood.Id = config.RequiredFood;
-                                SimulatorUI.SimFood.ConsumableHQ = config.RequiredFoodHQ;
-                                SimulatorUI.SimFood.Stats = new ConsumableStats(config.RequiredFood, config.RequiredFoodHQ);
-                            }
-
-                            foreach (ref var gs in RaptureGearsetModule.Instance()->Entries)
-                            {
-                                if ((Job)gs.ClassJob == Job.CRP + recipe.CraftType.RowId)
-                                {
-                                    if (SimulatorUI.SimGS is null || (Job)SimulatorUI.SimGS.Value.ClassJob != Job.CRP + recipe.CraftType.RowId)
-                                    {
-                                        SimulatorUI.SimGS = gs;
-                                    }
-
-                                    if (SimulatorUI.SimGS.Value.ItemLevel < gs.ItemLevel)
-                                        SimulatorUI.SimGS = gs;
-                                }
-                            }
-
-                            var rawSolver = CraftingProcessor.GetSolverForRecipe(config, craft);
-                            SimulatorUI._selectedSolver = new(rawSolver.Name, rawSolver.Def.Create(craft, rawSolver.Flavour));
-                        }
-
-                        if (ImGui.IsItemHovered())
-                        {
-                            ImGuiEx.Tooltip($"Click to open in simulator");
-                        }
-
-
-                    }
-
                 }
 
                 ImGui.End();
                 ImGui.PopStyleVar(2);
             }
         }
+
+        
 
         internal static unsafe void DrawEnduranceCounter()
         {
