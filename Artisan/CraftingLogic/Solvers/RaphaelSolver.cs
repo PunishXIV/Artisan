@@ -1,6 +1,7 @@
 ﻿using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.UI;
+using Dalamud.Interface.Utility.Raii;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
@@ -77,6 +78,11 @@ namespace Artisan.CraftingLogic.Solvers
                 if (config.QuickInno)
                 {
                     extraArgsBuilder.Append($"--quick-innovation "); // must always have a space after
+                }
+
+                if (P.Config.RaphaelSolverConfig.MaximumThreads > 0)
+                {
+                    extraArgsBuilder.Append($"--threads {P.Config.RaphaelSolverConfig.MaximumThreads} "); // must always have a space after
                 }
 
                 var process = new Process()
@@ -223,6 +229,7 @@ namespace Artisan.CraftingLogic.Solvers
         public bool AutoGenerate = false;
         public bool AutoSwitch = false;
         public bool AutoSwitchOnAll = false;
+        public int MaximumThreads = 0;
 
         public bool Draw()
         {
@@ -231,6 +238,12 @@ namespace Artisan.CraftingLogic.Solvers
             ImGui.Indent();
             ImGui.TextWrapped($"Raphael settings can change the performance and system memory consumption. If you have low amounts of RAM try not to change settings, recommended minimum amount of RAM free is 2GB");
 
+            if (ImGui.SliderInt("Maximum Threads", ref MaximumThreads, 0, Environment.ProcessorCount))
+            {
+                P.Config.Save();
+            }
+            ImGui.Text("By default uses all it can, but on lower end machines you might need to use less cpu at the cost of speed. (0 = everything)");
+
             changed |= ImGui.Checkbox("Allow HQ Materials to be considered in macro generation", ref AllowHQConsiderations);
             changed |= ImGui.Checkbox("Ensure 100% reliability in macro generation", ref AllowEnsureReliability);
             ImGui.TextColored(new System.Numerics.Vector4(255, 0, 0, 1), "Ensuring reliability may not always work and is very CPU and RAM intensive, suggested RAM at least 16GB+ spare.");
@@ -238,6 +251,7 @@ namespace Artisan.CraftingLogic.Solvers
             changed |= ImGui.Checkbox("Show specialist options when available", ref ShowSpecialistSettings);
             changed |= ImGui.Checkbox($"Automatically generate a solution if a valid one hasn't been created.", ref AutoGenerate);
             changed |= ImGui.Checkbox($"Automatically switch to the Raphael Solver once a solution has been created.", ref AutoSwitch);
+
             if (AutoSwitch)
             {
                 ImGui.Indent();

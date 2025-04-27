@@ -44,6 +44,7 @@ namespace Artisan.IPC
             Svc.PluginInterface.GetIpcProvider<bool, object>("Artisan.SetStopRequest").RegisterAction(SetStopRequest);
 
             Svc.PluginInterface.GetIpcProvider<ushort, int, object>("Artisan.CraftItem").RegisterAction(CraftX);
+            Svc.PluginInterface.GetIpcProvider<bool>("Artisan.IsBusy").RegisterFunc(IsBusy);
         }
 
         internal static void Dispose()
@@ -59,6 +60,7 @@ namespace Artisan.IPC
             Svc.PluginInterface.GetIpcProvider<bool, object>("Artisan.SetStopRequest").UnregisterAction();
 
             Svc.PluginInterface.GetIpcProvider<ushort, int, object>("Artisan.CraftItem").UnregisterAction();
+            Svc.PluginInterface.GetIpcProvider<ushort, int, object>("Artisan.IsBusy").UnregisterFunc();
         }
 
         static bool GetEnduranceStatus()
@@ -124,6 +126,11 @@ namespace Artisan.IPC
             {
                 throw new Exception("RecipeID not found.");
             }
+        }
+
+        public static bool IsBusy()
+        {
+            return P.TM.NumQueuedTasks > 0 || P.CTM.NumQueuedTasks > 0;
         }
 
         public enum ArtisanMode
