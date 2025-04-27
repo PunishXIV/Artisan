@@ -675,6 +675,10 @@ namespace Artisan.UI
                 if (ImGui.SliderInt($"###MaxIQStacksPrepTouch", ref P.Config.MaxIQPrepTouch, 0, 10))
                     P.Config.Save();
 
+                if (ImGui.Checkbox($"Use Material Miracle when available", ref P.Config.UseMaterialMiracle))
+                    P.Config.Save();
+
+                ImGuiComponents.HelpMarker($"This will switch the Standard Recipe Solver over to the Expert Solver for the duration of the buff. This will not give you proper simulator results as it's a timed buff, not a permanent one with stacks, so we can't really simulate it properly.");
 
             }
             bool openExpert = false;

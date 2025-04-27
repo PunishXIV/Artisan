@@ -311,7 +311,12 @@ public class RecipeConfig
             var solver = CraftingProcessor.GetSolverForRecipe(config, craft);
 
             if (solver.Name != "Expert Recipe Solver")
-                ImGuiEx.TextWrapped(hintColor, solverHint);
+            {
+                if (craft.MissionHasMaterialMiracle && solver.Name == "Standard Recipe Solver" && P.Config.UseMaterialMiracle)
+                    ImGuiEx.TextWrapped($"This would use Material Miracle, which is not compatible with the simulator.");
+                else
+                    ImGuiEx.TextWrapped(hintColor, solverHint);
+            }
             else
                 ImGuiEx.TextWrapped($"Please run this recipe in the simulator for results.");
 

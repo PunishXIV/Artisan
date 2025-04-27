@@ -1,7 +1,6 @@
 ﻿using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Colors;
-using ECommons.DalamudServices;
 using Lumina.Excel.Sheets;
 using System;
 using System.ComponentModel;
@@ -59,7 +58,8 @@ public static class Simulator
             HeartAndSoulAvailable = craft.Specialist,
             QuickInnoLeft = craft.Specialist ? 1 : 0,
             TrainedPerfectionAvailable = craft.StatLevel >= MinLevel(Skills.TrainedPerfection),
-            Condition = Condition.Normal
+            Condition = Condition.Normal,
+            MaterialMiracleCharges = (uint)(craft.MissionHasMaterialMiracle ? 1 : 0),
         };
 
     public static CraftStatus Status(CraftState craft, StepState step)
@@ -208,6 +208,8 @@ public static class Simulator
         next.PrevComboAction = action; // note: even stuff like final appraisal and h&s break combos
         next.TrainedPerfectionActive = action == Skills.TrainedPerfection || (step.TrainedPerfectionActive && !HasDurabilityCost(action));
         next.TrainedPerfectionAvailable = step.TrainedPerfectionAvailable && action != Skills.TrainedPerfection;
+        next.MaterialMiracleCharges = action == Skills.MaterialMiracle ? step.MaterialMiracleCharges - 1 : step.MaterialMiracleCharges;
+        next.MaterialMiracleActive = step.MaterialMiracleActive; //This is a timed buff, can't really use this in the simulator, just copy the real result
 
         if (step.FinalAppraisalLeft > 0 && next.Progress >= craft.CraftProgress)
             next.Progress = craft.CraftProgress - 1;
@@ -282,10 +284,11 @@ public static class Simulator
         Skills.TrainedPerfection => step.TrainedPerfectionAvailable,
         Skills.DaringTouch => step.ExpedienceLeft > 0,
         Skills.QuickInnovation => step.QuickInnoLeft > 0 && step.InnovationLeft == 0,
+        Skills.MaterialMiracle => step.MaterialMiracleCharges > 0 && !step.MaterialMiracleActive,
         _ => true
     } && craft.StatLevel >= MinLevel(action) && step.RemainingCP >= GetCPCost(step, action);
 
-    public static bool SkipUpdates(Skills action) => action is Skills.CarefulObservation or Skills.FinalAppraisal or Skills.HeartAndSoul;
+    public static bool SkipUpdates(Skills action) => action is Skills.CarefulObservation or Skills.FinalAppraisal or Skills.HeartAndSoul or Skills.MaterialMiracle;
     public static bool ConsumeHeartAndSoul(Skills action) => action is Skills.IntensiveSynthesis or Skills.PreciseTouch or Skills.TricksOfTrade;
 
     public static double GetSuccessRate(StepState step, Skills action)
