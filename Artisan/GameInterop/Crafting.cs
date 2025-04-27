@@ -494,7 +494,17 @@ public static unsafe class Crafting
     private static int GetStepQuality(AddonSynthesis* synthWindow) => synthWindow->AtkUnitBase.AtkValues[9].Int;
     private static int GetStepDurability(AddonSynthesis* synthWindow) => synthWindow->AtkUnitBase.AtkValues[7].Int;
     private static Condition GetStepCondition(AddonSynthesis* synthWindow) => (Condition)synthWindow->AtkUnitBase.AtkValues[12].Int;
-    private unsafe static uint MaterialMiracleCharges() => (uint)(DutyActionManager.GetInstanceIfReady()->CurCharges[1] + DutyActionManager.GetInstanceIfReady()->CurCharges[0]);
+    private unsafe static uint MaterialMiracleCharges()
+    {
+        try
+        {
+            return (uint)(DutyActionManager.GetInstanceIfReady()->CurCharges[1] + DutyActionManager.GetInstanceIfReady()->CurCharges[0]);
+        }
+        catch (Exception e)
+        {
+            return 0;
+        }
+    }
 
     private static StepState BuildStepState(AddonSynthesis* synthWindow, StepState? predictedStep, CraftState craft)
     {
