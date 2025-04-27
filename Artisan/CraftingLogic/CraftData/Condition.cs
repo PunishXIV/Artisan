@@ -5,16 +5,16 @@ namespace Artisan.CraftingLogic.CraftData
 
     public enum Condition
     {
-        Normal,
-        Good,
-        Excellent,
-        Poor,
-        Centered,
-        Sturdy,
-        Pliant,
-        Malleable,
-        Primed,
-        GoodOmen,
+        Normal = 0,
+        Good = 1,
+        Excellent = 2,
+        Poor = 3,
+        Centered = 4,
+        Sturdy = 5,
+        Pliant = 6,
+        Malleable = 7,
+        Primed = 8,
+        GoodOmen = 9,
 
         Unknown
     }
