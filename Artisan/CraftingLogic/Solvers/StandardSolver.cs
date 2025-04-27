@@ -29,10 +29,14 @@ namespace Artisan.CraftingLogic.Solvers
         private bool _qualityStarted;
         private bool _venereationUsed;
         private bool _trainedEyeUsed;
+        private bool _materialMiracleUsed;
+
+        private Solver? _fallback; //For Material Miracle
 
         public StandardSolver(bool expert)
         {
             _expert = expert;
+            _fallback = new ExpertSolver();
         }
 
         public override Recommendation Solve(CraftState craft, StepState step)
@@ -41,8 +45,11 @@ namespace Artisan.CraftingLogic.Solvers
 
             if (Simulator.GetDurabilityCost(step, rec.Action) == 0)
             {
-                if (step.Durability <= 10 && Simulator.CanUseAction(craft, step, Skills.MastersMend)) rec.Action = Skills.MastersMend;
-                if (step.Durability <= 10 && Simulator.CanUseAction(craft, step, Skills.ImmaculateMend) && craft.CraftDurability >= 70) rec.Action = Skills.ImmaculateMend;
+                if (rec.Action != Skills.MaterialMiracle)
+                {
+                    if (step.Durability <= 10 && Simulator.CanUseAction(craft, step, Skills.MastersMend)) rec.Action = Skills.MastersMend;
+                    if (step.Durability <= 10 && Simulator.CanUseAction(craft, step, Skills.ImmaculateMend) && craft.CraftDurability >= 70) rec.Action = Skills.ImmaculateMend;
+                }
             }
             else
             {
@@ -136,12 +143,21 @@ namespace Artisan.CraftingLogic.Solvers
 
         public Recommendation GetRecommendation(CraftState craft, StepState step)
         {
+            var fallbackRec = _fallback.Solve(craft, step);
+
             _manipulationUsed |= step.PrevComboAction == Skills.Manipulation;
             _trainedEyeUsed |= step.PrevComboAction == Skills.TrainedEye;
             _wasteNotUsed |= step.PrevComboAction is Skills.WasteNot or Skills.WasteNot2;
             _qualityStarted |= step.PrevComboAction is Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.ByregotsBlessing or Skills.PrudentTouch
                 or Skills.PreciseTouch or Skills.TrainedEye or Skills.PreparatoryTouch or Skills.TrainedFinesse or Skills.Innovation;
             _venereationUsed |= step.PrevComboAction == Skills.Veneration;
+            _materialMiracleUsed |= step.PrevComboAction == Skills.MaterialMiracle;
+
+            if (step.MaterialMiracleActive)
+                return fallbackRec;
+
+            if (P.Config.UseMaterialMiracle && !_materialMiracleUsed && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
+                return new(Skills.MaterialMiracle);
 
             bool inCombo = (step.PrevComboAction == Skills.BasicTouch && Simulator.CanUseAction(craft, step, Skills.StandardTouch)) || (step.PrevComboAction == Skills.StandardTouch && Simulator.CanUseAction(craft, step, Skills.AdvancedTouch));
             var act = BestSynthesis(craft, step);

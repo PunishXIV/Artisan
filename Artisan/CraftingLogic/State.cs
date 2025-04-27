@@ -38,6 +38,7 @@ public record class CraftState
     public byte CollectableMetadataKey;
     public bool IsCosmic;
     public ConditionFlags ConditionFlags;
+    public bool MissionHasMaterialMiracle;
 
     public uint ItemId;
     public uint RecipeId;
@@ -76,6 +77,8 @@ public record class StepState
     public bool TrainedPerfectionAvailable;
     public bool TrainedPerfectionActive;
     public Skills PrevComboAction;
+    public uint MaterialMiracleCharges;
+    public bool MaterialMiracleActive;
 
     public override string ToString() => $"#{Index} {Condition}: {Progress}/{Quality}/{Durability}/{RemainingCP}; {BuffsString()}; Prev={PrevComboAction}{(PrevActionFailed ? " (failed)" : "")}";
 
@@ -98,6 +101,7 @@ public record class StepState
             sb.Append($", FA={FinalAppraisalLeft}");
         sb.Append($", CO={CarefulObservationLeft}, HS={(HeartAndSoulActive ? "active" : HeartAndSoulAvailable ? "avail" : "none")}");
         sb.Append($", QuickInno:{QuickInnoAvailable}/{QuickInnoLeft}/{InnovationLeft}");
+        sb.Append($", MaterialMiracleActive:{MaterialMiracleActive} / {MaterialMiracleCharges}");
         return sb.ToString();
     }
 }
