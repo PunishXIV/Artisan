@@ -100,9 +100,14 @@ namespace Artisan.CraftingLogic.Solvers
                 {
                     process.Start();
                     var output = process.StandardOutput.ReadToEnd();
+
+                    var rng = new Random();
+                    var ID = rng.Next(50001, Int32.MaxValue);
+                    while (P.Config.RaphaelSolverCacheV2.Any(kv => kv.Value.ID == ID))
+                        ID = rng.Next(50001, Int32.MaxValue);
                     P.Config.RaphaelSolverCacheV2[key] = new MacroSolverSettings.Macro()
                     {
-                        ID = (int)craft.RecipeId,
+                        ID = ID,
                         Name = key,
                         Steps = MacroUI.ParseMacro(output.Replace("\"", "").Replace("[", "").Replace("]", "").Replace(",", "\r\n").Replace("2", "II").Replace("MasterMend", "MastersMend"), true),
                         Options = new()
