@@ -680,6 +680,15 @@ namespace Artisan.UI
 
                 ImGuiComponents.HelpMarker($"This will switch the Standard Recipe Solver over to the Expert Solver for the duration of the buff. This will not give you proper simulator results as it's a timed buff, not a permanent one with stacks, so we can't really simulate it properly.");
 
+                if (P.Config.UseMaterialMiracle)
+                {
+                    ImGui.Indent();
+                    if (ImGui.Checkbox($"Use more than once per craft.", ref P.Config.MaterialMiracleMulti))
+                        P.Config.Save();
+
+                    ImGui.Unindent();
+                }
+
             }
             bool openExpert = false;
             if (ImGui.CollapsingHeader("Expert Recipe Solver Settings"))

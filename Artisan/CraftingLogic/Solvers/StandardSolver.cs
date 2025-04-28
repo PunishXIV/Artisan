@@ -151,7 +151,7 @@ namespace Artisan.CraftingLogic.Solvers
             _qualityStarted |= step.PrevComboAction is Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.ByregotsBlessing or Skills.PrudentTouch
                 or Skills.PreciseTouch or Skills.TrainedEye or Skills.PreparatoryTouch or Skills.TrainedFinesse or Skills.Innovation;
             _venereationUsed |= step.PrevComboAction == Skills.Veneration;
-            _materialMiracleUsed |= step.PrevComboAction == Skills.MaterialMiracle;
+            _materialMiracleUsed |= step.PrevComboAction == Skills.MaterialMiracle && !P.Config.MaterialMiracleMulti;
 
             if (step.MaterialMiracleActive)
                 return fallbackRec;
