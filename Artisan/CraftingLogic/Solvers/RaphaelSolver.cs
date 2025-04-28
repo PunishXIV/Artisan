@@ -4,6 +4,7 @@ using Artisan.UI;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using ECommons.Logging;
 using ImGuiNET;
 using System;
 using System.Collections.Concurrent;
@@ -126,6 +127,14 @@ namespace Artisan.CraftingLogic.Solvers
                             MinCraftsmanship = craft.StatCraftsmanship,
                         }
                     };
+                    if (P.Config.RaphaelSolverCacheV2[key].Steps.Count == 0)
+                    {
+                        DuoLog.Error($"Raphael failed to generate a valid macro. If you are not running Windows this may be the issue.{(P.Config.RaphaelSolverConfig.AutoGenerate ? " Automatic generation will be disabled as a result." : "")}");
+                        P.Config.RaphaelSolverConfig.AutoGenerate = false;
+                        return;
+                    }
+                        
+
                     if (P.Config.RaphaelSolverConfig.AutoSwitch)
                     {
                         if (!P.Config.RaphaelSolverConfig.AutoSwitchOnAll)
