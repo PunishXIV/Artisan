@@ -1,7 +1,6 @@
 ﻿using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.UI;
-using Dalamud.Interface.Utility.Raii;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
@@ -32,8 +31,8 @@ namespace Artisan.CraftingLogic.Solvers
 
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
-            if (RaphaelCache.HasSolution(craft, out var solution) && solution.Steps.Count > 0)
-            yield return new(this, 3, 0, $"Raphael Recipe Solver");
+            if (RaphaelCache.HasSolution(craft, out var solution))
+                yield return new(this, 3, 0, $"Raphael Recipe Solver");
         }
     }
 
@@ -108,9 +107,10 @@ namespace Artisan.CraftingLogic.Solvers
                     var output = process.StandardOutput.ReadToEnd();
 
                     var rng = new Random();
-                    var ID = rng.Next(50001, Int32.MaxValue);
+                    var ID = rng.Next(50001, 10000000);
                     while (P.Config.RaphaelSolverCacheV2.Any(kv => kv.Value.ID == ID))
-                        ID = rng.Next(50001, Int32.MaxValue);
+                        ID = rng.Next(50001, 10000000);
+
                     P.Config.RaphaelSolverCacheV2[key] = new MacroSolverSettings.Macro()
                     {
                         ID = ID,
@@ -131,24 +131,30 @@ namespace Artisan.CraftingLogic.Solvers
                         if (!P.Config.RaphaelSolverConfig.AutoSwitchOnAll)
                         {
                             Svc.Log.Debug("Switching to Raphael solver");
-                            var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).First(x => x.Name == $"Raphael Recipe Solver");
-                            var config = P.Config.RecipeConfigs.GetValueOrDefault(craft.Recipe.RowId);
-                            config.SolverType = opt.Def.GetType().FullName!;
-                            config.SolverFlavour = opt.Flavour;
-                            P.Config.RecipeConfigs[craft.Recipe.RowId] = config;
+                            var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).FirstOrNull(x => x.Name == $"Raphael Recipe Solver");
+                            if (opt is not null)
+                            {
+                                var config = P.Config.RecipeConfigs.GetValueOrDefault(craft.Recipe.RowId);
+                                config.SolverType = opt?.Def.GetType().FullName!;
+                                config.SolverFlavour = (int)(opt?.Flavour);
+                                P.Config.RecipeConfigs[craft.Recipe.RowId] = config;
+                            }
                         }
                         else
                         {
                             var crafts = AllValidCrafts(key, craft.Recipe.CraftType.RowId).ToList();
                             Svc.Log.Debug($"Applying solver to {crafts.Count()} recipes.");
-                            var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).First(x => x.Name == $"Raphael Recipe Solver");
-                            var config = P.Config.RecipeConfigs.GetValueOrDefault(craft.Recipe.RowId) ?? new();
-                            config.SolverType = opt.Def.GetType().FullName!;
-                            config.SolverFlavour = opt.Flavour;
-                            foreach (var c in crafts)
+                            var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).FirstOrNull(x => x.Name == $"Raphael Recipe Solver");
+                            if (opt is not null)
                             {
-                                Svc.Log.Debug($"Switching {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) to Raphael solver");
-                                P.Config.RecipeConfigs[c.Recipe.RowId] = config;
+                                var config = P.Config.RecipeConfigs.GetValueOrDefault(craft.Recipe.RowId) ?? new();
+                                config.SolverType = opt?.Def.GetType().FullName!;
+                                config.SolverFlavour = (int)(opt?.Flavour);
+                                foreach (var c in crafts)
+                                {
+                                    Svc.Log.Debug($"Switching {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) to Raphael solver");
+                                    P.Config.RecipeConfigs[c.Recipe.RowId] = config;
+                                }
                             }
                         }
                     }
@@ -200,6 +206,8 @@ namespace Artisan.CraftingLogic.Solvers
         {
             foreach (var solution in P.Config.RaphaelSolverCacheV2.OrderByDescending(x => KeyParts(x.Key).Control))
             {
+                if (solution.Value.Steps.Count == 0) continue;
+
                 var solKey = KeyParts(solution.Key);
                 if (solKey.Level == craft.CraftLevel &&
                     solKey.Prog == craft.CraftProgress &&

@@ -498,10 +498,14 @@ public static unsafe class Crafting
     {
         try
         {
-            return (uint)(DutyActionManager.GetInstanceIfReady()->CurCharges[1] + DutyActionManager.GetInstanceIfReady()->CurCharges[0]);
+            if (DutyActionManager.GetInstanceIfReady() != null)
+                return (uint)(DutyActionManager.GetInstanceIfReady()->CurCharges[1] + DutyActionManager.GetInstanceIfReady()->CurCharges[0]);
+
+            return 0;
         }
         catch (Exception e)
         {
+            ECommons.GenericHelpers.Log(e);
             return 0;
         }
     }
