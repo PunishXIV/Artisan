@@ -419,7 +419,7 @@ public static class Simulator
 
         float condMod = step.Condition switch
         {
-            Condition.Good => craft.Splendorous ? 1.75f : 1.5f,
+            Condition.Good => craft.SplendorCosmic ? 1.75f : 1.5f,
             Condition.Excellent => 4,
             Condition.Poor => 0.5f,
             _ => 1

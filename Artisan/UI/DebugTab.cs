@@ -453,7 +453,7 @@ namespace Artisan.UI
                 return;
 
             var stats = CharacterStats.GetBaseStatsEquipped();
-            ImGui.TextUnformatted($"Total stats: {stats.Craftsmanship}/{stats.Control}/{stats.CP}/{stats.Splendorous}/{stats.Specialist}");
+            ImGui.TextUnformatted($"Total stats: {stats.Craftsmanship}/{stats.Control}/{stats.CP}/{stats.SplendorCosmic}/{stats.Specialist}");
 
             var inventory = InventoryManager.Instance()->GetInventoryContainer(InventoryType.EquippedItems);
             if (inventory == null)
@@ -469,6 +469,7 @@ namespace Artisan.UI
                 using var n = ImRaii.TreeNode($"{i}: {item->ItemId} '{details.Data.Value.Name}' ({item->Flags}): crs={details.Stats[0].Base}+{details.Stats[0].Melded}/{details.Stats[0].Max}, ctrl={details.Stats[1].Base}+{details.Stats[1].Melded}/{details.Stats[1].Max}, cp={details.Stats[2].Base}+{details.Stats[2].Melded}/{details.Stats[2].Max}");
                 if (n)
                 {
+                    ImGui.Text($"{details.Data.Value.LevelEquip} {details.Data.Value.Rarity}");
                     for (int j = 0; j < 5; ++j)
                     {
                         using var m = ImRaii.TreeNode($"Materia {j}: {item->Materia[j]} {item->MateriaGrades[j]}", ImGuiTreeNodeFlags.Leaf);
@@ -489,7 +490,7 @@ namespace Artisan.UI
                     return;
 
                 var stats = CharacterStats.GetBaseStatsGearset(ref gs);
-                ImGui.TextUnformatted($"Total stats: {stats.Craftsmanship}/{stats.Control}/{stats.CP}/{stats.Splendorous}/{stats.Specialist}");
+                ImGui.TextUnformatted($"Total stats: {stats.Craftsmanship}/{stats.Control}/{stats.CP}/{stats.SplendorCosmic}/{stats.Specialist}");
 
                 for (int i = 0; i < gs.Items.Length; ++i)
                 {

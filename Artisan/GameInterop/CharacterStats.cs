@@ -163,13 +163,13 @@ public unsafe struct CharacterStats
     public int Control;
     public int CP;
     public int Level;
-    public bool Splendorous;
+    public bool SplendorCosmic;
     public bool Specialist;
     public bool Manipulation;
 
     public override string ToString()
     {
-        return $"Craft: {Craftsmanship}; Control: {Control}; CP: {CP}; Level: {Level}; Splendorous: {Splendorous}; Specialist: {Specialist}; Manipulation: {Manipulation};";
+        return $"Craft: {Craftsmanship}; Control: {Control}; CP: {CP}; Level: {Level}; Splendorous/Cosmic: {SplendorCosmic}; Specialist: {Specialist}; Manipulation: {Manipulation};";
     }
 
     // current in-game stats
@@ -181,7 +181,7 @@ public unsafe struct CharacterStats
         stats.Control = CharacterInfo.Control;
         stats.CP = (int)CharacterInfo.MaxCP;
         stats.Specialist = InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 13)->ItemId != 0; // specialist == job crystal equipped
-        stats.Splendorous = Svc.Data.GetExcelSheet<Item>()?.GetRow(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemId) is { LevelEquip: 90, Rarity: >= 4 };
+        stats.SplendorCosmic = Svc.Data.GetExcelSheet<Item>()?.GetRow(InventoryManager.Instance()->GetInventorySlot(InventoryType.EquippedItems, 0)->ItemId) is { LevelEquip: 90 or 100, Rarity: >= 4 };
         stats.Manipulation = CharacterInfo.IsManipulationUnlocked(CharacterInfo.JobID);
 
         return stats;
@@ -252,7 +252,7 @@ public unsafe struct CharacterStats
         Craftsmanship += item.Stats[(int)CharacterStatsUtils.Stat.Craftsmanship].Effective;
         Control += item.Stats[(int)CharacterStatsUtils.Stat.Control].Effective;
         CP += item.Stats[(int)CharacterStatsUtils.Stat.CP].Effective;
-        Splendorous |= slot == 0 && item.Data.Value.LevelEquip == 90 && item.Data.Value.Rarity >= 4;
+        SplendorCosmic |= slot == 0 && item.Data.Value.LevelEquip is 90 or 100 && item.Data.Value.Rarity >= 4;
         Specialist |= slot == 13; // specialist == job crystal equipped
     }
 

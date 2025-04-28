@@ -13,7 +13,7 @@ public record class CraftState
     public int StatLevel;
     public bool UnlockedManipulation;
     public bool Specialist;
-    public bool Splendorous;
+    public bool SplendorCosmic;
 
     // recipe stats
     public bool CraftHQ;

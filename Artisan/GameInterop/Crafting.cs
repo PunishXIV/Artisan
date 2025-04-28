@@ -95,7 +95,7 @@ public static unsafe class Crafting
             StatLevel = stats.Level,
             UnlockedManipulation = stats.Manipulation,
             Specialist = stats.Specialist,
-            Splendorous = stats.Splendorous,
+            SplendorCosmic = stats.SplendorCosmic,
             CraftCollectible = recipe.ItemResult.Value.AlwaysCollectable,
             CraftExpert = recipe.IsExpert,
             CraftLevel = lt.ClassJobLevel,

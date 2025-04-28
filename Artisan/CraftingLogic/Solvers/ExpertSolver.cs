@@ -636,7 +636,7 @@ public class ExpertSolver : Solver
             // try [gs]+inno+byregot
             var adjBuffMod = (1 + 0.1f * step.IQStacks) * 2.5f;
             float effPotency = (100 + 20 * step.IQStacks) * adjBuffMod;
-            float condMod = step.Condition != Condition.GoodOmen ? 1 : craft.Splendorous ? 1.75f : 1.5f;
+            float condMod = step.Condition != Condition.GoodOmen ? 1 : craft.SplendorCosmic ? 1.75f : 1.5f;
             var adjQuality = (int)(Simulator.BaseQuality(craft) * condMod * effPotency / 100);
             if (missingQuality <= adjQuality)
                 return new(Skills.Innovation, "fq: inno->byregot");
@@ -646,7 +646,7 @@ public class ExpertSolver : Solver
             // try gs+byregot
             var adjBuffMod = (1 + 0.1f * step.IQStacks) * (step.InnovationLeft > 1 ? 2.5f : 2.0f);
             float effPotency = (100 + 20 * step.IQStacks) * adjBuffMod;
-            float condMod = step.Condition != Condition.GoodOmen ? 1 : craft.Splendorous ? 1.75f : 1.5f;
+            float condMod = step.Condition != Condition.GoodOmen ? 1 : craft.SplendorCosmic ? 1.75f : 1.5f;
             var adjQuality = (int)(Simulator.BaseQuality(craft) * condMod * effPotency / 100);
             if (missingQuality <= adjQuality)
                 return new(Skills.GreatStrides, "fq: gs->byregot");
