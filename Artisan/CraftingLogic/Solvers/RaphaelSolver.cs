@@ -127,9 +127,12 @@ namespace Artisan.CraftingLogic.Solvers
                             MinCraftsmanship = craft.StatCraftsmanship,
                         }
                     };
-                    if (P.Config.RaphaelSolverCacheV2[key].Steps.Count == 0)
+                    if (P.Config.RaphaelSolverCacheV2[key] == null || P.Config.RaphaelSolverCacheV2[key].Steps.Count == 0)
                     {
-                        DuoLog.Error($"Raphael failed to generate a valid macro. If you are not running Windows this may be the issue.{(P.Config.RaphaelSolverConfig.AutoGenerate ? " Automatic generation will be disabled as a result." : "")}");
+                        DuoLog.Error($"Raphael failed to generate a valid macro. This could be one of the following reasons:" +
+                            $"\n- If you are not running Windows, Raphael may not be compatible with your OS." +
+                            $"\n- You cancelled the generation." +
+                            $"\n- Raphael just gave up after not finding a result.{(P.Config.RaphaelSolverConfig.AutoGenerate ? "\nAutomatic generation will be disabled as a result." : "")}");
                         P.Config.RaphaelSolverConfig.AutoGenerate = false;
                         return;
                     }

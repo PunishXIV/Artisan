@@ -173,14 +173,15 @@ namespace Artisan.CraftingLists
 
         public static unsafe void OpenRecipeByID(uint recipeID, bool skipThrottle = false)
         {
-            if (Crafting.CurState != Crafting.State.IdleNormal) return;
+            PreCrafting.TaskSelectRecipe(LuminaSheets.RecipeSheet[recipeID]);
+            //if (Crafting.CurState != Crafting.State.IdleNormal) return;
 
-            var re = Operations.GetSelectedRecipeEntry();
+            //var re = Operations.GetSelectedRecipeEntry();
 
-            if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) || (re != null && re->RecipeId != recipeID))
-            {
-                AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipeID);
-            }
+            //if (!TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon) || (re != null && re->RecipeId != recipeID))
+            //{
+            //    AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipeID);
+            //}
         }
 
         public static bool HasItemsForRecipe(uint currentProcessedItem)
