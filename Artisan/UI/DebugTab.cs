@@ -132,6 +132,59 @@ namespace Artisan.UI
                         }
                     }
                 }
+                if (ImGui.CollapsingHeader("Recipe Configs"))
+                {
+                    if (ImGui.Button("Clear (Hold Ctrl)") && ImGui.GetIO().KeyCtrl)
+                    {
+                        P.Config.RecipeConfigs.Clear();
+                        P.Config.Save();
+                    }
+                    ImGui.BeginTable("DebugeRcipeConfigs", 9);
+                    ImGui.TableHeader("DebugRecipeConfigs");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("Item");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("requiredFood");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("HQ?");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("requiredPotion");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("HQ?");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("requiredManual");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("requiredSquadronManual");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("SolverType");
+                    ImGui.TableNextColumn();
+                    ImGui.Text("SolverFlavour");
+
+                    foreach (var (k, v) in P.Config.RecipeConfigs)
+                    {
+                        ImGui.TableNextRow();
+                        var recipe = LuminaSheets.RecipeSheet[k];
+                        ImGui.TableNextColumn();
+                        ImGui.Text(recipe.ItemResult.Value.Name.ToDalamudString().ToString());
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.requiredFood}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.requiredFoodHQ}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.requiredPotion}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.requiredPotionHQ}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.requiredManual}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.requiredSquadronManual}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.SolverType}");
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{v.SolverFlavour}");
+                    }
+                    ImGui.EndTable();
+                }
                 if (ImGui.CollapsingHeader("Base Stats"))
                 {
                     ImGui.Text($"{CharacterStats.GetCurrentStats()}");

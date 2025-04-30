@@ -88,6 +88,15 @@ namespace Artisan
 
         public bool UseConsumablesTrial = false;
         public bool UseConsumablesQuickSynth = false;
+        public RecipeConfig DefaultConsumables = new(){
+            requiredFood = 1,
+            requiredPotion = 1,
+            requiredManual = 1,
+            requiredSquadronManual = 1,
+            requiredFoodHQ = false,
+            requiredPotionHQ = false
+        };
+
 
         public bool PlaySoundFinishEndurance = false;
         public bool PlaySoundFinishList = false;

@@ -1212,8 +1212,8 @@ internal class ListEditor : Window, IDisposable
                 foreach (var r in SelectedList.Recipes.Distinct())
                 {
                     var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
-                    o.RequiredFood = config.RequiredFood;
-                    o.RequiredFoodHQ = config.RequiredFoodHQ;
+                    o.requiredFood = config.requiredFood;
+                    o.requiredFoodHQ = config.requiredFoodHQ;
                     P.Config.RecipeConfigs[r.ID] = o;
                 }
                 P.Config.Save();
@@ -1233,8 +1233,8 @@ internal class ListEditor : Window, IDisposable
                 foreach (var r in SelectedList.Recipes.Distinct())
                 {
                     var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
-                    o.RequiredPotion = config.RequiredPotion;
-                    o.RequiredPotionHQ = config.RequiredPotionHQ;
+                    o.requiredPotion = config.requiredPotion;
+                    o.requiredPotionHQ = config.requiredPotionHQ;
                     P.Config.RecipeConfigs[r.ID] = o;
                 }
                 P.Config.Save();
@@ -1255,7 +1255,7 @@ internal class ListEditor : Window, IDisposable
                 foreach (var r in SelectedList.Recipes.Distinct())
                 {
                     var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
-                    o.RequiredManual = config.RequiredManual;
+                    o.requiredManual = config.requiredManual;
                     P.Config.RecipeConfigs[r.ID] = o;
                 }
                 P.Config.Save();
@@ -1276,7 +1276,7 @@ internal class ListEditor : Window, IDisposable
                 foreach (var r in SelectedList.Recipes.Distinct())
                 {
                     var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
-                    o.RequiredSquadronManual = config.RequiredSquadronManual;
+                    o.requiredSquadronManual = config.requiredSquadronManual;
                     P.Config.RecipeConfigs[r.ID] = o;
                 }
                 P.Config.Save();
