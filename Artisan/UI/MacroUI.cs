@@ -38,9 +38,6 @@ namespace Artisan.UI
         private const string MacroNamePopupLabel = "Macro Name";
         private static bool reorderMode = false;
         private static MacroSolverSettings.Macro? selectedAssignMacro;
-        private static uint selectedAssignMacroFoodId = 0;
-        private static uint selectedAssignMacroMedicineId;
-
         private static int quickAssignLevel = 1;
         private static int quickAssignDifficulty = 9;
         private static int quickAssignQuality = 80;
@@ -135,7 +132,7 @@ namespace Artisan.UI
 
                 }
                 ImGui.EndChild();
-                ImGuiEx.CenterColumnText("Quick Macro Assigner TEST VERSION");
+                ImGuiEx.CenterColumnText("Quick Macro Assigner");
                 if (ImGui.BeginChild("###Assigner", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y), true))
                 {
                     if (ImGui.BeginCombo($"{LuminaSheets.AddonSheet[405].Text.ToString().Replace("#", "").Replace("n°", "").Trim()}", selectedAssignMacro?.Name ?? ""))
