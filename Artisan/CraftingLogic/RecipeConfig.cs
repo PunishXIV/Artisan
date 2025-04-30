@@ -21,28 +21,38 @@ namespace Artisan.CraftingLogic;
 
 public class RecipeConfig
 {
+    public const uint Default = 0;
+    public const uint Disabled = 1;
+
+
     public string SolverType = ""; // TODO: ideally it should be a Type?, but that causes problems for serialization
     public int SolverFlavour;
-    public uint requiredFood = 0;
-    public uint requiredPotion = 0;
-    public uint requiredManual = 0;
-    public uint requiredSquadronManual = 0;
+    public uint requiredFood = Default;
+    public uint requiredPotion = Default;
+    public uint requiredManual = Default;
+    public uint requiredSquadronManual = Default;
     public bool requiredFoodHQ = true;
     public bool requiredPotionHQ = true;
 
 
-    public uint RequiredFood => requiredFood == 0 ? P.Config.DefaultConsumables.requiredFood : requiredFood;
-    public uint RequiredPotion => requiredPotion == 0 ? P.Config.DefaultConsumables.requiredPotion : requiredPotion;
-    public uint RequiredManual => requiredManual == 0 ? P.Config.DefaultConsumables.requiredManual : requiredManual;
-    public uint RequiredSquadronManual => requiredSquadronManual == 0 ? P.Config.DefaultConsumables.requiredSquadronManual : requiredSquadronManual;
-    public bool RequiredFoodHQ => requiredFood == 0 ? P.Config.DefaultConsumables.requiredFoodHQ : requiredFoodHQ;
-    public bool RequiredPotionHQ => requiredPotion == 0 ? P.Config.DefaultConsumables.requiredPotionHQ : requiredPotionHQ;
+    public bool FoodEnabled => RequiredFood != Disabled;
+    public bool PotionEnabled => RequiredPotion != Disabled;
+    public bool ManualEnabled => RequiredManual != Disabled;
+    public bool SquadronManualEnabled => RequiredSquadronManual != Disabled;
 
 
-    public string FoodName => requiredFood == 0 ? $"{P.Config.DefaultConsumables.FoodName} (Default)" : RequiredFood == 1 ? "Disabled" : $"{(RequiredFoodHQ ? " " : "")}{ConsumableChecker.Food.FirstOrDefault(x => x.Id == RequiredFood).Name}";
-    public string PotionName => requiredPotion == 0 ? $"{P.Config.DefaultConsumables.PotionName} (Default)" : RequiredPotion == 1 ? "Disabled" : $"{(RequiredPotionHQ ? " " : "")}{ConsumableChecker.Pots.FirstOrDefault(x => x.Id == RequiredPotion).Name}";
-    public string ManualName => requiredManual == 0 ? $"{P.Config.DefaultConsumables.ManualName} (Default)" : RequiredManual == 1 ? "Disabled" : $"{ConsumableChecker.Manuals.FirstOrDefault(x => x.Id == RequiredManual).Name}";
-    public string SquadronManualName => requiredSquadronManual == 0 ? $"{P.Config.DefaultConsumables.SquadronManualName} (Default)" : RequiredSquadronManual == 1 ? "Disabled" : $"{ConsumableChecker.SquadronManuals.FirstOrDefault(x => x.Id == RequiredSquadronManual).Name}";
+    public uint RequiredFood => requiredFood == Default ? P.Config.DefaultConsumables.requiredFood : requiredFood;
+    public uint RequiredPotion => requiredPotion == Default ? P.Config.DefaultConsumables.requiredPotion : requiredPotion;
+    public uint RequiredManual => requiredManual == Default ? P.Config.DefaultConsumables.requiredManual : requiredManual;
+    public uint RequiredSquadronManual => requiredSquadronManual == Default ? P.Config.DefaultConsumables.requiredSquadronManual : requiredSquadronManual;
+    public bool RequiredFoodHQ => requiredFood == Default ? P.Config.DefaultConsumables.requiredFoodHQ : requiredFoodHQ;
+    public bool RequiredPotionHQ => requiredPotion == Default ? P.Config.DefaultConsumables.requiredPotionHQ : requiredPotionHQ;
+
+
+    public string FoodName => requiredFood == Default ? $"{P.Config.DefaultConsumables.FoodName} (Default)" : RequiredFood == Disabled ? "Disabled" : $"{(RequiredFoodHQ ? " " : "")}{ConsumableChecker.Food.FirstOrDefault(x => x.Id == RequiredFood).Name}";
+    public string PotionName => requiredPotion == Default ? $"{P.Config.DefaultConsumables.PotionName} (Default)" : RequiredPotion == Disabled ? "Disabled" : $"{(RequiredPotionHQ ? " " : "")}{ConsumableChecker.Pots.FirstOrDefault(x => x.Id == RequiredPotion).Name}";
+    public string ManualName => requiredManual == Default ? $"{P.Config.DefaultConsumables.ManualName} (Default)" : RequiredManual == Disabled ? "Disabled" : $"{ConsumableChecker.Manuals.FirstOrDefault(x => x.Id == RequiredManual).Name}";
+    public string SquadronManualName => requiredSquadronManual == Default ? $"{P.Config.DefaultConsumables.SquadronManualName} (Default)" : RequiredSquadronManual == Disabled ? "Disabled" : $"{ConsumableChecker.SquadronManuals.FirstOrDefault(x => x.Id == RequiredSquadronManual).Name}";
 
 
 
@@ -79,14 +89,14 @@ public class RecipeConfig
             {
                 if (ImGui.Selectable($"Default ({P.Config.DefaultConsumables.FoodName})"))
                 {
-                    requiredFood = 0;
+                    requiredFood = Default;
                     requiredFoodHQ = false;
                     changed = true;
                 }
             }
             if (ImGui.Selectable("Disable"))
             {
-                requiredFood = 1;
+                requiredFood = Disabled;
                 requiredFoodHQ = false;
                 changed = true;
             }
@@ -125,14 +135,14 @@ public class RecipeConfig
             {
                 if (ImGui.Selectable($"Default ({P.Config.DefaultConsumables.PotionName})"))
                 {
-                    requiredPotion = 0;
+                    requiredPotion = Default;
                     requiredPotionHQ = false;
                     changed = true;
                 }
             }
             if (ImGui.Selectable("Disable"))
             {
-                requiredPotion = 1;
+                requiredPotion = Disabled;
                 requiredPotionHQ = false;
                 changed = true;
             }
@@ -171,13 +181,13 @@ public class RecipeConfig
             {
                 if (ImGui.Selectable($"Default ({P.Config.DefaultConsumables.ManualName})"))
                 {
-                    requiredManual = 0;
+                    requiredManual = Default;
                     changed = true;
                 }
             }
             if (ImGui.Selectable("Disable"))
             {
-                requiredManual = 1;
+                requiredManual = Disabled;
                 changed = true;
             }
             foreach (var x in ConsumableChecker.GetManuals(true))
@@ -207,13 +217,13 @@ public class RecipeConfig
             {
                 if (ImGui.Selectable($"Default ({P.Config.DefaultConsumables.SquadronManualName})"))
                 {
-                    requiredSquadronManual = 0;
+                    requiredSquadronManual = Default;
                     changed = true;
                 }
             }
             if (ImGui.Selectable("Disable"))
             {
-                requiredSquadronManual = 1;
+                requiredSquadronManual = Disabled;
                 changed = true;
             }
             foreach (var x in ConsumableChecker.GetSquadronManuals(true))
@@ -378,14 +388,14 @@ public class RecipeConfig
                 P.PluginUi.IsOpen = true;
                 SimulatorUI.SelectedRecipe = recipe;
                 SimulatorUI.ResetSim();
-                if (config.RequiredPotion > 0)
+                if (config.PotionEnabled)
                 {
                     SimulatorUI.SimMedicine ??= new();
                     SimulatorUI.SimMedicine.Id = config.RequiredPotion;
                     SimulatorUI.SimMedicine.ConsumableHQ = config.RequiredPotionHQ;
                     SimulatorUI.SimMedicine.Stats = new ConsumableStats(config.RequiredPotion, config.RequiredPotionHQ);
                 }
-                if (config.RequiredFood > 0)
+                if (config.FoodEnabled)
                 {
                     SimulatorUI.SimFood ??= new();
                     SimulatorUI.SimFood.Id = config.RequiredFood;

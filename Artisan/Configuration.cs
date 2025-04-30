@@ -89,10 +89,10 @@ namespace Artisan
         public bool UseConsumablesTrial = false;
         public bool UseConsumablesQuickSynth = false;
         public RecipeConfig DefaultConsumables = new(){
-            requiredFood = 1,
-            requiredPotion = 1,
-            requiredManual = 1,
-            requiredSquadronManual = 1,
+            requiredFood = RecipeConfig.Disabled,
+            requiredPotion = RecipeConfig.Disabled,
+            requiredManual = RecipeConfig.Disabled,
+            requiredSquadronManual = RecipeConfig.Disabled,
             requiredFoodHQ = false,
             requiredPotionHQ = false
         };
