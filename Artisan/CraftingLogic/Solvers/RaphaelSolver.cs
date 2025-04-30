@@ -119,7 +119,7 @@ namespace Artisan.CraftingLogic.Solvers
                         Steps = MacroUI.ParseMacro(output.Replace("\"", "").Replace("[", "").Replace("]", "").Replace(",", "\r\n").Replace("2", "II").Replace("MasterMend", "MastersMend"), true),
                         Options = new()
                         {
-                            SkipQualityIfMet = true,
+                            SkipQualityIfMet = false,
                             UpgradeProgressActions = false,
                             UpgradeQualityActions = false,
                             MinCP = craft.StatCP,

@@ -1,7 +1,9 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Dalamud.Game.ClientState.Conditions;
+using ECommons;
 using ECommons.DalamudServices;
 using ECommons.Logging;
 using OtterGui;
@@ -109,9 +111,10 @@ namespace Artisan.IPC
         {
             if (LuminaSheets.RecipeSheet!.FindFirst(x => x.Value.RowId == recipeId, out var recipe))
             {
+                PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe.Value), default));
                 P.TM.Enqueue(() =>
                 {
-                    CraftingListFunctions.OpenRecipeByID(recipeId);
+                    return PreCrafting.Tasks.Count == 0;
                 });
                 P.TM.DelayNext(100);
                 P.TM.Enqueue(() =>
