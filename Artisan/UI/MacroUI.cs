@@ -15,16 +15,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using Dalamud.Interface.Utility.Raii;
+using Lumina.Excel.Sheets;
+using Artisan.Autocraft;
 
 namespace Artisan.UI
 {
     internal static class MacroUI
     {
+        public class ConsumableChoice
+        {
+            public uint Id;
+            public ConsumableStats Stats;
+            public bool ConsumableHQ;
+            public string ConsumableString => string.Join(", ", Stats.Stats.Where(x => x.Param != 0).Select(x => $"{Svc.Data.Excel.GetSheet<BaseParam>().GetRow((uint)x.Param).Name} +{x.Percent}% - max {x.Max}"));
+        }
+        public static ConsumableChoice? SimFood;
+        public static ConsumableChoice? SimMedicine;
+        
         private static string _newMacroName = string.Empty;
         private static bool _keyboardFocus;
         private const string MacroNamePopupLabel = "Macro Name";
         private static bool reorderMode = false;
         private static MacroSolverSettings.Macro? selectedAssignMacro;
+        private static uint selectedAssignMacroFoodId = 0;
+        private static uint selectedAssignMacroMedicineId;
 
         private static int quickAssignLevel = 1;
         private static int quickAssignDifficulty = 9;
@@ -120,7 +135,7 @@ namespace Artisan.UI
 
                 }
                 ImGui.EndChild();
-                ImGuiEx.CenterColumnText("Quick Macro Assigner");
+                ImGuiEx.CenterColumnText("Quick Macro Assigner TEST VERSION");
                 if (ImGui.BeginChild("###Assigner", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y), true))
                 {
                     if (ImGui.BeginCombo($"{LuminaSheets.AddonSheet[405].Text.ToString().Replace("#", "").Replace("n°", "").Trim()}", selectedAssignMacro?.Name ?? ""))
@@ -276,6 +291,9 @@ namespace Artisan.UI
                     }
                     filteredRecipes = filteredRecipes.Where(x => x.CanHq != quickAssignCannotHQ);
 
+                    DrawFoodDropdown();
+                    DrawMedicineDropdown();
+
                     if (ImGui.Checkbox($"Show All Recipes Assigned To", ref P.Config.ShowMacroAssignResults))
                         P.Config.Save();
 
@@ -289,6 +307,10 @@ namespace Artisan.UI
                                 P.Config.RecipeConfigs[recipe.RowId] = config = new();
                             config.SolverType = typeof(MacroSolverDefinition).FullName!;
                             config.SolverFlavour = selectedAssignMacro.ID;
+                            if(SimFood != null)
+                                config.RequiredFood = SimFood.Id;
+                            if(SimMedicine != null)
+                                config.RequiredPotion = SimMedicine.Id;
                             if (P.Config.ShowMacroAssignResults)
                             {
                                 P.TM.DelayNext(400);
@@ -324,6 +346,87 @@ namespace Artisan.UI
                     Notify.Success($"Removed from {count} recipes.");
                 else
                     Notify.Error($"This macro was not assigned to any recipes.");
+            }
+            
+        }
+
+        private static void DrawFoodDropdown()
+        {
+            using var foodCombo = ImRaii.Combo("Food", SimFood is null ? "" : $"{(SimFood.ConsumableHQ ? " " : "")} {LuminaSheets.ItemSheet[SimFood.Id].Name.ToString()} ({SimFood.ConsumableString})");
+            if (!foodCombo)
+                return;
+
+            if (ImGui.Selectable($""))
+                SimFood = null;
+
+            //TODO Could we please use OrderByDescending instead of OrderBy?
+            foreach (var food in ConsumableChecker.GetFood().OrderBy(x => x.Id))
+            {
+                var consumableStats = new ConsumableStats(food.Id, false);
+                ConsumableChoice choice = new ConsumableChoice() { Id = food.Id, Stats = consumableStats };
+                var selected = ImGui.Selectable($"{food.Name} ({choice.ConsumableString})");
+                
+
+                if (selected)
+                {
+                    choice.ConsumableHQ = false;
+                    SimFood = choice;
+                    continue;
+                }
+
+                consumableStats = new ConsumableStats(food.Id, true);
+                choice.Stats = consumableStats;
+                if (LuminaSheets.ItemSheet[food.Id].CanBeHq)
+                {
+                    selected = ImGui.Selectable($" {food.Name} ({choice.ConsumableString})");
+
+                    if (selected)
+                    {
+                        choice.ConsumableHQ = true;
+                        SimFood = choice;
+                    }
+                }
+            }
+        }
+
+        private static void DrawMedicineDropdown()
+        {
+            using var medicineCombo = ImRaii.Combo("Medicine", SimMedicine is null ? "" : $"{(SimMedicine.ConsumableHQ ? " " : "")} {LuminaSheets.ItemSheet[SimMedicine.Id].Name.ToString()} ({SimMedicine.ConsumableString})");
+            if (!medicineCombo)
+                return;
+
+            if (ImGui.Selectable($""))
+                SimMedicine = null;
+
+            foreach (var medicine in ConsumableChecker.GetPots(false,true).OrderBy(x => x.Id))
+            {
+                var consumable = ConsumableChecker.GetItemConsumableProperties(LuminaSheets.ItemSheet[medicine.Id], false);
+                if (consumable.Value.Params.Any(x => x.BaseParam.RowId is 69 or 68))
+                    continue;
+
+                var consumableStats = new ConsumableStats(medicine.Id, false);
+                ConsumableChoice choice = new ConsumableChoice() { Id = medicine.Id, Stats = consumableStats };
+                var selected = ImGui.Selectable($"{medicine.Name} ({choice.ConsumableString})");
+
+                if (selected)
+                {
+                    choice.ConsumableHQ = false;
+                    SimMedicine = choice;
+                    continue;
+                }
+
+                consumableStats = new ConsumableStats(medicine.Id, true);
+                choice.Stats = consumableStats;
+                if (LuminaSheets.ItemSheet[medicine.Id].CanBeHq)
+                {
+                    selected = ImGui.Selectable($" {medicine.Name} ({choice.ConsumableString})");
+
+                    if (selected)
+                    {
+                        choice.ConsumableHQ = true;
+                        SimMedicine = choice;
+                    }
+                }
             }
         }
 
