@@ -62,6 +62,7 @@ namespace Artisan.CraftingLogic.Solvers
 
                 if (config.EnsureReliability)
                 {
+                    Svc.Log.Error("Ensuring reliability is enabled, this may take a while. NO SUPPORT GIVEN IF ENABLED.");
                     extraArgsBuilder.Append($"--adversarial "); // must always have a space after
                 }
 
@@ -97,6 +98,14 @@ namespace Artisan.CraftingLogic.Solvers
                     }
                 };
 
+                process.ErrorDataReceived += (sender, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                    {
+                        DuoLog.Error($"Raphael native error: {e.Data}"); // this should be called
+                    }
+                };
+
                 Svc.Log.Information(process.StartInfo.Arguments);
 
                 var cts = new CancellationTokenSource();
@@ -119,7 +128,7 @@ namespace Artisan.CraftingLogic.Solvers
                         Steps = MacroUI.ParseMacro(output.Replace("\"", "").Replace("[", "").Replace("]", "").Replace(",", "\r\n").Replace("2", "II").Replace("MasterMend", "MastersMend"), true),
                         Options = new()
                         {
-                            SkipQualityIfMet = true,
+                            SkipQualityIfMet = false,
                             UpgradeProgressActions = false,
                             UpgradeQualityActions = false,
                             MinCP = craft.StatCP,
@@ -136,7 +145,7 @@ namespace Artisan.CraftingLogic.Solvers
                         P.Config.RaphaelSolverConfig.AutoGenerate = false;
                         return;
                     }
-                        
+
 
                     if (P.Config.RaphaelSolverConfig.AutoSwitch)
                     {
@@ -271,7 +280,9 @@ namespace Artisan.CraftingLogic.Solvers
 
             changed |= ImGui.Checkbox("Allow HQ Materials to be considered in macro generation", ref AllowHQConsiderations);
             changed |= ImGui.Checkbox("Ensure 100% reliability in macro generation", ref AllowEnsureReliability);
-            ImGui.TextColored(new System.Numerics.Vector4(255, 0, 0, 1), "Ensuring reliability may not always work and is very CPU and RAM intensive, suggested RAM at least 16GB+ spare.");
+            ImGui.PushTextWrapPos(0);
+            ImGui.TextColored(new System.Numerics.Vector4(255, 0, 0, 1), "Ensuring reliability may not always work and is very CPU and RAM intensive, suggested RAM at least 16GB+ spare. NO SUPPORT SHALL BE GIVEN IF YOU HAVE THIS ON");
+            ImGui.PopTextWrapPos();
             changed |= ImGui.Checkbox("Allow backloading of progress in macro generation", ref AllowBackloadProgress);
             changed |= ImGui.Checkbox("Show specialist options when available", ref ShowSpecialistSettings);
             changed |= ImGui.Checkbox($"Automatically generate a solution if a valid one hasn't been created.", ref AutoGenerate);

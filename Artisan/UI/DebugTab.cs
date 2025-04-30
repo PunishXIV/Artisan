@@ -363,6 +363,10 @@ namespace Artisan.UI
                 {
                     CraftingListFunctions.OpenRecipeByID(Endurance.RecipeID);
                 }
+                if (ImGui.Button($"Craft X IPC"))
+                {
+                    IPC.IPC.CraftX((ushort)DebugValue, 1);
+                }
 
                 ImGui.InputInt("Debug Value", ref DebugValue);
                 if (ImGui.Button($"Open Recipe"))
