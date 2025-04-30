@@ -5,6 +5,7 @@ using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility.Raii;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
@@ -231,7 +232,8 @@ public class RecipeConfig
                 //Svc.Log.Debug($"{curStats.Craftsmanship}/{craft.StatCraftsmanship} - {curStats.Control}/{craft.StatControl} - {curStats.CP}/{craft.StatCP}");
                 if (craft.StatCraftsmanship != curStats.Craftsmanship && solverIsRaph)
                 {
-                    ImGuiEx.Text(ImGuiColors.DalamudRed, $"Your current Craftsmanship does not match the generated result.\nThis solver won't be used until they match.\n(You may just need to have the correct buffs applied)");
+                    var craftsmanshipError = curStats.Craftsmanship - craft.StatCraftsmanship > 0 ? $"(Excess of {curStats.Craftsmanship - craft.StatCraftsmanship}) " : "";
+                    ImGuiEx.Text(ImGuiColors.DalamudRed, $"Your current Craftsmanship {craftsmanshipError}does not match the generated result.\nThis solver won't be used until they match due to possible early finishes.\n(You may just need to have the correct buffs applied)");
                 }
 
                 if (!solverIsRaph)
@@ -247,7 +249,7 @@ public class RecipeConfig
             }
             else
             {
-                if (P.Config.RaphaelSolverConfig.AutoGenerate && CraftingProcessor.GetAvailableSolversForRecipe(craft, true).Count() > 0)
+                if (P.Config.RaphaelSolverConfig.AutoGenerate && CraftingProcessor.GetAvailableSolversForRecipe(craft, true).Any())
                 {
                     RaphaelCache.Build(craft, TempConfigs[key]);
                 }
@@ -290,6 +292,18 @@ public class RecipeConfig
                     RaphaelCache.Tasks.TryRemove(key, out var task);
                     task.Item1.Cancel();
                 }
+            }
+
+            if (TempConfigs[key].EnsureReliability && ImGui.IsItemHovered())
+            {
+                ImGui.BeginTooltip();
+                ImGui.Text("Ensuring quality is enabled, no support shall be provided when its enabled\nDue to problems that can be caused.");
+                ImGui.EndTooltip();
+            }
+
+            if(TempConfigs[key].HeartAndSoul || TempConfigs[key].QuickInno)
+            {
+                ImGui.Text("Specialist actions are enabled, this can slow down the solver a lot.");
             }
 
             if (inProgress)
