@@ -169,6 +169,11 @@ namespace Artisan.UI
                             OpenWindow = OpenWindow.RaphaelCache;
                         }
                         ImGui.Spacing();
+                        if (ImGui.Selectable("Recipe Assigner", OpenWindow == OpenWindow.Assigner))
+                        {
+                            OpenWindow = OpenWindow.Assigner;
+                        }
+                        ImGui.Spacing();
                         if (ImGui.Selectable("Crafting Lists", OpenWindow == OpenWindow.Lists))
                         {
                             OpenWindow = OpenWindow.Lists;
@@ -232,6 +237,9 @@ namespace Artisan.UI
                                 break;
                             case OpenWindow.RaphaelCache:
                                 RaphaelCacheUI.Draw();
+                                break;
+                            case OpenWindow.Assigner:
+                                AssignerUI.Draw();
                                 break;
                             case OpenWindow.FCWorkshop:
                                 FCWorkshopUI.Draw();
@@ -1010,5 +1018,6 @@ namespace Artisan.UI
         Overview = 9,
         Simulator = 10,
         RaphaelCache = 11,
+        Assigner = 12,
     }
 }

@@ -57,9 +57,6 @@ public class RecipeConfig
 
 
 
-    [NonSerialized]
-    public Dictionary<string, RaphaelSolutionConfig> TempConfigs = new();
-
     public bool Draw(uint recipeId)
     {
         var recipe = LuminaSheets.RecipeSheet[recipeId];
@@ -240,7 +237,7 @@ public class RecipeConfig
         return changed;
     }
 
-    public bool DrawSolver(CraftState craft, bool hasButton = false)
+    public bool DrawSolver(CraftState craft, bool hasButton = false, bool liveStats = true)
     {
         bool changed = false;
         ImGuiEx.TextV($"Solver:");
@@ -271,108 +268,7 @@ public class RecipeConfig
             ImGui.EndCombo();
         }
 
-        if (RaphaelCache.CLIExists())
-        {
-            var hasSolution = RaphaelCache.HasSolution(craft, out var solution);
-            var key = RaphaelCache.GetKey(craft);
-
-            if (!TempConfigs.ContainsKey(key))
-            {
-                TempConfigs.Add(key, new());
-                TempConfigs[key].HQConsiderations = P.Config.RaphaelSolverConfig.AllowHQConsiderations;
-                TempConfigs[key].EnsureReliability = P.Config.RaphaelSolverConfig.AllowEnsureReliability;
-                TempConfigs[key].BackloadProgress = P.Config.RaphaelSolverConfig.AllowBackloadProgress;
-                TempConfigs[key].HeartAndSoul = P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist;
-                TempConfigs[key].QuickInno = P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist;
-            }
-
-            if (hasSolution)
-            {
-                var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).FirstOrNull(x => x.Name == $"Raphael Recipe Solver");
-                var solverIsRaph = SolverType == opt?.Def.GetType().FullName!;
-                var curStats = CharacterStats.GetCurrentStats();
-                //Svc.Log.Debug($"{curStats.Craftsmanship}/{craft.StatCraftsmanship} - {curStats.Control}/{craft.StatControl} - {curStats.CP}/{craft.StatCP}");
-                if (craft.StatCraftsmanship != curStats.Craftsmanship && solverIsRaph)
-                {
-                    var craftsmanshipError = curStats.Craftsmanship - craft.StatCraftsmanship > 0 ? $"(Excess of {curStats.Craftsmanship - craft.StatCraftsmanship}) " : "";
-                    ImGuiEx.Text(ImGuiColors.DalamudRed, $"Your current Craftsmanship {craftsmanshipError}does not match the generated result.\nThis solver won't be used until they match due to possible early finishes.\n(You may just need to have the correct buffs applied)");
-                }
-
-                if (!solverIsRaph)
-                {
-                    ImGuiEx.TextCentered($"Raphael Solution Has Been Generated. (Click to Switch)");
-                    if (ImGui.IsItemClicked())
-                    {
-                        SolverType = opt?.Def.GetType().FullName!;
-                        SolverFlavour = (int)(opt?.Flavour);
-                        changed = true;
-                    }
-                }
-            }
-            else
-            {
-                if (P.Config.RaphaelSolverConfig.AutoGenerate && CraftingProcessor.GetAvailableSolversForRecipe(craft, true).Any())
-                {
-                    RaphaelCache.Build(craft, TempConfigs[key]);
-                }
-            }
-
-            ImGui.Separator();
-            var inProgress = RaphaelCache.InProgress(craft);
-            var raphChanges = false;
-
-            if (inProgress)
-                ImGui.BeginDisabled();
-
-            if (P.Config.RaphaelSolverConfig.AllowHQConsiderations)
-                raphChanges |= ImGui.Checkbox($"Allow Quality Considerations##{key}Quality", ref TempConfigs[key].HQConsiderations);
-            if (P.Config.RaphaelSolverConfig.AllowEnsureReliability)
-                raphChanges |= ImGui.Checkbox($"Ensure reliability##{key}Reliability", ref TempConfigs[key].EnsureReliability);
-            if (P.Config.RaphaelSolverConfig.AllowBackloadProgress)
-                raphChanges |= ImGui.Checkbox($"Backload progress##{key}Progress", ref TempConfigs[key].BackloadProgress);
-            if (P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist)
-                raphChanges |= ImGui.Checkbox($"Allow heart and soul usage##{key}HS", ref TempConfigs[key].HeartAndSoul);
-            if (P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist)
-                raphChanges |= ImGui.Checkbox($"Allow quick innovation usage##{key}QI", ref TempConfigs[key].QuickInno);
-
-            changed |= raphChanges;
-
-            if (inProgress)
-                ImGui.EndDisabled();
-
-            if (!inProgress)
-            {
-                if (ImGui.Button("Build Raphael Solution", new Vector2(ImGui.GetContentRegionAvail().X, 25f.Scale())))
-                {
-                    RaphaelCache.Build(craft, TempConfigs[key]);
-                }
-            }
-            else
-            {
-                if (ImGui.Button("Cancel Raphael Generation", new Vector2(ImGui.GetContentRegionAvail().X, 25f.Scale())))
-                {
-                    RaphaelCache.Tasks.TryRemove(key, out var task);
-                    task.Item1.Cancel();
-                }
-            }
-
-            if (TempConfigs[key].EnsureReliability && ImGui.IsItemHovered())
-            {
-                ImGui.BeginTooltip();
-                ImGui.Text("Ensuring quality is enabled, no support shall be provided when its enabled\nDue to problems that can be caused.");
-                ImGui.EndTooltip();
-            }
-
-            if(TempConfigs[key].HeartAndSoul || TempConfigs[key].QuickInno)
-            {
-                ImGui.Text("Specialist actions are enabled, this can slow down the solver a lot.");
-            }
-
-            if (inProgress)
-            {
-                ImGuiEx.TextCentered("Generating...");
-            }
-        }
+        changed |= RaphaelCache.DrawRaphaelDropdown(craft, liveStats);
 
         return changed;
     }
@@ -442,12 +338,5 @@ public class RecipeConfig
 
 
         }
-    }
-
-    private void CleanRaphaelMacro(string key)
-    {
-        Svc.Log.Debug("Clearing macro due to settings changes");
-        TempConfigs[key].Macro = ""; // clear macro if settings have changed
-        TempConfigs[key].HasChanges = true;
     }
 }
