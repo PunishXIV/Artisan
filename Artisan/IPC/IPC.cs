@@ -130,7 +130,7 @@ namespace Artisan.IPC
 
         public static bool IsBusy()
         {
-            return P.TM.NumQueuedTasks > 0 || P.CTM.NumQueuedTasks > 0 || Svc.Condition[ConditionFlag.PreparingToCraft] || Svc.Condition[ConditionFlag.Crafting] || Svc.Condition[ConditionFlag.MeldingMateria];
+            return P.TM.NumQueuedTasks > 0 || P.CTM.NumQueuedTasks > 0 || !(Crafting.CurState is Crafting.State.IdleBetween or Crafting.State.IdleNormal);
         }
 
         public enum ArtisanMode
