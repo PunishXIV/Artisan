@@ -1,9 +1,11 @@
 ﻿using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.UI;
+using Dalamud.Interface.Colors;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using ECommons.ImGuiMethods;
 using ECommons.Logging;
 using ImGuiNET;
 using System;
@@ -12,6 +14,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,6 +43,8 @@ namespace Artisan.CraftingLogic.Solvers
     internal static class RaphaelCache
     {
         internal static readonly ConcurrentDictionary<string, Tuple<CancellationTokenSource, Task>> Tasks = [];
+        [NonSerialized]
+        public static Dictionary<string, RaphaelSolutionConfig> TempConfigs = new();
 
         public static void Build(CraftState craft, RaphaelSolutionConfig config)
         {
@@ -250,6 +255,123 @@ namespace Artisan.CraftingLogic.Solvers
         internal static bool CLIExists()
         {
             return File.Exists(Path.Join(Path.GetDirectoryName(Svc.PluginInterface.AssemblyLocation.FullName), "raphael-cli.exe"));
+        }
+
+        public static bool DrawRaphaelDropdown(CraftState craft, bool liveStats = true)
+        {
+            bool changed = false;
+            var config = P.Config.RecipeConfigs.GetValueOrDefault(craft.RecipeId) ?? new();
+            if (CLIExists())
+            {
+                var hasSolution = HasSolution(craft, out var solution);
+                var key = GetKey(craft);
+
+                if (!TempConfigs.ContainsKey(key))
+                {
+                    TempConfigs.Add(key, new());
+                    TempConfigs[key].HQConsiderations = P.Config.RaphaelSolverConfig.AllowHQConsiderations;
+                    TempConfigs[key].EnsureReliability = P.Config.RaphaelSolverConfig.AllowEnsureReliability;
+                    TempConfigs[key].BackloadProgress = P.Config.RaphaelSolverConfig.AllowBackloadProgress;
+                    TempConfigs[key].HeartAndSoul = P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist;
+                    TempConfigs[key].QuickInno = P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist;
+                }
+
+                if (hasSolution)
+                {
+                    var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).FirstOrNull(x => x.Name == $"Raphael Recipe Solver");
+                    var solverIsRaph = config.SolverType == opt?.Def.GetType().FullName!;
+                    var curStats = CharacterStats.GetCurrentStats();
+                    //Svc.Log.Debug($"{curStats.Craftsmanship}/{craft.StatCraftsmanship} - {curStats.Control}/{craft.StatControl} - {curStats.CP}/{craft.StatCP}");
+                    if (liveStats && craft.StatCraftsmanship != curStats.Craftsmanship && solverIsRaph)
+                    {
+                        var craftsmanshipError = curStats.Craftsmanship - craft.StatCraftsmanship > 0 ? $"(Excess of {curStats.Craftsmanship - craft.StatCraftsmanship}) " : "";
+                        ImGuiEx.Text(ImGuiColors.DalamudRed, $"Your current Craftsmanship {craftsmanshipError}does not match the generated result.\nThis solver won't be used until they match due to possible early finishes.\n(You may just need to have the correct buffs applied)");
+                    }
+
+                    if (!solverIsRaph)
+                    {
+                        if (liveStats)
+                        {
+                            ImGuiEx.TextCentered($"Raphael Solution Has Been Generated. (Click to Switch)");
+                            if (ImGui.IsItemClicked())
+                            {
+                                config.SolverType = opt?.Def.GetType().FullName!;
+                                config.SolverFlavour = (int)(opt?.Flavour);
+                                changed = true;
+                            }
+                        }
+                        else
+                        {
+                            ImGuiEx.TextCentered($"Raphael Solution Has Been Generated.");
+                        }
+                    }
+                }
+                else
+                {
+                    if (liveStats && P.Config.RaphaelSolverConfig.AutoGenerate && CraftingProcessor.GetAvailableSolversForRecipe(craft, true).Any())
+                    {
+                        Build(craft, TempConfigs[key]);
+                    }
+                }
+
+                ImGui.Separator();
+                var inProgress = InProgress(craft);
+                var raphChanges = false;
+
+                if (inProgress)
+                    ImGui.BeginDisabled();
+
+                if (P.Config.RaphaelSolverConfig.AllowHQConsiderations)
+                    raphChanges |= ImGui.Checkbox($"Allow Quality Considerations##{key}Quality", ref TempConfigs[key].HQConsiderations);
+                if (P.Config.RaphaelSolverConfig.AllowEnsureReliability)
+                    raphChanges |= ImGui.Checkbox($"Ensure reliability##{key}Reliability", ref TempConfigs[key].EnsureReliability);
+                if (P.Config.RaphaelSolverConfig.AllowBackloadProgress)
+                    raphChanges |= ImGui.Checkbox($"Backload progress##{key}Progress", ref TempConfigs[key].BackloadProgress);
+                if (P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist)
+                    raphChanges |= ImGui.Checkbox($"Allow heart and soul usage##{key}HS", ref TempConfigs[key].HeartAndSoul);
+                if (P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist)
+                    raphChanges |= ImGui.Checkbox($"Allow quick innovation usage##{key}QI", ref TempConfigs[key].QuickInno);
+
+                changed |= raphChanges;
+
+                if (inProgress)
+                    ImGui.EndDisabled();
+
+                if (!inProgress)
+                {
+                    if (ImGui.Button("Build Raphael Solution", new Vector2(ImGui.GetContentRegionAvail().X, 25f.Scale())))
+                    {
+                        Build(craft, TempConfigs[key]);
+                    }
+                }
+                else
+                {
+                    if (ImGui.Button("Cancel Raphael Generation", new Vector2(ImGui.GetContentRegionAvail().X, 25f.Scale())))
+                    {
+                        Tasks.TryRemove(key, out var task);
+                        task.Item1.Cancel();
+                    }
+                }
+
+                if (TempConfigs[key].EnsureReliability && ImGui.IsItemHovered())
+                {
+                    ImGui.BeginTooltip();
+                    ImGui.Text("Ensuring quality is enabled, no support shall be provided when its enabled\nDue to problems that can be caused.");
+                    ImGui.EndTooltip();
+                }
+
+                if (TempConfigs[key].HeartAndSoul || TempConfigs[key].QuickInno)
+                {
+                    ImGui.Text("Specialist actions are enabled, this can slow down the solver a lot.");
+                }
+
+                if (inProgress)
+                {
+                    ImGuiEx.TextCentered("Generating...");
+                }
+            }
+
+            return changed;
         }
     }
 

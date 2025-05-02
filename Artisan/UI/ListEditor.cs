@@ -1290,7 +1290,6 @@ internal class ListEditor : Window, IDisposable
         {
             P.Config.RecipeConfigs[selectedListItem] = config;
             P.Config.Save();
-            config.TempConfigs.Clear();
         }
         
         ImGuiEx.TextV("Requirements:");

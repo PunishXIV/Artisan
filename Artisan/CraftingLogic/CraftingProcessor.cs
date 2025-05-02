@@ -28,19 +28,19 @@ public static class CraftingProcessor
     public delegate void RecommendationReadyDelegate(Lumina.Excel.Sheets.Recipe recipe, SolverRef solver, CraftState craft, StepState step, Solver.Recommendation recommendation);
     public static event RecommendationReadyDelegate? RecommendationReady;
 
-    private static List<ISolverDefinition> _solverDefs = new();
+    public static List<ISolverDefinition> SolverDefinitions = new();
     private static Solver? _activeSolver; // solver for current or expected crafting session
     private static uint? _expectedRecipe; // non-null and equal to recipe id if we've requested start of a specific craft (with a specific solver) and are waiting for it to start
     private static Solver.Recommendation _nextRec;
 
     public static void Setup()
     {
-        _solverDefs.Add(new StandardSolverDefinition());
-        _solverDefs.Add(new ProgressOnlySolverDefinition());
-        _solverDefs.Add(new ExpertSolverDefinition());
-        _solverDefs.Add(new MacroSolverDefinition());
-        _solverDefs.Add(new ScriptSolverDefinition());
-        _solverDefs.Add(new RaphaelSolverDefintion());
+        SolverDefinitions.Add(new StandardSolverDefinition());
+        SolverDefinitions.Add(new ProgressOnlySolverDefinition());
+        SolverDefinitions.Add(new ExpertSolverDefinition());
+        SolverDefinitions.Add(new MacroSolverDefinition());
+        SolverDefinitions.Add(new ScriptSolverDefinition());
+        SolverDefinitions.Add(new RaphaelSolverDefintion());
 
         Crafting.CraftStarted += OnCraftStarted;
         Crafting.CraftAdvanced += OnCraftAdvanced;
@@ -56,7 +56,7 @@ public static class CraftingProcessor
 
     public static IEnumerable<ISolverDefinition.Desc> GetAvailableSolversForRecipe(CraftState craft, bool returnUnsupported, Type? skipSolver = null)
     {
-        foreach (var solver in _solverDefs)
+        foreach (var solver in SolverDefinitions)
         {
             if (solver.GetType() == skipSolver)
                 continue;
@@ -74,7 +74,7 @@ public static class CraftingProcessor
 
     public static ISolverDefinition.Desc? FindSolver(CraftState craft, string type, int flavour)
     {
-        var solver = type.Length > 0 ? _solverDefs.Find(s => s.GetType().FullName == type) : null;
+        var solver = type.Length > 0 ? SolverDefinitions.Find(s => s.GetType().FullName == type) : null;
         if (solver == null)
             return null;
         foreach (var f in solver.Flavours(craft).Where(f => f.Flavour == flavour))

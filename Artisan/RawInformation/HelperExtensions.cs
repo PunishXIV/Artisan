@@ -8,6 +8,44 @@ namespace Artisan.RawInformation
 {
     internal static class HelperExtensions
     {
+        public static void SortAndRemoveDuplicates(this List<int> list)
+        {
+            if (list.Count == 0)
+                return;
+            list.Sort();
+            int dest = 1;
+            int prev = list[0];
+            for (int src = 1; src < list.Count; ++src)
+                if (list[src] != prev)
+                    list[dest++] = list[src];
+            list.RemoveRange(dest, list.Count - dest);
+        }
+
+        public static int UpperBound(this List<int> list, int test)
+        {
+            int first = 0, size = list.Count;
+            while (size > 0)
+            {
+                int step = size / 2;
+                int mid = first + step;
+                if (list[mid] <= test)
+                {
+                    first = mid + 1;
+                    size -= step + 1;
+                }
+                else
+                {
+                    size = step;
+                }
+            }
+            return first;
+        }
+
+        public static int FindClosest(this List<int> list, int test)
+        {
+            var ub = list.UpperBound(test);
+            return ub == 0 ? list[0] : ub == list.Count ? list[list.Count - 1] : test - list[ub - 1] < list[ub] - test ? list[ub - 1] : list[ub];
+        }
         public static string GetNumbers(this string input)
         {
             if (input == null) return "";
