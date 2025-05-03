@@ -233,19 +233,18 @@ namespace Artisan.RawInformation
                 Svc.Data.GameData.Options.PanicOnSheetChecksumMismatch = false;
                 var id = recipe.RowId;
                 //First, find the MissionRecipe with our recipe
-                var missionRec = Svc.Data.GetExcelSheet<WKSMissionRecipe>().FirstOrNull(x => x.Unknown0 == id || x.Unknown1 == id || x.Unknown2 == id || x.Unknown3 == id || x.Unknown4 == id);
-
+                var missionRec = Svc.Data.GetExcelSheet<WKSMissionRecipe>().FirstOrDefault(missionRec => missionRec.Recipe.Any(recipe =>  recipe.RowId == id));
                 //Bail if there's no MissionRecipe (this isn't a Cosmic Craft)
-                if (missionRec is null)
+                if (missionRec.RowId == 0)
                     return false;
-
+                
                 //Next, find the MissionUnit that has our MissionRecipe row
-                var missionUnit = Svc.Data.GetExcelSheet<WKSMissionUnit>().First(x => x.Unknown12 == missionRec?.RowId);
+                var missionUnit = Svc.Data.GetExcelSheet<WKSMissionUnit>().First(missionUnit => missionUnit.WKSMissionRecipe == (ushort)missionRec.RowId);
 
                 //Get the MissionToDo from the MissionUnit
                 var missionToDo = Svc.Data.GetExcelSheet<WKSMissionToDo>().GetRow(missionUnit.Unknown7);
 
-                //Svc.Log.Debug($"{id} -> {missionRec.RowId} -> {missionUnit.RowId} -> {missionToDo.RowId} -> {missionToDo.Unknown0}");
+                //Svc.Log.Verbose($"{id} -> {missionRec.RowId} -> {missionUnit.RowId} -> {missionToDo.RowId} -> {missionToDo.Unknown0}");
                 return missionToDo.Unknown0 == (uint)Skills.MaterialMiracle;
             }
             catch (Exception e)
