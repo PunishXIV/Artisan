@@ -403,7 +403,7 @@ namespace Artisan.UI.Tables
 
                         if (ImGui.IsItemClicked())
                         {
-                            Chat.Instance.SendMessage($"/li {server}");
+                            Chat.Instance.SendMessage($"/li {server} mb");
                         }
                     }
                 }
