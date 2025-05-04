@@ -92,7 +92,7 @@ namespace Artisan.UI
                 else
                     ImGuiEx.CenterColumnText("Macro Editor Select");
 
-                if (ImGui.BeginChild("##selector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y / 1.85f), true))
+                if (ImGui.BeginChild("##selector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y), true))
                 {
                     for (int i = 0; i < P.Config.MacroSolverConfig.Macros.Count; i++)
                     {

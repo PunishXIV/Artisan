@@ -488,14 +488,12 @@ public unsafe static class PreCrafting
         if (recipe.Number == 0)
         {
             var addon = Crafting.GetCosmicAddon();
+
             if (addon == null)
             {
                 AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipe.RowId);
-                addon = Crafting.GetCosmicAddon();
-            }
-
-            if (addon == null)
                 return TaskResult.Retry;
+            }
 
             var rd = RecipeNoteRecipeData.Ptr();
             if (rd == null)

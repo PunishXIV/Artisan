@@ -2,7 +2,9 @@
 using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using Dalamud.Interface.Utility.Raii;
+using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
@@ -35,6 +37,7 @@ namespace Artisan.UI
         private static bool[] quickAssignJobs = new bool[8];
         private static Dictionary<int, bool> quickAssignDurabilities = new();
         private static bool quickAssignCannotHQ = false;
+        private static bool Notification;
 
         public static void Draw()
         {
@@ -59,6 +62,7 @@ namespace Artisan.UI
             ImGui.Spacing();
             var recipe = filteredRecipes.First();
             var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.RowId);
+            stats.AddConsumables(new(DummyConfig.RequiredFood, DummyConfig.RequiredFoodHQ), new(DummyConfig.RequiredPotion, DummyConfig.RequiredPotionHQ), CharacterInfo.FCCraftsmanshipbuff);
             var c = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.RowId, recipe);
 
             DummyConfig.DrawFood();
@@ -67,11 +71,26 @@ namespace Artisan.UI
             DummyConfig.DrawSquadronManual();
             DummyConfig.DrawSolver(c, false, false);
 
+            ImGui.Checkbox("Show which crafts have been assigned as a notification", ref Notification);
             if (ImGui.Button("Assign To All", new Vector2(ImGui.GetContentRegionAvail().X, 25f.Scale())))
             {
                 foreach (var rec in filteredRecipes)
                 {
-                    P.Config.RecipeConfigs[rec.RowId] = DummyConfig;
+                    P.Config.RecipeConfigs[rec.RowId] = new() 
+                    {   RequiredFood = DummyConfig.RequiredFood, 
+                        RequiredFoodHQ = DummyConfig.RequiredFoodHQ,
+                        RequiredPotion = DummyConfig.RequiredPotion,
+                        RequiredPotionHQ = DummyConfig.RequiredPotionHQ,
+                        RequiredManual = DummyConfig.RequiredManual,
+                        RequiredSquadronManual = DummyConfig.RequiredSquadronManual,
+                        SolverFlavour = DummyConfig.SolverFlavour,
+                        SolverType = DummyConfig.SolverType,
+                    };
+                    if (Notification)
+                    {
+                        P.TM.Enqueue(() => Notify.Success($"Assigned {rec.CraftType.Value.Name} - {rec.ItemResult.Value.Name}"));
+                        P.TM.DelayNext(75);
+                    }
                 }
                 P.Config.Save();
             }

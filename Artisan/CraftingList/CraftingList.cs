@@ -395,7 +395,7 @@ namespace Artisan.CraftingLists
             {
                 if (!CLTM.IsBusy)
                 {
-                    CLTM.Enqueue(() => PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromMilliseconds(200))));
+                    CLTM.Enqueue(() => PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromMilliseconds(500))));
 
                     if (!RecipeWindowOpen()) return;
 

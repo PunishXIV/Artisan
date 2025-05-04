@@ -1,5 +1,7 @@
 ﻿using Artisan.Autocraft;
+using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop.CSExt;
+using Artisan.UI;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
@@ -122,6 +124,9 @@ public static unsafe class Operations
             if (ing.NumAssignedNQ + ing.NumAssignedHQ != ing.NumTotal)
                 return false;
         }
+
+        if (RaphaelCache.InProgressAny())
+            return false;
 
         if (TryGetAddonByName<AtkUnitBase>("WKSRecipeNotebook", out var cosmicAddon))
         {

@@ -110,7 +110,7 @@ namespace Artisan.IPC
         {
             if (LuminaSheets.RecipeSheet!.FindFirst(x => x.Value.RowId == recipeId, out var recipe))
             {
-                PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe.Value), default));
+                PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe.Value), TimeSpan.FromMilliseconds(500)));
                 P.TM.Enqueue(() => PreCrafting.Tasks.Count == 0);
                 P.TM.DelayNext(100);
                 P.TM.Enqueue(() =>
@@ -130,7 +130,7 @@ namespace Artisan.IPC
 
         public static bool IsBusy()
         {
-            return P.TM.NumQueuedTasks > 0 || P.CTM.NumQueuedTasks > 0 || !(Crafting.CurState is Crafting.State.IdleBetween or Crafting.State.IdleNormal);
+            return Endurance.Enable || CraftingListUI.Processing || P.TM.NumQueuedTasks > 0 || P.CTM.NumQueuedTasks > 0 || !(Crafting.CurState is Crafting.State.IdleBetween or Crafting.State.IdleNormal);
         }
 
         public enum ArtisanMode

@@ -63,7 +63,7 @@ namespace Artisan.UI
                                 if (Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
                                 {
                                     var recipe = LuminaSheets.RecipeSheet[QuestList.GetRecipeForQuest((ushort)quest.Key)];
-                                    PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromSeconds(5)));
+                                    PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), TimeSpan.FromMilliseconds(500)));
                                 }
                             }
                         }

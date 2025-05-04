@@ -448,7 +448,7 @@ public static unsafe class Crafting
     public static AtkUnitBase* GetCosmicAddon()
     {
         var cosmicAddon = (AtkUnitBase*)Svc.GameGui.GetAddonByName("WKSRecipeNotebook");
-        if (cosmicAddon == null)
+        if (cosmicAddon == null || !cosmicAddon->IsVisible || !cosmicAddon->IsReady)
             return null; // not ready
 
         return cosmicAddon;
@@ -511,6 +511,18 @@ public static unsafe class Crafting
         }
     }
 
+    private unsafe static int CarefulObservationCharges()
+    {
+        try
+        {
+            return (int)ActionManager.Instance()->GetCurrentCharges(100395);
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
     private static StepState BuildStepState(AddonSynthesis* synthWindow, StepState? predictedStep, CraftState craft)
     {
         var ret = new StepState();
@@ -528,7 +540,7 @@ public static unsafe class Crafting
         ret.VenerationLeft = GetStatus(Buffs.Veneration)?.Param ?? 0;
         ret.MuscleMemoryLeft = GetStatus(Buffs.MuscleMemory)?.Param ?? 0;
         ret.FinalAppraisalLeft = GetStatus(Buffs.FinalAppraisal)?.Param ?? 0;
-        ret.CarefulObservationLeft = ActionManagerEx.CanUseSkill(Skills.CarefulObservation) ? 1 : 0;
+        ret.CarefulObservationLeft = predictedStep?.CarefulObservationLeft ?? 0; //Charges based on delineations, best to just use the predicted state until a proper check can be discovered
         ret.HeartAndSoulActive = GetStatus(Buffs.HeartAndSoul) != null;
         ret.HeartAndSoulAvailable = ActionManagerEx.CanUseSkill(Skills.HeartAndSoul);
         ret.TrainedPerfectionActive = GetStatus(Buffs.TrainedPerfection) != null;
