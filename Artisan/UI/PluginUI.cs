@@ -1,5 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.CraftingLogic;
 using Artisan.FCWorkshops;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
@@ -541,6 +542,22 @@ namespace Artisan.UI
                 {
                     P.Config.Save();
                 }
+
+                ImGui.Indent();
+                if (ImGui.CollapsingHeader("Default Consumables"))
+                {
+                    bool changed = false;
+                    changed |= P.Config.DefaultConsumables.DrawFood();
+                    changed |= P.Config.DefaultConsumables.DrawPotion();
+                    changed |= P.Config.DefaultConsumables.DrawManual();
+                    changed |= P.Config.DefaultConsumables.DrawSquadronManual();
+
+                    if (changed)
+                    {
+                        P.Config.Save();
+                    }
+                }
+                ImGui.Unindent();
 
                 if (ImGui.Checkbox($"Prioritize NPC repairs above self-repairs", ref P.Config.PrioritizeRepairNPC))
                 {

@@ -109,7 +109,7 @@ namespace Artisan.Autocraft
 
         internal static bool IsFooded(RecipeConfig? config)
         {
-            if (config == null || config.RequiredFood == 0)
+            if (config == null || !config.FoodEnabled)
                 return true; // don't need a food
             var foodBuff = Svc.ClientState.LocalPlayer.StatusList.FirstOrDefault(x => x.StatusId == 48 & x.RemainingTime > 10f);
             if (foodBuff == null)
@@ -124,7 +124,7 @@ namespace Artisan.Autocraft
 
         internal static bool IsPotted(RecipeConfig? config)
         {
-            if (config == null || config.RequiredPotion == 0)
+            if (config == null || !config.PotionEnabled)
                 return true; // don't need a pot
             var potBuff = Svc.ClientState.LocalPlayer.StatusList.FirstOrDefault(x => x.StatusId == 49 & x.RemainingTime > 10f);
             if (potBuff == null)
@@ -139,14 +139,14 @@ namespace Artisan.Autocraft
 
         internal static bool IsManualled(RecipeConfig? config)
         {
-            if (config == null || config.RequiredManual == 0)
+            if (config == null || !config.ManualEnabled)
                 return true; // don't need a manual
             return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.StatusId == 45) == true;
         }
 
         internal static bool IsSquadronManualled(RecipeConfig? config)
         {
-            if (config == null || config.RequiredSquadronManual == 0)
+            if (config == null || !config.SquadronManualEnabled)
                 return true; // don't need a squadron manual
             // Squadron engineering/spiritbonding/rationing/gear manual.
             uint[] SquadronManualBuffss = { 1082, 1083, 1084, 1085 };
@@ -175,7 +175,7 @@ namespace Artisan.Autocraft
         {
             if (Endurance.SkipBuffs) return false;
 
-            var fooded = IsFooded(config) || (config.RequiredFood == 0 && Endurance.Enable);
+            var fooded = IsFooded(config) || (!config.FoodEnabled && Endurance.Enable);
             if (!fooded)
             {
                 if (GetFood(true, config.RequiredFoodHQ).Any(x => x.Id == config.RequiredFood))
@@ -194,7 +194,7 @@ namespace Artisan.Autocraft
                     fooded = !P.Config.AbortIfNoFoodPot;
                 }
             }
-            var potted = IsPotted(config) || (config.RequiredPotion == 0 && Endurance.Enable);
+            var potted = IsPotted(config) || (!config.PotionEnabled && Endurance.Enable);
             if (!potted)
             {
                 if (GetPots(true, config.RequiredPotionHQ).Any(x => x.Id == config.RequiredPotion))
@@ -213,7 +213,7 @@ namespace Artisan.Autocraft
                     potted = !P.Config.AbortIfNoFoodPot;
                 }
             }
-            var manualed = IsManualled(config) || (config.RequiredManual == 0 && Endurance.Enable);
+            var manualed = IsManualled(config) || (!config.ManualEnabled && Endurance.Enable);
             if (!manualed)
             {
                 if (GetManuals(true).Any(x => x.Id == config.RequiredManual))
@@ -232,7 +232,7 @@ namespace Artisan.Autocraft
                     manualed = !P.Config.AbortIfNoFoodPot;
                 }
             }
-            var squadronManualed = IsSquadronManualled(config) || (config.RequiredSquadronManual == 0 && Endurance.Enable);
+            var squadronManualed = IsSquadronManualled(config) || (!config.SquadronManualEnabled && Endurance.Enable);
             if (!squadronManualed)
             {
                 if (GetSquadronManuals(true).Any(x => x.Id == config.RequiredSquadronManual))
