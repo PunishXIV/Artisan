@@ -77,12 +77,12 @@ namespace Artisan.UI
                 foreach (var rec in filteredRecipes)
                 {
                     P.Config.RecipeConfigs[rec.RowId] = new() 
-                    {   requiredFood = DummyConfig.RequiredFood, 
-                        requiredFoodHQ = DummyConfig.RequiredFoodHQ,
-                        requiredPotion = DummyConfig.RequiredPotion,
-                        requiredPotionHQ = DummyConfig.RequiredPotionHQ,
-                        requiredManual = DummyConfig.RequiredManual,
-                        requiredSquadronManual = DummyConfig.RequiredSquadronManual,
+                    {   requiredFood = DummyConfig.requiredFood, 
+                        requiredFoodHQ = DummyConfig.requiredFoodHQ,
+                        requiredPotion = DummyConfig.requiredPotion,
+                        requiredPotionHQ = DummyConfig.requiredPotionHQ,
+                        requiredManual = DummyConfig.requiredManual,
+                        requiredSquadronManual = DummyConfig.requiredSquadronManual,
                         SolverFlavour = DummyConfig.SolverFlavour,
                         SolverType = DummyConfig.SolverType,
                     };
