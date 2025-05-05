@@ -1,9 +1,11 @@
 ﻿using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Colors;
+using ECommons.DalamudServices;
 using Lumina.Excel.Sheets;
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Numerics;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
@@ -107,7 +109,7 @@ public static class Simulator
         hintColor = ImGuiColors.DalamudWhite;
         var solver = CraftingProcessor.GetSolverForRecipe(config, craft).CreateSolver(craft);
         if (solver == null) return "No valid solver found.";
-        var startingQuality = GetStartingQuality(recipe, assumeMaxStartingQuality);
+        var startingQuality = GetStartingQuality(recipe, assumeMaxStartingQuality, craft.StatLevel);
         var time = SolverUtils.EstimateCraftTime(solver, craft, startingQuality);
         var result = SolverUtils.SimulateSolverExecution(solver, craft, startingQuality);
         var status = result != null ? Status(craft, result) : CraftStatus.InProgress;
@@ -147,12 +149,13 @@ public static class Simulator
         return solverHint;
     }
 
-    public unsafe static int GetStartingQuality(Recipe recipe, bool assumeMaxStartingQuality)
+    public unsafe static int GetStartingQuality(Recipe recipe, bool assumeMaxStartingQuality, int characterLevel)
     {
         var rd = RecipeNoteRecipeData.Ptr();
         var re = rd != null ? rd->FindRecipeById(recipe.RowId) : null;
         var shqf = (float)recipe.MaterialQualityFactor / 100;
-        var startingQuality = assumeMaxStartingQuality ? (int)(Calculations.RecipeMaxQuality(recipe) * shqf) : re != null ? Calculations.GetStartingQuality(recipe, re->GetAssignedHQIngredients()) : 0;
+        var lt = recipe.Number == 0 && characterLevel < 100 ? Svc.Data.GetExcelSheet<RecipeLevelTable>().First(x => x.ClassJobLevel == characterLevel) : recipe.RecipeLevelTable.Value;
+        var startingQuality = assumeMaxStartingQuality ? (int)(Calculations.RecipeMaxQuality(recipe, lt) * shqf) : re != null ? Calculations.GetStartingQuality(recipe, re->GetAssignedHQIngredients(), lt) : 0;
         return startingQuality;
     }
 
@@ -462,4 +465,5 @@ public static class Simulator
         }
         return Condition.Normal;
     }
+
 }

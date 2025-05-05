@@ -44,6 +44,7 @@ public record class CraftState
     public uint RecipeId;
 
     public Lumina.Excel.Sheets.Recipe Recipe;
+    public Lumina.Excel.Sheets.RecipeLevelTable LevelTable;
 
     public static float[] NormalCraftConditionProbabilities(int statLevel) => [1, statLevel >= 63 ? 0.25f : 0.2f, 0.04f];
     public static float[] EWRelicT1CraftConditionProbabilities() => [1, 0.03f, 0, 0, 0.12f, 0.12f, 0.12f, 0, 0, 0.12f];

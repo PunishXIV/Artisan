@@ -77,6 +77,7 @@ public static class CraftingProcessor
         var solver = type.Length > 0 ? SolverDefinitions.Find(s => s.GetType().FullName == type) : null;
         if (solver == null)
             return null;
+
         foreach (var f in solver.Flavours(craft).Where(f => f.Flavour == flavour))
             return f;
         return null;
@@ -105,7 +106,6 @@ public static class CraftingProcessor
             ActiveSolver = new("");
         }
         _expectedRecipe = null;
-
         // we don't want any solvers running with broken gear
         if (RepairManager.GetMinEquippedPercent() == 0)
         {

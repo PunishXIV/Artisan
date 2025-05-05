@@ -37,7 +37,7 @@ namespace Artisan.CraftingLogic.Solvers
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
             if (RaphaelCache.HasSolution(craft, out var solution))
-                yield return new(this, 3, 0, $"Raphael Recipe Solver");
+                yield return new(this, 3, 0, $"Raphael Recipe Solver");   
         }
     }
 
@@ -58,12 +58,12 @@ namespace Artisan.CraftingLogic.Solvers
                 Svc.Log.Information("Spawning Raphael process");
 
                 var manipulation = craft.UnlockedManipulation ? "--manipulation" : "";
-                var itemText = craft.IsCosmic ? $"--recipe-id {craft.RecipeId}" : $"--item-id {craft.ItemId}";
+                var itemText = $"--custom-recipe {craft.LevelTable.RowId} {craft.CraftProgress} {craft.CraftQualityMax} {craft.CraftDurability}";
                 var extraArgsBuilder = new StringBuilder();
 
                 if (config.HQConsiderations)
                 {
-                    extraArgsBuilder.Append($"--initial {Simulator.GetStartingQuality(craft.Recipe, false)} "); // must always have a space after
+                    extraArgsBuilder.Append($"--initial {Simulator.GetStartingQuality(craft.Recipe, false, craft.StatLevel)} "); // must always have a space after
                 }
 
                 if (config.EnsureReliability)
@@ -238,6 +238,7 @@ namespace Artisan.CraftingLogic.Solvers
                 if (solution.Value.Steps.Count == 0) continue;
 
                 var solKey = KeyParts(solution.Key);
+
                 if (solKey.Level == craft.CraftLevel &&
                     solKey.Prog == craft.CraftProgress &&
                     solKey.Qual == craft.CraftQualityMax &&

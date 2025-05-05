@@ -112,7 +112,8 @@ public static unsafe class Crafting
             CollectableMetadataKey = recipe.CollectableMetadataKey,
             IsCosmic = recipe.Number == 0,
             ConditionFlags = (ConditionFlags)lt.ConditionsFlag,
-            MissionHasMaterialMiracle = recipe.MissionHasMaterialMiracle()
+            MissionHasMaterialMiracle = recipe.MissionHasMaterialMiracle(),
+            LevelTable = lt
         };
 
         if (res.CraftCollectible)

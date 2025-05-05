@@ -482,7 +482,7 @@ public unsafe static class PreCrafting
     public static TaskResult TaskSelectRecipe(Recipe recipe)
     {
         var re = Operations.GetSelectedRecipeEntry();
-        if (re != null && re->RecipeId == recipe.RowId)
+        if ((re != null && re->RecipeId == recipe.RowId) || (Crafting.CurState is not Crafting.State.IdleBetween and not Crafting.State.IdleNormal))
             return TaskResult.Done;
 
         if (recipe.Number == 0)

@@ -59,7 +59,7 @@ namespace Artisan.CraftingLogic
             };
         }
 
-        public static int GetStartingQuality(Recipe recipe, int[] hqCount)
+        public static int GetStartingQuality(Recipe recipe, int[] hqCount, RecipeLevelTable? lt = null)
         {
             var itemSheet = Svc.Data.GetExcelSheet<Item>();
             long sumLevelHQ = 0, sumLevel = 0, idx = 0;
@@ -78,7 +78,7 @@ namespace Artisan.CraftingLogic
                 sumLevelHQ += ilvl * Math.Clamp(numHQ, 0, i.Amount);
 
             }
-            var left = (sumLevelHQ * RecipeMaxQuality(recipe) * recipe.MaterialQualityFactor / 100);
+            var left = (sumLevelHQ * (lt is null ? RecipeMaxQuality(recipe) : RecipeMaxQuality(recipe, lt.Value)) * recipe.MaterialQualityFactor / 100);
             var right = (sumLevel);
             return (int)(sumLevel == 0 ? 0 : left / right);
         }
