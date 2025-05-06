@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLists;
+using ECommons.DalamudServices;
 using SharpDX.DirectWrite;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,7 +53,6 @@ public class MacroSolver : Solver, ICraftValidator
         {
             var s = _macro.Steps[_nextStep++];
             var action = s.Action;
-
             if ((s.ExcludeNormal && step.Condition == Condition.Normal) ||
                 (s.ExcludeGood && step.Condition == Condition.Good) ||
                 (s.ExcludePoor && step.Condition == Condition.Poor) ||

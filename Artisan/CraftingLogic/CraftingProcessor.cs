@@ -1,8 +1,10 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
+using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
+using ECommons.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -144,6 +146,8 @@ public static class CraftingProcessor
         SolverStarted?.Invoke(recipe, ActiveSolver, craft, initialStep);
 
         _nextRec = _activeSolver.Solve(craft, initialStep);
+        if (Simulator.CannotUseAction(craft, initialStep, _nextRec.Action, out string reason))
+            DuoLog.Error($"Unable to use {_nextRec.Action.NameOfAction()}: {reason}");
         if (_nextRec.Action != Skills.None)
             RecommendationReady?.Invoke(recipe, ActiveSolver, craft, initialStep, _nextRec);
     }
@@ -158,6 +162,8 @@ public static class CraftingProcessor
 
         _nextRec = _activeSolver.Solve(craft, step);
         Svc.Log.Debug($"Next rec is: {_nextRec.Action}");
+        if (Simulator.CannotUseAction(craft, step, _nextRec.Action, out string reason))
+            DuoLog.Error($"Unable to use {_nextRec.Action.NameOfAction()}: {reason}");
         if (_nextRec.Action != Skills.None)
             RecommendationReady?.Invoke(recipe, ActiveSolver, craft, step, _nextRec);
     }

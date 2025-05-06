@@ -194,7 +194,7 @@ public class ExpertSolver : Solver
         var allowObserveOnLowDura = venerationActive ? cfg.MidKeepHighDuraVeneration : cfg.MidKeepHighDuraUnbuffed;
         var allowIntensive = venerationActive ? cfg.MidAllowIntensiveVeneration : cfg.MidAllowIntensiveUnbuffed;
         var allowPrecise = cfg.MidAllowPrecise && (!allowObserveOnLowDura || step.ManipulationLeft > 0 || step.Durability > 25) /*&& !venerationActive*/;
-        if (progressDeficit > 0 && SolveMidHighPriorityProgress(step, allowIntensive) is var highPrioProgress && highPrioProgress != Skills.None)
+        if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, allowIntensive) is var highPrioProgress && highPrioProgress != Skills.None)
             return new(SafeCraftAction(craft, step, highPrioProgress), "mid pre quality: high-prio progress");
         if (step.IQStacks < 10 && SolveMidHighPriorityIQ(cfg, craft, step, allowPrecise) is var highPrioIQ && highPrioIQ != Skills.None)
             return new(highPrioIQ, "mid pre quality: high-prio iq");
@@ -251,7 +251,7 @@ public class ExpertSolver : Solver
     {
         // no buffs up, this is a good chance to get some dura back if needed, and then get some iq/progress/quality, maybe start dedicated progress/quality phase
         // first see whether we have some nice conditions to exploit for progress or iq
-        if (progressDeficit > 0 && SolveMidHighPriorityProgress(step, true) is var highPrioProgress && highPrioProgress != Skills.None)
+        if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, true) is var highPrioProgress && highPrioProgress != Skills.None)
             return new(SafeCraftAction(craft, step, highPrioProgress), "mid start quality: high-prio progress");
         if (step.Condition == Condition.Good && CU(craft, step, Skills.TricksOfTrade))
             return new(Skills.TricksOfTrade, "mid start quality: high-prio tricks");

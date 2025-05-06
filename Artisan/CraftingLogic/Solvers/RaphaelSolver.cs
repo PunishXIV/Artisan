@@ -58,7 +58,7 @@ namespace Artisan.CraftingLogic.Solvers
                 Svc.Log.Information("Spawning Raphael process");
 
                 var manipulation = craft.UnlockedManipulation ? "--manipulation" : "";
-                var itemText = $"--custom-recipe {craft.LevelTable.RowId} {craft.CraftProgress} {craft.CraftQualityMax} {craft.CraftDurability}";
+                var itemText = $"--recipe-id {craft.RecipeId}";
                 var extraArgsBuilder = new StringBuilder();
 
                 if (config.HQConsiderations)
