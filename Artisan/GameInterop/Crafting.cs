@@ -337,7 +337,6 @@ public static unsafe class Crafting
 
         IsTrial = synthWindow->AtkUnitBase.AtkValues[1] is { Type: FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool, Byte: 1 };
         CraftStarted?.Invoke(CurRecipe.Value, CurCraft, CurStep, IsTrial);
-        Svc.Log.Debug($"{CurCraft?.IsCosmic}");
         return State.InProgress;
     }
 
@@ -541,7 +540,7 @@ public static unsafe class Crafting
         ret.VenerationLeft = GetStatus(Buffs.Veneration)?.Param ?? 0;
         ret.MuscleMemoryLeft = GetStatus(Buffs.MuscleMemory)?.Param ?? 0;
         ret.FinalAppraisalLeft = GetStatus(Buffs.FinalAppraisal)?.Param ?? 0;
-        ret.CarefulObservationLeft = predictedStep?.CarefulObservationLeft ?? 0; //Charges based on delineations, best to just use the predicted state until a proper check can be discovered
+        ret.CarefulObservationLeft = predictedStep is null && craft.Specialist && craft.StatLevel >= Skills.CarefulObservation.Level() ? 3 : predictedStep?.CarefulObservationLeft ?? 0; //Charges based on delineations, best to just use the predicted state until a proper check can be discovered
         ret.HeartAndSoulActive = GetStatus(Buffs.HeartAndSoul) != null;
         ret.HeartAndSoulAvailable = ActionManagerEx.CanUseSkill(Skills.HeartAndSoul);
         ret.TrainedPerfectionActive = GetStatus(Buffs.TrainedPerfection) != null;

@@ -51,6 +51,9 @@
 	
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
+    <None Update="bcryptprimitives.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Images\artisan-icon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -304,7 +304,7 @@ public static class Simulator
                 Skills.ByregotsBlessing => "You have 0 Inner Quiet stacks",
                 Skills.TrainedEye => craft.CraftExpert ? "Craft is expert" : step.Index != 1 ? "You are not on the first step of the craft" : "Craft is not 10 or more levels lower than your current level",
                 Skills.Manipulation => "You haven't unlocked Manipulation",
-                Skills.CarefulObservation => craft.Specialist ? "You already used Careful Observation" : "You are not a specialist",
+                Skills.CarefulObservation => craft.Specialist ? $"You already used Careful Observation 3 times" : "You are not a specialist",
                 Skills.HeartAndSoul => craft.Specialist ? "You don't have Heart & Soul available anymore for this craft" : "You are not a specialist",
                 Skills.TrainedPerfection => "You have already used Trained Perfection",
                 Skills.DaringTouch => "Hasty Touch did not succeed",

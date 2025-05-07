@@ -172,7 +172,7 @@ namespace Artisan.RawInformation
                 var recipe = LuminaSheets.RecipeSheet[craft];
                 var owned = RetainerInfo.GetRetainerItemCount(recipe.ItemResult.RowId) + CraftingListUI.NumberOfIngredient(recipe.ItemResult.RowId);
                 var numberUsedInRecipe = recipe.Ingredients().First(x => x.Item.RowId == Data.RowId).Amount;
-                var numberOnList = OriginList.Recipes.First(x => x.ID == craft).Quantity * recipe.AmountResult;
+                var numberOnList = OriginList.Recipes.First(x => x.ID == craft).Quantity; // * recipe.AmountResult; Did I want to multiply that? Answers on a postcard
                 if (IngredientHelper.HelperList.Any(x => x.Data.RowId == recipe.ItemResult.RowId))
                 {
                     var subing = IngredientHelper.HelperList.First(x => x.Data.RowId == recipe.ItemResult.RowId);
