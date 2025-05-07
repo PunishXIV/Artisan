@@ -1,5 +1,6 @@
 ﻿using Artisan.GameInterop;
 using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using Artisan.UI;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
@@ -37,7 +38,7 @@ namespace Artisan.CraftingLogic.Solvers
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
             if (RaphaelCache.HasSolution(craft, out var solution))
-                yield return new(this, 3, 0, $"Raphael Recipe Solver");   
+                yield return new(this, 3, 0, $"Raphael Recipe Solver");
         }
     }
 
@@ -97,7 +98,7 @@ namespace Artisan.CraftingLogic.Solvers
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = Path.Join(Path.GetDirectoryName(Svc.PluginInterface.AssemblyLocation.FullName), "raphael-cli.exe"),
-                        Arguments = $"solve {itemText} {manipulation} --level {craft.StatLevel} --stats {craft.StatCraftsmanship} {craft.StatControl} {craft.StatCP} {extraArgsBuilder} --output-variables actions", // Command to execute
+                        Arguments = $"solve {itemText} {manipulation} --level {craft.StatLevel} --stats {craft.StatCraftsmanship} {craft.StatControl} {craft.StatCP} {extraArgsBuilder} --output-variables ids", // Command to execute
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                         UseShellExecute = false,
@@ -127,11 +128,12 @@ namespace Artisan.CraftingLogic.Solvers
                     while (P.Config.RaphaelSolverCacheV2.Any(kv => kv.Value.ID == ID))
                         ID = rng.Next(50001, 10000000);
 
+                    var cleansedOutput = output.Replace("[", "").Replace("]", "").Replace("\"", "").Split(", ").Select(x => int.TryParse(x, out int n) ? n : 0);
                     P.Config.RaphaelSolverCacheV2[key] = new MacroSolverSettings.Macro()
                     {
                         ID = ID,
                         Name = key,
-                        Steps = MacroUI.ParseMacro(output.Replace("\"", "").Replace("[", "").Replace("]", "").Replace(",", "\r\n").Replace("2", "II").Replace("MasterMend", "MastersMend"), true),
+                        Steps = MacroUI.ParseMacro(cleansedOutput),
                         Options = new()
                         {
                             SkipQualityIfMet = false,
@@ -142,6 +144,7 @@ namespace Artisan.CraftingLogic.Solvers
                             MinCraftsmanship = craft.StatCraftsmanship,
                         }
                     };
+
                     cts.Token.ThrowIfCancellationRequested();
                     if (P.Config.RaphaelSolverCacheV2[key] == null || P.Config.RaphaelSolverCacheV2[key].Steps.Count == 0)
                     {

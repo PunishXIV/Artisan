@@ -191,7 +191,6 @@ namespace Artisan.UI
 
         private void OnRecommendationReady(Lumina.Excel.Sheets.Recipe recipe, SolverRef solver, CraftState craft, StepState step, Solver.Recommendation recommendation)
         {
-            Svc.Log.Debug($"{step.TrainedPerfectionAvailable}");
             if (!Simulator.CanUseAction(craft, step, recommendation.Action))
             {
                 return;

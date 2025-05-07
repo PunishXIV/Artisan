@@ -5,7 +5,6 @@ using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using ECommons;
 using ECommons.DalamudServices;
-using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
 using ImGuiNET;
@@ -310,6 +309,23 @@ namespace Artisan.UI
             _newMacroName = string.Empty;
             _keyboardFocus = true;
             ImGui.OpenPopup($"{MacroNamePopupLabel}{use}");
+        }
+
+        internal static List<MacroSolverSettings.MacroStep> ParseMacro(IEnumerable<int> skillIds)
+        {
+            var res = new List<MacroSolverSettings.MacroStep>();
+            if (skillIds.Count() == 0)
+            {
+                return res;
+            }
+
+            foreach (var item in skillIds)
+            {
+                var act  = (Skills)item;
+                res.Add(new() { Action = act });
+            }
+
+            return res;
         }
 
         internal enum MacroNameUse
