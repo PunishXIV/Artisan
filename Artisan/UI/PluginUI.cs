@@ -492,36 +492,23 @@ namespace Artisan.UI
                 ImGuiComponents.HelpMarker($"Automatically use each recommended action.");
                 if (autoEnabled)
                 {
-                    var delay = P.Config.AutoDelay;
-                    ImGui.PushItemWidth(200);
-                    if (ImGui.SliderInt("Execution Delay (ms)###ActionDelay", ref delay, 0, 1000))
+                    if (ImGui.Checkbox($"Replicate Macro Delay", ref P.Config.ReplicateMacroDelay))
                     {
-                        if (delay < 0) delay = 0;
-                        if (delay > 1000) delay = 1000;
-
-                        P.Config.AutoDelay = delay;
                         P.Config.Save();
                     }
-                }
 
-                if (ImGui.Checkbox("Delay Getting Recommendations", ref delayRec))
-                {
-                    P.Config.DelayRecommendation = delayRec;
-                    P.Config.Save();
-                }
-                ImGuiComponents.HelpMarker("Use this if you're having issues with Final Appraisal not triggering when it's supposed to.");
-
-                if (delayRec)
-                {
-                    var delay = P.Config.RecommendationDelay;
-                    ImGui.PushItemWidth(200);
-                    if (ImGui.SliderInt("Set Delay (ms)###RecommendationDelay", ref delay, 0, 1000))
+                    if (!P.Config.ReplicateMacroDelay)
                     {
-                        if (delay < 0) delay = 0;
-                        if (delay > 1000) delay = 1000;
+                        var delay = P.Config.AutoDelay;
+                        ImGui.PushItemWidth(200);
+                        if (ImGui.SliderInt("Execution Delay (ms)###ActionDelay", ref delay, 0, 1000))
+                        {
+                            if (delay < 0) delay = 0;
+                            if (delay > 1000) delay = 1000;
 
-                        P.Config.RecommendationDelay = delay;
-                        P.Config.Save();
+                            P.Config.AutoDelay = delay;
+                            P.Config.Save();
+                        }
                     }
                 }
 

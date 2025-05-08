@@ -31,28 +31,35 @@ namespace Artisan.CraftingLogic
         {
             switch (id)
             {
-                case Skills.TouchCombo:
-                case Skills.TouchComboRefined:
                 case Skills.BasicSynthesis:
-                case Skills.RapidSynthesis:
+                case Skills.BasicTouch:
+                case Skills.MastersMend:
+                case Skills.Observe:
+                case Skills.TricksOfTrade:
+                case Skills.StandardTouch:
+                case Skills.ByregotsBlessing:
+                case Skills.PreciseTouch:
                 case Skills.MuscleMemory:
                 case Skills.CarefulSynthesis:
-                case Skills.Groundwork:
-                case Skills.DelicateSynthesis:
-                case Skills.IntensiveSynthesis:
-                case Skills.PrudentSynthesis:
-                case Skills.BasicTouch:
-                case Skills.HastyTouch:
-                case Skills.StandardTouch:
-                case Skills.PreciseTouch:
                 case Skills.PrudentTouch:
                 case Skills.Reflect:
                 case Skills.PreparatoryTouch:
+                case Skills.Groundwork:
+                case Skills.DelicateSynthesis:
+                case Skills.IntensiveSynthesis:
                 case Skills.AdvancedTouch:
+                case Skills.HeartAndSoul:
+                case Skills.PrudentSynthesis:
                 case Skills.TrainedFinesse:
-                case Skills.ByregotsBlessing:
-                case Skills.MastersMend:
+                case Skills.RefinedTouch:
+                case Skills.ImmaculateMend:
+                case Skills.TrainedPerfection:
                 case Skills.TrainedEye:
+                case Skills.QuickInnovation:
+                case Skills.TouchCombo:
+                case Skills.TouchComboRefined:
+                case Skills.RapidSynthesis:
+                case Skills.HastyTouch:
                     return true;
                 default:
                     return false;

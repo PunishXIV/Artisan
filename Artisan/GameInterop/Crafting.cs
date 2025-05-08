@@ -495,6 +495,8 @@ public static unsafe class Crafting
     private static int GetStepQuality(AddonSynthesis* synthWindow) => synthWindow->AtkUnitBase.AtkValues[9].Int;
     private static int GetStepDurability(AddonSynthesis* synthWindow) => synthWindow->AtkUnitBase.AtkValues[7].Int;
     private static Condition GetStepCondition(AddonSynthesis* synthWindow) => (Condition)synthWindow->AtkUnitBase.AtkValues[12].Int;
+    public static int DelineationCount() => InventoryManager.Instance()->GetInventoryItemCount(28724);
+
     private unsafe static uint MaterialMiracleCharges()
     {
         try
@@ -540,7 +542,7 @@ public static unsafe class Crafting
         ret.VenerationLeft = GetStatus(Buffs.Veneration)?.Param ?? 0;
         ret.MuscleMemoryLeft = GetStatus(Buffs.MuscleMemory)?.Param ?? 0;
         ret.FinalAppraisalLeft = GetStatus(Buffs.FinalAppraisal)?.Param ?? 0;
-        ret.CarefulObservationLeft = predictedStep is null && craft.Specialist && craft.StatLevel >= Skills.CarefulObservation.Level() ? 3 : predictedStep?.CarefulObservationLeft ?? 0; //Charges based on delineations, best to just use the predicted state until a proper check can be discovered
+        ret.CarefulObservationLeft = predictedStep is null ? craft.Specialist && craft.StatLevel >= Skills.CarefulObservation.Level() ? Math.Min(3, DelineationCount()) : 0 : Math.Min(predictedStep.CarefulObservationLeft, DelineationCount()); //Charges based on delineations, best to just use the predicted state until a proper check can be discovered
         ret.HeartAndSoulActive = GetStatus(Buffs.HeartAndSoul) != null;
         ret.HeartAndSoulAvailable = ActionManagerEx.CanUseSkill(Skills.HeartAndSoul);
         ret.TrainedPerfectionActive = GetStatus(Buffs.TrainedPerfection) != null;

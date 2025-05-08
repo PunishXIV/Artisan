@@ -1,4 +1,5 @@
-﻿using Artisan.GameInterop.CSExt;
+﻿using Artisan.GameInterop;
+using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Colors;
 using ECommons.DalamudServices;
@@ -304,11 +305,11 @@ public static class Simulator
                 Skills.ByregotsBlessing => "You have 0 Inner Quiet stacks",
                 Skills.TrainedEye => craft.CraftExpert ? "Craft is expert" : step.Index != 1 ? "You are not on the first step of the craft" : "Craft is not 10 or more levels lower than your current level",
                 Skills.Manipulation => "You haven't unlocked Manipulation",
-                Skills.CarefulObservation => craft.Specialist ? $"You already used Careful Observation 3 times" : "You are not a specialist",
-                Skills.HeartAndSoul => craft.Specialist ? "You don't have Heart & Soul available anymore for this craft" : "You are not a specialist",
+                Skills.CarefulObservation => craft.Specialist ? Crafting.DelineationCount() == 0 ? "You have run out of Delineations." : $"You already used Careful Observation 3 times" : "You are not a specialist",
+                Skills.HeartAndSoul => craft.Specialist ? Crafting.DelineationCount() == 0 ? "You have run out of Delineations." : "You don't have Heart & Soul available anymore for this craft" : "You are not a specialist",
                 Skills.TrainedPerfection => "You have already used Trained Perfection",
                 Skills.DaringTouch => "Hasty Touch did not succeed",
-                Skills.QuickInnovation => !craft.Specialist ? "You are not a specialist" : step.QuickInnoLeft == 0 ? "You don't have Quick Innovation available anymore for this craft" : step.InnovationLeft > 0 ? "You have an Innovation buff" : "",
+                Skills.QuickInnovation => !craft.Specialist ? "You are not a specialist" : Crafting.DelineationCount() == 0 ? "You have run out of Delineations." : step.QuickInnoLeft == 0 ? "You don't have Quick Innovation available anymore for this craft" : step.InnovationLeft > 0 ? "You have an Innovation buff" : "",
                 Skills.MaterialMiracle => !craft.MissionHasMaterialMiracle ? "This craft cannot use Material Miracle" : step.MaterialMiracleActive ? "You already have Material Miracle active" : step.MaterialMiracleCharges == 0 ? "You have no more charges" : ""
             };
 
