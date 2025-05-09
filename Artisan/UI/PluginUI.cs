@@ -12,6 +12,7 @@ using Dalamud.Interface.Windowing;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
+using ECommons.Interop;
 using ImGuiNET;
 using Lumina.Excel.Sheets;
 using PunishLib.ImGuiMethods;
@@ -592,6 +593,28 @@ namespace Artisan.UI
 
                 if (ImGui.Checkbox("Disable Automatically Equipping Required Items for Crafts", ref P.Config.DontEquipItems))
                     P.Config.Save();
+
+                if (ImGui.Checkbox("Use Custom Notification Sound", ref P.Config.UseCustomNotificationSound))
+                    P.Config.Save();
+
+                if(P.Config.UseCustomNotificationSound)
+                {
+                    ImGui.Text("Custom Notification Sound");
+
+                    if(ImGui.InputText("###CustomNotificationSound", ref P.Config.CustomSoundPath, 260 /*just going with MAX_PATH for now*/ ))
+                        P.Config.Save();
+
+                    ImGui.SameLine();
+
+                    if (ImGui.Button("..."))
+                    {
+                        OpenFileDialog.SelectFile(
+                            openFileName => { 
+                                P.Config.CustomSoundPath = openFileName.file; 
+                                P.Config.Save();
+                            });
+                    }
+                }
 
                 if (ImGui.Checkbox("Play Sound After Endurance Is Complete", ref P.Config.PlaySoundFinishEndurance))
                     P.Config.Save();
