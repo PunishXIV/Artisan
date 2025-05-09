@@ -97,7 +97,7 @@ namespace Artisan.CraftingLogic.Solvers
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = Path.Join(Path.GetDirectoryName(Svc.PluginInterface.AssemblyLocation.FullName), "raphael-cli.exe"),
+                        FileName = Path.Join(Path.GetDirectoryName(Svc.PluginInterface.AssemblyLocation.FullName), Util.IsWine() ? "raphael-cli" : "raphael-cli.exe"),
                         Arguments = $"solve {itemText} {manipulation} --level {craft.StatLevel} --stats {craft.StatCraftsmanship} {craft.StatControl} {craft.StatCP} {extraArgsBuilder} --output-variables ids", // Command to execute
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
