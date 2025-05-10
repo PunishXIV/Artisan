@@ -26,6 +26,7 @@ public static unsafe class Crafting
     public enum State
     {
         IdleNormal, // we're not crafting - the default state of the game
+        Exiting, // standing up from IdleBetween to IdleNormal
         IdleBetween, // we've finished a craft and have not yet started another, sitting in the menu
         WaitStart, // we're waiting for a new (quick) craft to start
         InProgress, // crafting is in progress, waiting for next action
@@ -42,6 +43,8 @@ public static unsafe class Crafting
     public static CraftState? CurCraft { get; private set; }
     public static StepState? CurStep { get; private set; }
     public static bool IsTrial { get; private set; }
+
+    public static int InitialQuality;
 
     public static bool CanCancelQS = false;
 
@@ -236,6 +239,7 @@ public static unsafe class Crafting
         var newState = CurState switch
         {
             State.IdleNormal => TransitionFromIdleNormal(),
+            State.Exiting => TransitionFromExiting(),
             State.IdleBetween => TransitionFromIdleBetween(),
             State.WaitStart => TransitionFromWaitStart(),
             State.InProgress => TransitionFromInProgress(),
@@ -250,6 +254,21 @@ public static unsafe class Crafting
             CurState = newState;
             StateChanged?.Invoke(newState);
         }
+    }
+
+    private static State TransitionFromExiting()
+    {
+        if (Svc.Condition[ConditionFlag.NormalConditions])
+            return State.IdleNormal;
+
+        _predictedNextStep = null;
+        _predictionDeadline = default;
+        CurRecipe = null;
+        CurCraft = null;
+        CurStep = null;
+        IsTrial = false;
+
+        return State.Exiting;
     }
 
     private static State TransitionFromInvalid()
@@ -272,10 +291,11 @@ public static unsafe class Crafting
 
     private static State TransitionFromIdleNormal()
     {
-        if (Svc.Condition[ConditionFlag.Crafting40])
-        {
+        if (Svc.Condition[ConditionFlag.NormalConditions])
+            return State.IdleNormal;
+
+        if (Svc.Condition[ConditionFlag.ExecutingCraftingAction])
             return State.WaitStart; // craft started, but we don't yet know details
-        }
 
         if (Svc.Condition[ConditionFlag.PreparingToCraft])
         {
@@ -293,11 +313,11 @@ public static unsafe class Crafting
         if (Svc.Condition[ConditionFlag.PreparingToCraft])
             return State.IdleBetween; // still in idle state
 
-        if (Svc.Condition[ConditionFlag.Crafting40])
+        if (Svc.Condition[ConditionFlag.ExecutingCraftingAction])
             return State.WaitStart; // craft started, but we don't yet know details
 
         // exit crafting menu
-        return State.IdleNormal;
+        return State.Exiting;
     }
 
     private static State TransitionFromWaitStart()
@@ -331,6 +351,7 @@ public static unsafe class Crafting
 
         var canHQ = CurRecipe.Value.CanHq;
         CurCraft = BuildCraftStateForRecipe(CharacterStats.GetCurrentStats(), CharacterInfo.JobID, CurRecipe!.Value);
+        CurCraft?.InitialQuality = InitialQuality;
         CurStep = BuildStepState(synthWindow, null, CurCraft);
         if (CurStep.Index != 1 || CurStep.Condition != Condition.Normal || CurStep.PrevComboAction != Skills.None)
             Svc.Log.Error($"Unexpected initial state: {CurStep}");
@@ -575,15 +596,17 @@ public static unsafe class Crafting
             case CraftingEventHandler.OperationId.StartInfo:
                 // this is sent few 100s of ms after StartPrepare for normal synth and contains details of the recipe
                 // client stores the information in payload in event handler, but we continue waiting
+                var startPayload = (CraftingEventHandler.StartInfo*)payload;
                 if (CurState != State.WaitStart)
                     Svc.Log.Error($"Unexpected state {CurState} when receiving {*payload} message");
-                var startPayload = (CraftingEventHandler.StartInfo*)payload;
                 Svc.Log.Debug($"Starting craft: recipe #{startPayload->RecipeId}, initial quality {startPayload->StartingQuality}, u8={startPayload->u8}");
                 if (CurRecipe != null)
                     Svc.Log.Error($"Unexpected non-null recipe when receiving {*payload} message");
                 CurRecipe = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Recipe>()?.GetRow(startPayload->RecipeId);
                 if (CurRecipe == null)
                     Svc.Log.Error($"Failed to find recipe #{startPayload->RecipeId}");
+
+                InitialQuality = startPayload->StartingQuality;
                 // note: we could build CurCraft and CurStep here
                 break;
             case CraftingEventHandler.OperationId.StartReady:
@@ -609,6 +632,8 @@ public static unsafe class Crafting
                     Svc.Log.Error($"Unexpected non-null predicted-next when receiving {*payload} message");
                 if (CurCraft is not null && CurCraft.IsCosmic && Endurance.Enable)
                     Endurance.ToggleEndurance(false);
+
+                CurState = State.Exiting;
                 break;
             case CraftingEventHandler.OperationId.AdvanceCraftAction:
             case CraftingEventHandler.OperationId.AdvanceNormalAction:

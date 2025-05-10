@@ -65,6 +65,7 @@ public class RecipeConfig
         var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.RowId);
         stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ), CharacterInfo.FCCraftsmanshipbuff);
         var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.RowId, recipe);
+        craft.InitialQuality = Simulator.GetStartingQuality(recipe, false, craft.StatLevel);
         bool changed = false;
         changed |= DrawFood();
         changed |= DrawPotion();

@@ -497,9 +497,11 @@ public class ExpertSolver : Solver
         if (step.ManipulationLeft > 0 && step.Durability + 5 > craft.CraftDurability)
             return Skills.None; // we're high on dura, doing anything here will waste manip durability
 
-        if (step.Condition == Condition.Pliant)
+        if (step.Condition == Condition.Pliant || !craft.ConditionFlags.HasFlag(ConditionFlags.Pliant))
         {
             // see if we can utilize pliant for manip/mm
+            if (step.Durability + 45 + (step.ManipulationLeft > 0 ? 5 : 0) <= craft.CraftDurability && CU(craft, step, Skills.ImmaculateMend))
+                return Skills.ImmaculateMend;
             if (step.ManipulationLeft <= 1 && availableCP >= Simulator.GetCPCost(step, Skills.Manipulation) && CU(craft, step, Skills.Manipulation))
                 return Skills.Manipulation;
             if (step.Durability + 30 + (step.ManipulationLeft > 0 ? 5 : 0) <= craft.CraftDurability && availableCP >= Simulator.GetCPCost(step, Skills.MastersMend) && CU(craft, step, Skills.MastersMend))
@@ -580,6 +582,8 @@ public class ExpertSolver : Solver
     private static Skills SolveMidDurabilityQualityPliant(ExpertSolverSettings cfg, CraftState craft, StepState step, int availableCP)
     {
         var effectiveDura = step.Durability + step.ManipulationLeft * 5; // since we are going to use a lot of non-dura actions (buffs/observes), this is what really matters
+        if (effectiveDura + 45 <= craft.CraftDurability && availableCP >= Simulator.GetCPCost(step, Skills.ImmaculateMend) + EstimateCPToUtilizeDurabilityForQuality(effectiveDura, 3) && CU(craft, step, Skills.ImmaculateMend))
+            return Skills.MastersMend;
         if (step.ManipulationLeft <= 1 && availableCP >= Simulator.GetCPCost(step, Skills.Manipulation) + EstimateCPToUtilizeDurabilityForQuality(effectiveDura, 4) && CU(craft, step, Skills.Manipulation))
             return Skills.Manipulation;
         if (effectiveDura + 30 <= craft.CraftDurability && availableCP >= Simulator.GetCPCost(step, Skills.MastersMend) + EstimateCPToUtilizeDurabilityForQuality(effectiveDura, 3) && CU(craft, step, Skills.MastersMend))

@@ -429,6 +429,8 @@ namespace Artisan.UI
             {
                 TeleportToGCTown();
             }
+
+            Util.ShowStruct(WKSManager.Instance());
         }
 
         public unsafe static void TeleportToGCTown()

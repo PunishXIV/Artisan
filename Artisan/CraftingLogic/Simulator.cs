@@ -432,6 +432,7 @@ public static class Simulator
             Skills.StandardTouch => 125,
             Skills.AdvancedTouch => 150,
             Skills.HastyTouch => 100,
+            Skills.DaringTouch => 150,
             Skills.PreparatoryTouch => 200,
             Skills.PreciseTouch => 150,
             Skills.PrudentTouch => 100,

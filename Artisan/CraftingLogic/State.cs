@@ -39,6 +39,7 @@ public record class CraftState
     public bool IsCosmic;
     public ConditionFlags ConditionFlags;
     public bool MissionHasMaterialMiracle;
+    public int InitialQuality;
 
     public uint ItemId;
     public uint RecipeId;

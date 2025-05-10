@@ -100,7 +100,7 @@ public static class CraftingProcessor
 
     private static void OnCraftStarted(Lumina.Excel.Sheets.Recipe recipe, CraftState craft, StepState initialStep, bool trial)
     {
-        Svc.Log.Debug($"[CProc] OnCraftStarted #{recipe.RowId} '{recipe.ItemResult.Value.Name.ToDalamudString()}' (trial={trial}) (cosmic={craft.IsCosmic}) (PQ={craft.CraftProgress}/{craft.CraftQualityMax})");
+        Svc.Log.Debug($"[CProc] OnCraftStarted #{recipe.RowId} '{recipe.ItemResult.Value.Name.ToDalamudString()}' (trial={trial}) (cosmic={craft.IsCosmic}) (IQ={craft.InitialQuality}) (PQ={craft.CraftProgress}/{craft.CraftQualityMax})");
         if (_expectedRecipe != null && _expectedRecipe.Value != recipe.RowId)
         {
             Svc.Log.Error($"Unexpected recipe started: expected {_expectedRecipe}, got {recipe.RowId}");

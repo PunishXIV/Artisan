@@ -1,6 +1,5 @@
 ﻿using Artisan.GameInterop;
 using Artisan.RawInformation;
-using Artisan.RawInformation.Character;
 using Artisan.UI;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
@@ -54,7 +53,7 @@ namespace Artisan.CraftingLogic.Solvers
 
             if (CLIExists() && !Tasks.ContainsKey(key))
             {
-                P.Config.RaphaelSolverCacheV2.TryRemove(key, out _);
+                P.Config.RaphaelSolverCacheV3.TryRemove(key, out _);
 
                 Svc.Log.Information("Spawning Raphael process");
 
@@ -62,10 +61,7 @@ namespace Artisan.CraftingLogic.Solvers
                 var itemText = $"--recipe-id {craft.RecipeId}";
                 var extraArgsBuilder = new StringBuilder();
 
-                if (config.HQConsiderations)
-                {
-                    extraArgsBuilder.Append($"--initial {Simulator.GetStartingQuality(craft.Recipe, false, craft.StatLevel)} "); // must always have a space after
-                }
+                extraArgsBuilder.Append($"--initial {craft.InitialQuality} "); // must always have a space after
 
                 if (config.EnsureReliability)
                 {
@@ -125,11 +121,11 @@ namespace Artisan.CraftingLogic.Solvers
                     }
                     var rng = new Random();
                     var ID = rng.Next(50001, 10000000);
-                    while (P.Config.RaphaelSolverCacheV2.Any(kv => kv.Value.ID == ID))
+                    while (P.Config.RaphaelSolverCacheV3.Any(kv => kv.Value.ID == ID))
                         ID = rng.Next(50001, 10000000);
 
                     var cleansedOutput = output.Replace("[", "").Replace("]", "").Replace("\"", "").Split(", ").Select(x => int.TryParse(x, out int n) ? n : 0);
-                    P.Config.RaphaelSolverCacheV2[key] = new MacroSolverSettings.Macro()
+                    P.Config.RaphaelSolverCacheV3[key] = new MacroSolverSettings.Macro()
                     {
                         ID = ID,
                         Name = key,
@@ -146,7 +142,7 @@ namespace Artisan.CraftingLogic.Solvers
                     };
 
                     cts.Token.ThrowIfCancellationRequested();
-                    if (P.Config.RaphaelSolverCacheV2[key] == null || P.Config.RaphaelSolverCacheV2[key].Steps.Count == 0)
+                    if (P.Config.RaphaelSolverCacheV3[key] == null || P.Config.RaphaelSolverCacheV3[key].Steps.Count == 0)
                     {
                         Svc.Log.Error($"Raphael failed to generate a valid macro. This could be one of the following reasons:" +
                             $"\n- If you are not running Windows, Raphael may not be compatible with your OS." +
@@ -200,7 +196,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         public static string GetKey(CraftState craft)
         {
-            return $"{craft.CraftLevel}/{craft.CraftProgress}/{craft.CraftQualityMax}/{craft.CraftDurability}-{craft.StatCraftsmanship}/{craft.StatControl}/{craft.StatCP}-{(craft.CraftExpert ? "Expert" : "Standard")}";
+            return $"{craft.CraftLevel}/{craft.CraftProgress}/{craft.CraftQualityMax}/{craft.CraftDurability}-{craft.StatCraftsmanship}/{craft.StatControl}/{craft.StatCP}-{(craft.CraftExpert ? "Expert" : "Standard")}/{craft.InitialQuality}";
         }
 
         public static IEnumerable<CraftState> AllValidCrafts(string key, uint craftType)
@@ -217,26 +213,25 @@ namespace Artisan.CraftingLogic.Solvers
             }
         }
 
-        public static (int Level, int Prog, int Qual, int Dur, int Crafts, int Control, int CP) KeyParts(string key)
+        public static (int Level, int Prog, int Qual, int Dur, int Initial, int Crafts, int Control, int CP) KeyParts(string key)
         {
             var parts = key.Split('/');
-            if (parts.Length != 6)
-                return new();
 
-            var lvl = int.Parse(parts[0]);
-            var prog = int.Parse(parts[1]);
-            var qual = int.Parse(parts[2]);
-            var dur = int.Parse(parts[3].Split('-')[0]);
-            var crafts = int.Parse(parts[3].Split('-')[1]);
-            var ctrl = int.Parse(parts[4]);
-            var cp = int.Parse(parts[5].Split('-')[0]);
+            int.TryParse(parts[0], out var lvl);
+            int.TryParse(parts[1], out var prog);
+            int.TryParse(parts[2], out var qual);
+            int.TryParse(parts[3].Split('-')[0], out var dur);
+            int.TryParse(parts[3].Split('-')[1], out var crafts);
+            int.TryParse(parts[4], out var ctrl);
+            int.TryParse(parts[5].Split('-')[0], out var cp);
+            int.TryParse(parts[6], out var initial);
 
-            return (lvl, prog, qual, dur, crafts, ctrl, cp);
+            return (lvl, prog, qual, dur, initial, crafts, ctrl, cp);
         }
 
         public static bool HasSolution(CraftState craft, out MacroSolverSettings.Macro? raphaelSolutionConfig)
         {
-            foreach (var solution in P.Config.RaphaelSolverCacheV2.OrderByDescending(x => KeyParts(x.Key).Control))
+            foreach (var solution in P.Config.RaphaelSolverCacheV3.OrderByDescending(x => KeyParts(x.Key).Control))
             {
                 if (solution.Value.Steps.Count == 0) continue;
 
@@ -247,6 +242,7 @@ namespace Artisan.CraftingLogic.Solvers
                     solKey.Qual == craft.CraftQualityMax &&
                     solKey.Crafts == craft.StatCraftsmanship &&
                     solKey.Control <= craft.StatControl &&
+                    solKey.Initial == craft.InitialQuality &&
                     solKey.CP <= craft.StatCP)
                 {
                     raphaelSolutionConfig = solution.Value;
@@ -278,7 +274,6 @@ namespace Artisan.CraftingLogic.Solvers
                 if (!TempConfigs.ContainsKey(key))
                 {
                     TempConfigs.Add(key, new());
-                    TempConfigs[key].HQConsiderations = P.Config.RaphaelSolverConfig.AllowHQConsiderations;
                     TempConfigs[key].EnsureReliability = P.Config.RaphaelSolverConfig.AllowEnsureReliability;
                     TempConfigs[key].BackloadProgress = P.Config.RaphaelSolverConfig.AllowBackloadProgress;
                     TempConfigs[key].HeartAndSoul = P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist;
@@ -331,8 +326,6 @@ namespace Artisan.CraftingLogic.Solvers
                 if (inProgress)
                     ImGui.BeginDisabled();
 
-                if (P.Config.RaphaelSolverConfig.AllowHQConsiderations)
-                    raphChanges |= ImGui.Checkbox($"Allow Quality Considerations##{key}Quality", ref TempConfigs[key].HQConsiderations);
                 if (P.Config.RaphaelSolverConfig.AllowEnsureReliability)
                     raphChanges |= ImGui.Checkbox($"Ensure reliability##{key}Reliability", ref TempConfigs[key].EnsureReliability);
                 if (P.Config.RaphaelSolverConfig.AllowBackloadProgress)
@@ -387,7 +380,6 @@ namespace Artisan.CraftingLogic.Solvers
 
     public class RaphaelSolverSettings
     {
-        public bool AllowHQConsiderations = false;
         public bool AllowEnsureReliability = false;
         public bool AllowBackloadProgress = false;
         public bool ShowSpecialistSettings = false;
@@ -412,7 +404,6 @@ namespace Artisan.CraftingLogic.Solvers
             }
             ImGuiEx.TextWrapped("By default uses all it can, but on lower end machines you might need to use less cpu at the cost of speed. (0 = everything)");
 
-            changed |= ImGui.Checkbox("Allow HQ Materials to be considered in macro generation", ref AllowHQConsiderations);
             changed |= ImGui.Checkbox("Ensure 100% reliability in macro generation", ref AllowEnsureReliability);
             ImGui.PushTextWrapPos(0);
             ImGui.TextColored(new System.Numerics.Vector4(255, 0, 0, 1), "Ensuring reliability may not always work and is very CPU and RAM intensive, suggested RAM at least 16GB+ spare. NO SUPPORT SHALL BE GIVEN IF YOU HAVE THIS ON");
@@ -441,9 +432,9 @@ namespace Artisan.CraftingLogic.Solvers
 
             ImGuiComponents.HelpMarker($"If a solution takes longer than this many minutes to generate, it will cancel the generation task.");
 
-            if (ImGui.Button($"Clear raphael macro cache (Currently {P.Config.RaphaelSolverCacheV2.Count} stored)"))
+            if (ImGui.Button($"Clear raphael macro cache (Currently {P.Config.RaphaelSolverCacheV3.Count} stored)"))
             {
-                P.Config.RaphaelSolverCacheV2.Clear();
+                P.Config.RaphaelSolverCacheV3.Clear();
                 changed |= true;
             }
 
@@ -454,7 +445,6 @@ namespace Artisan.CraftingLogic.Solvers
 
     public class RaphaelSolutionConfig
     {
-        public bool HQConsiderations = false;
         public bool EnsureReliability = false;
         public bool BackloadProgress = false;
         public bool HeartAndSoul = false;
