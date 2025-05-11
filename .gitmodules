@@ -10,3 +10,6 @@
 [submodule "OtterGui"]
 	path = OtterGui
 	url = https://github.com/Taurenkey/OtterGui
+[submodule "raphael-rs"]
+	path = raphael-rs
+	url = https://github.com/Taurenkey/raphael-rs.git

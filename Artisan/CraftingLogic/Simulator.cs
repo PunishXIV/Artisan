@@ -1,4 +1,5 @@
-﻿using Artisan.GameInterop;
+﻿using Artisan.CraftingLogic.CraftData;
+using Artisan.GameInterop;
 using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation.Character;
 using Dalamud.Interface.Colors;
@@ -214,6 +215,7 @@ public static class Simulator
         next.TrainedPerfectionAvailable = step.TrainedPerfectionAvailable && action != Skills.TrainedPerfection;
         next.MaterialMiracleCharges = action == Skills.MaterialMiracle ? step.MaterialMiracleCharges - 1 : step.MaterialMiracleCharges;
         next.MaterialMiracleActive = step.MaterialMiracleActive; //This is a timed buff, can't really use this in the simulator, just copy the real result
+        next.ObserveCounter = action == Skills.Observe ? next.ObserveCounter++ : 0;
 
         if (step.FinalAppraisalLeft > 0 && next.Progress >= craft.CraftProgress)
             next.Progress = craft.CraftProgress - 1;
@@ -493,6 +495,24 @@ public static class Simulator
                 return (Condition)i;
         }
         return Condition.Normal;
+    }
+
+    public static ConditionFlags ConditionToFlag(this Condition condition)
+    {
+        return condition switch
+        {
+            Condition.Normal => ConditionFlags.Normal,
+            Condition.Good => ConditionFlags.Good,
+            Condition.Excellent => ConditionFlags.Excellent,
+            Condition.Poor => ConditionFlags.Poor,
+            Condition.Centered => ConditionFlags.Centered,
+            Condition.Sturdy => ConditionFlags.Sturdy,
+            Condition.Pliant => ConditionFlags.Pliant,
+            Condition.Malleable => ConditionFlags.Malleable,
+            Condition.Primed => ConditionFlags.Primed,
+            Condition.GoodOmen => ConditionFlags.GoodOmen,
+            Condition.Unknown => throw new NotImplementedException(),
+        };
     }
 
 }

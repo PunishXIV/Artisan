@@ -575,6 +575,7 @@ namespace Artisan.UI
                         if (i + 1 < _simCurSteps.Count)
                         {
                             var currentAction = _simCurSteps[i + 1].step.PrevComboAction;
+                            var comment = _simCurSteps[i].comment;
                             ImGui.Image(P.Icons.TryLoadIconAsync(currentAction.IconOfAction(job)).Result.ImGuiHandle, new Vector2(widgetSize));
                             var step = _simCurSteps[i + 1].step;
                             if (ImGui.IsItemHovered())
@@ -586,6 +587,7 @@ namespace Artisan.UI
                                 ImGuiEx.Text($"D: {step.Durability} / {_selectedCraft.CraftDurability} ({Math.Round((float)step.Durability / _selectedCraft.CraftDurability * 100, 0)}%)");
                                 ImGuiEx.Text($"CP: {step.RemainingCP} / {_selectedCraft.StatCP} ({Math.Round((float)step.RemainingCP / _selectedCraft.StatCP * 100, 0)}%)");
                                 ImGuiEx.Text($"Condition: {_simCurSteps[i].step.Condition} -> {step.Condition}");
+                                ImGuiEx.Text($"{comment}");
                                 ImGui.EndTooltip();
                             }
 

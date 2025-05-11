@@ -198,12 +198,12 @@ namespace Artisan.UI
             ShowRecommendation(recommendation.Action);
             if (P.Config.AutoMode || Endurance.IPCOverride)
             {
+                if (!P.Config.ReplicateMacroDelay)
+                    P.CTM.DelayNext(P.Config.AutoDelay);
                 P.CTM.Enqueue(() => Crafting.CurState == Crafting.State.InProgress, 3000, true, "WaitForStateToUseAction");
                 P.CTM.Enqueue(() => ActionManagerEx.UseSkill(recommendation.Action));
                 if (P.Config.ReplicateMacroDelay)
                     P.CTM.DelayNext(Calculations.ActionIsLengthyAnimation(recommendation.Action) ? 3000 : 2000);
-                else
-                    P.CTM.DelayNext(P.Config.AutoDelay);
             }
         }
     }

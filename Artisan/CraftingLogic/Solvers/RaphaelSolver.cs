@@ -162,7 +162,7 @@ namespace Artisan.CraftingLogic.Solvers
                             var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).FirstOrNull(x => x.Name == $"Raphael Recipe Solver");
                             if (opt is not null)
                             {
-                                var config = P.Config.RecipeConfigs.GetValueOrDefault(craft.Recipe.RowId);
+                                var config = P.Config.RecipeConfigs.GetValueOrDefault(craft.Recipe.RowId) ?? new();
                                 config.SolverType = opt?.Def.GetType().FullName!;
                                 config.SolverFlavour = (int)(opt?.Flavour);
                                 P.Config.RecipeConfigs[craft.Recipe.RowId] = config;

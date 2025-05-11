@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FFXIVClientStructs;
+using System;
 
 namespace Artisan.CraftingLogic.CraftData
 {
@@ -32,6 +33,5 @@ namespace Artisan.CraftingLogic.CraftData
         Malleable = 128,
         Primed = 256,
         GoodOmen = 512,
-
     }
 }

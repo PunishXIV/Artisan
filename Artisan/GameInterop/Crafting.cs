@@ -102,7 +102,7 @@ public static unsafe class Crafting
             CraftCollectible = recipe.ItemResult.Value.AlwaysCollectable,
             CraftExpert = recipe.IsExpert,
             CraftLevel = lt.ClassJobLevel,
-            CraftDurability = recipe.Number == 0 ? Calculations.RecipeDurability(recipe, lt) : Calculations.RecipeDurability(recipe),
+            CraftDurability = Calculations.RecipeDurability(recipe),
             CraftProgress = recipe.Number == 0 ? Calculations.RecipeDifficulty(recipe, lt) : Calculations.RecipeDifficulty(recipe),
             CraftProgressDivider = lt.ProgressDivider,
             CraftProgressModifier = lt.ProgressModifier,
