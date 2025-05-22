@@ -1,10 +1,8 @@
-﻿using Artisan.CraftingLogic;
-using Artisan.CraftingLogic.Solvers;
+﻿using System;
+using Artisan.CraftingLogic;
 using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
-using Dalamud.Interface.Utility.Raii;
-using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using ImGuiNET;
@@ -12,7 +10,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Channels;
 
 namespace Artisan.UI
 {
@@ -22,17 +19,16 @@ namespace Artisan.UI
         private static RecipeConfig DummyConfig = new();
         private static ISolverDefinition.Desc? selectedSolver;
         private static int quickAssignLevel = 1;
-        private static int quickAssignDifficulty = 9;
-        private static int quickAssignQuality = 80;
 
         private static IEnumerable<Lumina.Excel.Sheets.Recipe> filteredRecipes;
+
         private static List<int> quickAssignPossibleDifficulties = new();
-        private static int quickAssignMaxDifficulty => quickAssignPossibleDifficulties.LastOrDefault();
-        private static int quickAssignMinDifficulty => quickAssignPossibleDifficulties.FirstOrDefault();
+        private static int quickAssignDifficultyIndex;
+        private static int quickAssignDifficulty => quickAssignPossibleDifficulties.GetByIndexOrDefault(quickAssignDifficultyIndex);
 
         private static List<int> quickAssignPossibleQualities = new();
-        private static int quickAssignMaxQuality => quickAssignPossibleQualities.LastOrDefault();
-        private static int quickAssignMinQuality => quickAssignPossibleQualities.FirstOrDefault();
+        private static int quickAssignQualityIndex;
+        private static int quickAssignQuality => quickAssignPossibleQualities.GetByIndexOrDefault(quickAssignQualityIndex);
 
         private static bool[] quickAssignJobs = new bool[8];
         private static Dictionary<int, bool> quickAssignDurabilities = new();
@@ -104,48 +100,47 @@ namespace Artisan.UI
             if (ImGui.SliderInt($"###QuickAssignLevel", ref quickAssignLevel, 1, 100))
             {
                 quickAssignPossibleDifficulties.Clear();
+                quickAssignDifficultyIndex = 0;
                 quickAssignPossibleQualities.Clear();
+                quickAssignQualityIndex = 0;
                 quickAssignDurabilities.Clear();
             }
             filteredRecipes = filteredRecipes.Where(x => x.RecipeLevelTable.Value.ClassJobLevel == quickAssignLevel);
 
             if (quickAssignPossibleDifficulties.Count == 0)
             {
-                foreach (var recipe in filteredRecipes)
-                {
-                    var actualDiff = Calculations.RecipeDifficulty(recipe);
-                    if (actualDiff != 0)
-                        quickAssignPossibleDifficulties.Add(actualDiff);
-                }
-                quickAssignPossibleDifficulties.SortAndRemoveDuplicates();
+                quickAssignPossibleDifficulties.AddRange(filteredRecipes
+                    .Select(Calculations.RecipeDifficulty)
+                    .Where(difficulty => difficulty > 0)
+                    .OrderBy(difficulty => difficulty)
+                    .Distinct());
             }
-            quickAssignDifficulty = quickAssignPossibleDifficulties.FindClosest(quickAssignDifficulty);
+
             ImGuiEx.Text($"{LuminaSheets.AddonSheet[1431].Text}");
             ImGui.SameLine(100f.Scale());
-            if (ImGui.SliderInt($"###RecipeDiff", ref quickAssignDifficulty, quickAssignMinDifficulty, quickAssignMaxDifficulty))
+            if (ImGui.SliderInt("###RecipeDiff", ref quickAssignDifficultyIndex, 0, Math.Max(0, quickAssignPossibleDifficulties.Count - 1), quickAssignDifficulty.ToString(CultureInfo.InvariantCulture), ImGuiSliderFlags.NoInput))
             {
                 quickAssignPossibleQualities.Clear();
+                quickAssignQualityIndex = 0;
                 quickAssignDurabilities.Clear();
             }
+
             filteredRecipes = filteredRecipes.Where(x => Calculations.RecipeDifficulty(x) == quickAssignDifficulty);
 
             if (quickAssignPossibleQualities.Count == 0)
             {
-                foreach (var recipe in filteredRecipes)
-                {
-                    var actualQual = Calculations.RecipeMaxQuality(recipe);
-                    if (actualQual != 0)
-                        quickAssignPossibleQualities.Add(actualQual);
-                }
-                quickAssignPossibleQualities.SortAndRemoveDuplicates();
+                quickAssignPossibleQualities.AddRange(filteredRecipes
+                    .Select(Calculations.RecipeMaxQuality)
+                    .Where(quality => quality > 0)
+                    .OrderBy(quality => quality)
+                    .Distinct());
             }
 
             if (quickAssignPossibleQualities.Any())
             {
-                quickAssignQuality = quickAssignPossibleQualities.FindClosest(quickAssignQuality);
                 ImGuiEx.Text($"{LuminaSheets.AddonSheet[216].Text}");
                 ImGui.SameLine(100f.Scale());
-                if (ImGui.SliderInt($"###RecipeQuality", ref quickAssignQuality, quickAssignMinQuality, quickAssignMaxQuality))
+                if (ImGui.SliderInt("###RecipeQuality", ref quickAssignQualityIndex, 0, quickAssignPossibleQualities.Count - 1, quickAssignQuality.ToString(CultureInfo.InvariantCulture), ImGuiSliderFlags.NoInput))
                 {
                     quickAssignDurabilities.Clear();
                 }
