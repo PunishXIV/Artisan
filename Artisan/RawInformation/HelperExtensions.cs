@@ -1,4 +1,5 @@
-﻿using Lumina.Excel.Sheets;
+﻿using System;
+using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,44 +9,31 @@ namespace Artisan.RawInformation
 {
     internal static class HelperExtensions
     {
-        public static void SortAndRemoveDuplicates(this List<int> list)
+        public static int FindClosestIndex(this List<int> list, int valueToFind)
         {
-            if (list.Count == 0)
-                return;
-            list.Sort();
-            int dest = 1;
-            int prev = list[0];
-            for (int src = 1; src < list.Count; ++src)
-                if (list[src] != prev)
-                    list[dest++] = list[src];
-            list.RemoveRange(dest, list.Count - dest);
-        }
+            int closestIndex = 0;
+            int smallestDifference = int.MaxValue;
 
-        public static int UpperBound(this List<int> list, int test)
-        {
-            int first = 0, size = list.Count;
-            while (size > 0)
+            for (int i = 0; i < list.Count; i++)
             {
-                int step = size / 2;
-                int mid = first + step;
-                if (list[mid] <= test)
+                int currentDifference = Math.Abs(list[i] - valueToFind);
+                if (currentDifference < smallestDifference)
                 {
-                    first = mid + 1;
-                    size -= step + 1;
-                }
-                else
-                {
-                    size = step;
+                    smallestDifference = list[i];
+                    closestIndex = i;
                 }
             }
-            return first;
+
+            return closestIndex;
         }
 
-        public static int FindClosest(this List<int> list, int test)
+        public static int GetByIndexOrDefault(this List<int> list, int index, int defaultValue = 0)
         {
-            var ub = list.UpperBound(test);
-            return ub == 0 ? list[0] : ub == list.Count ? list[list.Count - 1] : test - list[ub - 1] < list[ub] - test ? list[ub - 1] : list[ub];
+            if (index < 0 || index >= list.Count)
+                return defaultValue;
+            return list[index];
         }
+
         public static string GetNumbers(this string input)
         {
             if (input == null) return "";
