@@ -30,7 +30,7 @@ namespace Artisan.CraftingLists
         private static Dictionary<int, bool> questRecipe = new Dictionary<int, bool>() { [1] = false, [2] = false };
         private static Dictionary<int, bool> isSecondary = new Dictionary<int, bool>() { [1] = false, [2] = false };
         private static Dictionary<int, bool> alreadyCrafted = new Dictionary<int, bool>() { [1] = false, [2] = false };
-        private static Dictionary<int, bool> countsToLog = new Dictionary<int, bool>() { [1] = false, [2] = false };
+        private static Dictionary<int, bool> isLevelBased = new Dictionary<int, bool>() { [1] = false, [2] = false };
         private static Dictionary<int, bool> isCollectable = new Dictionary<int, bool>() { [1] = false, [2] = false };
         private static Dictionary<int, bool> isHQAble = new Dictionary<int, bool>() { [1] = false, [2] = false };
 
@@ -130,19 +130,19 @@ namespace Artisan.CraftingLists
             }
 
             ImGui.TextWrapped($"Level-based Recipes");
-            if (ImGui.BeginListBox("###CountsLog", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 32f.Scale())))
+            if (ImGui.BeginListBox("###IsLevelBasedRecipe", new System.Numerics.Vector2(ImGui.GetContentRegionAvail().X, 32f.Scale())))
             {
                 ImGui.Columns(2, null, false);
-                bool yes = countsToLog[1];
+                bool yes = isLevelBased[1];
                 if (ImGui.Checkbox("Yes", ref yes))
                 {
-                    countsToLog[1] = yes;
+                    isLevelBased[1] = yes;
                 }
                 ImGui.NextColumn();
-                bool no = countsToLog[2];
+                bool no = isLevelBased[2];
                 if (ImGui.Checkbox("No", ref no))
                 {
-                    countsToLog[2] = no;
+                    isLevelBased[2] = no;
                 }
                 
                 ImGui.EndListBox();
@@ -455,19 +455,19 @@ namespace Artisan.CraftingLists
                     {
                         if (v.Key == 1)
                         {
-                            recipes.RemoveAll(x => P.ri.HasRecipeCrafted(x.RowId));
+                            recipes.RemoveAll(x => x.RowId >= 30000 || P.ri.HasRecipeCrafted(x.RowId));
                         }
                         else
                         {
-                            recipes.RemoveAll(x => !P.ri.HasRecipeCrafted(x.RowId));
+                            recipes.RemoveAll(x => x.RowId >= 30000 || !P.ri.HasRecipeCrafted(x.RowId));
                         }
                     }
                 }
             }
 
-            if (countsToLog.Any(x => x.Value))
+            if (isLevelBased.Any(x => x.Value))
             {
-                foreach (var v in countsToLog)
+                foreach (var v in isLevelBased)
                 {
                     if (!v.Value)
                     {
@@ -477,7 +477,7 @@ namespace Artisan.CraftingLists
                         }
                         else
                         {
-                            recipes.RemoveAll(x => x.RecipeNotebookList.RowId > 1000);
+                            recipes.RemoveAll(x => x.RecipeNotebookList.RowId >= 1000);
                         }
                     }
                 }
