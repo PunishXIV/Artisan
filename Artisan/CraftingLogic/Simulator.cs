@@ -215,7 +215,7 @@ public static class Simulator
         next.TrainedPerfectionAvailable = step.TrainedPerfectionAvailable && action != Skills.TrainedPerfection;
         next.MaterialMiracleCharges = action == Skills.MaterialMiracle ? step.MaterialMiracleCharges - 1 : step.MaterialMiracleCharges;
         next.MaterialMiracleActive = step.MaterialMiracleActive; //This is a timed buff, can't really use this in the simulator, just copy the real result
-        next.ObserveCounter = action == Skills.Observe ? next.ObserveCounter++ : 0;
+        next.ObserveCounter = action == Skills.Observe ? step.ObserveCounter + 1 : 0;
 
         if (step.FinalAppraisalLeft > 0 && next.Progress >= craft.CraftProgress)
             next.Progress = craft.CraftProgress - 1;

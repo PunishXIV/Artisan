@@ -114,8 +114,8 @@ public class ExpertSolver : Solver
 
     private static Skills SolveOpenerMuMe(ExpertSolverSettings cfg, CraftState craft, StepState step)
     {
-        // we don't really have any concerns about cp or durability during mume - we might end up with quite low final durability though...
-        var lastChance = step.MuscleMemoryLeft == 1; // if we don't use successful touch now, we'll waste mume
+        bool lastChance = step.MuscleMemoryLeft == 1;
+
         if (step.Condition == Condition.Pliant)
         {
             // pliant is manip > vene > ignore
@@ -129,6 +129,11 @@ public class ExpertSolver : Solver
             // primed is vene > manip > ignore
             if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForVene && step.VenerationLeft == 0 && CU(craft, step, Skills.Veneration))
                 return Skills.Veneration;
+            if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForManip && step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation))
+                return Skills.Manipulation;
+        }
+        else if (step.Durability <= 25)
+        {
             if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForManip && step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation))
                 return Skills.Manipulation;
         }
@@ -612,12 +617,12 @@ public class ExpertSolver : Solver
         {
             if (step.TrainedPerfectionAvailable && CU(craft, step, Skills.TrainedPerfection))
                 return Skills.TrainedPerfection;
-            if (step.TrainedPerfectionActive && step.Condition is not Condition.Malleable && CU(craft, step, Skills.Observe))
+            if (step.TrainedPerfectionActive && step.Condition is not Condition.Malleable && step.ObserveCounter < 2 && CU(craft, step, Skills.Observe))
                 return Skills.Observe;
             if (step.TrainedPerfectionActive && CU(craft, step, Skills.Groundwork))
                 return Skills.Groundwork;
         }
-        if ((progBeforeQual || (step.Condition is Condition.Centered or Condition.Sturdy or Condition.Malleable)) && step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && CU(craft, step, Skills.RapidSynthesis))
+        if ((progBeforeQual || (step.Condition is Condition.Centered or Condition.Sturdy or Condition.Malleable)) && step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && !step.TrainedPerfectionActive && CU(craft, step, Skills.RapidSynthesis))
             return Skills.RapidSynthesis;
         return Skills.None;
     }
@@ -625,7 +630,7 @@ public class ExpertSolver : Solver
     private static Skills SolveMidHighPriorityIQ(ExpertSolverSettings cfg, CraftState craft, StepState step, bool allowPrecise)
     {
         if (step.Condition is Condition.Good or Condition.Excellent && allowPrecise && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreciseTouch) && CU(craft, step, Skills.PreciseTouch))
-            return step.TrainedPerfectionActive && CU(craft, step, Skills.PreparatoryTouch) ? Skills.PreparatoryTouch : Skills.PreciseTouch;
+            return Skills.PreciseTouch;
         if (step.TrainedPerfectionAvailable && CU(craft, step, Skills.TrainedPerfection))
             return Skills.TrainedPerfection;
         if (step.TrainedPerfectionActive && step.InnovationLeft == 0 && CU(craft, step, Skills.Innovation))

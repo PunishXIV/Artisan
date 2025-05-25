@@ -41,13 +41,13 @@ public class MacroSolver : Solver, ICraftValidator
     public override Solver Clone()
     {
         var res = (MacroSolver)MemberwiseClone();
-        res._fallback = _fallback.Clone();
+        res._fallback = _fallback?.Clone();
         return res;
     }
 
     public override Recommendation Solve(CraftState craft, StepState step)
     {
-        var fallback = _fallback.Solve(craft, step); // note: we need to call it, even if we provide rec from macro, to ensure fallback solver's state is updated
+        var fallback = _fallback?.Solve(craft, step); // note: we need to call it, even if we provide rec from macro, to ensure fallback solver's state is updated
 
         while (_nextStep < _macro.Steps.Count)
         {
@@ -102,7 +102,7 @@ public class MacroSolver : Solver, ICraftValidator
 
             if (action == Skills.None)
             {
-                action = fallback.Action;
+                action = fallback?.Action ?? Skills.None;
             }
 
             if (!s.ExcludeFromUpgrade && step.Condition is Condition.Good or Condition.Excellent)
@@ -123,7 +123,7 @@ public class MacroSolver : Solver, ICraftValidator
         // we've run out of macro steps, see if we can use solver to continue
         // TODO: this is not a very good condition, it depends on external state...
         if (!P.Config.DisableMacroArtisanRecommendation || CraftingListUI.Processing)
-            return new(fallback.Action, "Macro has completed. Now continuing with solver.");
+            return new(fallback?.Action ?? Skills.None, fallback?.Action is null ? $"Macro has completed, the fallback solver is not working{(craft.UnlockedManipulation ? " " : " (You need to unlock Manipulation) ")}so you will have to manually finish this" : "Macro has completed. Now continuing with solver.");
         return new(Skills.None, "Macro has completed. Please continue to manually craft.");
     }
 
