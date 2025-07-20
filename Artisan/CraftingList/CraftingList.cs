@@ -302,7 +302,7 @@ namespace Artisan.CraftingLists
 
             if (!HasItemsForRecipe(CraftingListUI.CurrentProcessedItem) && (preparing || !isCrafting))
             {
-                DuoLog.Error($"Insufficient materials for {recipe.ItemResult.Value.Name.ToDalamudString().ExtractText()}. Moving on.");
+                DuoLog.Error($"Insufficient materials for {recipe.ItemResult.Value.Name}. Moving on.");
                 var currentRecipe = selectedList.ExpandedList[CurrentIndex];
 
                 while (currentRecipe == selectedList.ExpandedList[CurrentIndex])
@@ -410,11 +410,23 @@ namespace Artisan.CraftingLists
                             CLTM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 2000, "ListQS99WaitStart");
                             return;
                         }
-                        else
+                        else if (count > 0)
                         {
                             CLTM.Enqueue(() => Operations.QuickSynthItem(count));
                             CLTM.Enqueue(() => Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft, 2000, "ListQSCountWaitStart");
                             return;
+                        }
+                        else
+                        {
+                            DuoLog.Error($"For some reason tried to quick synth 0 of {recipe.ItemResult.Value.Name}. Skipping.");
+                            var currentRecipe = selectedList.ExpandedList[CurrentIndex];
+                            while (currentRecipe == selectedList.ExpandedList[CurrentIndex])
+                            {
+                                ListEndTime = ListEndTime.Subtract(CraftingListUI.GetCraftDuration(currentRecipe, type == PreCrafting.CraftType.Quick)).Subtract(TimeSpan.FromSeconds(1));
+                                CurrentIndex++;
+                                if (CurrentIndex == selectedList.ExpandedList.Count)
+                                    return;
+                            }
                         }
                     }
                     else if (type == PreCrafting.CraftType.Normal)
