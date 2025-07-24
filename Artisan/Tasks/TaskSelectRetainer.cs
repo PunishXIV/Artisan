@@ -353,7 +353,7 @@ internal unsafe static class RetainerHandlers
             if (entry != null)
             {
                 var index = GetEntries(addon).IndexOf(entry);
-                if (index >= 0 && IsSelectItemEnabled(addon, index) && RetainerInfo.GenericThrottle)
+                if (index >= 0 && RetainerInfo.GenericThrottle)
                 {
                     new AddonMaster.SelectString((nint)addon).Entries[(ushort)index].Select();
                     return true;
@@ -367,14 +367,6 @@ internal unsafe static class RetainerHandlers
         return false;
     }
 
-    internal static bool IsSelectItemEnabled(AddonSelectString* addon, int index)
-    {
-        var step1 = (AtkTextNode*)addon->AtkUnitBase
-                    .UldManager.NodeList[2]
-                    ->GetComponent()->UldManager.NodeList[index + 1]
-                    ->GetComponent()->UldManager.NodeList[3];
-        return ECommons.GenericHelpers.IsSelectItemEnabled(step1);
-    }
     internal static List<string> GetEntries(AddonSelectString* addon)
     {
         var list = new List<string>();
