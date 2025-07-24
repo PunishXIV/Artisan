@@ -322,6 +322,9 @@ public unsafe static class PreCrafting
         if (job == CharacterInfo.JobID)
             return TaskResult.Done;
 
+        if (Svc.Condition[ConditionFlag.PreparingToCraft])
+            return TaskResult.Retry;
+
         if (equipGearsetLoops >= 5)
         {
             DuoLog.Error("Unable to switch gearsets.");
