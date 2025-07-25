@@ -99,8 +99,10 @@ namespace Artisan
         };
 
 
+        public bool UseCustomNotificationSound = false;
         public bool PlaySoundFinishEndurance = false;
         public bool PlaySoundFinishList = false;
+        public string CustomSoundPath = string.Empty;
 
         public float SoundVolume = 0.25f;
 
