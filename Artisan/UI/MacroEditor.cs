@@ -8,7 +8,7 @@ using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Newtonsoft.Json;
 using System;
 using System.Linq;

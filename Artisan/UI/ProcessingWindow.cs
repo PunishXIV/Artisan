@@ -3,7 +3,7 @@ using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System;
 
 namespace Artisan.UI

@@ -5,7 +5,7 @@ using Artisan.QuestSync;
 using Artisan.RawInformation;
 using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System;
 
 namespace Artisan.UI

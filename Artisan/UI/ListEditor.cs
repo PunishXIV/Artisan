@@ -17,7 +17,7 @@ using global::Artisan.CraftingLogic.Solvers;
 using global::Artisan.GameInterop;
 using global::Artisan.RawInformation.Character;
 using global::Artisan.UI.Tables;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using IPC;
 using Lumina.Excel.Sheets;
 using Newtonsoft.Json;

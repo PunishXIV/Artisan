@@ -5,7 +5,7 @@ using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;

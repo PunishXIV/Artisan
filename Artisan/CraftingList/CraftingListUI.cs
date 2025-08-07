@@ -14,7 +14,7 @@ using ECommons.GameHelpers;
 using ECommons.ImGuiMethods;
 using ECommons.Reflection;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 using OtterGui;
 using System;

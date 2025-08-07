@@ -1,5 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System;
 using System.Linq;
 using System.Numerics;

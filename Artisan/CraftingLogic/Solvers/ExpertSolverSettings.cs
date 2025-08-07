@@ -5,7 +5,7 @@ using Dalamud.Interface.Components;
 using Dalamud.Interface.Textures.TextureWraps;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System;
 using static Artisan.RawInformation.AddonExtensions;
 

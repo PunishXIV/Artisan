@@ -4,7 +4,7 @@ using Dalamud.Interface.Components;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 using System.Collections.Generic;
 using System.Linq;

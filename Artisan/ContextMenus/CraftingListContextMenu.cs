@@ -8,7 +8,7 @@ using Artisan.IPC;
 using Artisan.Autocraft;
 using Artisan.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Gui.ContextMenu;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using System.Collections.Generic;
