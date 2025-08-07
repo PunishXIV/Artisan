@@ -1283,9 +1283,9 @@ internal class ListEditor : Window, IDisposable
             }
         }
 
-        var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.RowId);
+        var stats = CharacterStats.GetBaseStatsForClassHeuristic((Job)((uint)Job.CRP + recipe.CraftType.RowId));
         stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ), CharacterInfo.FCCraftsmanshipbuff);
-        var craft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.RowId, recipe);
+        var craft = Crafting.BuildCraftStateForRecipe(stats, (Job)((uint)Job.CRP + recipe.CraftType.RowId), recipe);
         if (config.DrawSolver(craft))
         {
             P.Config.RecipeConfigs[selectedListItem] = config;
@@ -1383,7 +1383,7 @@ internal class RecipeSelector : ItemSelector<ListItem>
         }
         else
         {
-            if (LuminaSheets.RecipeSheet.Values.FindFirst(
+            if (LuminaSheets.RecipeSheet.Values.TryGetFirst(
                     x => x.ItemResult.Value.Name.ToDalamudString().ToString().Equals(name, StringComparison.CurrentCultureIgnoreCase),
                     out var recipe))
             {
@@ -1485,7 +1485,7 @@ internal class ListFolders : ItemSelector<NewCraftingList>
 
     protected override bool OnDelete(int idx)
     {
-        if (P.ws.Windows.FindFirst(
+        if (P.ws.Windows.TryGetFirst(
                 x => x.WindowName.Contains(CraftingListUI.selectedList.ID.ToString()) && x.GetType() == typeof(ListEditor),
                 out var window))
         {
@@ -1517,7 +1517,7 @@ internal class ListFolders : ItemSelector<NewCraftingList>
             }
             else
             {
-                P.ws.Windows.FindFirst(
+                P.ws.Windows.TryGetFirst(
                     x => x.WindowName.Contains(P.Config.NewCraftingLists[idx].ID.ToString()),
                     out var window);
                 window.BringToFront();
