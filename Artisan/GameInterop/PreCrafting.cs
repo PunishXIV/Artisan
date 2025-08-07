@@ -132,7 +132,7 @@ public unsafe static class PreCrafting
         {
             Svc.Log.Debug($"Starting {type} crafting: {recipe.RowId} '{recipe.ItemResult.Value.Name.ToDalamudString()}'");
 
-            var requiredClass = Job.CRP + recipe.CraftType.RowId;
+            var requiredClass = (Job)((uint)Job.CRP + recipe.CraftType.RowId);
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
 
             bool hasIngredients = GetNumberCraftable(recipe) > 0;
@@ -299,13 +299,13 @@ public unsafe static class PreCrafting
             case Crafting.State.IdleNormal:
                 return TaskResult.Done;
             case Crafting.State.IdleBetween:
-                var addon = (AddonRecipeNote*)Svc.GameGui.GetAddonByName("RecipeNote");
+                var addon = (AddonRecipeNote*)Svc.GameGui.GetAddonByName("RecipeNote").Address;
                 if (addon != null && addon->AtkUnitBase.IsVisible)
                 {
                     Svc.Log.Debug("Closing recipe menu to exit crafting state");
                     Callback.Fire(&addon->AtkUnitBase, true, -1);
                 }
-                var addon2 = (AtkUnitBase*)Svc.GameGui.GetAddonByName("WKSRecipeNotebook");
+                var addon2 = (AtkUnitBase*)Svc.GameGui.GetAddonByName("WKSRecipeNotebook").Address;
                 if (addon2 != null && addon2->IsVisible)
                 {
                     Svc.Log.Debug("Closing recipe menu to exit crafting state");
@@ -383,9 +383,9 @@ public unsafe static class PreCrafting
         var agentId = pos.Value.inv is InventoryType.ArmoryMainHand or InventoryType.ArmoryHands ? AgentId.ArmouryBoard : AgentId.Inventory;
         var addonId = AgentModule.Instance()->GetAgentByInternalId(agentId)->GetAddonId();
         var ctx = AgentInventoryContext.Instance();
-        ctx->OpenForItemSlot(pos.Value.inv, pos.Value.slot, addonId);
+        ctx->OpenForItemSlot(pos.Value.inv, pos.Value.slot, 0, addonId);
 
-        var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu");
+        var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu").Address;
         if (contextMenu != null)
         {
             for (int i = 0; i < contextMenu->AtkValuesCount; i++)
@@ -538,7 +538,7 @@ public unsafe static class PreCrafting
 
         }
 
-        var addon = (AddonRecipeNote*)Svc.GameGui.GetAddonByName("RecipeNote");
+        var addon = (AddonRecipeNote*)Svc.GameGui.GetAddonByName("RecipeNote").Address;
         if (addon == null)
             return TaskResult.Retry;
 

@@ -2,6 +2,7 @@
 using Artisan.IPC;
 using Artisan.Universalis;
 using Dalamud.Interface.Textures.TextureWraps;
+using ECommons;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Lumina.Excel.Sheets;
@@ -46,7 +47,7 @@ namespace Artisan.RawInformation
             Data = LuminaSheets.ItemSheet.Values.First(x => x.RowId == ItemId);
             Icon = P.Icons.TryLoadIconAsync(Data.Icon).Result;
             Required = required;
-            if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.RowId == ItemId, out CraftedRecipe)) { Sources.Add(1); CanBeCrafted = true; }
+            if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.RowId == ItemId, out CraftedRecipe)) { Sources.Add(1); CanBeCrafted = true; }
             if (LuminaSheets.GatheringItemSheet.Values.Any(x => x.Item.RowId == ItemId)) Sources.Add(2);
             if (Svc.Data.GetExcelSheet<FishingSpot>()!.Any(x => x.Item.Any(y => y.Value.RowId == ItemId))) Sources.Add(3);
             if (ItemVendorLocation.ItemHasVendor(ItemId)) Sources.Add(4);
@@ -55,11 +56,11 @@ namespace Artisan.RawInformation
             if (Sources.Count == 0) Sources.Add(-1);
             GatherZone = Svc.Data.Excel.GetSheet<TerritoryType>()!.First(x => x.RowId == 1);
             TimedNode = false;
-            if (LuminaSheets.GatheringItemSheet!.FindFirst(x => x.Value.Item.RowId == Data.RowId, out var gather))
+            if (LuminaSheets.GatheringItemSheet!.TryGetFirst(x => x.Value.Item.RowId == Data.RowId, out var gather))
             {
-                if (HiddenItems.Items.FindFirst(x => x.ItemId == Data.RowId, out var hiddenItems))
+                if (HiddenItems.Items.TryGetFirst(x => x.ItemId == Data.RowId, out var hiddenItems))
                 {
-                    if (Svc.Data.Excel.GetSheet<GatheringPoint>()!.FindFirst(y => y.GatheringPointBase.RowId == hiddenItems.NodeId && y.TerritoryType.Value.PlaceName.RowId > 0, out var gatherpoint))
+                    if (Svc.Data.Excel.GetSheet<GatheringPoint>()!.TryGetFirst(y => y.GatheringPointBase.RowId == hiddenItems.NodeId && y.TerritoryType.Value.PlaceName.RowId > 0, out var gatherpoint))
                     {
                         var transient = Svc.Data.Excel.GetSheet<GatheringPointTransient>().GetRow(gatherpoint.RowId);
                         if (transient.GatheringRarePopTimeTable.RowId > 0)
@@ -74,7 +75,7 @@ namespace Artisan.RawInformation
                     foreach (var pointBase in LuminaSheets.GatheringPointBaseSheet.Values.Where(x => x.Item.Any(y => y.RowId == gather.Key)))
                     {
                         if (GatherZone.RowId != 1) break;
-                        if (Svc.Data.Excel.GetSheet<GatheringPoint>()!.FindFirst(y => y.GatheringPointBase.RowId == pointBase.RowId && y.TerritoryType.Value.PlaceName.RowId > 0, out var gatherpoint))
+                        if (Svc.Data.Excel.GetSheet<GatheringPoint>()!.TryGetFirst(y => y.GatheringPointBase.RowId == pointBase.RowId && y.TerritoryType.Value.PlaceName.RowId > 0, out var gatherpoint))
                         {
                             var transient = Svc.Data.Excel.GetSheet<GatheringPointTransient>().GetRow(gatherpoint.RowId);
                             if (transient.GatheringRarePopTimeTable.RowId > 0)
@@ -234,7 +235,7 @@ namespace Artisan.RawInformation
         private int NumberCraftable(uint ItemId)
         {
             List<int> NumberOfUses = new();
-            if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.RowId == ItemId, out var recipe))
+            if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.RowId == ItemId, out var recipe))
             {
                 foreach (var ingredient in recipe.Ingredients().Where(x => x.Amount > 0))
                 {

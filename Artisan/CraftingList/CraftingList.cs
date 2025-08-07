@@ -521,7 +521,7 @@ namespace Artisan.CraftingLists
                                 {
                                     ex.Log();
                                 }
-                                var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextIconMenu");
+                                var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextIconMenu").Address;
                                 if (contextMenu != null)
                                 {
                                     Callback.Fire(contextMenu, true, 0, 0, 0, ingredient, 0);

@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLists;
 using Artisan.RawInformation;
+using ECommons;
 using ECommons.DalamudServices;
 using Lumina.Excel.Sheets;
 using OtterGui;
@@ -71,7 +72,7 @@ internal static class CraftingListHelpers
 
     public static Recipe? GetIngredientRecipe(uint ingredient)
     {
-        if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.Value.RowId == ingredient, out var result))
+        if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value.RowId == ingredient, out var result))
             return result;
 
         return null;

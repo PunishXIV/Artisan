@@ -60,6 +60,12 @@ namespace Artisan.UI
                 MaximumSize = new(9999, 9999)
             };
             P.ws.AddWindow(this);
+            this.TitleBarButtons.Add(new()
+            {
+                Icon = FontAwesomeIcon.Cog,
+                ShowTooltip = () => ImGuiEx.SetTooltip("Open Config"),
+                Click = (x) => P.PluginUi.IsOpen = true,
+            });
         }
 
         public override void PreDraw()
@@ -132,7 +138,7 @@ namespace Artisan.UI
                         {
                             ImGuiEx.LineCentered("###ArtisanLogo", () =>
                             {
-                                ImGui.Image(logo.ImGuiHandle, new(125f.Scale(), 125f.Scale()));
+                                ImGui.Image(logo.Handle, new(125f.Scale(), 125f.Scale()));
                                 if (ImGui.IsItemHovered())
                                 {
                                     ImGui.BeginTooltip();
@@ -277,7 +283,7 @@ namespace Artisan.UI
             {
                 ImGuiEx.LineCentered("###ArtisanTextLogo", () =>
                 {
-                    ImGui.Image(logo.ImGuiHandle, new Vector2(logo.Width, 100f.Scale()));
+                    ImGui.Image(logo.Handle, new Vector2(logo.Width, 100f.Scale()));
                 });
             }
 
@@ -309,7 +315,7 @@ namespace Artisan.UI
             {
                 ImGuiEx.LineCentered("###AutoModeExample", () =>
                 {
-                    ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
+                    ImGui.Image(example.Handle, new Vector2(example.Width, example.Height));
                 });
             }
 
@@ -322,7 +328,7 @@ namespace Artisan.UI
             {
                 ImGuiEx.LineCentered("###CraftWindowExample", () =>
                 {
-                    ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
+                    ImGui.Image(example.Handle, new Vector2(example.Width, example.Height));
                 });
             }
 
@@ -337,7 +343,7 @@ namespace Artisan.UI
             {
                 ImGuiEx.LineCentered("###OutlineExample", () =>
                 {
-                    ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
+                    ImGui.Image(example.Handle, new Vector2(example.Width, example.Height));
                 });
             }
 
@@ -374,7 +380,7 @@ namespace Artisan.UI
             {
                 ImGuiEx.LineCentered("###RecipeWindowExample", () =>
                 {
-                    ImGui.Image(example.ImGuiHandle, new Vector2(example.Width, example.Height));
+                    ImGui.Image(example.Handle, new Vector2(example.Width, example.Height));
                 });
             }
 
@@ -709,7 +715,7 @@ namespace Artisan.UI
                 if (P.Config.ExpertSolverConfig.expertIcon is not null)
                 {
                     ImGui.SameLine();
-                    ImGui.Image(P.Config.ExpertSolverConfig.expertIcon.ImGuiHandle, new(P.Config.ExpertSolverConfig.expertIcon.Width * ImGuiHelpers.GlobalScaleSafe, ImGui.GetItemRectSize().Y), new(0, 0), new(1, 1), new(0.94f, 0.57f, 0f, 1f));
+                    ImGui.Image(P.Config.ExpertSolverConfig.expertIcon.Handle, new(P.Config.ExpertSolverConfig.expertIcon.Width * ImGuiHelpers.GlobalScaleSafe, ImGui.GetItemRectSize().Y), new(0, 0), new Vector2(1, 1), new(0.94f, 0.57f, 0f, 1f));
                 }
                 if (P.Config.ExpertSolverConfig.Draw())
                     P.Config.Save();
@@ -719,7 +725,7 @@ namespace Artisan.UI
                 if (P.Config.ExpertSolverConfig.expertIcon is not null)
                 {
                     ImGui.SameLine();
-                    ImGui.Image(P.Config.ExpertSolverConfig.expertIcon.ImGuiHandle, new(P.Config.ExpertSolverConfig.expertIcon.Width * ImGuiHelpers.GlobalScaleSafe, ImGui.GetItemRectSize().Y), new(0, 0), new(1, 1), new(0.94f, 0.57f, 0f, 1f));
+                    ImGui.Image(P.Config.ExpertSolverConfig.expertIcon.Handle, new(P.Config.ExpertSolverConfig.expertIcon.Width * ImGuiHelpers.GlobalScaleSafe, ImGui.GetItemRectSize().Y), new(0, 0), new Vector2(1, 1), new(0.94f, 0.57f, 0f, 1f));
                 }
             }
 
@@ -974,7 +980,7 @@ namespace Artisan.UI
                 {
                     ImGuiEx.ImGuiLineCentered("###EnduranceNewSetting", () =>
                     {
-                        ImGui.Image(img.ImGuiHandle, new Vector2(img.Width, img.Height));
+                        ImGui.Image(img.Handle, new Vector2(img.Width, img.Height));
                     });
                 }
 

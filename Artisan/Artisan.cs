@@ -60,7 +60,7 @@ public unsafe class Artisan : IDalamudPlugin
 #endif
         ws = new();
         ri = new();
-        Icons = new(Svc.Data, Svc.Texture, Svc.Log);
+        Icons = new(Svc.Data, Svc.Texture);
         Config = P.Config;
         PluginUi = new();
 

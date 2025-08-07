@@ -51,14 +51,14 @@ public static unsafe class Operations
                 return;
             }
 
-            var addonPtr = (AddonRecipeNote*)recipeWindow;
+            var addonPtr = (AddonRecipeNote*)recipeWindow.Address;
             if (addonPtr == null)
                 return;
 
             Svc.Log.Debug($"Starting quick craft");
             Callback.Fire(&addon->AtkUnitBase, true, 9);
 
-            var quickSynthWindow = (AtkUnitBase*)Svc.GameGui.GetAddonByName("SynthesisSimpleDialog", 1);
+            var quickSynthWindow = (AtkUnitBase*)Svc.GameGui.GetAddonByName("SynthesisSimpleDialog", 1).Address;
 
             if (quickSynthWindow != null)
             {
@@ -93,7 +93,7 @@ public static unsafe class Operations
                 if (quickSynthPTR == nint.Zero)
                     return;
 
-                var quickSynthWindow = (AtkUnitBase*)quickSynthPTR;
+                var quickSynthWindow = (AtkUnitBase*)quickSynthPTR.Address;
                 if (quickSynthWindow == null)
                     return;
 
@@ -141,7 +141,7 @@ public static unsafe class Operations
         }
         else
         {
-            var addon = (AddonRecipeNote*)Svc.GameGui.GetAddonByName("RecipeNote");
+            var addon = (AddonRecipeNote*)Svc.GameGui.GetAddonByName("RecipeNote").Address;
             if (addon == null)
                 return false;
 

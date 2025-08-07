@@ -101,7 +101,7 @@ namespace Artisan.UI
 
                         if (ImGui.IsItemActive() && !ImGui.IsItemHovered() && reorderMode)
                         {
-                            int i_next = i + (ImGui.GetMouseDragDelta(0).Y < 0f ? -1 : 1);
+                            int i_next = i + (ImGui.GetMouseDragDelta(ImGuiMouseButton.Left).Y < 0f ? -1 : 1);
                             if (i_next >= 0 && i_next < P.Config.MacroSolverConfig.Macros.Count)
                             {
                                 P.Config.MacroSolverConfig.Macros[i] = P.Config.MacroSolverConfig.Macros[i_next];

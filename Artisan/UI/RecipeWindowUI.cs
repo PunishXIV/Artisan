@@ -60,6 +60,12 @@ namespace Artisan
             {
                 MaximumSize = new Vector2(0, 0),
             };
+            this.TitleBarButtons.Add(new()
+            {
+                Icon = FontAwesomeIcon.Cog,
+                ShowTooltip = () => ImGuiEx.SetTooltip("Open Config"),
+                Click = (x) => P.PluginUi.IsOpen = true,
+            });
         }
 
         public override void Draw()
@@ -91,7 +97,7 @@ namespace Artisan
             if (recipeWindow == IntPtr.Zero)
                 return;
 
-            var addonPtr = (AtkUnitBase*)recipeWindow;
+            var addonPtr = (AtkUnitBase*)recipeWindow.Address;
             if (addonPtr == null)
                 return;
 
@@ -126,7 +132,7 @@ namespace Artisan
             if (recipeWindow == IntPtr.Zero)
                 return;
 
-            var addonPtr = (AtkUnitBase*)recipeWindow;
+            var addonPtr = (AtkUnitBase*)recipeWindow.Address;
             if (addonPtr == null)
                 return;
 
@@ -274,7 +280,7 @@ namespace Artisan
             {
                 try
                 {
-                    var subcontext = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu");
+                    var subcontext = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu").Address;
                     if (subcontext != null && subcontext->IsVisible)
                         return;
 
@@ -288,7 +294,7 @@ namespace Artisan
                     if (timerWindow == IntPtr.Zero)
                         return;
 
-                    var atkUnitBase = (AtkUnitBase*)timerWindow;
+                    var atkUnitBase = (AtkUnitBase*)timerWindow.Address;
                     var node = atkUnitBase->UldManager.NodeList[19];
 
                     if (!node->IsVisible())
@@ -360,12 +366,12 @@ namespace Artisan
             {
                 try
                 {
-                    var subcontext = (AtkUnitBase*)Svc.GameGui.GetAddonByName("AddonContextSub");
+                    var subcontext = (AtkUnitBase*)Svc.GameGui.GetAddonByName("AddonContextSub").Address;
 
                     if (subcontext != null && subcontext->IsVisible)
                         return;
 
-                    subcontext = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu");
+                    subcontext = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu").Address;
                     if (subcontext != null && subcontext->IsVisible)
                         return;
 
@@ -373,7 +379,7 @@ namespace Artisan
                     if (timerWindow == IntPtr.Zero)
                         return;
 
-                    var atkUnitBase = (AtkUnitBase*)timerWindow;
+                    var atkUnitBase = (AtkUnitBase*)timerWindow.Address;
 
                     if (atkUnitBase->AtkValues[233].Type != FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int)
                         return;
@@ -473,7 +479,7 @@ namespace Artisan
 
                 if (!boostedCraftsOnly || (boostedCraftsOnly && starred))
                 {
-                    if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.RowId == ItemId && x.CraftType.RowId + 8 == job, out var recipe))
+                    if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.RowId == ItemId && x.CraftType.RowId + 8 == job, out var recipe))
                     {
                         var timesToAdd = requested / recipe.AmountResult;
 
@@ -532,7 +538,7 @@ namespace Artisan
 
                 if (!boostedCraftOnly || (boostedCraftOnly && starred))
                 {
-                    if (LuminaSheets.RecipeSheet.Values.FindFirst(x => x.ItemResult.RowId == ItemId && x.CraftType.RowId + 8 == job, out var recipe))
+                    if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.RowId == ItemId && x.CraftType.RowId + 8 == job, out var recipe))
                     {
                         var timesToAdd = requested / recipe.AmountResult;
 
@@ -565,7 +571,7 @@ namespace Artisan
                 if (subWindow == IntPtr.Zero)
                     return;
 
-                var addonPtr = (AtkUnitBase*)subWindow;
+                var addonPtr = (AtkUnitBase*)subWindow.Address;
                 if (addonPtr == null)
                     return;
 
@@ -705,7 +711,7 @@ namespace Artisan
             if (recipeWindow == IntPtr.Zero)
                 return;
 
-            var addonPtr = (AtkUnitBase*)recipeWindow;
+            var addonPtr = (AtkUnitBase*)recipeWindow.Address;
             if (addonPtr == null)
                 return;
 
@@ -762,11 +768,6 @@ namespace Artisan
 
         private static void DrawCopyOfCraftMenu()
         {
-            if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
-            {
-                P.PluginUi.IsOpen = true;
-            }
-
             bool autoMode = P.Config.AutoMode;
 
             if (ImGui.Checkbox("Automatic Action Execution Mode", ref autoMode))
@@ -804,7 +805,7 @@ namespace Artisan
             if (recipeWindow == IntPtr.Zero)
                 return;
 
-            var addonPtr = (AtkUnitBase*)recipeWindow;
+            var addonPtr = (AtkUnitBase*)recipeWindow.Address;
             if (addonPtr == null)
                 return;
 
@@ -872,7 +873,7 @@ namespace Artisan
             if (recipeWindow == IntPtr.Zero)
                 return;
 
-            var addonPtr = (AtkUnitBase*)recipeWindow;
+            var addonPtr = (AtkUnitBase*)recipeWindow.Address;
             if (addonPtr == null)
                 return;
 

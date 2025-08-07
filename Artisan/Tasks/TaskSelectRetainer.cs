@@ -257,8 +257,8 @@ internal unsafe static class RetainerHandlers
                     quantity = item->Quantity;
                     Svc.Log.Debug($"Found item? {item->Quantity}");
                     var ag = AgentInventoryContext.Instance();
-                    ag->OpenForItemSlot(inv, i, AgentModule.Instance()->GetAgentByInternalId(AgentId.Retainer)->GetAddonId());
-                    var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu", 1);
+                    ag->OpenForItemSlot(inv, i, 0, AgentModule.Instance()->GetAgentByInternalId(AgentId.Retainer)->GetAddonId());
+                    var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu", 1).Address;
                     var contextAgent = AgentInventoryContext.Instance();
                     var indexOfRetrieveAll = -1;
                     var indexOfRetrieveQuantity = -1;
@@ -299,7 +299,7 @@ internal unsafe static class RetainerHandlers
 
     internal static bool InputNumericValue(int value)
     {
-        var numeric = (AtkUnitBase*)Svc.GameGui.GetAddonByName("InputNumeric", 1);
+        var numeric = (AtkUnitBase*)Svc.GameGui.GetAddonByName("InputNumeric", 1).Address;
         if (numeric != null)
         {
             Svc.Log.Debug($"{value}");

@@ -227,6 +227,8 @@ namespace Artisan.RawInformation
 
         public static bool MissionHasMaterialMiracle(this Recipe recipe)
         {
+            return false; //TODO: I have literally no idea
+            /*
             try
             {
 
@@ -239,7 +241,7 @@ namespace Artisan.RawInformation
                     return false;
                 
                 //Next, find the MissionUnit that has our MissionRecipe row
-                var missionUnit = Svc.Data.GetExcelSheet<WKSMissionUnit>().First(missionUnit => missionUnit.WKSMissionRecipe == (ushort)missionRec.RowId);
+                var missionUnit = Svc.Data.GetExcelSheet<WKSMissionUnit>().First(missionUnit => missionUnit.WKSMissionRecipe.RowId == (ushort)missionRec.RowId);
 
                 //Get the MissionToDo from the MissionUnit
                 var missionToDo = Svc.Data.GetExcelSheet<WKSMissionToDo>().GetRow(missionUnit.Unknown7);
@@ -251,7 +253,7 @@ namespace Artisan.RawInformation
             {
                 Svc.Log.Error($"Error in MissionHasMaterialMiracle: {e}");
                 return false;
-            }
+            }*/
         }
     }
 }

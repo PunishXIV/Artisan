@@ -80,7 +80,7 @@ namespace Artisan.RawInformation
                 if (materializePTR == IntPtr.Zero)
                     return;
 
-                var materalizeWindow = (AtkUnitBase*)materializePTR;
+                var materalizeWindow = (AtkUnitBase*)materializePTR.Address;
                 if (materalizeWindow == null)
                     return;
 
@@ -150,7 +150,7 @@ namespace Artisan.RawInformation
                         if (materializePTR == IntPtr.Zero)
                             return;
 
-                        var materalizeWindow = (AtkUnitBase*)materializePTR;
+                        var materalizeWindow = (AtkUnitBase*)materializePTR.Address;
                         if (materalizeWindow == null)
                             return;
 

@@ -66,7 +66,7 @@ internal static class SimulatorUIVeynVersion
 
     private static void DrawRecipeInfo(Recipe r, CraftState craft)
     {
-        using var n = ImRaii.TreeNode($"Recipe: #{r.RowId} {r.CraftType.RowId + Job.CRP} '{r.ItemResult.Value.Name.ToDalamudString()}', solver: {_selectedSolver.Name}###recipe");
+        using var n = ImRaii.TreeNode($"Recipe: #{r.RowId} {Job.CRP.Add(r.CraftType.RowId)} '{r.ItemResult.Value.Name.ToDalamudString()}', solver: {_selectedSolver.Name}###recipe");
         if (!n)
             return;
 
@@ -327,9 +327,9 @@ internal static class SimulatorUIVeynVersion
         if (recipe != null)
         {
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.Value.RowId) ?? new();
-            var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.Value.CraftType.RowId);
+            var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP.Add(recipe.Value.CraftType.RowId));
             stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ), CharacterInfo.FCCraftsmanshipbuff);
-            _selectedCraft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.Value.CraftType.RowId, recipe.Value);
+            _selectedCraft = Crafting.BuildCraftStateForRecipe(stats, Job.CRP.Add(recipe.Value.CraftType.RowId), recipe.Value);
             InitDefaultTransitionProbabilities(_selectedCraft, recipe.Value);
             var solverDesc = CraftingProcessor.GetSolverForRecipe(config, _selectedCraft);
             _selectedSolver = new(solverDesc.Name, solverDesc.CreateSolver(_selectedCraft));

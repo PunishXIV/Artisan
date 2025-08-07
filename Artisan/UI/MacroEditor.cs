@@ -235,7 +235,7 @@ namespace Artisan.UI
 
                         ImGui.BeginChild("ConditionalExcludes", new Vector2(ImGui.GetContentRegionAvail().X, step.HasExcludeCondition ? 200f : 100f), false, ImGuiWindowFlags.AlwaysAutoResize);
                         ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0, 0));
-                        ImGui.Columns(3, null, false);
+                        ImGui.Columns(3, border: false);
                         if (ImGui.Checkbox($"Normal", ref step.ExcludeNormal))
                             P.Config.Save();
                         if (ImGui.Checkbox($"Poor", ref step.ExcludePoor))

@@ -57,9 +57,9 @@ namespace Artisan.UI
 
             ImGui.Spacing();
             var recipe = filteredRecipes.First();
-            var stats = CharacterStats.GetBaseStatsForClassHeuristic(Job.CRP + recipe.CraftType.RowId);
+            var stats = CharacterStats.GetBaseStatsForClassHeuristic((Job)((uint)Job.CRP + recipe.CraftType.RowId));
             stats.AddConsumables(new(DummyConfig.RequiredFood, DummyConfig.RequiredFoodHQ), new(DummyConfig.RequiredPotion, DummyConfig.RequiredPotionHQ), CharacterInfo.FCCraftsmanshipbuff);
-            var c = Crafting.BuildCraftStateForRecipe(stats, Job.CRP + recipe.CraftType.RowId, recipe);
+            var c = Crafting.BuildCraftStateForRecipe(stats, (Job)((uint)Job.CRP + recipe.CraftType.RowId), recipe);
 
             DummyConfig.DrawFood();
             DummyConfig.DrawPotion();
@@ -151,7 +151,7 @@ namespace Artisan.UI
                 ImGui.SameLine(100f.Scale());
                 if (ImGui.BeginListBox($"###AssignJobBox", new Vector2(0, 55f.Scale())))
                 {
-                    ImGui.Columns(4, null, false);
+                    ImGui.Columns(4, border:false);
                     for (var job = Job.CRP; job <= Job.CUL; ++job)
                     {
                         ImGui.Checkbox(job.ToString(), ref quickAssignJobs[job - Job.CRP]);
@@ -167,7 +167,7 @@ namespace Artisan.UI
                     ImGui.SameLine(100f.Scale());
                     if (ImGui.BeginListBox($"###AssignDurabilities", new Vector2(0, 55f.Scale())))
                     {
-                        ImGui.Columns(4, null, false);
+                        ImGui.Columns(4, border: false);
 
                         foreach (var recipe in filteredRecipes)
                         {
@@ -201,7 +201,7 @@ namespace Artisan.UI
                         var anyHQ = filteredRecipes.Any(recipe => recipe.CanHq);
                         var anyNonHQ = filteredRecipes.Any(recipe => !recipe.CanHq);
 
-                        ImGui.Columns(2, null, false);
+                        ImGui.Columns(2, border: false);
                         if (anyNonHQ)
                         {
                             if (!anyHQ)
@@ -223,7 +223,7 @@ namespace Artisan.UI
                                 quickAssignCannotHQ = false;
                             }
                         }
-                        ImGui.Columns(1, null, false);
+                        ImGui.Columns(1, border: false);
                         ImGui.EndListBox();
                     }
                     filteredRecipes = filteredRecipes.Where(x => x.CanHq != quickAssignCannotHQ);
