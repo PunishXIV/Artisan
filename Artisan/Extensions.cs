@@ -1,7 +1,9 @@
-﻿using Dalamud.Interface.Textures;
+﻿using Artisan.GameInterop.CSExt;
+using Dalamud.Interface.Textures;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Plugin.Services;
 using ECommons.ExcelServices;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using OtterGui.Classes;
 using System;
 using System.Collections.Generic;
