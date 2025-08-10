@@ -1,4 +1,4 @@
-﻿using Artisan.Autocraft;
+using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.FCWorkshops;
 using Artisan.GameInterop;
@@ -929,7 +929,7 @@ namespace Artisan
                 ImGui.Text("Craft X Times:");
                 ImGui.SameLine();
                 ImGui.PushItemWidth(110f * scale.X);
-                if (ImGui.InputInt($"###TimesRepeat{node->NodeId}", ref P.Config.CraftX))
+                if (ImGui.InputInt($"###TimesRepeat{node->NodeId}", ref P.Config.CraftX, step: 1, stepFast: 1))
                 {
                     if (P.Config.CraftX < 0)
                         P.Config.CraftX = 0;
