@@ -17,12 +17,13 @@ namespace Artisan.UI
     {
         public bool EnableMacroOptions { get; set; }
         
-        public CraftMenuWindowUI(string windowName, ImGuiWindowFlags flags) : base(windowName, flags, true)
+        public CraftMenuWindowUI(string windowName, ImGuiWindowFlags flags) : base(windowName, flags)
         {
-            IsOpen = true;
+            IsOpen = false;
             ShowCloseButton = false;
             RespectCloseHotkey = false;
             DisableWindowSounds = true;
+            PositionCondition = ImGuiCond.Appearing;
             
             TitleBarButtons.Add(new()
             {

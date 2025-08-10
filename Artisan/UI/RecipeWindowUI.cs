@@ -117,9 +117,8 @@ namespace Artisan
                 var position = AtkResNodeFunctions.GetNodePosition(node);
                 var scale = AtkResNodeFunctions.GetNodeScale(node);
                 var size = new Vector2(node->Width, node->Height) * scale;
-                var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
                 //position += ImGuiHelpers.MainViewport.Pos;
-                var textHeight = ImGui.CalcTextSize("Craft X Times:");
+                ImGui.CalcTextSize("Craft X Times:");
                 var craftableCount = addonPtr->UldManager.NodeList[24]->GetAsAtkTextNode()->NodeText.ToString() == "" ? 0 : Convert.ToInt32(addonPtr->UldManager.NodeList[24]->GetAsAtkTextNode()->NodeText.ToString().GetNumbers());
 
                 if (craftableCount == 0) return;
@@ -147,9 +146,6 @@ namespace Artisan
             if (addonPtr == null)
                 return;
 
-            var baseX = addonPtr->X;
-            var baseY = addonPtr->Y;
-
             if (addonPtr->UldManager.NodeListCount >= 2 && addonPtr->UldManager.NodeList[1]->IsVisible())
             {
                 var node = addonPtr->UldManager.NodeList[1];
@@ -159,25 +155,23 @@ namespace Artisan
 
                 ShowCosmicCraftMenuWindow($"###CosmicOptions{node->NodeId}");
 
-                if (P.Config.LockMiniMenuR)
+                var position = AtkResNodeFunctions.GetNodePosition(node);
+                var scale = AtkResNodeFunctions.GetNodeScale(node);
+                var size = new Vector2(node->Width, node->Height) * scale;
+
+                if (P.Config.LockMiniMenuR || AtkResNodeFunctions.ResetPosition)
                 {
-                    var position = AtkResNodeFunctions.GetNodePosition(node);
-                    var scale = AtkResNodeFunctions.GetNodeScale(node);
-                    var size = new Vector2(node->Width, node->Height) * scale;
-
-                    //position += ImGuiHelpers.MainViewport.Pos;
-
                     if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
                     {
                         _cosmicCraftMenuWindowUi.PositionCondition = ImGuiCond.Always;
                         _cosmicCraftMenuWindowUi.Position = new Vector2(position.X + size.X + 7, position.Y + 7);
                         AtkResNodeFunctions.ResetPosition = false;
                     }
-                    else
-                    {
-                        _cosmicCraftMenuWindowUi.PositionCondition = ImGuiCond.FirstUseEver;
-                        _cosmicCraftMenuWindowUi.Position = (new Vector2(position.X + size.X + 7, position.Y + 7) + ImGuiHelpers.MainViewport.Pos);
-                    }
+                }
+                else
+                {
+                    _cosmicCraftMenuWindowUi.PositionCondition = ImGuiCond.FirstUseEver;
+                    _cosmicCraftMenuWindowUi.Position = new Vector2(position.X + size.X + 7, position.Y + 7);
                 }
 
                 if (!_cosmicCraftMenuWindowUi.EnableMacroOptions)
@@ -211,12 +205,11 @@ namespace Artisan
 
                 var textInput = (AtkComponentTextInput*)searchNode->GetComponent();
                 Search = Marshal.PtrToStringAnsi(new IntPtr(textInput->AtkComponentInputBase.UnkText1.StringPtr)).Trim();
-                var textSize = ImGui.CalcTextSize(Search);
+                ImGui.CalcTextSize(Search);
 
                 var position = AtkResNodeFunctions.GetNodePosition(searchNode);
                 var scale = AtkResNodeFunctions.GetNodeScale(searchNode);
                 var size = new Vector2(searchNode->Width, searchNode->Height) * scale;
-                var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
 
                 ImGuiHelpers.ForceNextWindowMainViewport();
                 ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y + size.Y));
@@ -297,7 +290,6 @@ namespace Artisan
                     var position = AtkResNodeFunctions.GetNodePosition(node);
                     var scale = AtkResNodeFunctions.GetNodeScale(node);
                     var size = new Vector2(node->Width, node->Height) * scale;
-                    var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
                     var textSize = ImGui.CalcTextSize("Create Crafting List");
 
                     ImGuiHelpers.ForceNextWindowMainViewport();
@@ -386,7 +378,6 @@ namespace Artisan
                     var position = AtkResNodeFunctions.GetNodePosition(node);
                     var scale = AtkResNodeFunctions.GetNodeScale(node);
                     var size = new Vector2(node->Width, node->Height) * scale;
-                    var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
 
                     var textSize = ImGui.CalcTextSize("Create Crafting List");
 
@@ -415,7 +406,7 @@ namespace Artisan
                         ImGui.SameLine();
                         var oldScale = ImGui.GetIO().FontGlobalScale;
                         ImGui.GetIO().FontGlobalScale = 0.80f * scale.X;
-                        using (var f = ImRaii.PushFont(ImGui.GetFont()))
+                        using (ImRaii.PushFont(ImGui.GetFont()))
                         {
                             if (ImGui.Button($"Create Crafting List (with subcrafts) (Star only)", new Vector2(size.X / 2, s.Y)))
                             {
@@ -580,7 +571,6 @@ namespace Artisan
                 var position = AtkResNodeFunctions.GetNodePosition(node);
                 var scale = AtkResNodeFunctions.GetNodeScale(node);
                 var size = new Vector2(node->Width, node->Height) * scale;
-                var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
                 var textSize = ImGui.CalcTextSize("Create crafting list for this phase");
 
                 ImGuiHelpers.ForceNextWindowMainViewport();
@@ -737,9 +727,6 @@ namespace Artisan
             if (addonPtr == null)
                 return;
 
-            var baseX = addonPtr->X;
-            var baseY = addonPtr->Y;
-
             if (addonPtr->UldManager.NodeListCount > 1)
             {
                 if (addonPtr->UldManager.NodeList[1]->IsVisible())
@@ -751,25 +738,23 @@ namespace Artisan
 
                     ShowCraftMenuWindow($"###Options{node->NodeId}");
 
-                    if (P.Config.LockMiniMenuR)
+                    var position = AtkResNodeFunctions.GetNodePosition(node);
+                    var scale = AtkResNodeFunctions.GetNodeScale(node);
+                    var size = new Vector2(node->Width, node->Height) * scale;
+
+                    if (P.Config.LockMiniMenuR || AtkResNodeFunctions.ResetPosition)
                     {
-                        var position = AtkResNodeFunctions.GetNodePosition(node);
-                        var scale = AtkResNodeFunctions.GetNodeScale(node);
-                        var size = new Vector2(node->Width, node->Height) * scale;
-                       
-                        //position += ImGuiHelpers.MainViewport.Pos;
-                        
                         if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
                         {
                             _craftMenuWindowUi.PositionCondition = ImGuiCond.Always;
                             _craftMenuWindowUi.Position = new Vector2(position.X + size.X + 7, position.Y + 7);
                             AtkResNodeFunctions.ResetPosition = false;
                         }
-                        else
-                        {
-                            _craftMenuWindowUi.PositionCondition = ImGuiCond.FirstUseEver;
-                            _craftMenuWindowUi.Position = (new Vector2(position.X + size.X + 7, position.Y + 7) + ImGuiHelpers.MainViewport.Pos);
-                        }
+                    }
+                    else
+                    {
+                        _craftMenuWindowUi.PositionCondition = ImGuiCond.FirstUseEver;
+                        _craftMenuWindowUi.Position = new Vector2(position.X + size.X + 7, position.Y + 7);
                     }
                 }
             }
@@ -789,9 +774,6 @@ namespace Artisan
             if (addonPtr == null)
                 return;
 
-            var baseX = addonPtr->X;
-            var baseY = addonPtr->Y;
-
             if (addonPtr->UldManager.NodeListCount >= 2 && addonPtr->UldManager.NodeList[1]->IsVisible())
             {
                 var node = addonPtr->UldManager.NodeList[1];
@@ -801,27 +783,25 @@ namespace Artisan
 
                 ShowCraftMenuWindow($"###Options{node->NodeId}");
 
-                if (P.Config.LockMiniMenuR)
+                var position = AtkResNodeFunctions.GetNodePosition(node);
+                var scale = AtkResNodeFunctions.GetNodeScale(node);
+                var size = new Vector2(node->Width, node->Height) * scale;
+
+                if (P.Config.LockMiniMenuR || AtkResNodeFunctions.ResetPosition)
                 {
-                    var position = AtkResNodeFunctions.GetNodePosition(node);
-                    var scale = AtkResNodeFunctions.GetNodeScale(node);
-                    var size = new Vector2(node->Width, node->Height) * scale;
-
-                    //position += ImGuiHelpers.MainViewport.Pos;
-
                     if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
                     {
                         _craftMenuWindowUi.PositionCondition = ImGuiCond.Always;
                         _craftMenuWindowUi.Position = new Vector2(position.X + size.X + 7, position.Y + 7);
                         AtkResNodeFunctions.ResetPosition = false;
                     }
-                    else
-                    {
-                        _craftMenuWindowUi.PositionCondition = ImGuiCond.FirstUseEver;
-                        _craftMenuWindowUi.Position = (new Vector2(position.X + size.X + 7, position.Y + 7) + ImGuiHelpers.MainViewport.Pos);
-                    }
                 }
-                
+                else
+                {
+                    _craftMenuWindowUi.PositionCondition = ImGuiCond.FirstUseEver;
+                    _craftMenuWindowUi.Position = (new Vector2(position.X + size.X + 7, position.Y + 7) + ImGuiHelpers.MainViewport.Pos);
+                }
+
                 if (!_craftMenuWindowUi.EnableMacroOptions)
                     _craftMenuWindowUi.EnableMacroOptions = true;
             }
@@ -848,9 +828,8 @@ namespace Artisan
                 var position = AtkResNodeFunctions.GetNodePosition(node);
                 var scale = AtkResNodeFunctions.GetNodeScale(node);
                 var size = new Vector2(node->Width, node->Height) * scale;
-                var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
                 //position += ImGuiHelpers.MainViewport.Pos;
-                var textHeight = ImGui.CalcTextSize("Craft X Times:");
+                ImGui.CalcTextSize("Craft X Times:");
                 var craftableCount = addonPtr->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString() == "" ? 0 : Convert.ToInt32(addonPtr->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString().GetNumbers());
 
                 if (craftableCount == 0) return;
@@ -879,7 +858,7 @@ namespace Artisan
 
             var oldScale = ImGui.GetIO().FontGlobalScale;
             ImGui.GetIO().FontGlobalScale = 1f * scale.X;
-            using (var font = ImRaii.PushFont(ImGui.GetFont()))
+            using (ImRaii.PushFont(ImGui.GetFont()))
             {
                 ImGui.AlignTextToFramePadding();
                 ImGui.Text("Craft X Times:");
@@ -929,17 +908,14 @@ namespace Artisan
             }
             else
             {
+                _craftMenuWindowUi.Flags = GetWindowFlags();
                 _craftMenuWindowUi.IsOpen = true;
             }
         }
 
         private static void AddCraftMenuWindow(string windowName)
         {
-            var flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding;
-            if (P.Config.PinMiniMenu)
-                flags |= ImGuiWindowFlags.NoMove;
-
-            _craftMenuWindowUi = new CraftMenuWindowUI(windowName, flags);
+            _craftMenuWindowUi = new CraftMenuWindowUI(windowName, GetWindowFlags());
             _windowSystem.AddWindow(_craftMenuWindowUi);
         }
 
@@ -968,17 +944,14 @@ namespace Artisan
             }
             else
             {
+                _cosmicCraftMenuWindowUi.Flags = GetWindowFlags();
                 _cosmicCraftMenuWindowUi.IsOpen = true;
             }
         }
 
         private static void AddCosmicCraftMenuWindow(string windowName)
         {
-            var flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding;
-            if (P.Config.PinMiniMenu)
-                flags |= ImGuiWindowFlags.NoMove;
-
-            _cosmicCraftMenuWindowUi = new CraftMenuWindowUI(windowName, flags);
+            _cosmicCraftMenuWindowUi = new CraftMenuWindowUI(windowName, GetWindowFlags());
             _windowSystem.AddWindow(_cosmicCraftMenuWindowUi);
         }
 
@@ -997,6 +970,15 @@ namespace Artisan
             }
 
             _cosmicCraftMenuWindowUi.EnableMacroOptions = false;
+        }
+
+        private static ImGuiWindowFlags GetWindowFlags()
+        {
+            var flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding;
+            if (P.Config.PinMiniMenu)
+                flags |= ImGuiWindowFlags.NoMove;
+
+            return flags;
         }
     }
 }
