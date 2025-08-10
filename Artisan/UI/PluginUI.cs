@@ -59,13 +59,13 @@ namespace Artisan.UI
                 MinimumSize = new(250, 100),
                 MaximumSize = new(9999, 9999)
             };
-            P.ws.AddWindow(this);
             this.TitleBarButtons.Add(new()
             {
                 Icon = FontAwesomeIcon.Cog,
                 ShowTooltip = () => ImGuiEx.SetTooltip("Open Config"),
                 Click = (x) => P.PluginUi.IsOpen = true,
             });
+            P.ws.AddWindow(this);
         }
 
         public override void PreDraw()

@@ -1,13 +1,10 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
-using Artisan.CraftingLogic;
-using Artisan.CraftingLogic.Solvers;
 using Artisan.FCWorkshops;
 using Artisan.GameInterop;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.UI;
-using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
@@ -17,11 +14,9 @@ using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
-using OtterGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,6 +31,9 @@ namespace Artisan
     {
         private static string search = string.Empty;
         private static bool searched = false;
+        private static WindowSystem _windowSystem;
+        private static CraftMenuWindowUI? _craftMenuWindowUi = null;
+        
         internal static string Search
         {
             get => search;
@@ -48,32 +46,40 @@ namespace Artisan
                 }
             }
         }
-        public RecipeWindowUI() : base($"###RecipeWindow", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoNavInputs | ImGuiWindowFlags.NoNavFocus | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoFocusOnAppearing)
+        
+        private RecipeWindowUI() : base("###RecipeWindow", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoNavInputs | ImGuiWindowFlags.NoNavFocus | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoFocusOnAppearing)
         {
-            this.Size = new Vector2(0, 0);
-            this.Position = new Vector2(0, 0);
+            Size = new Vector2(0, 0);
+            Position = new Vector2(0, 0);
             IsOpen = true;
             ShowCloseButton = false;
             RespectCloseHotkey = false;
             DisableWindowSounds = true;
-            this.SizeConstraints = new WindowSizeConstraints()
+            SizeConstraints = new WindowSizeConstraints()
             {
                 MaximumSize = new Vector2(0, 0),
             };
-            this.TitleBarButtons.Add(new()
-            {
-                Icon = FontAwesomeIcon.Cog,
-                ShowTooltip = () => ImGuiEx.SetTooltip("Open Config"),
-                Click = (x) => P.PluginUi.IsOpen = true,
-            });
         }
 
         public override void Draw()
         {
-            if (Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.BetweenAreas]) return;
+            if (Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.BetweenAreas])
+            {
+                HideCraftingMenuWindow(reset: true);
+            }
 
             if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] || Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
+            {
+                if (_craftMenuWindowUi != null)
+                {
+                    _craftMenuWindowUi.IsOpen = true;
+                }
                 DrawOptions();
+            }
+            else
+            {
+                HideCraftingMenuWindow(reset: true);
+            }
 
             DrawSearchReplace();
 
@@ -86,6 +92,12 @@ namespace Artisan
 
             DrawMacroOptions();
             DrawCosmicWindowOptions();
+        }
+
+        public static RecipeWindowUI Create(WindowSystem ws)
+        {
+            _windowSystem = ws;
+            return new();
         }
 
         private unsafe void DrawCosmicEnduranceCounter()
@@ -704,12 +716,33 @@ namespace Artisan
             }
         }
 
+        public override void OnClose()
+        {
+            HideCraftingMenuWindow(reset: true);
 
-        public unsafe static void DrawOptions()
+            base.OnClose();
+        }
+
+        public override void OnSafeToRemove()
+        {
+            if (_craftMenuWindowUi != null)
+            {
+                _windowSystem.RemoveWindow(_craftMenuWindowUi);
+                _craftMenuWindowUi = null;
+            }
+
+            base.OnSafeToRemove();
+        }
+
+
+        public static unsafe void DrawOptions()
         {
             var recipeWindow = Svc.GameGui.GetAddonByName("RecipeNote", 1);
             if (recipeWindow == IntPtr.Zero)
+            {
+                HideCraftingMenuWindow();
                 return;
+            }
 
             var addonPtr = (AtkUnitBase*)recipeWindow.Address;
             if (addonPtr == null)
@@ -727,40 +760,28 @@ namespace Artisan
                     if (!node->IsVisible())
                         return;
 
+                    ShowCraftMenuWindow($"###Options{node->NodeId}");
+
                     if (P.Config.LockMiniMenuR)
                     {
                         var position = AtkResNodeFunctions.GetNodePosition(node);
                         var scale = AtkResNodeFunctions.GetNodeScale(node);
                         var size = new Vector2(node->Width, node->Height) * scale;
-                        var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
+                       
                         //position += ImGuiHelpers.MainViewport.Pos;
-
-                        ImGuiHelpers.ForceNextWindowMainViewport();
-
+                        
                         if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
                         {
-                            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.Always);
+                            _craftMenuWindowUi.PositionCondition = ImGuiCond.Always;
+                            _craftMenuWindowUi.Position = (new Vector2(position.X + size.X + 7, position.Y + 7) + ImGuiHelpers.MainViewport.Pos);
                             AtkResNodeFunctions.ResetPosition = false;
                         }
                         else
                         {
-                            ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.FirstUseEver);
+                            _craftMenuWindowUi.PositionCondition = ImGuiCond.FirstUseEver;
+                            _craftMenuWindowUi.Position = (new Vector2(position.X + size.X + 7, position.Y + 7) + ImGuiHelpers.MainViewport.Pos);
                         }
                     }
-
-                    ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(7f, 7f));
-                    ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
-                    var flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding;
-                    if (P.Config.PinMiniMenu)
-                        flags |= ImGuiWindowFlags.NoMove;
-
-                    ImGui.Begin($"###Options{node->NodeId}", flags);
-
-
-                    DrawCopyOfCraftMenu();
-
-                    ImGui.End();
-                    ImGui.PopStyleVar(2);
                 }
             }
 
@@ -799,11 +820,14 @@ namespace Artisan
             }
         }
 
-        public unsafe static void DrawMacroOptions()
+        public static unsafe void DrawMacroOptions()
         {
             var recipeWindow = Svc.GameGui.GetAddonByName("RecipeNote", 1);
             if (recipeWindow == IntPtr.Zero)
+            {
+                HideCraftingMenuWindow();
                 return;
+            }
 
             var addonPtr = (AtkUnitBase*)recipeWindow.Address;
             if (addonPtr == null)
@@ -819,50 +843,33 @@ namespace Artisan
                 if (!node->IsVisible())
                     return;
 
-                var position = AtkResNodeFunctions.GetNodePosition(node);
-                var scale = AtkResNodeFunctions.GetNodeScale(node);
-                var size = new Vector2(node->Width, node->Height) * scale;
-                var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
+                ShowCraftMenuWindow($"###Options{node->NodeId}");
 
-                ImGuiHelpers.ForceNextWindowMainViewport();
-                if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
+                if (P.Config.LockMiniMenuR)
                 {
-                    ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.FirstUseEver);
-                    AtkResNodeFunctions.ResetPosition = false;
-                }
-                else
-                {
-                    ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.FirstUseEver);
-                }
+                    var position = AtkResNodeFunctions.GetNodePosition(node);
+                    var scale = AtkResNodeFunctions.GetNodeScale(node);
+                    var size = new Vector2(node->Width, node->Height) * scale;
 
-                //Svc.Log.Debug($"{position.X + node->Width + 7}");
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(7f, 7f));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
-                ImGui.Begin($"###Options{node->NodeId}", ImGuiWindowFlags.NoScrollbar
-                    | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding);
+                    //position += ImGuiHelpers.MainViewport.Pos;
 
-                ImGui.Spacing();
-
-                if (SimpleTweaks.IsFocusTweakEnabled())
-                {
-                    ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, $@"Warning: You have the ""Auto Focus Recipe Search"" SimpleTweak enabled. This is highly incompatible with Artisan and is recommended to disable it.");
-                }
-                if (Endurance.RecipeID != 0)
-                {
-                    var config = P.Config.RecipeConfigs.GetValueOrDefault(Endurance.RecipeID) ?? new();
-                    if (config.Draw(Endurance.RecipeID))
+                    if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
                     {
-                        P.Config.RecipeConfigs[Endurance.RecipeID] = config;
-                        P.Config.Save();
+                        _craftMenuWindowUi.PositionCondition = ImGuiCond.Always;
+                        _craftMenuWindowUi.Position = (new Vector2(position.X + size.X + 7, position.Y + 7) + ImGuiHelpers.MainViewport.Pos);
+                        AtkResNodeFunctions.ResetPosition = false;
+                    }
+                    else
+                    {
+                        _craftMenuWindowUi.PositionCondition = ImGuiCond.FirstUseEver;
+                        _craftMenuWindowUi.Position = (new Vector2(position.X + size.X + 7, position.Y + 7) + ImGuiHelpers.MainViewport.Pos);
                     }
                 }
-
-                ImGui.End();
-                ImGui.PopStyleVar(2);
+                
+                if (!_craftMenuWindowUi.EnableMacroOptions)
+                    _craftMenuWindowUi.EnableMacroOptions = true;
             }
         }
-
-        
 
         internal static unsafe void DrawEnduranceCounter()
         {
@@ -956,6 +963,46 @@ namespace Artisan
             ImGui.End();
             ImGui.PopStyleVar(5);
             ImGui.PopStyleColor();
+        }
+
+        private static void ShowCraftMenuWindow(string windowName)
+        {
+            if (_craftMenuWindowUi == null)
+            {
+                AddCraftMenuWindow(windowName);
+            }
+            else
+            {
+                _craftMenuWindowUi.IsOpen = true;
+            }
+        }
+
+        private static void AddCraftMenuWindow(string windowName)
+        {
+            var flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding;
+            if (P.Config.PinMiniMenu)
+                flags |= ImGuiWindowFlags.NoMove;
+
+            _craftMenuWindowUi = new CraftMenuWindowUI(windowName, flags);
+            _windowSystem.AddWindow(_craftMenuWindowUi);
+        }
+
+        private static void HideCraftingMenuWindow(bool reset = false)
+        {
+            if (_craftMenuWindowUi == null)
+            {
+                return;
+            }
+            
+            _craftMenuWindowUi.IsOpen = false;
+
+            if (!reset)
+            {
+                return;
+            }
+
+            _craftMenuWindowUi.EnableCosmicOptions = false;
+            _craftMenuWindowUi.EnableMacroOptions = false;
         }
     }
 }
