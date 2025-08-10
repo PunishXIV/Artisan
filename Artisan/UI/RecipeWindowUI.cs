@@ -975,6 +975,8 @@ namespace Artisan
         private static void AddCosmicCraftMenuWindow(string windowName)
         {
             var flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding;
+            if (P.Config.PinMiniMenu)
+                flags |= ImGuiWindowFlags.NoMove;
 
             _cosmicCraftMenuWindowUi = new CraftMenuWindowUI(windowName, flags);
             _windowSystem.AddWindow(_cosmicCraftMenuWindowUi);
