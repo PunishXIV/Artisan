@@ -2,10 +2,8 @@ using Artisan.Autocraft;
 using Artisan.CraftingLists;
 using Artisan.FCWorkshops;
 using Artisan.GameInterop;
-using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.UI;
-using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ECommons;
@@ -18,7 +16,6 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -33,7 +30,8 @@ namespace Artisan
         private static bool searched = false;
         private static WindowSystem _windowSystem;
         private static CraftMenuWindowUI? _craftMenuWindowUi = null;
-        
+        private static CraftMenuWindowUI? _cosmicCraftMenuWindowUi = null;
+
         internal static string Search
         {
             get => search;
@@ -66,19 +64,17 @@ namespace Artisan
             if (Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.BetweenAreas])
             {
                 HideCraftingMenuWindow(reset: true);
+                HideCosmicCraftingMenuWindow(reset: true);
             }
 
             if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] || Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
             {
-                if (_craftMenuWindowUi != null)
-                {
-                    _craftMenuWindowUi.IsOpen = true;
-                }
                 DrawOptions();
             }
             else
             {
                 HideCraftingMenuWindow(reset: true);
+                HideCosmicCraftingMenuWindow(reset: true);
             }
 
             DrawSearchReplace();
@@ -142,7 +138,10 @@ namespace Artisan
         {
             var recipeWindow = Svc.GameGui.GetAddonByName("WKSRecipeNotebook", 1);
             if (recipeWindow == IntPtr.Zero)
+            {
+                HideCosmicCraftingMenuWindow();
                 return;
+            }
 
             var addonPtr = (AtkUnitBase*)recipeWindow.Address;
             if (addonPtr == null)
@@ -158,48 +157,31 @@ namespace Artisan
                 if (!node->IsVisible())
                     return;
 
-                var position = AtkResNodeFunctions.GetNodePosition(node);
-                var scale = AtkResNodeFunctions.GetNodeScale(node);
-                var size = new Vector2(node->Width, node->Height) * scale;
-                var center = new Vector2((position.X + size.X) / 2, (position.Y - size.Y) / 2);
+                ShowCosmicCraftMenuWindow($"###CosmicOptions{node->NodeId}");
 
-                ImGuiHelpers.ForceNextWindowMainViewport();
-                if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
+                if (P.Config.LockMiniMenuR)
                 {
-                    ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.Always);
-                    AtkResNodeFunctions.ResetPosition = false;
-                }
-                else
-                {
-                    ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + size.X + 7, position.Y + 7), ImGuiCond.FirstUseEver);
-                }
+                    var position = AtkResNodeFunctions.GetNodePosition(node);
+                    var scale = AtkResNodeFunctions.GetNodeScale(node);
+                    var size = new Vector2(node->Width, node->Height) * scale;
 
-                //Svc.Log.Debug($"{position.X + node->Width + 7}");
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(7f, 7f));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
-                ImGui.Begin($"###CosmicOptions{node->NodeId}", ImGuiWindowFlags.NoScrollbar
-                    | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding);
+                    //position += ImGuiHelpers.MainViewport.Pos;
 
-                ImGui.Spacing();
-
-                DrawCopyOfCraftMenu();
-                if (SimpleTweaks.IsFocusTweakEnabled())
-                {
-                    ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, $@"Warning: You have the ""Auto Focus Recipe Search"" SimpleTweak enabled. This is highly incompatible with Artisan and is recommended to disable it.");
-                }
-                if (Endurance.RecipeID != 0)
-                {
-                    var config = P.Config.RecipeConfigs.GetValueOrDefault(Endurance.RecipeID) ?? new();
-                    if (config.Draw(Endurance.RecipeID))
+                    if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
                     {
-                        Svc.Log.Debug($"Updating config for {Endurance.RecipeID}");
-                        P.Config.RecipeConfigs[Endurance.RecipeID] = config;
-                        P.Config.Save();
+                        _cosmicCraftMenuWindowUi.PositionCondition = ImGuiCond.Always;
+                        _cosmicCraftMenuWindowUi.Position = (new Vector2(position.X + size.X + 7, position.Y + 7) + ImGuiHelpers.MainViewport.Pos);
+                        AtkResNodeFunctions.ResetPosition = false;
+                    }
+                    else
+                    {
+                        _cosmicCraftMenuWindowUi.PositionCondition = ImGuiCond.FirstUseEver;
+                        _cosmicCraftMenuWindowUi.Position = (new Vector2(position.X + size.X + 7, position.Y + 7) + ImGuiHelpers.MainViewport.Pos);
                     }
                 }
 
-                ImGui.End();
-                ImGui.PopStyleVar(2);
+                if (!_cosmicCraftMenuWindowUi.EnableMacroOptions)
+                    _cosmicCraftMenuWindowUi.EnableMacroOptions = true;
             }
         }
 
@@ -719,6 +701,7 @@ namespace Artisan
         public override void OnClose()
         {
             HideCraftingMenuWindow(reset: true);
+            HideCosmicCraftingMenuWindow(reset: true);
 
             base.OnClose();
         }
@@ -729,6 +712,12 @@ namespace Artisan
             {
                 _windowSystem.RemoveWindow(_craftMenuWindowUi);
                 _craftMenuWindowUi = null;
+            }
+
+            if (_cosmicCraftMenuWindowUi != null)
+            {
+                _windowSystem.RemoveWindow(_cosmicCraftMenuWindowUi);
+                _cosmicCraftMenuWindowUi = null;
             }
 
             base.OnSafeToRemove();
@@ -785,39 +774,6 @@ namespace Artisan
                 }
             }
 
-        }
-
-        private static void DrawCopyOfCraftMenu()
-        {
-            bool autoMode = P.Config.AutoMode;
-
-            if (ImGui.Checkbox("Automatic Action Execution Mode", ref autoMode))
-            {
-                P.Config.AutoMode = autoMode;
-                P.Config.Save();
-            }
-            bool enable = Endurance.Enable;
-
-            if (!CraftingListFunctions.HasItemsForRecipe(Endurance.RecipeID) && !Endurance.Enable)
-                ImGui.BeginDisabled();
-
-            if (ImGui.Checkbox("Endurance Mode Toggle", ref enable))
-            {
-                Endurance.ToggleEndurance(enable);
-            }
-
-            if (!CraftingListFunctions.HasItemsForRecipe(Endurance.RecipeID) && !Endurance.Enable)
-            {
-                ImGui.EndDisabled();
-
-                if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-                {
-                    var recipe = LuminaSheets.RecipeSheet!.First(x => x.Key == Endurance.RecipeID).Value;
-                    ImGui.BeginTooltip();
-                    ImGui.Text($"You cannot start Endurance as you do not possess ingredients to craft this recipe.\r\nMissing: {string.Join(", ", PreCrafting.MissingIngredients(recipe))}");
-                    ImGui.EndTooltip();
-                }
-            }
         }
 
         public static unsafe void DrawMacroOptions()
@@ -1001,8 +957,44 @@ namespace Artisan
                 return;
             }
 
-            _craftMenuWindowUi.EnableCosmicOptions = false;
             _craftMenuWindowUi.EnableMacroOptions = false;
+        }
+
+        private static void ShowCosmicCraftMenuWindow(string windowName)
+        {
+            if (_cosmicCraftMenuWindowUi == null)
+            {
+                AddCosmicCraftMenuWindow(windowName);
+            }
+            else
+            {
+                _cosmicCraftMenuWindowUi.IsOpen = true;
+            }
+        }
+
+        private static void AddCosmicCraftMenuWindow(string windowName)
+        {
+            var flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.AlwaysUseWindowPadding;
+
+            _cosmicCraftMenuWindowUi = new CraftMenuWindowUI(windowName, flags);
+            _windowSystem.AddWindow(_cosmicCraftMenuWindowUi);
+        }
+
+        private static void HideCosmicCraftingMenuWindow(bool reset = false)
+        {
+            if (_cosmicCraftMenuWindowUi == null)
+            {
+                return;
+            }
+
+            _cosmicCraftMenuWindowUi.IsOpen = false;
+
+            if (!reset)
+            {
+                return;
+            }
+
+            _cosmicCraftMenuWindowUi.EnableMacroOptions = false;
         }
     }
 }

@@ -17,8 +17,6 @@ namespace Artisan.UI
     {
         public bool EnableMacroOptions { get; set; }
         
-        public bool EnableCosmicOptions { get; set; }
-        
         public CraftMenuWindowUI(string windowName, ImGuiWindowFlags flags) : base(windowName, flags, true)
         {
             IsOpen = true;
