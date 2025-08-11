@@ -799,7 +799,7 @@ namespace Artisan
                 else
                 {
                     _craftMenuWindowUi.PositionCondition = ImGuiCond.FirstUseEver;
-                    _craftMenuWindowUi.Position = (new Vector2(position.X + size.X + 7, position.Y + 7) + ImGuiHelpers.MainViewport.Pos);
+                    _craftMenuWindowUi.Position = new Vector2(position.X + size.X + 7, position.Y + 7);
                 }
 
                 if (!_craftMenuWindowUi.EnableMacroOptions)
