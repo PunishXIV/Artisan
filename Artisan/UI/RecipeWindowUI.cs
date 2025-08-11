@@ -163,6 +163,7 @@ namespace Artisan
                 {
                     if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
                     {
+                        _cosmicCraftMenuWindowUi.ForceMainWindow = true;
                         _cosmicCraftMenuWindowUi.PositionCondition = ImGuiCond.Always;
                         _cosmicCraftMenuWindowUi.Position = new Vector2(position.X + size.X + 7, position.Y + 7);
                         AtkResNodeFunctions.ResetPosition = false;
@@ -170,6 +171,7 @@ namespace Artisan
                 }
                 else
                 {
+                    _cosmicCraftMenuWindowUi.ForceMainWindow = false;
                     _cosmicCraftMenuWindowUi.PositionCondition = ImGuiCond.FirstUseEver;
                     _cosmicCraftMenuWindowUi.Position = new Vector2(position.X + size.X + 7, position.Y + 7);
                 }
@@ -746,6 +748,7 @@ namespace Artisan
                     {
                         if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
                         {
+                            _craftMenuWindowUi.ForceMainWindow = true;
                             _craftMenuWindowUi.PositionCondition = ImGuiCond.Always;
                             _craftMenuWindowUi.Position = new Vector2(position.X + size.X + 7, position.Y + 7);
                             AtkResNodeFunctions.ResetPosition = false;
@@ -753,6 +756,7 @@ namespace Artisan
                     }
                     else
                     {
+                        _craftMenuWindowUi.ForceMainWindow = false;
                         _craftMenuWindowUi.PositionCondition = ImGuiCond.FirstUseEver;
                         _craftMenuWindowUi.Position = new Vector2(position.X + size.X + 7, position.Y + 7);
                     }
@@ -791,6 +795,7 @@ namespace Artisan
                 {
                     if ((AtkResNodeFunctions.ResetPosition && position.X != 0) || P.Config.LockMiniMenuR)
                     {
+                        _craftMenuWindowUi.ForceMainWindow = true;
                         _craftMenuWindowUi.PositionCondition = ImGuiCond.Always;
                         _craftMenuWindowUi.Position = new Vector2(position.X + size.X + 7, position.Y + 7);
                         AtkResNodeFunctions.ResetPosition = false;
@@ -798,8 +803,9 @@ namespace Artisan
                 }
                 else
                 {
+                    _craftMenuWindowUi.ForceMainWindow = false;
                     _craftMenuWindowUi.PositionCondition = ImGuiCond.FirstUseEver;
-                    _craftMenuWindowUi.Position = (new Vector2(position.X + size.X + 7, position.Y + 7) + ImGuiHelpers.MainViewport.Pos);
+                    _craftMenuWindowUi.Position = new Vector2(position.X + size.X + 7, position.Y + 7);
                 }
 
                 if (!_craftMenuWindowUi.EnableMacroOptions)
