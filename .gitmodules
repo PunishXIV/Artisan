@@ -3,7 +3,7 @@
 	url = https://github.com/PunishXIV/PunishLib.git
 [submodule "OtterGui"]
 	path = OtterGui
-	url = https://github.com/Ottermandias/OtterGui.git
+	url = https://github.com/Limiana/OtterGui
 [submodule "raphael-rs"]
 	path = raphael-rs
 	url = https://github.com/Taurenkey/raphael-rs.git
