@@ -153,7 +153,7 @@ namespace Artisan
                 if (!node->IsVisible())
                     return;
 
-                ShowCosmicCraftMenuWindow($"###CosmicOptions{node->NodeId}");
+                ShowCosmicCraftMenuWindow();
 
                 var position = AtkResNodeFunctions.GetNodePosition(node);
                 var scale = AtkResNodeFunctions.GetNodeScale(node);
@@ -698,24 +698,6 @@ namespace Artisan
             base.OnClose();
         }
 
-        public override void OnSafeToRemove()
-        {
-            if (_craftMenuWindowUi != null)
-            {
-                _windowSystem.RemoveWindow(_craftMenuWindowUi);
-                _craftMenuWindowUi = null;
-            }
-
-            if (_cosmicCraftMenuWindowUi != null)
-            {
-                _windowSystem.RemoveWindow(_cosmicCraftMenuWindowUi);
-                _cosmicCraftMenuWindowUi = null;
-            }
-
-            base.OnSafeToRemove();
-        }
-
-
         public static unsafe void DrawOptions()
         {
             var recipeWindow = Svc.GameGui.GetAddonByName("RecipeNote", 1);
@@ -738,7 +720,7 @@ namespace Artisan
                     if (!node->IsVisible())
                         return;
 
-                    ShowCraftMenuWindow($"###Options{node->NodeId}");
+                    ShowCraftMenuWindow();
 
                     var position = AtkResNodeFunctions.GetNodePosition(node);
                     var scale = AtkResNodeFunctions.GetNodeScale(node);
@@ -785,7 +767,7 @@ namespace Artisan
                 if (!node->IsVisible())
                     return;
 
-                ShowCraftMenuWindow($"###Options{node->NodeId}");
+                ShowCraftMenuWindow();
 
                 var position = AtkResNodeFunctions.GetNodePosition(node);
                 var scale = AtkResNodeFunctions.GetNodeScale(node);
@@ -798,8 +780,9 @@ namespace Artisan
                         _craftMenuWindowUi.ForceMainWindow = true;
                         _craftMenuWindowUi.PositionCondition = ImGuiCond.Always;
                         _craftMenuWindowUi.Position = new Vector2(position.X + size.X + 7, position.Y + 7);
-                        AtkResNodeFunctions.ResetPosition = false;
                     }
+
+                    AtkResNodeFunctions.ResetPosition = false;
                 }
                 else
                 {
@@ -906,20 +889,13 @@ namespace Artisan
             ImGui.PopStyleColor();
         }
 
-        private static void ShowCraftMenuWindow(string windowName)
+        private static void ShowCraftMenuWindow()
         {
-            if (_craftMenuWindowUi == null)
-            {
-                AddCraftMenuWindow(windowName);
-            }
-            else
-            {
-                _craftMenuWindowUi.Flags = GetWindowFlags();
-                _craftMenuWindowUi.IsOpen = true;
-            }
+            _craftMenuWindowUi.Flags = GetWindowFlags();
+            _craftMenuWindowUi.IsOpen = true;
         }
 
-        private static void AddCraftMenuWindow(string windowName)
+        public static void AddCraftMenuWindow(string windowName)
         {
             _craftMenuWindowUi = new CraftMenuWindowUI(windowName, GetWindowFlags());
             _windowSystem.AddWindow(_craftMenuWindowUi);
@@ -942,20 +918,13 @@ namespace Artisan
             _craftMenuWindowUi.EnableMacroOptions = false;
         }
 
-        private static void ShowCosmicCraftMenuWindow(string windowName)
+        private static void ShowCosmicCraftMenuWindow()
         {
-            if (_cosmicCraftMenuWindowUi == null)
-            {
-                AddCosmicCraftMenuWindow(windowName);
-            }
-            else
-            {
-                _cosmicCraftMenuWindowUi.Flags = GetWindowFlags();
-                _cosmicCraftMenuWindowUi.IsOpen = true;
-            }
+            _cosmicCraftMenuWindowUi.Flags = GetWindowFlags();
+            _cosmicCraftMenuWindowUi.IsOpen = true;
         }
 
-        private static void AddCosmicCraftMenuWindow(string windowName)
+        public static void AddCosmicCraftMenuWindow(string windowName)
         {
             _cosmicCraftMenuWindowUi = new CraftMenuWindowUI(windowName, GetWindowFlags());
             _windowSystem.AddWindow(_cosmicCraftMenuWindowUi);

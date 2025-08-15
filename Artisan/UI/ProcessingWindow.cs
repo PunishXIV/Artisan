@@ -1,4 +1,4 @@
-﻿using Artisan.CraftingLists;
+using Artisan.CraftingLists;
 using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Dalamud.Interface.Windowing;
@@ -20,10 +20,7 @@ namespace Artisan.UI
 
         public override bool DrawConditions()
         {
-            if (CraftingListUI.Processing)
-                return true;
-
-            return false;
+            return CraftingListUI.Processing;
         }
 
         public override void PreDraw()
