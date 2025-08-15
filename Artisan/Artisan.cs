@@ -96,7 +96,9 @@ public unsafe class Artisan : IDalamudPlugin
         UniversalsisClient = new();
 
         EnduranceCraftWatcher.Setup();
-        ws.AddWindow(RecipeWindowUI.Create(ws));
+        ws.AddWindow(RecipeWindowUI.Create());
+        ws.AddWindow(RecipeWindowUI.AddCraftMenuWindow());
+        ws.AddWindow(RecipeWindowUI.AddCosmicCraftMenuWindow());
         ws.AddWindow(new ProcessingWindow());
         ws.AddWindow(new QuestHelper());
         cw = new();
