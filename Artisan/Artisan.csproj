@@ -1,170 +1,170 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <Authors></Authors>
-    <Company></Company>
-    <Version>4.0.3.55</Version>
-    <Description>A 'simple' crafting plugin.</Description>
-    <Copyright>Taurenkey</Copyright>
-  </PropertyGroup>
+    <PropertyGroup>
+        <Authors></Authors>
+        <Company></Company>
+        <Version>4.0.3.54</Version>
+        <Description>A 'simple' crafting plugin.</Description>
+        <Copyright>Taurenkey</Copyright>
+    </PropertyGroup>
 
-	<PropertyGroup>
-		<AssemblyName>Artisan</AssemblyName>
-		<RootNamespace>Artisan</RootNamespace>
-		<PackageId>Artisan</PackageId>
-		<Product>Artisan</Product>
-		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <PropertyGroup>
+        <AssemblyName>Artisan</AssemblyName>
+        <RootNamespace>Artisan</RootNamespace>
+        <PackageId>Artisan</PackageId>
+        <Product>Artisan</Product>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
         <EnableWindowsTargeting>true</EnableWindowsTargeting>
         <UseWindowsForms>false</UseWindowsForms>
-	</PropertyGroup>
+    </PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
-		<TargetFramework>net9.0-windows7.0</TargetFramework>
-		<Platforms>x64</Platforms>
-		<Nullable>enable</Nullable>
-		<LangVersion>preview</LangVersion>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-		<OutputPath>bin/Release</OutputPath>
-		<NoWarn>CS1591</NoWarn>
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <TargetFramework>net9.0-windows7.0</TargetFramework>
+        <Platforms>x64</Platforms>
+        <Nullable>enable</Nullable>
+        <LangVersion>preview</LangVersion>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <OutputPath>bin/Release</OutputPath>
+        <NoWarn>CS1591</NoWarn>
         <EnableWindowsTargeting>true</EnableWindowsTargeting>
         <UseWindowsForms>false</UseWindowsForms>
-	</PropertyGroup>
+    </PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-		<TargetFramework>net9.0-windows7.0</TargetFramework>
-		<Platforms>x64</Platforms>
-		<Nullable>enable</Nullable>
-		<LangVersion>preview</LangVersion>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-		<OutputPath>$(DalamudDevPlugins)</OutputPath>
-		<NoWarn>CS1591</NoWarn>
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <TargetFramework>net9.0-windows7.0</TargetFramework>
+        <Platforms>x64</Platforms>
+        <Nullable>enable</Nullable>
+        <LangVersion>preview</LangVersion>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <OutputPath>$(DalamudDevPlugins)</OutputPath>
+        <NoWarn>CS1591</NoWarn>
         <EnableWindowsTargeting>false</EnableWindowsTargeting>
         <UseWindowsForms>false</UseWindowsForms>
-	</PropertyGroup>
-	
-  <PropertyGroup>
-      <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
-      <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('Linux'))">$(HOME)/.xlcore/dalamud/Hooks/dev/</DalamudLibPath>
-      <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/Library/Application Support/XIV on Mac/dalamud/Hooks/dev/</DalamudLibPath>
-      <DalamudLibPath Condition="$(DALAMUD_HOME) != ''">$(DALAMUD_HOME)/</DalamudLibPath>
-  </PropertyGroup>
-	
-  <ItemGroup>
-    <None Include="..\.editorconfig" Link=".editorconfig" />
-    <None Update="bcryptprimitives.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\artisan-icon.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Artisan.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\artisan.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\AutoMode.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\EnduranceNewSetting.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Icon.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\MacroStartError.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\OutlineExample.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\RecipeWindowExample.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\ThemeCraftingWindowExample.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="raphael-cli.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Sounds\Time Up.mp3">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+    </PropertyGroup>
 
-  <ItemGroup>
-      
-    <KnownFrameworkReference Condition="$([MSBuild]::IsOSPlatform('Linux'))" Update="Microsoft.WindowsDesktop.App" IsWindowsOnly="false" />
-    <KnownFrameworkReference Condition="$([MSBuild]::IsOSPlatform('Linux'))" Update="Microsoft.WindowsDesktop.App.WPF" IsWindowsOnly="false" />
-    <KnownFrameworkReference Condition="$([MSBuild]::IsOSPlatform('Linux'))" Update="Microsoft.WindowsDesktop.App.WindowsForms" IsWindowsOnly="false" />
-    <PackageReference Include="Discord.Net.Webhook" Version="3.15.3" />
-    <PackageReference Include="ECommons" Version="3.0.1.7" />
-    <PackageReference Include="FuzzySharp" Version="2.0.2" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.10.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" />
-    <PackageReference Include="NAudio" Version="2.2.1" />
-    <PackageReference Include="OpenTK" Version="4.9.4" />
-    <PackageReference Include="Reloaded.Memory" Version="9.4.2" />
-    <PackageReference Include="SharpDX.Direct2D1" Version="4.2.0" />
-    <ProjectReference Include="..\OtterGui\OtterGui.csproj" />
-    <ProjectReference Include="..\PunishLib\PunishLib\PunishLib.csproj" />
-  </ItemGroup>
+    <PropertyGroup>
+        <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
+        <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('Linux'))">$(HOME)/.xlcore/dalamud/Hooks/dev/</DalamudLibPath>
+        <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/Library/Application Support/XIV on Mac/dalamud/Hooks/dev/</DalamudLibPath>
+        <DalamudLibPath Condition="$(DALAMUD_HOME) != ''">$(DALAMUD_HOME)/</DalamudLibPath>
+    </PropertyGroup>
 
-  <ItemGroup>
-      <Reference Include="Newtonsoft.Json">
-          <HintPath>$(DalamudLibPath)Newtonsoft.Json.dll</HintPath>
-          <Private>false</Private>
-      </Reference>
-      <Reference Include="Dalamud">
-          <HintPath>$(DalamudLibPath)Dalamud.dll</HintPath>
-          <Private>false</Private>
-      </Reference>
-      <Reference Include="FFXIVClientStructs">
-          <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
-          <Private>false</Private>
-      </Reference>
-      <Reference Include="Dalamud.Bindings.ImGui">
-          <HintPath>$(DalamudLibPath)Dalamud.Bindings.ImGui.dll</HintPath>
-          <Private>False</Private>
-      </Reference>
-      <Reference Include="Dalamud.Bindings.ImPlot">
-          <HintPath>$(DalamudLibPath)Dalamud.Bindings.ImPlot.dll</HintPath>
-          <Private>False</Private>
-      </Reference>
-      <Reference Include="Dalamud.Bindings.ImGuizmo">
-          <HintPath>$(DalamudLibPath)Dalamud.Bindings.ImGuizmo.dll</HintPath>
-          <Private>False</Private>
-      </Reference>
-      <Reference Include="TerraFX.Interop.Windows">
-          <HintPath>$(DalamudLibPath)TerraFX.Interop.Windows.dll</HintPath>
-          <Private>False</Private>
-      </Reference>
-      <Reference Include="ImGuiScene">
-          <HintPath>$(DalamudLibPath)ImGuiScene.dll</HintPath>
-          <Private>false</Private>
-      </Reference>
-      <Reference Include="Lumina">
-          <HintPath>$(DalamudLibPath)Lumina.dll</HintPath>
-          <Private>false</Private>
-      </Reference>
-      <Reference Include="Lumina.Excel">
-          <HintPath>$(DalamudLibPath)Lumina.Excel.dll</HintPath>
-          <Private>false</Private>
-      </Reference>
-      <Reference Include="Dalamud.Common">
-          <HintPath>$(DalamudLibPath)Dalamud.Common.dll</HintPath>
-          <Private>False</Private>
-      </Reference>
-      <Reference Include="InteropGenerator.Runtime">
-          <HintPath>$(DalamudLibPath)InteropGenerator.Runtime.dll</HintPath>
-          <Private>False</Private>
-      </Reference>
-  </ItemGroup>
+    <ItemGroup>
+        <None Include="..\.editorconfig" Link=".editorconfig" />
+        <None Update="bcryptprimitives.dll">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\artisan-icon.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Artisan.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\artisan.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\AutoMode.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\EnduranceNewSetting.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Icon.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\MacroStartError.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\OutlineExample.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\RecipeWindowExample.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\ThemeCraftingWindowExample.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="raphael-cli.exe">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Sounds\Time Up.mp3">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+
+        <KnownFrameworkReference Condition="$([MSBuild]::IsOSPlatform('Linux'))" Update="Microsoft.WindowsDesktop.App" IsWindowsOnly="false" />
+        <KnownFrameworkReference Condition="$([MSBuild]::IsOSPlatform('Linux'))" Update="Microsoft.WindowsDesktop.App.WPF" IsWindowsOnly="false" />
+        <KnownFrameworkReference Condition="$([MSBuild]::IsOSPlatform('Linux'))" Update="Microsoft.WindowsDesktop.App.WindowsForms" IsWindowsOnly="false" />
+        <PackageReference Include="Discord.Net.Webhook" Version="3.15.3" />
+        <PackageReference Include="ECommons" Version="3.0.1.7" />
+        <PackageReference Include="FuzzySharp" Version="2.0.2" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.10.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" />
+        <PackageReference Include="NAudio" Version="2.2.1" />
+        <PackageReference Include="OpenTK" Version="4.9.4" />
+        <PackageReference Include="Reloaded.Memory" Version="9.4.2" />
+        <PackageReference Include="SharpDX.Direct2D1" Version="4.2.0" />
+        <ProjectReference Include="..\OtterGui\OtterGui.csproj" />
+        <ProjectReference Include="..\PunishLib\PunishLib\PunishLib.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="Newtonsoft.Json">
+            <HintPath>$(DalamudLibPath)Newtonsoft.Json.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="Dalamud">
+            <HintPath>$(DalamudLibPath)Dalamud.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="FFXIVClientStructs">
+            <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="Dalamud.Bindings.ImGui">
+            <HintPath>$(DalamudLibPath)Dalamud.Bindings.ImGui.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Dalamud.Bindings.ImPlot">
+            <HintPath>$(DalamudLibPath)Dalamud.Bindings.ImPlot.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Dalamud.Bindings.ImGuizmo">
+            <HintPath>$(DalamudLibPath)Dalamud.Bindings.ImGuizmo.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="TerraFX.Interop.Windows">
+            <HintPath>$(DalamudLibPath)TerraFX.Interop.Windows.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="ImGuiScene">
+            <HintPath>$(DalamudLibPath)ImGuiScene.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="Lumina">
+            <HintPath>$(DalamudLibPath)Lumina.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="Lumina.Excel">
+            <HintPath>$(DalamudLibPath)Lumina.Excel.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="Dalamud.Common">
+            <HintPath>$(DalamudLibPath)Dalamud.Common.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="InteropGenerator.Runtime">
+            <HintPath>$(DalamudLibPath)InteropGenerator.Runtime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
 
 </Project>
