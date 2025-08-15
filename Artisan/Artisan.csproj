@@ -103,6 +103,7 @@
         <KnownFrameworkReference Condition="$([MSBuild]::IsOSPlatform('Linux'))" Update="Microsoft.WindowsDesktop.App" IsWindowsOnly="false" />
         <KnownFrameworkReference Condition="$([MSBuild]::IsOSPlatform('Linux'))" Update="Microsoft.WindowsDesktop.App.WPF" IsWindowsOnly="false" />
         <KnownFrameworkReference Condition="$([MSBuild]::IsOSPlatform('Linux'))" Update="Microsoft.WindowsDesktop.App.WindowsForms" IsWindowsOnly="false" />
+        <PackageReference Include="DalamudPackager" Version="13.0.0" />
         <PackageReference Include="Discord.Net.Webhook" Version="3.15.3" />
         <PackageReference Include="ECommons" Version="3.0.1.7" />
         <PackageReference Include="FuzzySharp" Version="2.0.2" />
