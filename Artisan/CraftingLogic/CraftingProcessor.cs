@@ -161,7 +161,7 @@ public static class CraftingProcessor
             Svc.Log.Warning($"Previous action was different from recommendation: recommended {_nextRec.Action}, used {step.PrevComboAction}");
 
         _nextRec = _activeSolver.Solve(craft, step);
-        Svc.Log.Debug($"Next rec is: {_nextRec.Action}");
+        Svc.Log.Debug($"Next rec is: {_nextRec.Action} on {_nextRec.Comment}");
         if (Simulator.CannotUseAction(craft, step, _nextRec.Action, out string reason))
             DuoLog.Error($"Unable to use {_nextRec.Action.NameOfAction()}: {reason}");
         if (_nextRec.Action != Skills.None)
