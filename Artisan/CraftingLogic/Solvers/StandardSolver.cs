@@ -156,7 +156,7 @@ namespace Artisan.CraftingLogic.Solvers
             if (step.MaterialMiracleActive)
                 return fallbackRec;
 
-            if (P.Config.UseMaterialMiracle && !_materialMiracleUsed && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
+            if (P.Config.UseMaterialMiracle && step.Index >= P.Config.MinimumStepsBeforeMiracle && !_materialMiracleUsed && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
                 return new(Skills.MaterialMiracle);
 
             bool inCombo = (step.PrevComboAction == Skills.BasicTouch && Simulator.CanUseAction(craft, step, Skills.StandardTouch)) || (step.PrevComboAction == Skills.StandardTouch && Simulator.CanUseAction(craft, step, Skills.AdvancedTouch));
@@ -209,7 +209,7 @@ namespace Artisan.CraftingLogic.Solvers
                 if (Simulator.CanUseAction(craft, step, Skills.BasicTouch) && CalculateNewQuality(craft, step, Skills.BasicTouch) >= craft.CraftQualityMax && step.Index == 1)
                     return new(Skills.BasicTouch);
 
-                if (Simulator.CanUseAction(craft, step, Skills.Manipulation) && step.ManipulationLeft == 0 && !_manipulationUsed) return new(Skills.Manipulation);
+                if (Simulator.CanUseAction(craft, step, Skills.Manipulation) && step.ManipulationLeft == 0 /*&& !_manipulationUsed*/) return new(Skills.Manipulation);
 
                 if (step.Progress < craft.CraftProgress - 1 && (!_qualityStarted || !Simulator.CanUseAction(craft, step, Skills.FinalAppraisal)))
                 {

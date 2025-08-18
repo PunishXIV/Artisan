@@ -86,7 +86,7 @@ public class ExpertSolver : Solver
         if (step.MuscleMemoryLeft > 0) // mume still active - means we have very little progress and want more progress asap
             return new(SafeCraftAction(craft, step, SolveOpenerMuMe(cfg, craft, step)), "mume");
 
-        if (cfg.UseMaterialMiracle && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
+        if (cfg.UseMaterialMiracle && step.Index >= cfg.MinimumStepsBeforeMiracle && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
             return new(Skills.MaterialMiracle);
 
         // see if we can do byregot right now and top up quality

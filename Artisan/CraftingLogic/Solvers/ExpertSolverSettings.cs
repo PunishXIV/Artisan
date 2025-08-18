@@ -47,6 +47,7 @@ public class ExpertSolverSettings
     public bool EmergencyCPBaitGood = false; // if true, we allow spending careful observations to try baiting good for tricks when we really lack cp
 	public bool RapidSynthYoloAllowed = true; // if false, expert crafting may lock up midway, so not good for AFK crafting. This yolo however is likely to fail the craft, so disabling gives opportunity for intervention
     public bool UseMaterialMiracle = false;
+	public int MinimumStepsBeforeMiracle = 10;
 
     [NonSerialized]
     public IDalamudTextureWrap? expertIcon;
@@ -116,7 +117,9 @@ public class ExpertSolverSettings
         ImGuiComponents.HelpMarker("This will try to maximise quality to earn more Skyward points.");
         changed |= ImGui.Checkbox($"Finisher: use {Skills.CarefulObservation.NameOfAction()} to try baiting {Condition.Good.ToLocalizedString()} {ConditionString} for {Skills.ByregotsBlessing.NameOfAction()}", ref FinisherBaitGoodByregot);
         changed |= ImGui.Checkbox($"Emergency: use {Skills.CarefulObservation.NameOfAction()} to try baiting {Condition.Good.ToLocalizedString()} {ConditionString} for {Skills.TricksOfTrade.NameOfAction()} if really low on CP", ref EmergencyCPBaitGood);
-        changed |= ImGui.Checkbox($"Use Material Miracle in Cosmic Exploration", ref UseMaterialMiracle);
+        changed |= ImGui.Checkbox($"Use {Skills.MaterialMiracle.NameOfAction()} in Cosmic Exploration", ref UseMaterialMiracle);
+		ImGui.PushItemWidth(250);
+		changed |= ImGui.SliderInt($"Minimum steps to execute before trying {Skills.MaterialMiracle.NameOfAction()}###MinimumStepsBeforeMiracle", ref MinimumStepsBeforeMiracle, 0, 20);
         if (ImGuiEx.ButtonCtrl("Reset Expert Solver Settings To Default"))
         {
             P.Config.ExpertSolverConfig = new();

@@ -36,7 +36,8 @@ namespace Artisan
         public int MaxIQPrepTouch = 10;
         public bool UseMaterialMiracle = false;
         public bool MaterialMiracleMulti;
-        public bool LowStatsMode = false;
+		public int MinimumStepsBeforeMiracle = 10;
+		public bool LowStatsMode = false;
         public bool UseTricksExcellent = false;
         public bool UseSpecialist = false;
         public bool ShowEHQ = true;
