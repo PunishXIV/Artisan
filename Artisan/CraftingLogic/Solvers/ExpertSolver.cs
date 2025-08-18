@@ -537,7 +537,7 @@ public class ExpertSolver : Solver
             if (step.ManipulationLeft > 0 && CU(craft, step, Skills.Observe))
                 return Skills.Observe; // just regen a bit...
             // TODO: consider careful observation to bait pliant - this sounds much worse than using them to try baiting good byregot
-            if (cfg.MidBaitPliantWithObservePreQuality && craft.ConditionFlags.HasFlag(ConditionFlags.Pliant) && CU(craft, step, Skills.Observe))
+            if (cfg.MidBaitPliantWithObservePreQuality && craft.ConditionFlags.HasFlag(ConditionFlags.Pliant) && CU(craft, step, Skills.Observe) && step.RemainingCP > Skills.Observe.StandardCPCost() + Skills.Manipulation.StandardCPCost() / 2)
                 return Skills.Observe; // try baiting pliant - this will save us 48cp at the cost of ~7+24cp
             if (step.Durability <= criticalDurabilityThreshold && CU(craft, step, Skills.Manipulation))
                 return Skills.Manipulation; // bait the bullet and manip on normal
