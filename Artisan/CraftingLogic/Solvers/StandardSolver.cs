@@ -48,6 +48,7 @@ namespace Artisan.CraftingLogic.Solvers
                 if (rec.Action != Skills.MaterialMiracle)
                 {
                     if (step.Durability <= 10 && Simulator.CanUseAction(craft, step, Skills.MastersMend)) rec.Action = Skills.MastersMend;
+                    if (step.Durability <= 10 && Simulator.CanUseAction(craft, step, Skills.Manipulation) && step.ManipulationLeft <= 1) rec.Action = Skills.Manipulation;
                     if (step.Durability <= 10 && Simulator.CanUseAction(craft, step, Skills.ImmaculateMend) && craft.CraftDurability >= 70) rec.Action = Skills.ImmaculateMend;
                 }
             }
@@ -55,7 +56,8 @@ namespace Artisan.CraftingLogic.Solvers
             {
                 var stepClone = rec.Action;
                 if (WillActFail(craft, step, stepClone) && Simulator.CanUseAction(craft, step, Skills.MastersMend)) rec.Action = Skills.MastersMend;
-                if (WillActFail(craft, step, stepClone) && Simulator.CanUseAction(craft, step, Skills.ImmaculateMend) && craft.CraftDurability >= 70) rec.Action = Skills.ImmaculateMend;
+                if (WillActFail(craft, step, stepClone) && Simulator.CanUseAction(craft, step, Skills.Manipulation) && step.ManipulationLeft <= 1) rec.Action = Skills.Manipulation;
+				if (WillActFail(craft, step, stepClone) && Simulator.CanUseAction(craft, step, Skills.ImmaculateMend) && craft.CraftDurability >= 70) rec.Action = Skills.ImmaculateMend;
 
             }
 
