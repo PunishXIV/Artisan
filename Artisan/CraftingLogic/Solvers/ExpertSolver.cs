@@ -764,15 +764,7 @@ public class ExpertSolver : Solver
         if (Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) < step.Durability && CU(craft, step, Skills.RapidSynthesis))
             return Skills.RapidSynthesis;
 
-        // and we're out of dura - finish craft with basic if it's ok, otherwise try rapid
-        if (step.Progress + Simulator.CalculateProgress(craft, step, Skills.BasicSynthesis) >= craft.CraftProgress)
-            return Skills.BasicSynthesis;
-
-        // try to finish with hs+intensive
-        if (step.RemainingCP >= Simulator.GetCPCost(step, Skills.IntensiveSynthesis) && (Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis) || step.HeartAndSoulAvailable))
-            return Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis) ? Skills.IntensiveSynthesis : Skills.HeartAndSoul;
-
-		// alternative actions were rejected for some reason, final sanity check if we can restore dura
+		// try to restore dura if we're out
 		if (step.Durability <= 10)
 		{
 			if (step.Durability + 55 + (step.ManipulationLeft > 0 ? 5 : 0) <= craft.CraftDurability && CU(craft, step, Skills.ImmaculateMend))
@@ -782,6 +774,14 @@ public class ExpertSolver : Solver
 			if (CU(craft, step, Skills.MastersMend)) 
 				return Skills.MastersMend;
 		}
+
+		// and we're out of dura - finish craft with basic if it's ok, otherwise try rapid
+		if (step.Progress + Simulator.CalculateProgress(craft, step, Skills.BasicSynthesis) >= craft.CraftProgress)
+            return Skills.BasicSynthesis;
+
+		// try to finish with hs+intensive
+		if (step.RemainingCP >= Simulator.GetCPCost(step, Skills.IntensiveSynthesis) && (CanUseSynthForFinisher(craft, step, Skills.IntensiveSynthesis) || step.HeartAndSoulAvailable))
+            return CanUseSynthForFinisher(craft, step, Skills.IntensiveSynthesis) ? Skills.IntensiveSynthesis : Skills.HeartAndSoul;
 
 		// just pray
 		if (step.Durability > 10)
