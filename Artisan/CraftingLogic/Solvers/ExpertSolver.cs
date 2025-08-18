@@ -772,8 +772,23 @@ public class ExpertSolver : Solver
         if (step.RemainingCP >= Simulator.GetCPCost(step, Skills.IntensiveSynthesis) && (Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis) || step.HeartAndSoulAvailable))
             return Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis) ? Skills.IntensiveSynthesis : Skills.HeartAndSoul;
 
-        // just pray
-        return Skills.RapidSynthesis;
+		// alternative actions were rejected for some reason, final sanity check if we can restore dura
+		if (step.Durability <= 10)
+		{
+			if (step.Durability + 55 + (step.ManipulationLeft > 0 ? 5 : 0) <= craft.CraftDurability && CU(craft, step, Skills.ImmaculateMend))
+				return Skills.ImmaculateMend;
+			if (step.ManipulationLeft <= 1 && CU(craft, step, Skills.Manipulation))
+				return Skills.Manipulation;
+			if (CU(craft, step, Skills.MastersMend)) 
+				return Skills.MastersMend;
+		}
+
+		// just pray
+		if (step.Durability > 10)
+			return Skills.RapidSynthesis;
+		if (CU(craft, step, Skills.Observe))
+			return Skills.Observe;
+		return P.Config.ExpertSolverConfig.RapidSynthYoloAllowed ? Skills.RapidSynthesis : Skills.None;
     }
 
     private static bool CanUseSynthForFinisher(CraftState craft, StepState step, Skills action)
