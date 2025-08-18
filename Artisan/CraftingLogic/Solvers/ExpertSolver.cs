@@ -86,7 +86,7 @@ public class ExpertSolver : Solver
         if (step.MuscleMemoryLeft > 0) // mume still active - means we have very little progress and want more progress asap
             return new(SafeCraftAction(craft, step, SolveOpenerMuMe(cfg, craft, step)), "mume");
 
-        if (cfg.UseMaterialMiracle && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
+        if (cfg.UseMaterialMiracle && step.Index >= cfg.MinimumStepsBeforeMiracle && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
             return new(Skills.MaterialMiracle);
 
         // see if we can do byregot right now and top up quality
@@ -537,7 +537,7 @@ public class ExpertSolver : Solver
             if (step.ManipulationLeft > 0 && CU(craft, step, Skills.Observe))
                 return Skills.Observe; // just regen a bit...
             // TODO: consider careful observation to bait pliant - this sounds much worse than using them to try baiting good byregot
-            if (cfg.MidBaitPliantWithObservePreQuality && craft.ConditionFlags.HasFlag(ConditionFlags.Pliant) && CU(craft, step, Skills.Observe))
+            if (cfg.MidBaitPliantWithObservePreQuality && craft.ConditionFlags.HasFlag(ConditionFlags.Pliant) && CU(craft, step, Skills.Observe) && step.RemainingCP > Skills.Observe.StandardCPCost() + Skills.Manipulation.StandardCPCost() / 2)
                 return Skills.Observe; // try baiting pliant - this will save us 48cp at the cost of ~7+24cp
             if (step.Durability <= criticalDurabilityThreshold && CU(craft, step, Skills.Manipulation))
                 return Skills.Manipulation; // bait the bullet and manip on normal
@@ -764,16 +764,32 @@ public class ExpertSolver : Solver
         if (Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) < step.Durability && CU(craft, step, Skills.RapidSynthesis))
             return Skills.RapidSynthesis;
 
-        // and we're out of dura - finish craft with basic if it's ok, otherwise try rapid
-        if (step.Progress + Simulator.CalculateProgress(craft, step, Skills.BasicSynthesis) >= craft.CraftProgress)
+
+		// and we're out of dura - finish craft with basic if it's ok, otherwise try rapid
+		if (step.Progress + Simulator.CalculateProgress(craft, step, Skills.BasicSynthesis) >= craft.CraftProgress)
             return Skills.BasicSynthesis;
 
-        // try to finish with hs+intensive
-        if (step.RemainingCP >= Simulator.GetCPCost(step, Skills.IntensiveSynthesis) && (Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis) || step.HeartAndSoulAvailable))
-            return Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis) ? Skills.IntensiveSynthesis : Skills.HeartAndSoul;
+		// try to finish with hs+intensive
+		if (step.RemainingCP >= Simulator.GetCPCost(step, Skills.IntensiveSynthesis) && CanUseSynthForFinisher(craft, step, Skills.IntensiveSynthesis) && (Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis)|| step.HeartAndSoulAvailable))
+            return CanUseSynthForFinisher(craft, step, Skills.IntensiveSynthesis) ? Skills.IntensiveSynthesis : Skills.HeartAndSoul;
 
-        // just pray
-        return Skills.RapidSynthesis;
+		// try to restore dura if we're out
+		if (step.Durability <= 10)
+		{
+			if (step.Durability + 55 + (step.ManipulationLeft > 0 ? 5 : 0) <= craft.CraftDurability && CU(craft, step, Skills.ImmaculateMend))
+				return Skills.ImmaculateMend;
+			if (step.ManipulationLeft <= 1 && CU(craft, step, Skills.Manipulation))
+				return Skills.Manipulation;
+			if (CU(craft, step, Skills.MastersMend)) 
+				return Skills.MastersMend;
+		}
+
+		// just pray
+		if (step.Durability > 10)
+			return Skills.RapidSynthesis;
+		if (CU(craft, step, Skills.Observe))
+			return Skills.Observe;
+		return P.Config.ExpertSolverConfig.RapidSynthYoloAllowed ? Skills.RapidSynthesis : Skills.None;
     }
 
     private static bool CanUseSynthForFinisher(CraftState craft, StepState step, Skills action)

@@ -98,7 +98,34 @@ namespace Artisan.UI
                     ImGui.Text($"You cannot start Endurance as you do not possess ingredients to craft this recipe.\r\nMissing: {string.Join(", ", PreCrafting.MissingIngredients(recipe))}");
                     ImGui.EndTooltip();
                 }
-            }
+			}
+
+			if (Crafting.MaterialMiracleCharges() > 0)
+			{
+				bool useMatMiracle = LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert ? P.Config.ExpertSolverConfig.UseMaterialMiracle : P.Config.UseMaterialMiracle;
+				int delayMatMiracle = LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert ? P.Config.ExpertSolverConfig.MinimumStepsBeforeMiracle : P.Config.MinimumStepsBeforeMiracle;
+				bool multiMatMiracle = P.Config.MaterialMiracleMulti;
+				if (ImGui.Checkbox("Use Material Miracle", ref useMatMiracle))
+				{
+					if (LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert)
+						P.Config.ExpertSolverConfig.UseMaterialMiracle = useMatMiracle;
+					else
+						P.Config.UseMaterialMiracle = useMatMiracle;
+				}
+				if (ImGui.SliderInt("Minimum steps to execute before trying Material Miracle", ref delayMatMiracle, 0, 20))
+				{
+					if (LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert)
+						P.Config.ExpertSolverConfig.MinimumStepsBeforeMiracle = delayMatMiracle;
+					else
+						P.Config.MinimumStepsBeforeMiracle = delayMatMiracle;
+				}
+
+				if (false == LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert)
+				{
+					if (ImGui.Checkbox("Use multiple material miracles", ref multiMatMiracle))
+						P.Config.MaterialMiracleMulti = multiMatMiracle;
+				}
+			}
 
             if (EnableMacroOptions)
             {
