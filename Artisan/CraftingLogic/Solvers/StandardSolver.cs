@@ -77,8 +77,12 @@ namespace Artisan.CraftingLogic.Solvers
             if (Simulator.GetDurabilityCost(step, rec.Action) == 20 && !_trainedEyeUsed && step.TrainedPerfectionAvailable && step.VenerationLeft == 0)
                 rec.Action = Skills.TrainedPerfection;
 
-            if (WillActFail(craft, step, rec.Action))
-                rec.Action = Skills.BasicSynthesis;
+			if (WillActFail(craft, step, rec.Action))
+			{
+				var bestSynth = BestSynthesis(craft, step);
+				rec.Action = bestSynth != Skills.BasicSynthesis ? bestSynth :
+					CanSpamBasicToComplete(craft, step) ? Skills.BasicSynthesis : Skills.RapidSynthesis;
+			}
 
             return rec;
         }
