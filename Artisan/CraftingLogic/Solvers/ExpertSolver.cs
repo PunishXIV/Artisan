@@ -1,4 +1,5 @@
 ﻿using Artisan.CraftingLogic.CraftData;
+using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using System.Collections.Generic;
 

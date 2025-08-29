@@ -20,6 +20,8 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using ThreadLoadImageHandler = ECommons.ImGuiMethods.ThreadLoadImageHandler;
+using ECommons.Automation;
+using ECommons.WindowsFormsReflector;
 
 namespace Artisan.UI
 {
@@ -207,13 +209,20 @@ namespace Artisan.UI
 
 
 #if DEBUG
-                        ImGui.Spacing();
-                        if (ImGui.Selectable("DEBUG", OpenWindow == OpenWindow.Debug))
-                        {
-                            OpenWindow = OpenWindow.Debug;
-                        }
-                        ImGui.Spacing();
+                        drawDebugTab();
+#else
+                        if(GenericHelpers.IsKeyPressed(Keys.LControlKey) && GenericHelpers.IsKeyPressed(Keys.LShiftKey)) drawDebugTab();
 #endif
+                        void drawDebugTab()
+                        {
+                            ImGui.Spacing();
+                            if(ImGui.Selectable("DEBUG", OpenWindow == OpenWindow.Debug))
+                            {
+                                OpenWindow = OpenWindow.Debug;
+                            }
+                            ImGui.Spacing();
+                        }
+
 
                     }
 
