@@ -523,7 +523,7 @@ public static unsafe class Crafting
     private static Condition GetStepCondition(AddonSynthesis* synthWindow) => (Condition)synthWindow->AtkUnitBase.AtkValues[12].Int;
     public static int DelineationCount() => InventoryManager.Instance()->GetInventoryItemCount(28724);
 
-    private unsafe static uint MaterialMiracleCharges()
+    public unsafe static uint MaterialMiracleCharges()
     {
         try
         {
