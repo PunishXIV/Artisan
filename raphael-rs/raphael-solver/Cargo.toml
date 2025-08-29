@@ -1,0 +1,27 @@
+[package]
+name = "raphael-solver"
+edition = "2024"
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+raphael-sim = { workspace = true }
+rustc-hash = "1.1.0"
+bitfield-struct = "0.8.0"
+rayon = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true, optional = true }
+web-time = { workspace = true }
+
+[features]
+serde = ["dep:serde", "raphael-sim/serde"]
+
+[dev-dependencies]
+rand = "0.9.1"
+env_logger = "0.11.5"
+expect-test = "1.5.1"
+test-case = "3.3.1"
