@@ -766,31 +766,36 @@ public class ExpertSolver : Solver
             return Skills.RapidSynthesis;
 
 
-		// and we're out of dura - finish craft with basic if it's ok, otherwise try rapid
-		if (step.Progress + Simulator.CalculateProgress(craft, step, Skills.BasicSynthesis) >= craft.CraftProgress)
+        // and we're out of dura - finish craft with basic if it's ok, otherwise try rapid
+        if (step.Progress + Simulator.CalculateProgress(craft, step, Skills.BasicSynthesis) >= craft.CraftProgress)
             return Skills.BasicSynthesis;
 
-		// try to finish with hs+intensive
-		if (step.RemainingCP >= Simulator.GetCPCost(step, Skills.IntensiveSynthesis) && CanUseSynthForFinisher(craft, step, Skills.IntensiveSynthesis) && (Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis)|| step.HeartAndSoulAvailable))
-            return CanUseSynthForFinisher(craft, step, Skills.IntensiveSynthesis) ? Skills.IntensiveSynthesis : Skills.HeartAndSoul;
+        // try to finish with hs+intensive
+        if (CanUseSynthForFinisher(craft, step, Skills.IntensiveSynthesis))
+        {
+            if (CU(craft, step, Skills.IntensiveSynthesis))
+                return Skills.IntensiveSynthesis;
+            else if (CU(craft, step, Skills.HeartAndSoul))
+                return Skills.HeartAndSoul;
+        }
 
-		// try to restore dura if we're out
-		if (step.Durability <= 10)
-		{
-			if (step.Durability + 55 + (step.ManipulationLeft > 0 ? 5 : 0) <= craft.CraftDurability && CU(craft, step, Skills.ImmaculateMend))
-				return Skills.ImmaculateMend;
-			if (step.ManipulationLeft <= 1 && CU(craft, step, Skills.Manipulation))
-				return Skills.Manipulation;
-			if (CU(craft, step, Skills.MastersMend)) 
-				return Skills.MastersMend;
-		}
+        // try to restore dura if we're out
+        if (step.Durability <= 10)
+        {
+            if (step.Durability + 55 + (step.ManipulationLeft > 0 ? 5 : 0) <= craft.CraftDurability && CU(craft, step, Skills.ImmaculateMend))
+                return Skills.ImmaculateMend;
+            if (step.ManipulationLeft <= 1 && CU(craft, step, Skills.Manipulation))
+                return Skills.Manipulation;
+            if (CU(craft, step, Skills.MastersMend))
+                return Skills.MastersMend;
+        }
 
-		// just pray
-		if (step.Durability > 10)
-			return Skills.RapidSynthesis;
-		if (CU(craft, step, Skills.Observe))
-			return Skills.Observe;
-		return P.Config.ExpertSolverConfig.RapidSynthYoloAllowed ? Skills.RapidSynthesis : Skills.None;
+        // just pray
+        if (step.Durability > 10)
+            return Skills.RapidSynthesis;
+        if (CU(craft, step, Skills.Observe))
+            return Skills.Observe;
+        return P.Config.ExpertSolverConfig.RapidSynthYoloAllowed ? Skills.RapidSynthesis : Skills.None;
     }
 
     private static bool CanUseSynthForFinisher(CraftState craft, StepState step, Skills action)
