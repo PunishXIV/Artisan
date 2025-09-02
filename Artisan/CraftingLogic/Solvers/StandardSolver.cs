@@ -12,7 +12,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
-            if (!craft.CraftExpert && craft.CraftHQ)
+            if (!craft.CraftExpert && (craft.CraftHQ || craft.CraftRequiredQuality > 0))
                 yield return new(this, 0, 2, "Standard Recipe Solver");
         }
 

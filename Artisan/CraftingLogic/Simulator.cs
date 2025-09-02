@@ -102,6 +102,9 @@ public static class Simulator
         }
         else
         {
+            if (craft.CraftRequiredQuality > 0 && step.Quality < craft.CraftRequiredQuality)
+                return CraftStatus.FailedMinQuality;
+
             return CraftStatus.SucceededNoQualityReq;
         }
     }
