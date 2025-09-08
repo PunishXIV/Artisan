@@ -314,9 +314,9 @@ internal unsafe static class RetainerHandlers
         var text = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Addon>().GetRow(13530).Text.ToDalamudString().GetText();
         if (TryGetAddonByName<AtkUnitBase>("RetainerItemTransferProgress", out var addon) && IsAddonReady(addon))
         {
-            var button = (AtkComponentButton*)addon->UldManager.NodeList[2]->GetComponent();
-            var nodetext = MemoryHelper.ReadSeString(&addon->UldManager.NodeList[2]->GetComponent()->UldManager.NodeList[2]->GetAsAtkTextNode()->NodeText).GetText();
-            if (nodetext == text && addon->UldManager.NodeList[2]->IsVisible() && button->IsEnabled && RetainerInfo.GenericThrottle)
+            var button = addon->GetComponentButtonById(9);// (AtkComponentButton*)addon->UldManager.NodeList[2]->GetComponent();
+            var nodetext = MemoryHelper.ReadSeString(&button->GetTextNodeById(2)->NodeText).GetText();
+            if (nodetext == text && button->AtkResNode->IsVisible() && button->IsEnabled && RetainerInfo.GenericThrottle)
             {
                 button->ClickAddonButton(addon);
                 return true;

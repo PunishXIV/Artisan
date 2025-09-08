@@ -261,10 +261,10 @@ namespace Artisan.Autocraft
         private static void CheckNonMaxQuantityModeFinished(ref SeString message, ref bool isHandled)
         {
             if (!P.Config.MaxQuantityMode && Enable &&
-                (message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1147).Text.ExtractText() ||
-                 message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1146).Text.ExtractText() ||
-                 message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1145).Text.ExtractText() ||
-                 message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1144).Text.ExtractText()))
+                (message.GetText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1147).Text.GetText() ||
+                 message.GetText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1146).Text.GetText() ||
+                 message.GetText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1145).Text.GetText() ||
+                 message.GetText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == 1144).Text.GetText()))
             {
                 if (P.Config.PlaySoundFinishEndurance)
                     SoundPlayer.PlaySound();
@@ -432,7 +432,7 @@ namespace Artisan.Autocraft
             {
                 //foreach (uint errorId in UnableToCraftErrors)
                 //{
-                //    if (message.ExtractText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == errorId).Text.ExtractText())
+                //    if (message.GetText() == Svc.Data.GetExcelSheet<LogMessage>()?.First(x => x.RowId == errorId).Text.GetText())
                 //    {
                 //        Svc.Toasts.ShowError($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to unable to craft error.");
                 //        DuoLog.Error($"Current crafting mode has been {(Enable ? "disabled" : "paused")} due to unable to craft error.");

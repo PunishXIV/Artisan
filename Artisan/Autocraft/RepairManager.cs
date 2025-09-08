@@ -39,7 +39,7 @@ namespace Artisan.Autocraft
                 addon->AtkUnitBase.IsVisible &&
                 addon->YesButton is not null &&
                 addon->YesButton->IsEnabled &&
-                addon->AtkUnitBase.UldManager.NodeList[15]->IsVisible())
+                addon->AtkUnitBase.GetNodeById(2)->IsVisible())
             {
                 new AddonMaster.SelectYesno((IntPtr)addon).Yes();
             }

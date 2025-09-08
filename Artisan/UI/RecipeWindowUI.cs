@@ -199,7 +199,7 @@ namespace Artisan
                 }
                 else
                 {
-                    string searchText = Svc.Data.Excel.GetSheet<Addon>().GetRow(1412).Text.ExtractText();
+                    string searchText = Svc.Data.Excel.GetSheet<Addon>().GetRow(1412).Text.GetText();
                     searchLabel->GetAsAtkTextNode()->SetText(searchText);
                     return;
                 }
@@ -371,7 +371,7 @@ namespace Artisan
                     if (atkUnitBase->AtkValues[233].Type != FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int)
                         return;
 
-                    var node = atkUnitBase->UldManager.NodeList[97];
+                    var node = atkUnitBase->GetNodeById(15);//->UldManager.NodeList[97];
 
                     if (!node->IsVisible())
                         return;
@@ -591,14 +591,19 @@ namespace Artisan
                     | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
 
 
+
+                void getNodes(out AtkTextNode* itemNameNode, out AtkTextNode*  phaseProgress, out AtkTextNode* currentPartNode)
+                {
+                    itemNameNode = addonPtr->GetTextNodeById(6);//UldManager.NodeList[37]->GetAsAtkTextNode();
+                    phaseProgress = addonPtr->GetTextNodeById(16);//->UldManager.NodeList[26]->GetAsAtkTextNode();
+                    currentPartNode = addonPtr->GetTextNodeById(13);//UldManager.NodeList[28]->GetAsAtkTextNode();
+                }
                 if (ImGui.Button("Create crafting list for this phase"))
                 {
-                    var itemNameNode = addonPtr->UldManager.NodeList[37]->GetAsAtkTextNode();
-                    var phaseProgress = addonPtr->UldManager.NodeList[26]->GetAsAtkTextNode();
-
-                    if (LuminaSheets.WorkshopSequenceSheet.Values.Any(x => x.ResultItem.Value.Name.ExtractText() == itemNameNode->NodeText.ExtractText()))
+                    getNodes(out AtkTextNode* itemNameNode, out AtkTextNode* phaseProgress, out AtkTextNode* currentPartNode);
+                    if (LuminaSheets.WorkshopSequenceSheet.Values.Any(x => x.ResultItem.Value.Name.GetText() == itemNameNode->NodeText.GetText()))
                     {
-                        var project = LuminaSheets.WorkshopSequenceSheet.Values.First(x => x.ResultItem.Value.Name.ExtractText() == itemNameNode->NodeText.ExtractText());
+                        var project = LuminaSheets.WorkshopSequenceSheet.Values.First(x => x.ResultItem.Value.Name.GetText() == itemNameNode->NodeText.GetText());
                         var phaseNum = Convert.ToInt32(phaseProgress->NodeText.ToString().First().ToString());
 
                         if (project.CompanyCraftPart.Count(x => x.RowId > 0) == 1)
@@ -606,20 +611,19 @@ namespace Artisan
                             var part = project.CompanyCraftPart.First(x => x.RowId > 0).Value;
                             var phase = part.CompanyCraftProcess[phaseNum - 1];
 
-                            FCWorkshopUI.CreatePhaseList(phase.Value!, part.CompanyCraftType.Value.Name.ExtractText(), phaseNum, false, null, project);
+                            FCWorkshopUI.CreatePhaseList(phase.Value!, part.CompanyCraftType.Value.Name.GetText(), phaseNum, false, null, project);
                             Notify.Success("FC Workshop List Created");
                         }
                         else
                         {
-                            var currentPartNode = addonPtr->UldManager.NodeList[28]->GetAsAtkTextNode();
-                            string partStep = currentPartNode->NodeText.ExtractText().Split(":").Last();
+                            string partStep = currentPartNode->NodeText.GetText().Split(":").Last();
 
-                            if (project.CompanyCraftPart.Any(x => x.Value.CompanyCraftType.Value.Name.ExtractText() == partStep))
+                            if (project.CompanyCraftPart.Any(x => x.Value.CompanyCraftType.Value.Name.GetText() == partStep))
                             {
-                                var part = project.CompanyCraftPart.First(x => x.Value.CompanyCraftType.Value.Name.ExtractText() == partStep).Value;
+                                var part = project.CompanyCraftPart.First(x => x.Value.CompanyCraftType.Value.Name.GetText() == partStep).Value;
                                 var phase = part.CompanyCraftProcess[phaseNum - 1];
 
-                                FCWorkshopUI.CreatePhaseList(phase.Value!, part.CompanyCraftType.Value.Name.ExtractText(), phaseNum, false, null, project);
+                                FCWorkshopUI.CreatePhaseList(phase.Value!, part.CompanyCraftType.Value.Name.GetText(), phaseNum, false, null, project);
                                 Notify.Success("FC Workshop List Created");
                             }
                         }
@@ -628,12 +632,10 @@ namespace Artisan
 
                 if (ImGui.Button("Create crafting list for this phase (including precrafts)"))
                 {
-                    var itemNameNode = addonPtr->UldManager.NodeList[37]->GetAsAtkTextNode();
-                    var phaseProgress = addonPtr->UldManager.NodeList[26]->GetAsAtkTextNode();
-
-                    if (LuminaSheets.WorkshopSequenceSheet.Values.Any(x => x.ResultItem.Value.Name.ExtractText() == itemNameNode->NodeText.ExtractText()))
+                    getNodes(out AtkTextNode* itemNameNode, out AtkTextNode* phaseProgress, out AtkTextNode* currentPartNode);
+                    if (LuminaSheets.WorkshopSequenceSheet.Values.Any(x => x.ResultItem.Value.Name.GetText() == itemNameNode->NodeText.GetText()))
                     {
-                        var project = LuminaSheets.WorkshopSequenceSheet.Values.First(x => x.ResultItem.Value.Name.ExtractText() == itemNameNode->NodeText.ExtractText());
+                        var project = LuminaSheets.WorkshopSequenceSheet.Values.First(x => x.ResultItem.Value.Name.GetText() == itemNameNode->NodeText.GetText());
                         var phaseNum = Convert.ToInt32(phaseProgress->NodeText.ToString().First().ToString());
 
                         if (project.CompanyCraftPart.Count(x => x.RowId > 0) == 1)
@@ -641,20 +643,19 @@ namespace Artisan
                             var part = project.CompanyCraftPart.First(x => x.RowId > 0).Value;
                             var phase = part.CompanyCraftProcess[phaseNum - 1];
 
-                            FCWorkshopUI.CreatePhaseList(phase.Value!, part.CompanyCraftType.Value.Name.ExtractText(), phaseNum, true, null, project);
+                            FCWorkshopUI.CreatePhaseList(phase.Value!, part.CompanyCraftType.Value.Name.GetText(), phaseNum, true, null, project);
                             Notify.Success("FC Workshop List Created");
                         }
                         else
                         {
-                            var currentPartNode = addonPtr->UldManager.NodeList[28]->GetAsAtkTextNode();
-                            string partStep = currentPartNode->NodeText.ExtractText().Split(":").Last();
+                            string partStep = currentPartNode->NodeText.GetText().Split(":").Last();
 
-                            if (project.CompanyCraftPart.Any(x => x.Value.CompanyCraftType.Value.Name.ExtractText() == partStep))
+                            if (project.CompanyCraftPart.Any(x => x.Value.CompanyCraftType.Value.Name.GetText() == partStep))
                             {
-                                var part = project.CompanyCraftPart.First(x => x.Value.CompanyCraftType.Value.Name.ExtractText() == partStep).Value;
+                                var part = project.CompanyCraftPart.First(x => x.Value.CompanyCraftType.Value.Name.GetText() == partStep).Value;
                                 var phase = part.CompanyCraftProcess[phaseNum - 1];
 
-                                FCWorkshopUI.CreatePhaseList(phase.Value!, part.CompanyCraftType.Value.Name.ExtractText(), phaseNum, true, null, project);
+                                FCWorkshopUI.CreatePhaseList(phase.Value!, part.CompanyCraftType.Value.Name.GetText(), phaseNum, true, null, project);
                                 Notify.Success("FC Workshop List Created");
                             }
                         }
@@ -715,9 +716,9 @@ namespace Artisan
 
             if (addonPtr->UldManager.NodeListCount > 1)
             {
-                if (addonPtr->UldManager.NodeList[1]->IsVisible())
+                if (addonPtr->GetNodeById(109)->IsVisible())//1
                 {
-                    var node = addonPtr->UldManager.NodeList[1];
+                    var node = addonPtr->GetNodeById(109);
 
                     if (!node->IsVisible())
                         return;
@@ -762,9 +763,9 @@ namespace Artisan
             if (addonPtr == null)
                 return;
 
-            if (addonPtr->UldManager.NodeListCount >= 2 && addonPtr->UldManager.NodeList[1]->IsVisible())
+            if (addonPtr->UldManager.NodeListCount >= 2 && addonPtr->GetNodeById(109)->IsVisible())
             {
-                var node = addonPtr->UldManager.NodeList[1];
+                var node = addonPtr->GetNodeById(109);
 
                 if (!node->IsVisible())
                     return;
@@ -813,14 +814,15 @@ namespace Artisan
             if (addonPtr->UldManager.NodeListCount >= 5)
             {
                 //var node = addonPtr->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[4];
-                var node = addonPtr->UldManager.NodeList[8];
+                var node = addonPtr->GetNodeById(103);// UldManager.NodeList[8];
 
                 var position = AtkResNodeFunctions.GetNodePosition(node);
                 var scale = AtkResNodeFunctions.GetNodeScale(node);
                 var size = new Vector2(node->Width, node->Height) * scale;
                 //position += ImGuiHelpers.MainViewport.Pos;
                 ImGui.CalcTextSize("Craft X Times:");
-                var craftableCount = addonPtr->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString() == "" ? 0 : Convert.ToInt32(addonPtr->UldManager.NodeList[35]->GetAsAtkTextNode()->NodeText.ToString().GetNumbers());
+                var text = addonPtr->GetTextNodeById(78)->NodeText.ToString();
+                var craftableCount = text == "" ? 0 : Convert.ToInt32(text.GetNumbers());
 
                 if (craftableCount == 0) return;
 

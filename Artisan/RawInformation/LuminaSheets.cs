@@ -117,11 +117,11 @@ namespace Artisan.RawInformation
                        .ToDictionary(i => i.RowId, i => i);
 
             ENPCResidentSheet = Svc.Data?.GetExcelSheet<ENpcResident>()?
-                       .Where(x => x.Singular.ExtractText().Length > 0)
+                       .Where(x => x.Singular.GetText().Length > 0)
                        .ToDictionary(i => i.RowId, i => i);
 
             QuestSheet = Svc.Data?.GetExcelSheet<Quest>()?
-                        .Where(x => x.Id.ExtractText().Length > 0)
+                        .Where(x => x.Id.GetText().Length > 0)
                         .ToDictionary(i => i.RowId, i => i);
 
             WorkshopPartSheet = Svc.Data?.GetExcelSheet<CompanyCraftPart>()?
@@ -196,7 +196,7 @@ namespace Artisan.RawInformation
         {
             if (id == 0) return "";
 
-            return LuminaSheets.ItemSheet[id].Name.ExtractText();
+            return LuminaSheets.ItemSheet[id].Name.GetText();
         }
 
         public static string NameOfRecipe(this uint id)
@@ -218,7 +218,7 @@ namespace Artisan.RawInformation
                 var digits = id.ToString().Length;
                 if (LuminaSheets.QuestSheet!.Any(x => Convert.ToInt16(x.Value.Id.ToString().GetLast(digits)) == id))
                 {
-                    return LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.ToString().GetLast(digits)) == id).Value.Name.ExtractText().Replace("", "").Trim();
+                    return LuminaSheets.QuestSheet!.First(x => Convert.ToInt16(x.Value.Id.ToString().GetLast(digits)) == id).Value.Name.GetText().Replace("", "").Trim();
                 }
             }
             return "";

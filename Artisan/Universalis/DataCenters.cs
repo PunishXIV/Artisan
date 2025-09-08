@@ -85,7 +85,7 @@ namespace Artisan.Universalis
             var name = Svc.Data.GetExcelSheet<World>()?.FirstOrDefault(x => x.RowId == world).Name;
 
             if (name != null)
-                return name.Value.ExtractText();
+                return name.Value.GetText();
 
             return null;
         }

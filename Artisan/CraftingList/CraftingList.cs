@@ -498,22 +498,22 @@ namespace Artisan.CraftingLists
                 if (setIngredients == null || Endurance.IPCOverride)
                 {
                     //TODO: this needs rewrite
-                    for(int i = 0; i <= 5; i++)
+                    for(uint i = 0; i <= 5; i++)
                     {
                         try
                         {
-                            var node = addon->AtkUnitBase.UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
+                            var node = addon->GetComponentNodeById(89 + i);// AtkUnitBase.UldManager.NodeList[23 - i]->GetAsAtkComponentNode();
 
                             if (node is null || !node->AtkResNode.IsVisible())
                             {
                                 continue;
                             }
 
-                            if (node->Component->UldManager.NodeList[11]->IsVisible())
+                            if (node->Component->GetNodeById(7)->IsVisible()) //11
                             {
-                                var ingredient = LuminaSheets.RecipeSheet.Values.Where(x => x.RowId == Endurance.RecipeID).FirstOrDefault().Ingredients().ElementAt(i).Item;
+                                var ingredient = LuminaSheets.RecipeSheet.Values.Where(x => x.RowId == Endurance.RecipeID).FirstOrDefault().Ingredients().ElementAt((int)i).Item;
 
-                                var btn = node->Component->UldManager.NodeList[14]->GetAsAtkComponentButton();
+                                var btn = node->Component->GetNodeById(5)->GetAsAtkComponentButton();// UldManager.NodeList[14]->GetAsAtkComponentButton();
 
                                 try
                                 {
