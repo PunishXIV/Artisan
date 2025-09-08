@@ -117,26 +117,37 @@ public class ExpertSolver : Solver
     {
         bool lastChance = step.MuscleMemoryLeft == 1;
 
+        bool isBasicSynthesisEnough = CU(craft, step, Skills.BasicSynthesis) && (step.Progress + Simulator.CalculateProgress(craft, step, Skills.BasicSynthesis) >= craft.CraftProgress);
+    
         if (step.Condition == Condition.Pliant)
         {
-            // pliant is manip > vene > ignore
+            // pliant is manip > basicIfEnough > vene > ignore
             if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForManip && step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation))
                 return Skills.Manipulation;
+            if (isBasicSynthesisEnough)
+                return Skills.BasicSynthesis;
             if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForVene && step.VenerationLeft == 0 && CU(craft, step, Skills.Veneration))
                 return Skills.Veneration;
         }
         else if (step.Condition == Condition.Primed && cfg.MuMePrimedManip)
         {
             // primed is vene > manip > ignore
-            if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForVene && step.VenerationLeft == 0 && CU(craft, step, Skills.Veneration))
+            if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForVene && step.VenerationLeft == 0 && CU(craft, step, Skills.Veneration) && !isBasicSynthesisEnough)
                 return Skills.Veneration;
             if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForManip && step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation))
                 return Skills.Manipulation;
+            if (isBasicSynthesisEnough)
+                return Skills.BasicSynthesis;
         }
         else if (step.Durability <= 25)
         {
             if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForManip && step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation))
                 return Skills.Manipulation;
+            if (isBasicSynthesisEnough)
+                return Skills.BasicSynthesis;
+        }
+        else if (isBasicSynthesisEnough){
+            return Skills.BasicSynthesis;
         }
         else if (step.Condition == Condition.Centered && Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) < step.Durability)
         {
