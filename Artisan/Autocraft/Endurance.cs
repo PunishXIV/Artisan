@@ -457,6 +457,8 @@ namespace Artisan.Autocraft
                         ToggleEndurance(false);
                     if (CraftingListUI.Processing)
                         CraftingListFunctions.Paused = true;
+                    if (P.Config.PlaySoundError)
+                        SoundPlayer.PlaySound();
                     Errors.Clear();
                     PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), default));
 

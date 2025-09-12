@@ -610,11 +610,14 @@ namespace Artisan.UI
 
                 if (ImGui.Checkbox("Play Sound After Endurance Is Complete", ref P.Config.PlaySoundFinishEndurance))
                     P.Config.Save();
+                
+                if (ImGui.Checkbox("Play Sound After Crafting Has Errored", ref P.Config.PlaySoundError))
+                    P.Config.Save();
 
                 if (ImGui.Checkbox($"Play Sound After List Is Complete", ref P.Config.PlaySoundFinishList))
                     P.Config.Save();
 
-                if (P.Config.PlaySoundFinishEndurance || P.Config.PlaySoundFinishList)
+                if (P.Config.PlaySoundFinishEndurance || P.Config.PlaySoundFinishList || P.Config.PlaySoundError)
                 {
                     if (ImGui.SliderFloat("Sound Volume", ref P.Config.SoundVolume, 0f, 1f, "%.2f"))
                         P.Config.Save();
