@@ -102,6 +102,7 @@ namespace Artisan
 
         public bool PlaySoundFinishEndurance = false;
         public bool PlaySoundFinishList = false;
+        public bool PlaySoundError = false;
 
         public float SoundVolume = 0.25f;
 
