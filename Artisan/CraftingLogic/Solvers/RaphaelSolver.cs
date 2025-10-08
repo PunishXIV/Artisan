@@ -93,7 +93,7 @@ namespace Artisan.CraftingLogic.Solvers
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = Path.Join(Path.GetDirectoryName(Svc.PluginInterface.AssemblyLocation.FullName), "raphael-cli.exe"),
+                        FileName = Path.Join(Path.GetDirectoryName(Svc.PluginInterface.AssemblyLocation.FullName), "raphael-cli.bin"),
                         Arguments = $"solve {itemText} {manipulation} --level {craft.StatLevel} --stats {craft.StatCraftsmanship} {craft.StatControl} {craft.StatCP} {extraArgsBuilder} --output-variables action_ids", // Command to execute
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
@@ -259,7 +259,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         internal static bool CLIExists()
         {
-            return File.Exists(Path.Join(Path.GetDirectoryName(Svc.PluginInterface.AssemblyLocation.FullName), "raphael-cli.exe"));
+            return File.Exists(Path.Join(Path.GetDirectoryName(Svc.PluginInterface.AssemblyLocation.FullName), "raphael-cli.bin"));
         }
 
         public static bool DrawRaphaelDropdown(CraftState craft, bool liveStats = true)

@@ -7,6 +7,7 @@ using Dalamud.Interface.Windowing;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Dalamud.Bindings.ImGui;
 using System;
+using ECommons;
 
 namespace Artisan.UI
 {
