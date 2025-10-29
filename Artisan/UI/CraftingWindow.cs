@@ -186,12 +186,12 @@ namespace Artisan.UI
             DuoLog.Error(text);
         }
 
-        private void OnSolverFinished(Lumina.Excel.Sheets.Recipe recipe, SolverRef solver, CraftState craft, StepState finalStep)
+        private void OnSolverFinished(Lumina.Excel.Sheets.Recipe? recipe, SolverRef solver, CraftState craft, StepState finalStep)
         {
             _estimatedCraftEnd = default;
         }
 
-        private void OnRecommendationReady(Lumina.Excel.Sheets.Recipe recipe, SolverRef solver, CraftState craft, StepState step, Solver.Recommendation recommendation)
+        private void OnRecommendationReady(Lumina.Excel.Sheets.Recipe? recipe, SolverRef solver, CraftState craft, StepState step, Solver.Recommendation recommendation)
         {
             if (!Simulator.CanUseAction(craft, step, recommendation.Action))
             {

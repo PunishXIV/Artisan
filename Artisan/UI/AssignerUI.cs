@@ -17,10 +17,9 @@ namespace Artisan.UI
     {
 
         private static RecipeConfig DummyConfig = new();
-        private static ISolverDefinition.Desc? selectedSolver;
         private static int quickAssignLevel = 1;
 
-        private static IEnumerable<Lumina.Excel.Sheets.Recipe> filteredRecipes;
+        private static IEnumerable<Lumina.Excel.Sheets.Recipe>? filteredRecipes;
 
         private static List<int> quickAssignPossibleDifficulties = new();
         private static int quickAssignDifficultyIndex;
@@ -52,11 +51,11 @@ namespace Artisan.UI
 
         private static void DrawAssignables()
         {
-            if (filteredRecipes.Count() == 0)
+            if (filteredRecipes!.Count() == 0)
                 return;
 
             ImGui.Spacing();
-            var recipe = filteredRecipes.First();
+            var recipe = filteredRecipes!.First();
             var stats = CharacterStats.GetBaseStatsForClassHeuristic((Job)((uint)Job.CRP + recipe.CraftType.RowId));
             stats.AddConsumables(new(DummyConfig.RequiredFood, DummyConfig.RequiredFoodHQ), new(DummyConfig.RequiredPotion, DummyConfig.RequiredPotionHQ), CharacterInfo.FCCraftsmanshipbuff);
             var c = Crafting.BuildCraftStateForRecipe(stats, (Job)((uint)Job.CRP + recipe.CraftType.RowId), recipe);

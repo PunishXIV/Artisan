@@ -57,11 +57,11 @@ public static unsafe class Crafting
     public static event CraftStartedDelegate? CraftStarted;
 
     // note: step index increases for most actions (except final appraisal / careful observation / heart&soul)
-    public delegate void CraftAdvancedDelegate(Recipe recipe, CraftState craft, StepState step);
+    public delegate void CraftAdvancedDelegate(Recipe? recipe, CraftState craft, StepState step);
     public static event CraftAdvancedDelegate? CraftAdvanced;
 
     // note: final action that completes/fails a craft does not advance step index
-    public delegate void CraftFinishedDelegate(Recipe recipe, CraftState craft, StepState finalStep, bool cancelled);
+    public delegate void CraftFinishedDelegate(Recipe? recipe, CraftState craft, StepState finalStep, bool cancelled);
     public static event CraftFinishedDelegate? CraftFinished;
 
     public delegate void QuickSynthProgressDelegate(int cur, int max);
@@ -357,14 +357,18 @@ public static unsafe class Crafting
 
         var canHQ = CurRecipe.Value.CanHq;
         CurCraft = BuildCraftStateForRecipe(CharacterStats.GetCurrentStats(), CharacterInfo.JobID, CurRecipe!.Value);
-        CurCraft?.InitialQuality = InitialQuality;
-        CurStep = BuildStepState(synthWindow, null, CurCraft);
-        if (CurStep.Index != 1 || CurStep.Condition != Condition.Normal || CurStep.PrevComboAction != Skills.None)
-            Svc.Log.Error($"Unexpected initial state: {CurStep}");
+        if (CurCraft != null)
+        {
+            CurCraft.InitialQuality = InitialQuality;
+            CurStep = BuildStepState(synthWindow, null, CurCraft);
+            if (CurStep.Index != 1 || CurStep.Condition != Condition.Normal || CurStep.PrevComboAction != Skills.None)
+                Svc.Log.Error($"Unexpected initial state: {CurStep}");
 
-        IsTrial = synthWindow->AtkUnitBase.AtkValues[1] is { Type: FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool, Byte: 1 };
-        CraftStarted?.Invoke(CurRecipe.Value, CurCraft, CurStep, IsTrial);
-        return State.InProgress;
+            IsTrial = synthWindow->AtkUnitBase.AtkValues[1] is { Type: FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool, Byte: 1 };
+            CraftStarted?.Invoke(CurRecipe.Value, CurCraft, CurStep, IsTrial);
+            return State.InProgress;
+        }
+        return State.WaitStart;
     }
 
     private static State TransitionFromInProgress()
@@ -382,7 +386,7 @@ public static unsafe class Crafting
         if (synthWindow == null)
         {
             // craft was aborted
-            CraftFinished?.Invoke(CurRecipe.Value, CurCraft!, CurStep!, true);
+            CraftFinished?.Invoke(CurRecipe, CurCraft!, CurStep!, true);
             return State.WaitFinish;
         }
 
@@ -395,7 +399,7 @@ public static unsafe class Crafting
             CurStep = BuildStepState(synthWindow, _predictedNextStep, CurCraft);
             _predictedNextStep = null;
             _predictionDeadline = default;
-            CraftFinished?.Invoke(CurRecipe.Value!, CurCraft, CurStep, false);
+            CraftFinished?.Invoke(CurRecipe, CurCraft, CurStep, false);
             return State.WaitFinish;
         }
         else
@@ -419,7 +423,7 @@ public static unsafe class Crafting
             CurStep = step;
             _predictedNextStep = null;
             _predictionDeadline = default;
-            CraftAdvanced?.Invoke(CurRecipe.Value, CurCraft, CurStep);
+            CraftAdvanced?.Invoke(CurRecipe, CurCraft, CurStep);
             return State.InProgress;
         }
     }

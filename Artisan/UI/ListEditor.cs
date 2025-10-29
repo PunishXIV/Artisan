@@ -39,7 +39,7 @@ internal class ListEditor : Window, IDisposable
 {
     public bool Minimized = false;
 
-    private Task RegenerateTask = null;
+    private Task? RegenerateTask = null;
     private CancellationTokenSource source = new CancellationTokenSource();
     private CancellationToken token;
 

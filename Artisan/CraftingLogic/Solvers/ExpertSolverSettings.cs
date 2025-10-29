@@ -55,7 +55,7 @@ public class ExpertSolverSettings
     public ExpertSolverSettings()
     {
         var tex = Svc.PluginInterface.UiBuilder.LoadUld("ui/uld/RecipeNoteBook.uld");
-        expertIcon = tex.LoadTexturePart("ui/uld/RecipeNoteBook_hr1.tex", 14);
+        expertIcon = tex?.LoadTexturePart("ui/uld/RecipeNoteBook_hr1.tex", 14);
     }
 
     public bool Draw()

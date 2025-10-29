@@ -13,9 +13,9 @@ namespace Artisan.RawInformation
     {
         public static List<DropSources>? Sources = DropList()?.ToList();
 
-        public DropSources(uint ItemId, List<uint> monsterId)
+        public DropSources(uint Item, List<uint> monsterId)
         {
-            ItemId = ItemId;
+            ItemId = Item;
             MonsterId = monsterId;
             CanObtainFromRetainer = Svc.Data.GetExcelSheet<RetainerTaskNormal>()!.Any(x => x.Item.RowId == ItemId);
             UsedInRecipes = LuminaSheets.RecipeSheet.Values.Any(y => y.Ingredients().Any(x => x.Item.RowId == ItemId));

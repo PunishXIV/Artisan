@@ -403,7 +403,7 @@ namespace Artisan.UI.Tables
 
                         if (ImGui.IsItemClicked())
                         {
-                            Chat.Instance.SendMessage($"/li {server} mb");
+                            Chat.SendMessage($"/li {server} mb");
                         }
                     }
                 }
@@ -714,7 +714,7 @@ namespace Artisan.UI.Tables
             {
                 if (ImGui.Selectable("Market Board Lookup"))
                 {
-                    Chat.Instance.SendMessage($"/pmb {item.Data.Name.ToDalamudString()}");
+                    Chat.SendMessage($"/pmb {item.Data.Name.ToDalamudString()}");
                 }
             }
         }
@@ -802,7 +802,7 @@ namespace Artisan.UI.Tables
 
                 try
                 {
-                    Chat.Instance.SendMessage($"/mloot {item.Data.Name.ToString()}");
+                    Chat.SendMessage($"/mloot {item.Data.Name.ToString()}");
                 }
                 catch (Exception e)
                 {
@@ -875,9 +875,9 @@ namespace Artisan.UI.Tables
                 try
                 {
                     if (LuminaSheets.GatheringItemSheet!.Any(x => x.Value.Item.RowId == item.Data.RowId))
-                        Chat.Instance.SendMessage($"/gather {item.Data.Name.ToString()}");
+                        Chat.SendMessage($"/gather {item.Data.Name.ToString()}");
                     else
-                        Chat.Instance.SendMessage($"/gatherfish {item.Data.Name.ToString()}");
+                        Chat.SendMessage($"/gatherfish {item.Data.Name.ToString()}");
                 }
                 catch (Exception e)
                 {

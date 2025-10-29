@@ -191,7 +191,7 @@ namespace Artisan.UI
 
                     ImGui.Columns(2, "actionColumns", true);
                     ImGui.SetColumnWidth(0, 220f.Scale());
-                    ImGuiEx.ImGuiLineCentered("###MacroActions", () => ImGuiEx.TextUnderlined("Macro Actions"));
+                    ImGuiEx.LineCentered("###MacroActions", () => ImGuiEx.TextUnderlined("Macro Actions"));
                     ImGui.Indent();
                     for (int i = 0; i < SelectedMacro.Steps.Count; i++)
                     {
@@ -435,15 +435,15 @@ namespace Artisan.UI
                 }
 
 
-                ImGuiEx.ImGuiLineCentered("MTimeHead", delegate
+                ImGuiEx.LineCentered("MTimeHead", delegate
                 {
                     ImGuiEx.TextUnderlined($"Estimated Macro Length");
                 });
-                ImGuiEx.ImGuiLineCentered("MTimeArtisan", delegate
+                ImGuiEx.LineCentered("MTimeArtisan", delegate
                 {
                     ImGuiEx.Text($"Artisan: {MacroUI.GetMacroLength(SelectedMacro)} seconds");
                 });
-                ImGuiEx.ImGuiLineCentered("MTimeTeamcraft", delegate
+                ImGuiEx.LineCentered("MTimeTeamcraft", delegate
                 {
                     ImGuiEx.Text($"Normal Macro: {MacroUI.GetTeamcraftMacroLength(SelectedMacro)} seconds");
                 });

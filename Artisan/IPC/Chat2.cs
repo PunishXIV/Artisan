@@ -34,7 +34,7 @@ namespace Artisan.IPC
         // Subscribe to this to draw your custom context menu items.
         private ICallGateSubscriber<string, PlayerPayload?, ulong, Payload?, SeString?, SeString?, object?> Invoke { get; }
 
-        private string _id = string.Empty;
+        private string? _id = string.Empty;
 
         public Action<uint>? OnOpenChatTwoItemContextMenu;
 

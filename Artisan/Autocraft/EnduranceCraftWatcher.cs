@@ -50,7 +50,7 @@ namespace Artisan.Autocraft
             Svc.Chat.ChatMessage -= ScanForHQItems;
         }
 
-        private static void OnCraftFinished(Recipe recipe, CraftState craft, StepState finalStep, bool cancelled)
+        private static void OnCraftFinished(Recipe? recipe, CraftState craft, StepState finalStep, bool cancelled)
         {
             Svc.Log.Debug($"Craft Finished");
 

@@ -318,12 +318,12 @@ namespace Artisan.QuestSync
         {
             if (EmoteQuests.TryGetValue(questId, out var data))
             {
-                if (Svc.Objects.Any(x => x.DataId == data.NPCDataId))
+                if (Svc.Objects.Any(x => x.BaseId == data.NPCDataId))
                 {
-                    var npc = Svc.Objects.First(x => x.DataId == data.NPCDataId);
+                    var npc = Svc.Objects.First(x => x.BaseId == data.NPCDataId);
                     Svc.Targets.Target = npc;
                 }
-                if (Svc.Targets.Target != null && Svc.Targets.Target.DataId == data.NPCDataId)
+                if (Svc.Targets.Target != null && Svc.Targets.Target.BaseId == data.NPCDataId)
                 {
                     CommandProcessor.ExecuteThrottled(data.Emote!);
                 }

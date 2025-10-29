@@ -180,7 +180,7 @@ namespace Artisan.CraftingLists
             Endurance.ToggleEndurance(false);
         }
 
-        public static void UpdateListTimer(Recipe recipe, CraftState craft, StepState finalStep, bool cancelled)
+        public static void UpdateListTimer(Recipe? recipe, CraftState craft, StepState finalStep, bool cancelled)
         {
             Task.Run(() =>
             {
