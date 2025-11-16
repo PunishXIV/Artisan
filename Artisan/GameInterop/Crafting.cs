@@ -9,6 +9,7 @@ using Dalamud.Hooking;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using ECommons.GameHelpers;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -118,7 +119,7 @@ public static unsafe class Crafting
             IsCosmic = recipe.Number == 0,
             ConditionFlags = (ConditionFlags)lt.ConditionsFlag,
             MissionHasMaterialMiracle = recipe.MissionHasMaterialMiracle(),
-            LevelTable = lt
+            LevelTable = lt,
         };
 
         if (res.CraftCollectible)

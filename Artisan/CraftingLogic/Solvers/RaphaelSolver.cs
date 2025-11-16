@@ -1,4 +1,5 @@
-﻿using Artisan.GameInterop;
+﻿using Artisan.Autocraft;
+using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.UI;
 using Dalamud.Bindings.ImGui;
@@ -7,6 +8,7 @@ using Dalamud.Interface.Components;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using ECommons.GameHelpers;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
 using System;
@@ -207,6 +209,7 @@ namespace Artisan.CraftingLogic.Solvers
                             }
                         }
                     }
+
                     P.Config.Save();
                     Tasks.Remove(key, out var _);
                 }, cts.Token);
@@ -306,12 +309,6 @@ namespace Artisan.CraftingLogic.Solvers
                     var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).FirstOrNull(x => x.Name == $"Raphael Recipe Solver");
                     var solverIsRaph = config.SolverType == opt?.Def.GetType().FullName!;
                     var curStats = CharacterStats.GetCurrentStats();
-                    //Svc.Log.Debug($"{curStats.Craftsmanship}/{craft.StatCraftsmanship} - {curStats.Control}/{craft.StatControl} - {curStats.CP}/{craft.StatCP}");
-                    if (liveStats && craft.StatCraftsmanship != curStats.Craftsmanship && solverIsRaph)
-                    {
-                        var craftsmanshipError = curStats.Craftsmanship - craft.StatCraftsmanship > 0 ? $"(Excess of {curStats.Craftsmanship - craft.StatCraftsmanship}) " : "";
-                        ImGuiEx.Text(ImGuiColors.DalamudRed, $"Your current Craftsmanship {craftsmanshipError}does not match the generated result.\nThis solver won't be used until they match due to possible early finishes.\n(You may just need to have the correct buffs applied)");
-                    }
 
                     if (!solverIsRaph)
                     {
@@ -330,10 +327,46 @@ namespace Artisan.CraftingLogic.Solvers
                             ImGuiEx.TextCentered($"Raphael Solution Has Been Generated.");
                         }
                     }
+                    else
+                    {
+                        ImGuiEx.TextCentered($"Solution Key: {key}");
+                        var playerIsJob = Player.JobId == craft.Recipe.CraftType.RowId + 8;
+                        var parts = KeyParts(key);
+                        if (!playerIsJob)
+                            ImGuiEx.TextCentered($"Not currently job.");
+                        else
+                        {
+                            if (curStats.Craftsmanship == craft.StatCraftsmanship)
+                                ImGuiEx.TextCentered(ImGuiColors.HealerGreen, $"Craftsmanship meets solution requirement: {parts.Crafts}.");
+                            else
+                            {
+                                ImGuiEx.TextCentered(ImGuiColors.DPSRed, $"There is a craftsmanship difference between the solution ({craft.StatCraftsmanship}) and current ({curStats.Craftsmanship}).\nRaphael won't be used until this is resolved.");
+                                var foodIsCrafts = ConsumableChecker.GetItemConsumableProperties(LuminaSheets.ItemSheet[config.RequiredFood], false)?.Params.Any(x => x.BaseParam.RowId is 70);
+                                if (foodIsCrafts == true)
+                                    ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"(Set food is craftsmanship food, this issue will likely be resolved once the buff is applied)");
+
+                                var potIsCrafts = ConsumableChecker.GetItemConsumableProperties(LuminaSheets.ItemSheet[config.RequiredPotion], false)?.Params.Any(x => x.BaseParam.RowId is 70);
+                                if (potIsCrafts == true)
+                                    ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"(Set potion is craftsmanship potion, this issue will likely be resolved once the buff is applied)");
+
+                                if ((foodIsCrafts == null || foodIsCrafts == false) && (potIsCrafts == null || potIsCrafts == false))
+                                    ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"(You currently have a Well Fed/Medicated buff granting you craftsmanship\n that is not set as your food/potion, removing the buff(s) may resolve this)");
+
+                                var diffPos = Math.Abs(craft.StatCraftsmanship - curStats.Craftsmanship);
+                                var diffAct = (craft.StatCraftsmanship - curStats.Craftsmanship);
+                                if (diffPos % 5 == 0)
+                                    if (diffAct > 0)
+                                        ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"(This solution may have been generated with a Free Company Craftsmanship buff which you no longer have)");
+                                    else
+                                        ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"(You may have a Free Company Craftsmanship buff that was not active when this solution was generated)");
+                            }
+                        }
+
+                    }
                 }
                 else
                 {
-                    if (liveStats && P.Config.RaphaelSolverConfig.AutoGenerate && CraftingProcessor.GetAvailableSolversForRecipe(craft, true).Any())
+                    if (liveStats && Player.JobId == craft.Recipe.CraftType.RowId + 8 && P.Config.RaphaelSolverConfig.AutoGenerate && CraftingProcessor.GetAvailableSolversForRecipe(craft, true).Any())
                     {
                         if (!craft.CraftExpert || (craft.CraftExpert && P.Config.RaphaelSolverConfig.GenerateOnExperts))
                             Build(craft, TempConfigs[key]);
@@ -341,6 +374,7 @@ namespace Artisan.CraftingLogic.Solvers
                 }
 
                 ImGui.Separator();
+
                 var inProgress = InProgress(craft);
                 var raphChanges = false;
 
@@ -402,7 +436,7 @@ namespace Artisan.CraftingLogic.Solvers
     public class RaphaelSolverSettings
     {
         public bool AllowEnsureReliability = false;
-        public bool AllowBackloadProgress = false;
+        public bool AllowBackloadProgress = true;
         public bool ShowSpecialistSettings = false;
         public bool ExactCraftsmanship = false;
         public bool AutoGenerate = false;

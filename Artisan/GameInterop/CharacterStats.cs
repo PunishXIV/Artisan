@@ -177,6 +177,7 @@ public unsafe struct CharacterStats
     {
         var stats = new CharacterStats();
 
+        stats.Level = CharacterInfo.CharacterLevel ?? 0;
         stats.Craftsmanship = CharacterInfo.Craftsmanship;
         stats.Control = CharacterInfo.Control;
         stats.CP = (int)CharacterInfo.MaxCP;
