@@ -28,6 +28,7 @@ using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using static ECommons.GenericHelpers;
+using RepairManager = Artisan.Autocraft.RepairManager;
 
 namespace Artisan.UI
 {
