@@ -333,7 +333,7 @@ namespace Artisan.CraftingLogic.Solvers
                         var playerIsJob = Player.JobId == craft.Recipe.CraftType.RowId + 8;
                         var parts = KeyParts(key);
                         if (!playerIsJob)
-                            ImGuiEx.TextCentered($"Not currently job.");
+                            ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"Not currently job.");
                         else
                         {
                             if (curStats.Craftsmanship == craft.StatCraftsmanship)
