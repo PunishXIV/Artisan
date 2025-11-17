@@ -592,18 +592,21 @@ namespace Artisan
 
 
 
-                void getNodes(out AtkTextNode* itemNameNode, out AtkTextNode*  phaseProgress, out AtkTextNode* currentPartNode)
+                void getNodes(out AtkTextNode* itemNameNode1, out AtkTextNode* itemNameNode2, out AtkTextNode*  phaseProgress, out AtkTextNode* currentPartNode)
                 {
-                    itemNameNode = addonPtr->GetTextNodeById(6);//UldManager.NodeList[37]->GetAsAtkTextNode();
+                    itemNameNode1 = addonPtr->GetTextNodeById(4);//UldManager.NodeList[37]->GetAsAtkTextNode();
+                    itemNameNode2 = addonPtr->GetTextNodeById(6);//UldManager.NodeList[37]->GetAsAtkTextNode();
                     phaseProgress = addonPtr->GetTextNodeById(16);//->UldManager.NodeList[26]->GetAsAtkTextNode();
                     currentPartNode = addonPtr->GetTextNodeById(13);//UldManager.NodeList[28]->GetAsAtkTextNode();
                 }
                 if (ImGui.Button("Create crafting list for this phase"))
                 {
-                    getNodes(out AtkTextNode* itemNameNode, out AtkTextNode* phaseProgress, out AtkTextNode* currentPartNode);
-                    if (LuminaSheets.WorkshopSequenceSheet.Values.Any(x => x.ResultItem.Value.Name.GetText() == itemNameNode->NodeText.GetText()))
+                    getNodes(out AtkTextNode* itemNameNode1, out AtkTextNode* itemNameNode2, out AtkTextNode* phaseProgress, out AtkTextNode* currentPartNode);
+                    var i1 = itemNameNode1->NodeText.GetText();
+                    var i2 = itemNameNode2->NodeText.GetText();
+                    if (LuminaSheets.WorkshopSequenceSheet.Values.Any(x => x.ResultItem.Value.Name.GetText() == i1 || x.ResultItem.Value.Name.GetText() == i2))
                     {
-                        var project = LuminaSheets.WorkshopSequenceSheet.Values.First(x => x.ResultItem.Value.Name.GetText() == itemNameNode->NodeText.GetText());
+                        var project = LuminaSheets.WorkshopSequenceSheet.Values.First(x => x.ResultItem.Value.Name.GetText() == i1 || x.ResultItem.Value.Name.GetText() == i2);
                         var phaseNum = Convert.ToInt32(phaseProgress->NodeText.ToString().First().ToString());
 
                         if (project.CompanyCraftPart.Count(x => x.RowId > 0) == 1)
@@ -632,10 +635,12 @@ namespace Artisan
 
                 if (ImGui.Button("Create crafting list for this phase (including precrafts)"))
                 {
-                    getNodes(out AtkTextNode* itemNameNode, out AtkTextNode* phaseProgress, out AtkTextNode* currentPartNode);
-                    if (LuminaSheets.WorkshopSequenceSheet.Values.Any(x => x.ResultItem.Value.Name.GetText() == itemNameNode->NodeText.GetText()))
+                    getNodes(out AtkTextNode* itemNameNode1, out AtkTextNode* itemNameNode2, out AtkTextNode* phaseProgress, out AtkTextNode* currentPartNode);
+                    var i1 = itemNameNode1->NodeText.GetText();
+                    var i2 = itemNameNode2->NodeText.GetText();
+                    if (LuminaSheets.WorkshopSequenceSheet.Values.Any(x => x.ResultItem.Value.Name.GetText() == i1 || x.ResultItem.Value.Name.GetText() == i2))
                     {
-                        var project = LuminaSheets.WorkshopSequenceSheet.Values.First(x => x.ResultItem.Value.Name.GetText() == itemNameNode->NodeText.GetText());
+                        var project = LuminaSheets.WorkshopSequenceSheet.Values.First(x => x.ResultItem.Value.Name.GetText() == i1 || x.ResultItem.Value.Name.GetText() == i2);
                         var phaseNum = Convert.ToInt32(phaseProgress->NodeText.ToString().First().ToString());
 
                         if (project.CompanyCraftPart.Count(x => x.RowId > 0) == 1)
