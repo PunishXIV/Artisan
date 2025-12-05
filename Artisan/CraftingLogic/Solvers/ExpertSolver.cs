@@ -648,6 +648,9 @@ public class ExpertSolver : Solver
             return Skills.HastyTouch;
         if (step.Condition == Condition.Sturdy && cfg.MidAllowSturdyPreсise && (step.HeartAndSoulActive || step.HeartAndSoulAvailable) && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreciseTouch))
             return step.HeartAndSoulActive && CU(craft, step, Skills.PreciseTouch) ? Skills.PreciseTouch : Skills.HeartAndSoul;
+        // Fix the issue where any hasty touch > sturdy condition would use hasty touch instead of daring touch with cfg.MidAllowSturdyHasty set
+        if (step.Condition == Condition.Sturdy && step.Durability > Simulator.GetDurabilityCost(step, Skills.DaringTouch) && CU(craft, step, Skills.DaringTouch))
+            return cfg.MidAllowSturdyHasty ? Skills.DaringTouch : Simulator.NextTouchCombo(step, craft);
         if (step.Condition == Condition.Sturdy && step.Durability > Simulator.GetDurabilityCost(step, Skills.HastyTouch))
             return cfg.MidAllowSturdyHasty ? Skills.HastyTouch : Simulator.NextTouchCombo(step, craft);
         return Skills.None;
