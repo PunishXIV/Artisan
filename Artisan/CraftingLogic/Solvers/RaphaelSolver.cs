@@ -366,10 +366,16 @@ namespace Artisan.CraftingLogic.Solvers
                 }
                 else
                 {
-                    if (liveStats && Player.JobId == craft.Recipe.CraftType.RowId + 8 && P.Config.RaphaelSolverConfig.AutoGenerate && CraftingProcessor.GetAvailableSolversForRecipe(craft, true).Any())
+                    if (P.Config.RaphaelSolverConfig.AutoGenerate && CraftingProcessor.GetAvailableSolversForRecipe(craft, true).Any() && (!craft.CraftExpert || (craft.CraftExpert && P.Config.RaphaelSolverConfig.GenerateOnExperts)))
                     {
-                        if (!craft.CraftExpert || (craft.CraftExpert && P.Config.RaphaelSolverConfig.GenerateOnExperts))
+                        if (liveStats && Player.JobId == craft.Recipe.CraftType.RowId + 8)
+                        {
                             Build(craft, TempConfigs[key]);
+                        }
+                        else
+                        {
+                            ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"Raphael solution will auto-generate when current job is {(Job)craft.Recipe.CraftType.RowId + 8}");
+                        }
                     }
                 }
 
