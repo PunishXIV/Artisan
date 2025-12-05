@@ -108,7 +108,7 @@ namespace Artisan.CraftingLogic.Solvers
                 Svc.Log.Information(process.StartInfo.Arguments);
 
                 var cts = new CancellationTokenSource();
-                cts.Token.Register(() => { process.Kill(); Tasks.Remove(key, out var _); });
+                cts.Token.Register(() => { process?.Kill(); Tasks.TryRemove(key, out var _); });
                 cts.CancelAfter(TimeSpan.FromMinutes(P.Config.RaphaelSolverConfig.TimeOutMins));
 
                 var task = Task.Run(() =>
