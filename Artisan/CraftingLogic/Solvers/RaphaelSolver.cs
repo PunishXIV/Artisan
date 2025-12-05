@@ -11,6 +11,7 @@ using ECommons.ExcelServices;
 using ECommons.GameHelpers;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -374,7 +375,7 @@ namespace Artisan.CraftingLogic.Solvers
                         }
                         else
                         {
-                            ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"Raphael solution will auto-generate when current job is {(Job)craft.Recipe.CraftType.RowId + 8}");
+                            ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"Raphael solution will auto-generate when current job is {Svc.Data.GetExcelSheet<ClassJob>().GetRow(craft.Recipe.CraftType.RowId + 8).Abbreviation}.");
                         }
                     }
                 }
