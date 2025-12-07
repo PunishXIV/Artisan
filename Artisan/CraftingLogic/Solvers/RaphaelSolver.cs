@@ -108,7 +108,19 @@ namespace Artisan.CraftingLogic.Solvers
                 Svc.Log.Information(process.StartInfo.Arguments);
 
                 var cts = new CancellationTokenSource();
-                cts.Token.Register(() => { process?.Kill(); Tasks.TryRemove(key, out var _); });
+                cts.Token.Register(() =>
+                {
+                    try
+                    {
+                        process?.Kill();
+                    }
+                    catch (Exception ex)
+                    {
+                        ex.Log("Couldn't remove process, likely already completed.");
+                    }
+                    Tasks.TryRemove(key, out var _);
+                } 
+                );
                 cts.CancelAfter(TimeSpan.FromMinutes(P.Config.RaphaelSolverConfig.TimeOutMins));
 
                 var task = Task.Run(() =>
@@ -122,6 +134,9 @@ namespace Artisan.CraftingLogic.Solvers
                         cts.Cancel();
                         return;
                     }
+                    cts.Token.ThrowIfCancellationRequested();
+
+                    Svc.Log.Information("Raphael process completed, output generated");
                     var rng = new Random();
                     var ID = rng.Next(50001, 10000000);
                     while (P.Config.RaphaelSolverCacheV3.Any(kv => kv.Value.ID == ID))
@@ -144,7 +159,7 @@ namespace Artisan.CraftingLogic.Solvers
                         }
                     };
 
-                    cts.Token.ThrowIfCancellationRequested();
+                    Svc.Log.Information("Raphael macro generated and stored in cache.");
                     if (P.Config.RaphaelSolverCacheV3[key] == null || P.Config.RaphaelSolverCacheV3[key].Steps.Count == 0)
                     {
                         Svc.Log.Error($"Raphael failed to generate a valid macro. This could be one of the following reasons:" +
@@ -170,27 +185,29 @@ namespace Artisan.CraftingLogic.Solvers
 
                     if (P.Config.RaphaelSolverConfig.AutoSwitch)
                     {
+                        Svc.Log.Information("Auto-switch is enabled, switching solver for recipe if applicable.");
                         if (!P.Config.RaphaelSolverConfig.AutoSwitchOnAll)
                         {
-                            Svc.Log.Debug("Switching to Raphael solver");
+                            Svc.Log.Debug("Switching to Raphael solver - Single");
                             var nopt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).FirstOrNull(x => x.Name == $"Raphael Recipe Solver");
                             if (nopt is { } opt)
                             {
                                 if (autoSwitchOk(craft.Recipe.RowId))
                                 {
+                                    Svc.Log.Information("AutoSwitchOk, setting");    
                                     var config = P.Config.RecipeConfigs.GetValueOrDefault(craft.Recipe.RowId) ?? new();
                                     config.SolverType = opt.Def.GetType().FullName!;
                                     config.SolverFlavour = opt.Flavour;
                                     P.Config.RecipeConfigs[craft.Recipe.RowId] = config;
                                 }
                                 else
-                                    Svc.Log.Debug("Never mind, recipe already has a macro assigned");
+                                    Svc.Log.Information("Never mind, recipe already has a macro assigned");
                             }
                         }
                         else
                         {
                             var crafts = AllValidCrafts(key, craft.Recipe.CraftType.RowId).ToList();
-                            Svc.Log.Debug($"Applying solver to {crafts.Count} recipes.");
+                            Svc.Log.Information($"Applying solver to {crafts.Count} recipes.");
                             var nopt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).FirstOrNull(x => x.Name == $"Raphael Recipe Solver");
                             if (nopt is { } opt)
                             {
@@ -201,17 +218,19 @@ namespace Artisan.CraftingLogic.Solvers
                                 {
                                     if (autoSwitchOk(c.Recipe.RowId))
                                     {
-                                        Svc.Log.Debug($"Switching {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) to Raphael solver");
+                                        Svc.Log.Information($"Switching {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) to Raphael solver");
                                         P.Config.RecipeConfigs[c.Recipe.RowId] = config;
                                     }
                                     else
-                                        Svc.Log.Debug($"Skipping {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) because it already has a macro assigned");
+                                        Svc.Log.Information($"Skipping {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) because it already has a macro assigned");
                                 }
                             }
                         }
                     }
-
+                    Svc.Log.Information("Saving config changes after Raphael generation.");
                     P.Config.Save();
+
+                    Svc.Log.Information("Tidying up task.");
                     Tasks.Remove(key, out var _);
                 }, cts.Token);
 
