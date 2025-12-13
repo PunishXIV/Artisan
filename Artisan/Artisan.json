@@ -12,5 +12,5 @@
     "RepoUrl": "https://github.com/PunishXIV/Artisan",
     "DalamudApiLevel": 13,
     "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
-    "ChangeLog":  "- Adding some raphael logging for troubleshooting on Discord."
+    "ChangeLog":  "- More Raphael tweaks."
 }

@@ -57,7 +57,9 @@ namespace Artisan.UI
 
         public override bool DrawConditions()
         {
-            return P.PluginUi.CraftingVisible;
+            bool crafting = Crafting.CurState is Crafting.State.InProgress or Crafting.State.QuickCraft or Crafting.State.WaitAction;
+            bool waitingForRaph = RaphaelCache.InProgressAny() && Crafting.CurState is Crafting.State.WaitStart;
+            return crafting || waitingForRaph;
         }
 
         public override void PreDraw()
@@ -80,6 +82,12 @@ namespace Artisan.UI
 
         public override void Draw()
         {
+            if (RaphaelCache.InProgressAny())
+            {
+                ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "Raphael is generating. Please wait...");
+                return;
+            }
+
             if (!P.Config.DisableHighlightedAction)
                 Hotbars.MakeButtonsGlow(CraftingProcessor.NextRec.Action);
 

@@ -328,6 +328,9 @@ public static unsafe class Crafting
 
     private static State TransitionFromWaitStart()
     {
+        if (RaphaelCache.InProgressAny())
+            return State.WaitStart;
+
         var quickSynth = GetQuickSynthAddon(); // TODO: consider updating quicksynth state to 0/max in CEH update hook and checking that here instead
         if (quickSynth != null)
         {
