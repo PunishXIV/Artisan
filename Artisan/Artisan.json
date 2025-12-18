@@ -10,7 +10,7 @@
         "crafting"
     ],
     "RepoUrl": "https://github.com/PunishXIV/Artisan",
-    "DalamudApiLevel": 13,
+    "DalamudApiLevel": 14,
     "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
     "ChangeLog":  "- More Raphael tweaks."
 }

@@ -93,7 +93,7 @@ namespace Artisan.Autocraft
             if (!item.ItemAction.IsValid)
                 return false;
             var action = item.ItemAction.Value;
-            return action.Type == 816 && action.Data[0] is 300 or 301 or 1751 or 5329;
+            return action.Action.RowId == 816 && action.Data[0] is 300 or 301 or 1751 or 5329;
         }
 
         internal static bool IsSquadronManual(Item item)
@@ -103,7 +103,7 @@ namespace Artisan.Autocraft
             if (!item.ItemAction.IsValid)
                 return false;
             var action = item.ItemAction.Value;
-            return action.Type == 816 && action.Data[0] is 2291 or 2292 or 2293 or 2294;
+            return action.Action.RowId == 816 && action.Data[0] is 2291 or 2292 or 2293 or 2294;
         }
 
 
@@ -111,7 +111,7 @@ namespace Artisan.Autocraft
         {
             if (config == null || !config.FoodEnabled)
                 return true; // don't need a food
-            var foodBuff = Svc.ClientState.LocalPlayer.StatusList.FirstOrDefault(x => x.StatusId == 48 & x.RemainingTime > 10f);
+            var foodBuff = Svc.Objects.LocalPlayer.StatusList.FirstOrDefault(x => x.StatusId == 48 & x.RemainingTime > 10f);
             if (foodBuff == null)
                 return false; // don't have any well-fed buff
             var desiredFood = LuminaSheets.ItemSheet[config.RequiredFood].ItemAction.Value;

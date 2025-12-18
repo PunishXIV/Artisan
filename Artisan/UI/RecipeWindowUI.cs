@@ -205,7 +205,7 @@ namespace Artisan
                 }
 
                 var textInput = (AtkComponentTextInput*)searchNode->GetComponent();
-                Search = Marshal.PtrToStringAnsi(new IntPtr(textInput->AtkComponentInputBase.UnkText1.StringPtr)).Trim();
+                Search = Marshal.PtrToStringAnsi(new IntPtr(textInput->AtkComponentInputBase.EvaluatedString.StringPtr)).Trim();
                 ImGui.CalcTextSize(Search);
 
                 var position = AtkResNodeFunctions.GetNodePosition(searchNode);

@@ -245,7 +245,7 @@ namespace Artisan.RawInformation
                 var missionToDo = Svc.Data.GetExcelSheet<WKSMissionToDo>().GetRow(missionUnit.MissionToDo[0].RowId);
 
                 //Svc.Log.Verbose($"{id} -> {missionRec.RowId} -> {missionUnit.RowId} -> {missionToDo.RowId} -> {missionToDo.Unknown0}");
-                return missionToDo.Unknown0 == (uint)Skills.MaterialMiracle;
+                return missionToDo.TemporaryAction.RowId == (uint)Skills.MaterialMiracle;
             }
             catch(Exception e)
             {

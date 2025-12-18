@@ -6,6 +6,7 @@ using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.ClientState.Statuses;
 using Dalamud.Hooking;
 using ECommons;
 using ECommons.DalamudServices;
@@ -613,7 +614,7 @@ public static unsafe class Crafting
         return ret;
     }
 
-    private static Dalamud.Game.ClientState.Statuses.Status? GetStatus(uint statusID) => Svc.ClientState.LocalPlayer?.StatusList.FirstOrDefault(s => s.StatusId == statusID);
+    private static IStatus? GetStatus(uint statusID) => Svc.Objects.LocalPlayer?.StatusList.FirstOrDefault(s => s.StatusId == statusID);
 
     private static void CraftingEventHandlerUpdateDetour(CraftingEventHandler* self, nint a2, nint a3, CraftingEventHandler.OperationId* payload)
     {

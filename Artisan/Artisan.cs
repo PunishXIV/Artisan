@@ -1,4 +1,5 @@
-﻿using Artisan.Autocraft;
+﻿global using Player = ECommons.GameHelpers.LegacyPlayer.Player;
+using Artisan.Autocraft;
 using Artisan.ContextMenus;
 using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
