@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Numerics;
+using TerraFX.Interop.Windows;
 using static FFXIVClientStructs.FFXIV.Client.UI.AddonItemDetailCompare;
 
 namespace Artisan.CraftingLogic;
@@ -273,8 +274,14 @@ public class RecipeConfig
             ImGui.EndCombo();
         }
 
-        if (!Crafting.EnoughDelinsForCraft(this, craft))
-            ImGuiEx.TextCentered(ImGuiColors.DalamudRed, $"You do not have enough {Svc.Data.GetExcelSheet<Item>().GetRow(28724).Name} for this macro.");
+        if (!Crafting.EnoughDelinsForCraft(this, craft, out var req))
+        {
+            ImGuiEx.TextCentered(ImGuiColors.DalamudRed, $"You do not have enough {Svc.Data.GetExcelSheet<Item>().GetRow(28724).Name} for this solver ({req} required).");
+            if (this.SolverType.Contains("Raphael"))
+            {
+                ImGuiEx.TextCentered(ImGuiColors.DalamudYellow, $"An alternative solution will be used/generated when you start crafting.");
+            }
+        }
 
         changed |= RaphaelCache.DrawRaphaelDropdown(craft, liveStats);
 

@@ -273,7 +273,7 @@ namespace Artisan.CraftingLogic.Solvers
             }
         }
 
-        public static (int Level, int Prog, int Qual, int Dur, int Initial, int Crafts, int Control, int CP) KeyParts(string key)
+        public static (int Level, int Prog, int Qual, int Dur, int Initial, int Crafts, int Control, int CP, bool SP) KeyParts(string key)
         {
             var parts = key.Split('/');
 
@@ -285,8 +285,9 @@ namespace Artisan.CraftingLogic.Solvers
             int.TryParse(parts[4], out var ctrl);
             int.TryParse(parts[5].Split('-')[0], out var cp);
             int.TryParse(parts[6], out var initial);
+            var sp = parts[7] == "Sp";
 
-            return (lvl, prog, qual, dur, initial, crafts, ctrl, cp);
+            return (lvl, prog, qual, dur, initial, crafts, ctrl, cp, sp);
         }
 
         public static bool HasSolution(CraftState craft, out MacroSolverSettings.Macro? raphaelSolutionConfig)
@@ -303,7 +304,8 @@ namespace Artisan.CraftingLogic.Solvers
                     solKey.Crafts == craft.StatCraftsmanship &&
                     solKey.Control <= craft.StatControl &&
                     solKey.Initial == craft.InitialQuality &&
-                    solKey.CP <= craft.StatCP)
+                    solKey.CP <= craft.StatCP &&
+                    solKey.SP == craft.Specialist)
                 {
                     raphaelSolutionConfig = solution.Value;
                     return true;

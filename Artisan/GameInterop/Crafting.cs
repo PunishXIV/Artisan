@@ -367,6 +367,10 @@ public static unsafe class Crafting
             CurCraft.InitialQuality = InitialQuality;
             if (P.Config.RecipeConfigs.TryGetValue(CurRecipe.Value.RowId, out var rc))
             {
+                Svc.Log.Debug($"Checking for delins");
+                if (CurCraft.Specialist && !EnoughDelinsForCraft(rc, CurCraft, out _))
+                    CurCraft.Specialist = false;
+
                 if (rc.SolverType.Contains("Raphael") && !RaphaelCache.HasSolution(CurCraft, out _))
                 {
                     var key = RaphaelCache.GetKey(CurCraft);
@@ -374,9 +378,9 @@ public static unsafe class Crafting
                         return State.WaitStart;
 
                     Svc.Log.Debug("Raphael set as config but has no solution, generating now...");
-                    var config = RaphaelCache.GetConfigFromTempOrDefault(CurCraft);
+                    var raphConfig = RaphaelCache.GetConfigFromTempOrDefault(CurCraft);
 
-                    RaphaelCache.Build(CurCraft, config);
+                    RaphaelCache.Build(CurCraft, raphConfig);
                     return State.WaitStart; // wait for solution to be ready
                 }
             }
@@ -548,14 +552,15 @@ public static unsafe class Crafting
     private static Condition GetStepCondition(AddonSynthesis* synthWindow) => (Condition)synthWindow->AtkUnitBase.AtkValues[12].Int;
     public static int DelineationCount() => InventoryManager.Instance()->GetInventoryItemCount(28724);
 
-    public static bool EnoughDelinsForCraft(RecipeConfig config, CraftState craft)
+    public static bool EnoughDelinsForCraft(RecipeConfig config, CraftState craft, out int numReq)
     {
         bool enoughDelins = true;
+        numReq = 0;
         if (config.SolverType.Contains("Macro"))
         {
             var macro = P.Config.MacroSolverConfig.FindMacro(config.SolverFlavour);
-            var specialistActs = macro.Steps.Count(x => x.Action is Skills.CarefulObservation or Skills.HeartAndSoul or Skills.QuickInnovation);
-            if (specialistActs > Crafting.DelineationCount())
+            numReq = macro.Steps.Count(x => x.Action is Skills.CarefulObservation or Skills.HeartAndSoul or Skills.QuickInnovation);
+            if (numReq > Crafting.DelineationCount())
                 enoughDelins = false;
         }
         else if (config.SolverType.Contains("Raphael"))
@@ -563,8 +568,8 @@ public static unsafe class Crafting
             var key = RaphaelCache.GetKey(craft);
             if (RaphaelCache.HasSolution(craft, out var macro))
             {
-                var specialistActs = macro.Steps.Count(x => x.Action is Skills.CarefulObservation or Skills.HeartAndSoul or Skills.QuickInnovation);
-                if (specialistActs > Crafting.DelineationCount())
+                numReq = macro.Steps.Count(x => x.Action is Skills.CarefulObservation or Skills.HeartAndSoul or Skills.QuickInnovation);
+                if (numReq > Crafting.DelineationCount())
                     enoughDelins = false;
             }
         }
