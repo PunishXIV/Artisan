@@ -97,7 +97,7 @@ namespace Artisan.CraftingLogic.Solvers
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = Path.Join(Path.GetDirectoryName(Svc.PluginInterface.AssemblyLocation.FullName), "raphael-cli.bin"),
+                        FileName = Path.Join(Path.GetDirectoryName(Svc.PluginInterface.AssemblyLocation.FullName), "raphael-cli.exe"),
                         Arguments = $"solve {itemText} {manipulation} --level {craft.StatLevel} --stats {craft.StatCraftsmanship} {craft.StatControl} {craft.StatCP} {extraArgsBuilder} --output-variables action_ids", // Command to execute
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
@@ -292,27 +292,37 @@ namespace Artisan.CraftingLogic.Solvers
 
         public static bool HasSolution(CraftState craft, out MacroSolverSettings.Macro? raphaelSolutionConfig)
         {
-            foreach (var solution in P.Config.RaphaelSolverCacheV4.OrderByDescending(x => KeyParts(x.Key).Control))
-            {
-                if (solution.Value.Steps.Count == 0) continue;
-
-                var solKey = KeyParts(solution.Key);
-
-                if (solKey.Level == craft.CraftLevel &&
-                    solKey.Prog == craft.CraftProgress &&
-                    solKey.Qual == craft.CraftQualityMax &&
-                    solKey.Crafts == craft.StatCraftsmanship &&
-                    solKey.Control <= craft.StatControl &&
-                    solKey.Initial == craft.InitialQuality &&
-                    solKey.CP <= craft.StatCP &&
-                    solKey.SP == craft.Specialist)
-                {
-                    raphaelSolutionConfig = solution.Value;
-                    return true;
-                }
-            }
+            var thisKey = GetKey(craft);
             raphaelSolutionConfig = null;
-            return false;
+            var sol = P.Config.RaphaelSolverCacheV4.FirstOrNull(x => x.Key == thisKey);
+            if (sol != null)
+            {
+                raphaelSolutionConfig = sol.Value.Value;
+                return true;
+            }
+            else
+                return false;
+
+            //foreach (var solution in P.Config.RaphaelSolverCacheV4.OrderByDescending(x => KeyParts(x.Key).Control))
+            //{
+            //    if (solution.Value.Steps.Count == 0) continue;
+
+            //    var solKey = KeyParts(solution.Key);
+
+            //    if (solKey.Level == craft.CraftLevel &&
+            //        solKey.Prog == craft.CraftProgress &&
+            //        solKey.Qual == craft.CraftQualityMax &&
+            //        solKey.Crafts == craft.StatCraftsmanship &&
+            //        solKey.Control <= craft.StatControl &&
+            //        solKey.Initial == craft.InitialQuality &&
+            //        solKey.CP <= craft.StatCP &&
+            //        solKey.SP == craft.Specialist)
+            //    {
+            //        raphaelSolutionConfig = solution.Value;
+            //        return true;
+            //    }
+            //}
+            //return false;
         }
 
         public static bool InProgress(CraftState craft) => Tasks.TryGetValue(GetKey(craft), out var _);
@@ -321,7 +331,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         internal static bool CLIExists()
         {
-            return File.Exists(Path.Join(Path.GetDirectoryName(Svc.PluginInterface.AssemblyLocation.FullName), "raphael-cli.bin"));
+            return File.Exists(Path.Join(Path.GetDirectoryName(Svc.PluginInterface.AssemblyLocation.FullName), "raphael-cli.exe"));
         }
 
         public static bool DrawRaphaelDropdown(CraftState craft, bool liveStats = true)
