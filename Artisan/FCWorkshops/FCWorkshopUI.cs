@@ -23,274 +23,196 @@ namespace Artisan.FCWorkshops
 
         internal static void Draw()
         {
-            if (NumberOfLoops <= 0)
+            try
             {
-                NumberOfLoops = 1;
-            }
-
-            ImGui.TextWrapped($"In this tab, you can browse all the FC Workshop projects in the game. " +
-                $"It is broken into 3 main sections. The first is an overview of the full project. " +
-                $"The second breaks down each of the parts. " +
-                $"The last is each of the phases. " +
-                $"In each section, you can click a button to create a crafting list with all you " +
-                $"need to craft that particular section.");
-
-
-            ImGui.Separator();
-            string preview = SelectedProject != 0 ? LuminaSheets.ItemSheet[LuminaSheets.WorkshopSequenceSheet[SelectedProject].ResultItem.RowId].Name.ToString() : "";
-            if (ImGui.BeginCombo("###Workshop Project", preview))
-            {
-                ImGui.Text("Search");
-                ImGui.SameLine();
-                ImGui.InputText("###ProjectSearch", ref Search, 100);
-
-                if (ImGui.Selectable("", SelectedProject == 0))
+                if (NumberOfLoops <= 0)
                 {
-                    SelectedProject = 0;
+                    NumberOfLoops = 1;
                 }
 
-                foreach (var project in LuminaSheets.WorkshopSequenceSheet.Values.Where(x => x.RowId > 0).Where(x => x.ResultItem.Value.Name.ToString().Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
+                ImGui.TextWrapped($"In this tab, you can browse all the FC Workshop projects in the game. " +
+                    $"It is broken into 3 main sections. The first is an overview of the full project. " +
+                    $"The second breaks down each of the parts. " +
+                    $"The last is each of the phases. " +
+                    $"In each section, you can click a button to create a crafting list with all you " +
+                    $"need to craft that particular section.");
+
+
+                ImGui.Separator();
+                string preview = SelectedProject != 0 ? LuminaSheets.ItemSheet[LuminaSheets.WorkshopSequenceSheet[SelectedProject].ResultItem.RowId].Name.ToString() : "";
+                if (ImGui.BeginCombo("###Workshop Project", preview))
                 {
-                    bool selected = ImGui.Selectable($"{project.ResultItem.Value.Name.ToString()}", project.RowId == SelectedProject);
+                    ImGui.Text("Search");
+                    ImGui.SameLine();
+                    ImGui.InputText("###ProjectSearch", ref Search, 100);
 
-                    if (selected)
+                    if (ImGui.Selectable("", SelectedProject == 0))
                     {
-                        SelectedProject = project.RowId;
+                        SelectedProject = 0;
                     }
-                }
 
-                ImGui.EndCombo();
-            }
-
-            if (SelectedProject != 0)
-            {
-                var project = LuminaSheets.WorkshopSequenceSheet[SelectedProject];
-
-                if (ImGui.CollapsingHeader("Project Information"))
-                {
-                    if (ImGui.BeginTable($"FCWorkshopProjectContainer", 2, ImGuiTableFlags.Resizable))
+                    foreach (var project in LuminaSheets.WorkshopSequenceSheet.Values.Where(x => x.RowId > 0).Where(x => x.ResultItem.Value.Name.ToString().Contains(Search, StringComparison.CurrentCultureIgnoreCase)))
                     {
-                        ImGui.TableSetupColumn($"###Description", ImGuiTableColumnFlags.WidthFixed);
+                        bool selected = ImGui.Selectable($"{project.ResultItem.Value.Name.ToString()}", project.RowId == SelectedProject);
 
-                        ImGui.TableNextColumn();
-
-                        ImGuiEx.Text($"Selected project:");
-                        ImGui.TableNextColumn();
-                        ImGui.Text($"{project.ResultItem.Value.Name.ToString()}");
-                        ImGui.TableNextColumn();
-                        ImGuiEx.Text($"Number of parts:");
-                        ImGui.TableNextColumn();
-                        ImGui.Text($"{project.CompanyCraftPart.Where(x => x.RowId > 0).Count()}");
-                        ImGui.TableNextColumn();
-                        ImGuiEx.Text($"Total number of phases:");
-                        ImGui.TableNextColumn();
-                        ImGui.Text($"{project.CompanyCraftPart.Where(x => x.RowId > 0).SelectMany(x => x.Value.CompanyCraftProcess).Where(x => x.RowId > 0).Count()}");
-
-                        ImGui.EndTable();
-                    }
-                    if (ImGui.BeginTable($"###FCWorkshopProjectItemsContainer", RetainerInfo.ATools ? 4 : 3, ImGuiTableFlags.Borders))
-                    {
-                        ImGui.TableSetupColumn($"Item", ImGuiTableColumnFlags.WidthFixed);
-                        ImGui.TableSetupColumn($"Total Required", ImGuiTableColumnFlags.WidthFixed);
-                        ImGui.TableSetupColumn($"Inventory", ImGuiTableColumnFlags.WidthFixed);
-                        if (RetainerInfo.ATools) ImGui.TableSetupColumn($"Retainers", ImGuiTableColumnFlags.WidthFixed);
-
-                        ImGui.TableHeadersRow();
-
-                        Dictionary<uint, int> TotalItems = new Dictionary<uint, int>();
-                        foreach (var item in project.CompanyCraftPart.Where(x => x.RowId > 0).SelectMany(x => x.Value.CompanyCraftProcess).Where(x => x.RowId > 0).SelectMany(x => x.Value.SupplyItems()).Where(x => x.SupplyItem.RowId > 0).GroupBy(x => x))
+                        if (selected)
                         {
-                            if (TotalItems.ContainsKey(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId))
-                                TotalItems[LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId] += item.Sum(x => x.SetQuantity * x.SetsRequired);
-                            else
-                                TotalItems.TryAdd(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId, item.Sum(x => x.SetQuantity * x.SetsRequired));
+                            SelectedProject = project.RowId;
                         }
+                    }
 
-                        foreach (var item in TotalItems)
+                    ImGui.EndCombo();
+                }
+
+                if (SelectedProject != 0)
+                {
+                    var project = LuminaSheets.WorkshopSequenceSheet[SelectedProject];
+
+                    if (ImGui.CollapsingHeader("Project Information"))
+                    {
+                        if (ImGui.BeginTable($"FCWorkshopProjectContainer", 2, ImGuiTableFlags.Resizable))
                         {
-                            ImGui.TableNextRow();
-                            ImGui.TableNextColumn();
-                            ImGui.Text($"{LuminaSheets.ItemSheet[item.Key].Name.ToString()}");
-                            ImGui.TableNextColumn();
-                            ImGui.Text($"{item.Value * NumberOfLoops}");
-                            ImGui.TableNextColumn();
-                            int invCount = CraftingListUI.NumberOfIngredient(LuminaSheets.ItemSheet[item.Key].RowId);
-                            ImGui.Text($"{invCount}");
-                            bool hasEnoughInInv = invCount >= item.Value * NumberOfLoops;
-                            if (hasEnoughInInv)
-                            {
-                                var color = ImGuiColors.HealerGreen;
-                                color.W -= 0.3f;
-                                ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
-                            }
-                            if (RetainerInfo.ATools)
-                            {
-                                ImGui.TableNextColumn();
-                                ImGui.Text($"{RetainerInfo.GetRetainerItemCount(LuminaSheets.ItemSheet[item.Key].RowId)}");
+                            ImGui.TableSetupColumn($"###Description", ImGuiTableColumnFlags.WidthFixed);
 
-                                bool hasEnoughWithRetainer = (invCount + RetainerInfo.GetRetainerItemCount(LuminaSheets.ItemSheet[item.Key].RowId) >= item.Value * NumberOfLoops);
-                                if (!hasEnoughInInv && hasEnoughWithRetainer)
+                            ImGui.TableNextColumn();
+
+                            ImGuiEx.Text($"Selected project:");
+                            ImGui.TableNextColumn();
+                            ImGui.Text($"{project.ResultItem.Value.Name.ToString()}");
+                            ImGui.TableNextColumn();
+                            ImGuiEx.Text($"Number of parts:");
+                            ImGui.TableNextColumn();
+                            ImGui.Text($"{project.CompanyCraftPart.Where(x => x.RowId > 0).Count()}");
+                            ImGui.TableNextColumn();
+                            ImGuiEx.Text($"Total number of phases:");
+                            ImGui.TableNextColumn();
+                            ImGui.Text($"{project.CompanyCraftPart.Where(x => x.RowId > 0).SelectMany(x => x.Value.CompanyCraftProcess).Where(x => x.RowId > 0).Count()}");
+
+                            ImGui.EndTable();
+                        }
+                        if (ImGui.BeginTable($"###FCWorkshopProjectItemsContainer", RetainerInfo.ATools ? 4 : 3, ImGuiTableFlags.Borders))
+                        {
+                            ImGui.TableSetupColumn($"Item", ImGuiTableColumnFlags.WidthFixed);
+                            ImGui.TableSetupColumn($"Total Required", ImGuiTableColumnFlags.WidthFixed);
+                            ImGui.TableSetupColumn($"Inventory", ImGuiTableColumnFlags.WidthFixed);
+                            if (RetainerInfo.ATools) ImGui.TableSetupColumn($"Retainers", ImGuiTableColumnFlags.WidthFixed);
+
+                            ImGui.TableHeadersRow();
+
+                            Dictionary<uint, int> TotalItems = new Dictionary<uint, int>();
+                            foreach (var item in project.CompanyCraftPart.Where(x => x.RowId > 0).SelectMany(x => x.Value.CompanyCraftProcess).Where(x => x.RowId > 0).SelectMany(x => x.Value.SupplyItems()).Where(x => x.SupplyItem.RowId > 0).GroupBy(x => x))
+                            {
+                                if (TotalItems.ContainsKey(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId))
+                                    TotalItems[LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId] += item.Sum(x => x.SetQuantity * x.SetsRequired);
+                                else
+                                    TotalItems.TryAdd(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId, item.Sum(x => x.SetQuantity * x.SetsRequired));
+                            }
+
+                            foreach (var item in TotalItems)
+                            {
+                                ImGui.TableNextRow();
+                                ImGui.TableNextColumn();
+                                ImGui.Text($"{LuminaSheets.ItemSheet[item.Key].Name.ToString()}");
+                                ImGui.TableNextColumn();
+                                ImGui.Text($"{item.Value * NumberOfLoops}");
+                                ImGui.TableNextColumn();
+                                int invCount = CraftingListUI.NumberOfIngredient(LuminaSheets.ItemSheet[item.Key].RowId);
+                                ImGui.Text($"{invCount}");
+                                bool hasEnoughInInv = invCount >= item.Value * NumberOfLoops;
+                                if (hasEnoughInInv)
                                 {
-                                    var color = ImGuiColors.DalamudOrange;
-                                    color.W -= 0.6f;
+                                    var color = ImGuiColors.HealerGreen;
+                                    color.W -= 0.3f;
                                     ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                                 }
-                            }
-
-                        }
-
-                        ImGui.EndTable();
-                    }
-
-                    ImGui.InputInt("Number of Times###LoopProject", ref NumberOfLoops);
-
-                    if (ImGui.Button($"Create Crafting List for this Project", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
-                    {
-                        Notify.Info($"Creating List. Please wait.");
-                        Task.Run(() => CreateProjectList(project, false)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
-                    }
-
-                    if (ImGui.Button($"Create Crafting List for this Project (Including pre-crafts)", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
-                    {
-                        Notify.Info($"Creating List. Please wait.");
-                        Task.Run(() => CreateProjectList(project, true)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
-                    }
-                }
-                if (ImGui.CollapsingHeader("Project Parts"))
-                {
-                    ImGui.Indent();
-                    string partNum = "";
-                    foreach (var part in project.CompanyCraftPart.Where(x => x.RowId > 0).Select(x => x.Value))
-                    {
-                        partNum = part.CompanyCraftType.Value.Name.ToString();
-                        if (ImGui.CollapsingHeader($"{partNum}"))
-                        {
-                            if (ImGui.BeginTable($"FCWorkshopPartsContainer###{part.RowId}", 2, ImGuiTableFlags.None))
-                            {
-                                ImGui.TableSetupColumn($"###PartType{part.RowId}", ImGuiTableColumnFlags.WidthFixed);
-                                ImGui.TableSetupColumn($"###Phases{part.RowId}", ImGuiTableColumnFlags.WidthFixed);
-                                ImGui.TableNextColumn();
-
-                                ImGuiEx.Text($"Part Type:");
-                                ImGui.TableNextColumn();
-                                ImGui.Text($"{part.CompanyCraftType.Value.Name.ToString()}");
-                                ImGui.TableNextColumn();
-                                ImGuiEx.Text($"Number of phases:");
-                                ImGui.TableNextColumn();
-                                ImGui.Text($"{part.CompanyCraftProcess.Where(x => x.RowId > 0).Count()}");
-                                ImGui.TableNextColumn();
-
-                                ImGui.EndTable();
-                            }
-                            if (ImGui.BeginTable($"###FCWorkshopPartItemsContainer{part.RowId}", RetainerInfo.ATools ? 4 : 3, ImGuiTableFlags.Borders))
-                            {
-                                ImGui.TableSetupColumn($"Item", ImGuiTableColumnFlags.WidthFixed);
-                                ImGui.TableSetupColumn($"Total Required", ImGuiTableColumnFlags.WidthFixed);
-                                ImGui.TableSetupColumn($"Inventory", ImGuiTableColumnFlags.WidthFixed);
-                                if (RetainerInfo.ATools) ImGui.TableSetupColumn($"Retainers", ImGuiTableColumnFlags.WidthFixed);
-                                ImGui.TableHeadersRow();
-
-                                Dictionary<uint, int> TotalItems = new Dictionary<uint, int>();
-                                foreach (var item in part.CompanyCraftProcess.Where(x => x.RowId > 0).SelectMany(x => x.Value.SupplyItems()).Where(x => x.SupplyItem.RowId > 0).GroupBy(x => x.SupplyItem))
+                                if (RetainerInfo.ATools)
                                 {
-                                    if (TotalItems.ContainsKey(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId))
-                                        TotalItems[LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId] += item.Sum(x => x.SetQuantity * x.SetsRequired);
-                                    else
-                                        TotalItems.TryAdd(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId, item.Sum(x => x.SetQuantity * x.SetsRequired));
+                                    ImGui.TableNextColumn();
+                                    ImGui.Text($"{RetainerInfo.GetRetainerItemCount(LuminaSheets.ItemSheet[item.Key].RowId)}");
 
-                                }
-
-                                foreach (var item in TotalItems)
-                                {
-                                    ImGui.TableNextRow();
-                                    ImGui.TableNextColumn();
-                                    ImGui.Text($"{LuminaSheets.ItemSheet[item.Key].Name.ToString()}");
-                                    ImGui.TableNextColumn();
-                                    ImGui.Text($"{item.Value * NumberOfLoops}");
-                                    ImGui.TableNextColumn();
-                                    int invCount = CraftingListUI.NumberOfIngredient(item.Key);
-                                    ImGui.Text($"{invCount}");
-                                    bool hasEnoughInInv = invCount >= item.Value * NumberOfLoops;
-                                    if (hasEnoughInInv)
+                                    bool hasEnoughWithRetainer = (invCount + RetainerInfo.GetRetainerItemCount(LuminaSheets.ItemSheet[item.Key].RowId) >= item.Value * NumberOfLoops);
+                                    if (!hasEnoughInInv && hasEnoughWithRetainer)
                                     {
-                                        var color = ImGuiColors.HealerGreen;
-                                        color.W -= 0.3f;
+                                        var color = ImGuiColors.DalamudOrange;
+                                        color.W -= 0.6f;
                                         ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                                     }
-                                    if (RetainerInfo.ATools)
-                                    {
-                                        ImGui.TableNextColumn();
-                                        ImGui.Text($"{RetainerInfo.GetRetainerItemCount(item.Key)}");
-
-                                        bool hasEnoughWithRetainer = (invCount + RetainerInfo.GetRetainerItemCount(item.Key)) >= item.Value * NumberOfLoops;
-                                        if (!hasEnoughInInv && hasEnoughWithRetainer)
-                                        {
-                                            var color = ImGuiColors.DalamudOrange;
-                                            color.W -= 0.6f;
-                                            ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
-                                        }
-                                    }
                                 }
 
-                                ImGui.EndTable();
                             }
 
-                            ImGui.InputInt("Number of Times###LoopPart", ref NumberOfLoops);
+                            ImGui.EndTable();
+                        }
 
+                        ImGui.InputInt("Number of Times###LoopProject", ref NumberOfLoops);
 
-                            if (ImGui.Button($"Create Crafting List for this Part", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
-                            {
-                                Notify.Info($"Creating List. Please wait.");
-                                Task.Run(() => CreatePartList(part, partNum, false)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
-                            }
+                        if (ImGui.Button($"Create Crafting List for this Project", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
+                        {
+                            Notify.Info($"Creating List. Please wait.");
+                            Task.Run(() => CreateProjectList(project, false)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
+                        }
 
-                            if (ImGui.Button($"Create Crafting List for this Part (Including pre-crafts)", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
-                            {
-                                Notify.Info($"Creating List. Please wait.");
-                                Task.Run(() => CreatePartList(part, partNum, true)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
-                            }
+                        if (ImGui.Button($"Create Crafting List for this Project (Including pre-crafts)", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
+                        {
+                            Notify.Info($"Creating List. Please wait.");
+                            Task.Run(() => CreateProjectList(project, true)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
                         }
                     }
-                    ImGui.Unindent();
-                }
-
-                if (ImGui.CollapsingHeader("Project Phases"))
-                {
-                    string pNum = "";
-                    foreach (var part in project.CompanyCraftPart.Where(x => x.RowId > 0).Select(x => x.Value))
+                    if (ImGui.CollapsingHeader("Project Parts"))
                     {
                         ImGui.Indent();
-                        int phaseNum = 1;
-                        pNum = part.CompanyCraftType.Value.Name.ToString();
-                        foreach (var phase in part.CompanyCraftProcess.Where(x => x.RowId > 0))
+                        string partNum = "";
+                        foreach (var part in project.CompanyCraftPart.Where(x => x.RowId > 0).Select(x => x.Value))
                         {
-                            if (ImGui.CollapsingHeader($"{pNum} - Phase {phaseNum}"))
+                            partNum = part.CompanyCraftType.Value.Name.ToString();
+                            if (ImGui.CollapsingHeader($"{partNum}"))
                             {
-                                if (ImGui.BeginTable($"###FCWorkshopPhaseContainer{phase.RowId}", RetainerInfo.ATools ? 6 : 5, ImGuiTableFlags.Borders))
+                                if (ImGui.BeginTable($"FCWorkshopPartsContainer###{part.RowId}", 2, ImGuiTableFlags.None))
+                                {
+                                    ImGui.TableSetupColumn($"###PartType{part.RowId}", ImGuiTableColumnFlags.WidthFixed);
+                                    ImGui.TableSetupColumn($"###Phases{part.RowId}", ImGuiTableColumnFlags.WidthFixed);
+                                    ImGui.TableNextColumn();
+
+                                    ImGuiEx.Text($"Part Type:");
+                                    ImGui.TableNextColumn();
+                                    ImGui.Text($"{part.CompanyCraftType.Value.Name.ToString()}");
+                                    ImGui.TableNextColumn();
+                                    ImGuiEx.Text($"Number of phases:");
+                                    ImGui.TableNextColumn();
+                                    ImGui.Text($"{part.CompanyCraftProcess.Where(x => x.RowId > 0).Count()}");
+                                    ImGui.TableNextColumn();
+
+                                    ImGui.EndTable();
+                                }
+                                if (ImGui.BeginTable($"###FCWorkshopPartItemsContainer{part.RowId}", RetainerInfo.ATools ? 4 : 3, ImGuiTableFlags.Borders))
                                 {
                                     ImGui.TableSetupColumn($"Item", ImGuiTableColumnFlags.WidthFixed);
-                                    ImGui.TableSetupColumn($"Set Quantity", ImGuiTableColumnFlags.WidthFixed);
-                                    ImGui.TableSetupColumn($"Sets Required", ImGuiTableColumnFlags.WidthFixed);
                                     ImGui.TableSetupColumn($"Total Required", ImGuiTableColumnFlags.WidthFixed);
                                     ImGui.TableSetupColumn($"Inventory", ImGuiTableColumnFlags.WidthFixed);
                                     if (RetainerInfo.ATools) ImGui.TableSetupColumn($"Retainers", ImGuiTableColumnFlags.WidthFixed);
                                     ImGui.TableHeadersRow();
 
-                                    foreach (var item in phase.Value.SupplyItems().Where(x => x.SupplyItem.RowId > 0))
+                                    Dictionary<uint, int> TotalItems = new Dictionary<uint, int>();
+                                    foreach (var item in part.CompanyCraftProcess.Where(x => x.RowId > 0).SelectMany(x => x.Value.SupplyItems()).Where(x => x.SupplyItem.RowId > 0).GroupBy(x => x.SupplyItem))
+                                    {
+                                        if (TotalItems.ContainsKey(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId))
+                                            TotalItems[LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId] += item.Sum(x => x.SetQuantity * x.SetsRequired);
+                                        else
+                                            TotalItems.TryAdd(LuminaSheets.WorkshopSupplyItemSheet[item.Select(x => x.SupplyItem.RowId).First()].Item.RowId, item.Sum(x => x.SetQuantity * x.SetsRequired));
+
+                                    }
+
+                                    foreach (var item in TotalItems)
                                     {
                                         ImGui.TableNextRow();
                                         ImGui.TableNextColumn();
-                                        ImGui.Text($"{LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem.RowId].Item.Value.Name.ToString()}");
+                                        ImGui.Text($"{LuminaSheets.ItemSheet[item.Key].Name.ToString()}");
                                         ImGui.TableNextColumn();
-                                        ImGui.Text($"{item.SetQuantity}");
+                                        ImGui.Text($"{item.Value * NumberOfLoops}");
                                         ImGui.TableNextColumn();
-                                        ImGui.Text($"{item.SetsRequired * NumberOfLoops}");
-                                        ImGui.TableNextColumn();
-                                        ImGui.Text($"{item.SetsRequired * item.SetQuantity * NumberOfLoops}");
-                                        ImGui.TableNextColumn();
-                                        int invCount = CraftingListUI.NumberOfIngredient(LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem.RowId].Item.RowId);
+                                        int invCount = CraftingListUI.NumberOfIngredient(item.Key);
                                         ImGui.Text($"{invCount}");
-                                        bool hasEnoughInInv = invCount >= (item.SetQuantity * item.SetsRequired);
+                                        bool hasEnoughInInv = invCount >= item.Value * NumberOfLoops;
                                         if (hasEnoughInInv)
                                         {
                                             var color = ImGuiColors.HealerGreen;
@@ -300,9 +222,9 @@ namespace Artisan.FCWorkshops
                                         if (RetainerInfo.ATools)
                                         {
                                             ImGui.TableNextColumn();
-                                            ImGui.Text($"{RetainerInfo.GetRetainerItemCount(LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem.RowId].Item.RowId)}");
+                                            ImGui.Text($"{RetainerInfo.GetRetainerItemCount(item.Key)}");
 
-                                            bool hasEnoughWithRetainer = (invCount + RetainerInfo.GetRetainerItemCount(LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem.RowId].Item.RowId)) >= (item.SetQuantity * item.SetsRequired);
+                                            bool hasEnoughWithRetainer = (invCount + RetainerInfo.GetRetainerItemCount(item.Key)) >= item.Value * NumberOfLoops;
                                             if (!hasEnoughInInv && hasEnoughWithRetainer)
                                             {
                                                 var color = ImGuiColors.DalamudOrange;
@@ -310,34 +232,116 @@ namespace Artisan.FCWorkshops
                                                 ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                                             }
                                         }
-
                                     }
 
                                     ImGui.EndTable();
                                 }
 
-                                ImGui.InputInt("Number of Times###LoopPhase", ref NumberOfLoops);
+                                ImGui.InputInt("Number of Times###LoopPart", ref NumberOfLoops);
 
-                                if (ImGui.Button($"Create Crafting List for this Phase###PhaseButton{phaseNum}", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
+
+                                if (ImGui.Button($"Create Crafting List for this Part", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
                                 {
                                     Notify.Info($"Creating List. Please wait.");
-                                    Task.Run(() => CreatePhaseList(phase.Value!, pNum, phaseNum, false)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
+                                    Task.Run(() => CreatePartList(part, partNum, false)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
                                 }
 
-                                if (ImGui.Button($"Create Crafting List for this Phase (Including pre-crafts)###PhaseButtonPC{phaseNum}", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
+                                if (ImGui.Button($"Create Crafting List for this Part (Including pre-crafts)", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
                                 {
                                     Notify.Info($"Creating List. Please wait.");
-                                    Task.Run(() => CreatePhaseList(phase.Value!, pNum, phaseNum, true)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
+                                    Task.Run(() => CreatePartList(part, partNum, true)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
                                 }
-
                             }
-                            phaseNum++;
                         }
                         ImGui.Unindent();
                     }
 
+                    if (ImGui.CollapsingHeader("Project Phases"))
+                    {
+                        string pNum = "";
+                        foreach (var part in project.CompanyCraftPart.Where(x => x.RowId > 0).Select(x => x.Value))
+                        {
+                            ImGui.Indent();
+                            int phaseNum = 1;
+                            pNum = part.CompanyCraftType.Value.Name.ToString();
+                            foreach (var phase in part.CompanyCraftProcess.Where(x => x.RowId > 0))
+                            {
+                                if (ImGui.CollapsingHeader($"{pNum} - Phase {phaseNum}"))
+                                {
+                                    if (ImGui.BeginTable($"###FCWorkshopPhaseContainer{phase.RowId}", RetainerInfo.ATools ? 6 : 5, ImGuiTableFlags.Borders))
+                                    {
+                                        ImGui.TableSetupColumn($"Item", ImGuiTableColumnFlags.WidthFixed);
+                                        ImGui.TableSetupColumn($"Set Quantity", ImGuiTableColumnFlags.WidthFixed);
+                                        ImGui.TableSetupColumn($"Sets Required", ImGuiTableColumnFlags.WidthFixed);
+                                        ImGui.TableSetupColumn($"Total Required", ImGuiTableColumnFlags.WidthFixed);
+                                        ImGui.TableSetupColumn($"Inventory", ImGuiTableColumnFlags.WidthFixed);
+                                        if (RetainerInfo.ATools) ImGui.TableSetupColumn($"Retainers", ImGuiTableColumnFlags.WidthFixed);
+                                        ImGui.TableHeadersRow();
+
+                                        foreach (var item in phase.Value.SupplyItems().Where(x => x.SupplyItem.RowId > 0))
+                                        {
+                                            ImGui.TableNextRow();
+                                            ImGui.TableNextColumn();
+                                            ImGui.Text($"{LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem.RowId].Item.Value.Name.ToString()}");
+                                            ImGui.TableNextColumn();
+                                            ImGui.Text($"{item.SetQuantity}");
+                                            ImGui.TableNextColumn();
+                                            ImGui.Text($"{item.SetsRequired * NumberOfLoops}");
+                                            ImGui.TableNextColumn();
+                                            ImGui.Text($"{item.SetsRequired * item.SetQuantity * NumberOfLoops}");
+                                            ImGui.TableNextColumn();
+                                            int invCount = CraftingListUI.NumberOfIngredient(LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem.RowId].Item.RowId);
+                                            ImGui.Text($"{invCount}");
+                                            bool hasEnoughInInv = invCount >= (item.SetQuantity * item.SetsRequired);
+                                            if (hasEnoughInInv)
+                                            {
+                                                var color = ImGuiColors.HealerGreen;
+                                                color.W -= 0.3f;
+                                                ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                                            }
+                                            if (RetainerInfo.ATools)
+                                            {
+                                                ImGui.TableNextColumn();
+                                                ImGui.Text($"{RetainerInfo.GetRetainerItemCount(LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem.RowId].Item.RowId)}");
+
+                                                bool hasEnoughWithRetainer = (invCount + RetainerInfo.GetRetainerItemCount(LuminaSheets.WorkshopSupplyItemSheet[item.SupplyItem.RowId].Item.RowId)) >= (item.SetQuantity * item.SetsRequired);
+                                                if (!hasEnoughInInv && hasEnoughWithRetainer)
+                                                {
+                                                    var color = ImGuiColors.DalamudOrange;
+                                                    color.W -= 0.6f;
+                                                    ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
+                                                }
+                                            }
+
+                                        }
+
+                                        ImGui.EndTable();
+                                    }
+
+                                    ImGui.InputInt("Number of Times###LoopPhase", ref NumberOfLoops);
+
+                                    if (ImGui.Button($"Create Crafting List for this Phase###PhaseButton{phaseNum}", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
+                                    {
+                                        Notify.Info($"Creating List. Please wait.");
+                                        Task.Run(() => CreatePhaseList(phase.Value!, pNum, phaseNum, false)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
+                                    }
+
+                                    if (ImGui.Button($"Create Crafting List for this Phase (Including pre-crafts)###PhaseButtonPC{phaseNum}", new Vector2(ImGui.GetContentRegionAvail().X, 24f.Scale())))
+                                    {
+                                        Notify.Info($"Creating List. Please wait.");
+                                        Task.Run(() => CreatePhaseList(phase.Value!, pNum, phaseNum, true)).ContinueWith((_) => Notify.Success("FC Workshop List Created"));
+                                    }
+
+                                }
+                                phaseNum++;
+                            }
+                            ImGui.Unindent();
+                        }
+
+                    }
                 }
             }
+            catch { }
         }
 
         private static void CreatePartList(CompanyCraftPart value, string partNum, bool includePrecraft, NewCraftingList? existingList = null)

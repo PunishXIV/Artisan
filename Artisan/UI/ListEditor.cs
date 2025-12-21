@@ -190,94 +190,98 @@ internal class ListEditor : Window, IDisposable
 
     public async override void Draw()
     {
-        var btn = ImGuiHelpers.GetButtonSize("Begin Crafting List");
-
-        if (Endurance.Enable || CraftingListUI.Processing)
-            ImGui.BeginDisabled();
-
-        if (ImGui.Button("Begin Crafting List"))
+        try
         {
-            CraftingListUI.selectedList = this.SelectedList;
-            CraftingListUI.StartList();
-            this.IsOpen = false;
-        }
-
-        if (Endurance.Enable || CraftingListUI.Processing)
-            ImGui.EndDisabled();
-
-        ImGui.SameLine();
-        var export = ImGuiHelpers.GetButtonSize("Export List");
-
-        if (ImGui.Button("Export List"))
-        {
-            ImGui.SetClipboardText(JsonConvert.SerializeObject(P.Config.NewCraftingLists.Where(x => x.ID == SelectedList.ID).First()));
-            Notify.Success("List exported to clipboard.");
-        }
-
-        var restock = ImGuiHelpers.GetButtonSize("Restock From Retainers");
-        if (RetainerInfo.ATools)
-        {
-            ImGui.SameLine();
+            var btn = ImGuiHelpers.GetButtonSize("Begin Crafting List");
 
             if (Endurance.Enable || CraftingListUI.Processing)
                 ImGui.BeginDisabled();
 
-            if (ImGui.Button($"Restock From Retainers"))
+            if (ImGui.Button("Begin Crafting List"))
             {
-                Task.Run(() => RetainerInfo.RestockFromRetainers(SelectedList));
+                CraftingListUI.selectedList = this.SelectedList;
+                CraftingListUI.StartList();
+                this.IsOpen = false;
             }
 
             if (Endurance.Enable || CraftingListUI.Processing)
                 ImGui.EndDisabled();
-        }
-        else
-        {
+
             ImGui.SameLine();
+            var export = ImGuiHelpers.GetButtonSize("Export List");
 
-            if (!RetainerInfo.AToolsInstalled)
-                ImGuiEx.Text(ImGuiColors.DalamudYellow, $"Please install Allagan Tools for retainer features.");
-
-            if (RetainerInfo.AToolsInstalled && !RetainerInfo.AToolsEnabled)
-                ImGuiEx.Text(ImGuiColors.DalamudYellow, $"Please enable Allagan Tools for retainer features.");
-
-            if (RetainerInfo.AToolsEnabled)
-                ImGuiEx.Text(ImGuiColors.DalamudYellow, $"You have turned off Allagan Tools integration.");
-        }
-
-        if (ImGui.BeginTabBar("CraftingListEditor", ImGuiTabBarFlags.None))
-        {
-            if (ImGui.BeginTabItem("Recipes"))
+            if (ImGui.Button("Export List"))
             {
-                DrawRecipes();
-                ImGui.EndTabItem();
+                ImGui.SetClipboardText(JsonConvert.SerializeObject(P.Config.NewCraftingLists.Where(x => x.ID == SelectedList.ID).First()));
+                Notify.Success("List exported to clipboard.");
             }
 
-            if (ImGui.BeginTabItem("Ingredients"))
+            var restock = ImGuiHelpers.GetButtonSize("Restock From Retainers");
+            if (RetainerInfo.ATools)
             {
-                if (NeedsToRefreshTable)
+                ImGui.SameLine();
+
+                if (Endurance.Enable || CraftingListUI.Processing)
+                    ImGui.BeginDisabled();
+
+                if (ImGui.Button($"Restock From Retainers"))
                 {
-                    RefreshTable(null, true);
-                    NeedsToRefreshTable = false;
+                    Task.Run(() => RetainerInfo.RestockFromRetainers(SelectedList));
                 }
 
-                DrawIngredients();
-                ImGui.EndTabItem();
+                if (Endurance.Enable || CraftingListUI.Processing)
+                    ImGui.EndDisabled();
             }
-
-            if (ImGui.BeginTabItem("List Settings"))
+            else
             {
-                DrawListSettings();
-                ImGui.EndTabItem();
+                ImGui.SameLine();
+
+                if (!RetainerInfo.AToolsInstalled)
+                    ImGuiEx.Text(ImGuiColors.DalamudYellow, $"Please install Allagan Tools for retainer features.");
+
+                if (RetainerInfo.AToolsInstalled && !RetainerInfo.AToolsEnabled)
+                    ImGuiEx.Text(ImGuiColors.DalamudYellow, $"Please enable Allagan Tools for retainer features.");
+
+                if (RetainerInfo.AToolsEnabled)
+                    ImGuiEx.Text(ImGuiColors.DalamudYellow, $"You have turned off Allagan Tools integration.");
             }
 
-            if (ImGui.BeginTabItem("Copy From Other List"))
+            if (ImGui.BeginTabBar("CraftingListEditor", ImGuiTabBarFlags.None))
             {
-                DrawCopyFromList();
-                ImGui.EndTabItem();
-            }
+                if (ImGui.BeginTabItem("Recipes"))
+                {
+                    DrawRecipes();
+                    ImGui.EndTabItem();
+                }
 
-            ImGui.EndTabBar();
+                if (ImGui.BeginTabItem("Ingredients"))
+                {
+                    if (NeedsToRefreshTable)
+                    {
+                        RefreshTable(null, true);
+                        NeedsToRefreshTable = false;
+                    }
+
+                    DrawIngredients();
+                    ImGui.EndTabItem();
+                }
+
+                if (ImGui.BeginTabItem("List Settings"))
+                {
+                    DrawListSettings();
+                    ImGui.EndTabItem();
+                }
+
+                if (ImGui.BeginTabItem("Copy From Other List"))
+                {
+                    DrawCopyFromList();
+                    ImGui.EndTabItem();
+                }
+
+                ImGui.EndTabBar();
+            }
         }
+        catch { }
     }
 
 

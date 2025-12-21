@@ -33,7 +33,7 @@ public static unsafe class ActionManagerEx
         module->AfkTimer = 0;
         module->ContentInputTimer = 0;
         module->InputTimer = 0;
-        module->Unk1C = 0;
+        //module->Unk1C = 0;
         return true;
     }
 

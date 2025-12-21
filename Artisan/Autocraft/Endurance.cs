@@ -97,123 +97,127 @@ namespace Artisan.Autocraft
 
         internal static void Draw()
         {
-            if (CraftingListUI.Processing)
+            try
             {
-                ImGui.TextWrapped("Processing list...");
-                return;
-            }
-
-            ImGui.TextWrapped("Endurance mode is Artisan's way to repeat the same craft over and over, either so many times or until you run out of materials. It has full capabilities to automatically repair your gear once a piece is under a certain percentage, use food/potions/exp manuals and extract materia from spiritbonding. Please note these settings are independent of crafting list settings, and only intended to be used to craft the one item repeatedly.");
-            ImGui.Separator();
-            ImGui.Spacing();
-
-            if (RecipeID == 0)
-            {
-                ImGuiEx.TextV(ImGuiColors.DalamudRed, "No recipe selected");
-            }
-            else
-            {
-                if (!CraftingListFunctions.HasItemsForRecipe(RecipeID))
-                    ImGui.BeginDisabled();
-
-                if (ImGui.Checkbox("Enable Endurance Mode", ref enable))
+                if (CraftingListUI.Processing)
                 {
-                    ToggleEndurance(enable);
+                    ImGui.TextWrapped("Processing list...");
+                    return;
                 }
 
-                if (!CraftingListFunctions.HasItemsForRecipe(RecipeID))
-                {
-                    ImGui.EndDisabled();
+                ImGui.TextWrapped("Endurance mode is Artisan's way to repeat the same craft over and over, either so many times or until you run out of materials. It has full capabilities to automatically repair your gear once a piece is under a certain percentage, use food/potions/exp manuals and extract materia from spiritbonding. Please note these settings are independent of crafting list settings, and only intended to be used to craft the one item repeatedly.");
+                ImGui.Separator();
+                ImGui.Spacing();
 
-                    if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                if (RecipeID == 0)
+                {
+                    ImGuiEx.TextV(ImGuiColors.DalamudRed, "No recipe selected");
+                }
+                else
+                {
+                    if (!CraftingListFunctions.HasItemsForRecipe(RecipeID))
+                        ImGui.BeginDisabled();
+
+                    if (ImGui.Checkbox("Enable Endurance Mode", ref enable))
                     {
-                        ImGui.BeginTooltip();
-                        ImGui.Text($"You cannot start Endurance as you do not possess ingredients to craft this recipe.");
-                        ImGui.EndTooltip();
+                        ToggleEndurance(enable);
+                    }
+
+                    if (!CraftingListFunctions.HasItemsForRecipe(RecipeID))
+                    {
+                        ImGui.EndDisabled();
+
+                        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                        {
+                            ImGui.BeginTooltip();
+                            ImGui.Text($"You cannot start Endurance as you do not possess ingredients to craft this recipe.");
+                            ImGui.EndTooltip();
+                        }
+                    }
+
+                    ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
+
+                    ImGuiEx.Text($"Recipe: {RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.ClassJobSheet[LuminaSheets.RecipeSheet[RecipeID].CraftType.RowId + 8].Abbreviation})" : "")}");
+                }
+
+                bool repairs = P.Config.Repair;
+                if (ImGui.Checkbox("Automatic Repairs", ref repairs))
+                {
+                    P.Config.Repair = repairs;
+                    P.Config.Save();
+                }
+                ImGuiComponents.HelpMarker($"If enabled, Artisan will automatically repair your gear when any piece reaches the configured repair threshold.\n\nCurrent min gear condition is {RepairManager.GetMinEquippedPercent()}% and cost to repair at a vendor is {RepairManager.GetNPCRepairPrice()} gil.\n\nIf unable to repair with Dark Matter, will try for a nearby repair NPC.");
+                if (P.Config.Repair)
+                {
+                    //ImGui.SameLine();
+                    ImGui.PushItemWidth(200);
+                    int percent = P.Config.RepairPercent;
+                    if (ImGui.SliderInt("##repairp", ref percent, 10, 100, $"%d%%"))
+                    {
+                        P.Config.RepairPercent = percent;
+                        P.Config.Save();
                     }
                 }
 
-                ImGuiComponents.HelpMarker("In order to begin Endurance Mode crafting you should first select the recipe in the crafting menu.\nEndurance Mode will automatically repeat the selected recipe similar to Auto-Craft but will factor in food/medicine buffs before doing so.");
+                if (!CharacterInfo.MateriaExtractionUnlocked())
+                    ImGui.BeginDisabled();
 
-                ImGuiEx.Text($"Recipe: {RecipeName} {(RecipeID != 0 ? $"({LuminaSheets.ClassJobSheet[LuminaSheets.RecipeSheet[RecipeID].CraftType.RowId + 8].Abbreviation})" : "")}");
-            }
-
-            bool repairs = P.Config.Repair;
-            if (ImGui.Checkbox("Automatic Repairs", ref repairs))
-            {
-                P.Config.Repair = repairs;
-                P.Config.Save();
-            }
-            ImGuiComponents.HelpMarker($"If enabled, Artisan will automatically repair your gear when any piece reaches the configured repair threshold.\n\nCurrent min gear condition is {RepairManager.GetMinEquippedPercent()}% and cost to repair at a vendor is {RepairManager.GetNPCRepairPrice()} gil.\n\nIf unable to repair with Dark Matter, will try for a nearby repair NPC.");
-            if (P.Config.Repair)
-            {
-                //ImGui.SameLine();
-                ImGui.PushItemWidth(200);
-                int percent = P.Config.RepairPercent;
-                if (ImGui.SliderInt("##repairp", ref percent, 10, 100, $"%d%%"))
+                bool materia = P.Config.Materia;
+                if (ImGui.Checkbox("Automatically Extract Materia", ref materia))
                 {
-                    P.Config.RepairPercent = percent;
+                    P.Config.Materia = materia;
                     P.Config.Save();
                 }
-            }
 
-            if (!CharacterInfo.MateriaExtractionUnlocked())
-                ImGui.BeginDisabled();
-
-            bool materia = P.Config.Materia;
-            if (ImGui.Checkbox("Automatically Extract Materia", ref materia))
-            {
-                P.Config.Materia = materia;
-                P.Config.Save();
-            }
-
-            if (!CharacterInfo.MateriaExtractionUnlocked())
-            {
-                ImGui.EndDisabled();
-
-                ImGuiComponents.HelpMarker("This character has not unlocked materia extraction. This setting will be ignored.");
-            }
-            else
-                ImGuiComponents.HelpMarker("Will automatically extract materia from any equipped gear once it's spiritbond is 100%");
-
-            ImGui.Checkbox("Craft only X times", ref P.Config.CraftingX);
-            if (P.Config.CraftingX)
-            {
-                ImGui.Text("Number of Times:");
-                ImGui.SameLine();
-                ImGui.PushItemWidth(200);
-                if (ImGui.InputInt("###TimesRepeat", ref P.Config.CraftX))
+                if (!CharacterInfo.MateriaExtractionUnlocked())
                 {
-                    if (P.Config.CraftX < 0)
-                        P.Config.CraftX = 0;
+                    ImGui.EndDisabled();
+
+                    ImGuiComponents.HelpMarker("This character has not unlocked materia extraction. This setting will be ignored.");
                 }
-            }
+                else
+                    ImGuiComponents.HelpMarker("Will automatically extract materia from any equipped gear once it's spiritbond is 100%");
 
-            if (ImGui.Checkbox("Use Quick Synthesis where possible", ref P.Config.QuickSynthMode))
-            {
-                P.Config.Save();
-            }
+                ImGui.Checkbox("Craft only X times", ref P.Config.CraftingX);
+                if (P.Config.CraftingX)
+                {
+                    ImGui.Text("Number of Times:");
+                    ImGui.SameLine();
+                    ImGui.PushItemWidth(200);
+                    if (ImGui.InputInt("###TimesRepeat", ref P.Config.CraftX))
+                    {
+                        if (P.Config.CraftX < 0)
+                            P.Config.CraftX = 0;
+                    }
+                }
 
-            bool stopIfFail = P.Config.EnduranceStopFail;
-            if (ImGui.Checkbox("Disable Endurance Mode Upon Failed Craft", ref stopIfFail))
-            {
-                P.Config.EnduranceStopFail = stopIfFail;
-                P.Config.Save();
-            }
+                if (ImGui.Checkbox("Use Quick Synthesis where possible", ref P.Config.QuickSynthMode))
+                {
+                    P.Config.Save();
+                }
 
-            bool stopIfNQ = P.Config.EnduranceStopNQ;
-            if (ImGui.Checkbox("Disable Endurance Mode Upon Crafting an NQ item", ref stopIfNQ))
-            {
-                P.Config.EnduranceStopNQ = stopIfNQ;
-                P.Config.Save();
-            }
+                bool stopIfFail = P.Config.EnduranceStopFail;
+                if (ImGui.Checkbox("Disable Endurance Mode Upon Failed Craft", ref stopIfFail))
+                {
+                    P.Config.EnduranceStopFail = stopIfFail;
+                    P.Config.Save();
+                }
 
-            if (ImGui.Checkbox("Max Quantity Mode", ref P.Config.MaxQuantityMode))
-            {
-                P.Config.Save();
-            }
+                bool stopIfNQ = P.Config.EnduranceStopNQ;
+                if (ImGui.Checkbox("Disable Endurance Mode Upon Crafting an NQ item", ref stopIfNQ))
+                {
+                    P.Config.EnduranceStopNQ = stopIfNQ;
+                    P.Config.Save();
+                }
 
-            ImGuiComponents.HelpMarker("Will set ingredients for you, to maximise the amount of crafts possible.");
+                if (ImGui.Checkbox("Max Quantity Mode", ref P.Config.MaxQuantityMode))
+                {
+                    P.Config.Save();
+                }
+
+                ImGuiComponents.HelpMarker("Will set ingredients for you, to maximise the amount of crafts possible.");
+            }
+            catch { }
         }
 
         internal static void DrawRecipeData()

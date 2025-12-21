@@ -22,6 +22,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using TerraFX.Interop.Windows;
 
 namespace Artisan.CraftingLogic.Solvers
 {
@@ -56,7 +57,7 @@ namespace Artisan.CraftingLogic.Solvers
 
             if (CLIExists() && !Tasks.ContainsKey(key))
             {
-                P.Config.RaphaelSolverCacheV3.TryRemove(key, out _);
+                P.Config.RaphaelSolverCacheV4.TryRemove(key, out _);
 
                 Svc.Log.Information("Spawning Raphael process");
 
@@ -139,11 +140,11 @@ namespace Artisan.CraftingLogic.Solvers
                     Svc.Log.Information("Raphael process completed, output generated");
                     var rng = new Random();
                     var ID = rng.Next(50001, 10000000);
-                    while (P.Config.RaphaelSolverCacheV3.Any(kv => kv.Value.ID == ID))
+                    while (P.Config.RaphaelSolverCacheV4.Any(kv => kv.Value.ID == ID))
                         ID = rng.Next(50001, 10000000);
 
                     var cleansedOutput = output.Replace("[", "").Replace("]", "").Replace("\"", "").Split(", ").Select(x => int.TryParse(x, out int n) ? n : 0);
-                    P.Config.RaphaelSolverCacheV3[key] = new MacroSolverSettings.Macro()
+                    P.Config.RaphaelSolverCacheV4[key] = new MacroSolverSettings.Macro()
                     {
                         ID = ID,
                         Name = key,
@@ -160,7 +161,7 @@ namespace Artisan.CraftingLogic.Solvers
                     };
 
                     Svc.Log.Information("Raphael macro generated and stored in cache.");
-                    if (P.Config.RaphaelSolverCacheV3[key] == null || P.Config.RaphaelSolverCacheV3[key].Steps.Count == 0)
+                    if (P.Config.RaphaelSolverCacheV4[key] == null || P.Config.RaphaelSolverCacheV4[key].Steps.Count == 0)
                     {
                         Svc.Log.Error($"Raphael failed to generate a valid macro. This could be one of the following reasons:" +
                             $"\n- If you are not running Windows, Raphael may not be compatible with your OS." +
@@ -240,7 +241,22 @@ namespace Artisan.CraftingLogic.Solvers
 
         public static string GetKey(CraftState craft)
         {
-            return $"{craft.CraftLevel}/{craft.CraftProgress}/{craft.CraftQualityMax}/{craft.CraftDurability}-{craft.StatCraftsmanship}/{craft.StatControl}/{craft.StatCP}-{(craft.CraftExpert ? "Expert" : "Standard")}/{craft.InitialQuality}";
+            return $"{craft.CraftLevel}/{craft.CraftProgress}/{craft.CraftQualityMax}/{craft.CraftDurability}-{craft.StatCraftsmanship}/{craft.StatControl}/{craft.StatCP}-{(craft.CraftExpert ? "Ex" : "St")}/{craft.InitialQuality}/{(craft.Specialist ? "Sp" : "Re")}";
+        }
+
+        public static RaphaelSolutionConfig GetConfigFromTempOrDefault(CraftState craft)
+        {
+            var key = GetKey(craft);
+            var config = new RaphaelSolutionConfig();
+
+            var hasTempConfig = TempConfigs.TryGetValue(key, out var tempconfig);
+            var hasDelins = Crafting.DelineationCount() > 0;
+            config.EnsureReliability = hasTempConfig ? tempconfig.EnsureReliability : P.Config.RaphaelSolverConfig.AllowEnsureReliability;
+            config.BackloadProgress = hasTempConfig ? tempconfig.BackloadProgress : P.Config.RaphaelSolverConfig.AllowBackloadProgress;
+            config.HeartAndSoul = hasTempConfig ? tempconfig.HeartAndSoul : P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist && hasDelins;
+            config.QuickInno = hasTempConfig ? tempconfig.QuickInno : P.Config.RaphaelSolverConfig.ShowSpecialistSettings && craft.Specialist && hasDelins;
+
+            return config;
         }
 
         public static IEnumerable<CraftState> AllValidCrafts(string key, uint craftType)
@@ -275,7 +291,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         public static bool HasSolution(CraftState craft, out MacroSolverSettings.Macro? raphaelSolutionConfig)
         {
-            foreach (var solution in P.Config.RaphaelSolverCacheV3.OrderByDescending(x => KeyParts(x.Key).Control))
+            foreach (var solution in P.Config.RaphaelSolverCacheV4.OrderByDescending(x => KeyParts(x.Key).Control))
             {
                 if (solution.Value.Steps.Count == 0) continue;
 
@@ -476,53 +492,58 @@ namespace Artisan.CraftingLogic.Solvers
 
         public bool Draw()
         {
-            bool changed = false;
-
-            ImGui.Indent();
-            ImGui.TextWrapped($"Raphael settings can change the performance and system memory consumption. If you have low amounts of RAM try not to change settings, recommended minimum amount of RAM free is 2GB");
-
-            if (ImGui.SliderInt("Maximum Threads", ref MaximumThreads, 0, Environment.ProcessorCount))
+                bool changed = false;
+            try
             {
-                P.Config.Save();
-            }
-            ImGuiEx.TextWrapped("By default uses all it can, but on lower end machines you might need to use less cpu at the cost of speed. (0 = everything)");
 
-            changed |= ImGui.Checkbox("Ensure 100% reliability in macro generation", ref AllowEnsureReliability);
-            ImGui.PushTextWrapPos(0);
-            ImGui.TextColored(new System.Numerics.Vector4(255, 0, 0, 1), "Ensuring reliability may not always work and is very CPU and RAM intensive, suggested RAM at least 16GB+ spare. NO SUPPORT SHALL BE GIVEN IF YOU HAVE THIS ON");
-            ImGui.PopTextWrapPos();
-            changed |= ImGui.Checkbox("Allow backloading of progress in macro generation", ref AllowBackloadProgress);
-            changed |= ImGui.Checkbox("Show specialist options when available", ref ShowSpecialistSettings);
-            changed |= ImGui.Checkbox($"Automatically generate a solution if a valid one hasn't been created.", ref AutoGenerate);
-
-            if (AutoGenerate)
-            {
                 ImGui.Indent();
-                changed |= ImGui.Checkbox($"Generate on Expert Recipes", ref GenerateOnExperts);
+                ImGui.TextWrapped($"Raphael settings can change the performance and system memory consumption. If you have low amounts of RAM try not to change settings, recommended minimum amount of RAM free is 2GB");
+
+                if (ImGui.SliderInt("Maximum Threads", ref MaximumThreads, 0, Environment.ProcessorCount))
+                {
+                    P.Config.Save();
+                }
+                ImGuiEx.TextWrapped("By default uses all it can, but on lower end machines you might need to use less cpu at the cost of speed. (0 = everything)");
+
+                changed |= ImGui.Checkbox("Ensure 100% reliability in macro generation", ref AllowEnsureReliability);
+                ImGui.PushTextWrapPos(0);
+                ImGui.TextColored(new System.Numerics.Vector4(255, 0, 0, 1), "Ensuring reliability may not always work and is very CPU and RAM intensive, suggested RAM at least 16GB+ spare. NO SUPPORT SHALL BE GIVEN IF YOU HAVE THIS ON");
+                ImGui.PopTextWrapPos();
+                changed |= ImGui.Checkbox("Allow backloading of progress in macro generation", ref AllowBackloadProgress);
+                changed |= ImGui.Checkbox("Show specialist options when available", ref ShowSpecialistSettings);
+                changed |= ImGui.Checkbox($"Automatically generate a solution if a valid one hasn't been created.", ref AutoGenerate);
+
+                if (AutoGenerate)
+                {
+                    ImGui.Indent();
+                    changed |= ImGui.Checkbox($"Generate on Expert Recipes", ref GenerateOnExperts);
+                    ImGui.Unindent();
+                }
+
+                changed |= ImGui.Checkbox($"Automatically switch to the Raphael Solver once a solution has been created.", ref AutoSwitch);
+
+                if (AutoSwitch)
+                {
+                    ImGui.Indent();
+                    changed |= ImGui.Checkbox($"Apply to all valid crafts", ref AutoSwitchOnAll);
+                    changed |= ImGui.Checkbox("Apply over crafts that already have a macro assigned to them", ref AutoSwitchOverManual);
+                    ImGui.Unindent();
+                }
+
+                changed |= ImGui.SliderInt("Timeout solution generation", ref TimeOutMins, 1, 15);
+
+                ImGuiComponents.HelpMarker($"If a solution takes longer than this many minutes to generate, it will cancel the generation task.");
+
+                if (ImGui.Button($"Clear raphael macro cache (Currently {P.Config.RaphaelSolverCacheV4.Count} stored)"))
+                {
+                    P.Config.RaphaelSolverCacheV4.Clear();
+                    changed |= true;
+                }
+
                 ImGui.Unindent();
+                return changed;
             }
-
-            changed |= ImGui.Checkbox($"Automatically switch to the Raphael Solver once a solution has been created.", ref AutoSwitch);
-
-            if (AutoSwitch)
-            {
-                ImGui.Indent();
-                changed |= ImGui.Checkbox($"Apply to all valid crafts", ref AutoSwitchOnAll);
-                changed |= ImGui.Checkbox("Apply over crafts that already have a macro assigned to them", ref AutoSwitchOverManual);
-                ImGui.Unindent();
-            }
-
-            changed |= ImGui.SliderInt("Timeout solution generation", ref TimeOutMins, 1, 15);
-
-            ImGuiComponents.HelpMarker($"If a solution takes longer than this many minutes to generate, it will cancel the generation task.");
-
-            if (ImGui.Button($"Clear raphael macro cache (Currently {P.Config.RaphaelSolverCacheV3.Count} stored)"))
-            {
-                P.Config.RaphaelSolverCacheV3.Clear();
-                changed |= true;
-            }
-
-            ImGui.Unindent();
+            catch { }
             return changed;
         }
     }

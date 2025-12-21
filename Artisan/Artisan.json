@@ -12,5 +12,5 @@
     "RepoUrl": "https://github.com/PunishXIV/Artisan",
     "DalamudApiLevel": 14,
     "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
-    "ChangeLog":  "- More Raphael tweaks."
+    "ChangeLog":  "- Quick synths started by Artisan will default to NQ only.\n- Recipe side window will now show you missing ingredients rather than being a hovered tooltip.\n- Improvements made to Raphael Cache to differentiate regular crafts from specialist crafts (unfortunately this means the cache has been soft-reset)"
 }

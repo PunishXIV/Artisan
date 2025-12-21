@@ -54,16 +54,20 @@ namespace Artisan.CraftingLists
 
         internal static void Draw()
         {
-            ImGui.TextWrapped($"Crafting lists are a fantastic way to queue up different crafts and have them craft one-by-one. Create a list by importing from Teamcraft using the button at the bottom, or click the '+' icon and give your list a name." +
-                              $" You can also right click an item from the game's recipe menu to either add it to a new list if one is not selected, or to create a new list with it as the first item if a list is not selected.");
+            try
+            {
+                ImGui.TextWrapped($"Crafting lists are a fantastic way to queue up different crafts and have them craft one-by-one. Create a list by importing from Teamcraft using the button at the bottom, or click the '+' icon and give your list a name." +
+                                  $" You can also right click an item from the game's recipe menu to either add it to a new list if one is not selected, or to create a new list with it as the first item if a list is not selected.");
 
-            ImGui.Dummy(new Vector2(0, 14f));
-            ImGui.TextWrapped("Left click a list to open the editor. Right click a list to select it without opening the editor.");
+                ImGui.Dummy(new Vector2(0, 14f));
+                ImGui.TextWrapped("Left click a list to open the editor. Right click a list to select it without opening the editor.");
 
-            ImGui.Separator();
+                ImGui.Separator();
 
-            DrawListOptions();
-            ImGui.Spacing();
+                DrawListOptions();
+                ImGui.Spacing();
+            }
+            catch { }
         }
 
         private static void DrawListOptions()

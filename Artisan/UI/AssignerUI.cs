@@ -36,11 +36,15 @@ namespace Artisan.UI
 
         public static void Draw()
         {
-            ImGuiEx.TextWrapped($"This tab allows you to quickly assign solvers and consumables to recipes based on recipe criteria.");
-            ImGui.Separator();
-            ImGui.Spacing();
-            DrawCriteria();
-            DrawAssignables();
+            try
+            {
+                ImGuiEx.TextWrapped($"This tab allows you to quickly assign solvers and consumables to recipes based on recipe criteria.");
+                ImGui.Separator();
+                ImGui.Spacing();
+                DrawCriteria();
+                DrawAssignables();
+            }
+            catch { }
         }
 
         private static void DrawCriteria()

@@ -43,87 +43,91 @@ namespace Artisan.UI
 
         internal static void Draw()
         {
-            ImGui.TextWrapped("This tab will allow you to add macros that Artisan can use instead of its own decisions. Once you create a new macro, click on it from the list below to open up the macro editor window for your macro.");
-            ImGui.Separator();
-
-            if (Svc.ClientState.IsLoggedIn && Crafting.CurState is not Crafting.State.IdleNormal and not Crafting.State.IdleBetween)
+            try
             {
-                ImGui.Text($"Crafting in progress. Macro settings will be unavailable until you stop crafting.");
-                return;
-            }
-            ImGui.Spacing();
-            if (ImGui.Button("Import Macro From Clipboard"))
-                OpenMacroNamePopup(MacroNameUse.FromClipboard);
+                ImGui.TextWrapped("This tab will allow you to add macros that Artisan can use instead of its own decisions. Once you create a new macro, click on it from the list below to open up the macro editor window for your macro.");
+                ImGui.Separator();
 
-            if (ImGui.Button("Import Macro From Clipboard (Artisan Export)"))
-            {
-                try
+                if (Svc.ClientState.IsLoggedIn && Crafting.CurState is not Crafting.State.IdleNormal and not Crafting.State.IdleBetween)
                 {
-                    var import = JsonConvert.DeserializeObject<MacroSolverSettings.Macro>(ImGui.GetClipboardText());
-                    if (import != null)
+                    ImGui.Text($"Crafting in progress. Macro settings will be unavailable until you stop crafting.");
+                    return;
+                }
+                ImGui.Spacing();
+                if (ImGui.Button("Import Macro From Clipboard"))
+                    OpenMacroNamePopup(MacroNameUse.FromClipboard);
+
+                if (ImGui.Button("Import Macro From Clipboard (Artisan Export)"))
+                {
+                    try
                     {
-                        P.Config.MacroSolverConfig.AddNewMacro(import);
-                        P.Config.Save();
+                        var import = JsonConvert.DeserializeObject<MacroSolverSettings.Macro>(ImGui.GetClipboardText());
+                        if (import != null)
+                        {
+                            P.Config.MacroSolverConfig.AddNewMacro(import);
+                            P.Config.Save();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ex.Log();
+                        Notify.Error("Unable to import.");
                     }
                 }
-                catch (Exception ex)
+
+                if (ImGui.Button("New Macro"))
+                    OpenMacroNamePopup(MacroNameUse.NewMacro);
+
+                DrawMacroNamePopup(MacroNameUse.FromClipboard);
+                DrawMacroNamePopup(MacroNameUse.NewMacro);
+
+                if (P.Config.MacroSolverConfig.Macros.Count > 0)
                 {
-                    ex.Log();
-                    Notify.Error("Unable to import.");
-                }
-            }
+                    if (P.Config.MacroSolverConfig.Macros.Count > 1)
+                        ImGui.Checkbox("Reorder Mode (Click and Drag to Reorder)", ref reorderMode);
+                    else
+                        reorderMode = false;
 
-            if (ImGui.Button("New Macro"))
-                OpenMacroNamePopup(MacroNameUse.NewMacro);
+                    if (reorderMode)
+                        ImGuiEx.CenterColumnText("Reorder Mode");
+                    else
+                        ImGuiEx.CenterColumnText("Macro Editor Select");
 
-            DrawMacroNamePopup(MacroNameUse.FromClipboard);
-            DrawMacroNamePopup(MacroNameUse.NewMacro);
-
-            if (P.Config.MacroSolverConfig.Macros.Count > 0)
-            {
-                if (P.Config.MacroSolverConfig.Macros.Count > 1)
-                    ImGui.Checkbox("Reorder Mode (Click and Drag to Reorder)", ref reorderMode);
-                else
-                    reorderMode = false;
-
-                if (reorderMode)
-                    ImGuiEx.CenterColumnText("Reorder Mode");
-                else
-                    ImGuiEx.CenterColumnText("Macro Editor Select");
-
-                if (ImGui.BeginChild("##selector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y), true))
-                {
-                    for (int i = 0; i < P.Config.MacroSolverConfig.Macros.Count; i++)
+                    if (ImGui.BeginChild("##selector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y), true))
                     {
-                        var m = P.Config.MacroSolverConfig.Macros[i];
-                        int cpCost = GetCPCost(m);
-                        var selected = ImGui.Selectable($"{m.Name} (CP Cost: {cpCost}) (ID: {m.ID})###{m.ID}");
-
-                        if (ImGui.IsItemActive() && !ImGui.IsItemHovered() && reorderMode)
+                        for (int i = 0; i < P.Config.MacroSolverConfig.Macros.Count; i++)
                         {
-                            int i_next = i + (ImGui.GetMouseDragDelta(ImGuiMouseButton.Left).Y < 0f ? -1 : 1);
-                            if (i_next >= 0 && i_next < P.Config.MacroSolverConfig.Macros.Count)
+                            var m = P.Config.MacroSolverConfig.Macros[i];
+                            int cpCost = GetCPCost(m);
+                            var selected = ImGui.Selectable($"{m.Name} (CP Cost: {cpCost}) (ID: {m.ID})###{m.ID}");
+
+                            if (ImGui.IsItemActive() && !ImGui.IsItemHovered() && reorderMode)
                             {
-                                P.Config.MacroSolverConfig.Macros[i] = P.Config.MacroSolverConfig.Macros[i_next];
-                                P.Config.MacroSolverConfig.Macros[i_next] = m;
-                                P.Config.Save();
-                                ImGui.ResetMouseDragDelta();
+                                int i_next = i + (ImGui.GetMouseDragDelta(ImGuiMouseButton.Left).Y < 0f ? -1 : 1);
+                                if (i_next >= 0 && i_next < P.Config.MacroSolverConfig.Macros.Count)
+                                {
+                                    P.Config.MacroSolverConfig.Macros[i] = P.Config.MacroSolverConfig.Macros[i_next];
+                                    P.Config.MacroSolverConfig.Macros[i_next] = m;
+                                    P.Config.Save();
+                                    ImGui.ResetMouseDragDelta();
+                                }
+                            }
+
+                            if (selected && !reorderMode && !P.ws.Windows.Any(x => x.WindowName.Contains(m.ID.ToString())))
+                            {
+                                new MacroEditor(m);
                             }
                         }
 
-                        if (selected && !reorderMode && !P.ws.Windows.Any(x => x.WindowName.Contains(m.ID.ToString())))
-                        {
-                            new MacroEditor(m);
-                        }
                     }
-
+                    ImGui.EndChild();
                 }
-                ImGui.EndChild();
+                else
+                {
+                    selectedAssignMacro = null;
+                }
             }
-            else
-            {
-                selectedAssignMacro = null;
-            }
+            catch { }
         }
 
         public static int GetCPCost(MacroSolverSettings.Macro m)

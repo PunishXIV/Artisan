@@ -62,7 +62,7 @@ public static unsafe class Operations
 
             if (quickSynthWindow != null)
             {
-                var values = stackalloc AtkValue[2];
+                var values = stackalloc AtkValue[3];
                 values[0] = new()
                 {
                     Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int,
@@ -73,7 +73,12 @@ public static unsafe class Operations
                     Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool,
                     Byte = 1,
                 };
-                Callback.Fire(quickSynthWindow, true, values[0], values[1]);
+                values[2] = new()
+                {
+                    Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool,
+                    Byte = 1
+                };
+                Callback.Fire(quickSynthWindow, true, values[0], values[1], values[2]);
             }
 
         }

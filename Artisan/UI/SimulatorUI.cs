@@ -99,21 +99,24 @@ namespace Artisan.UI
 
         public static void Draw()
         {
-            if (ImGui.BeginTabBar("Simulator Select"))
+            try
             {
-                if (ImGui.BeginTabItem("GUI Sim"))
+                if (ImGui.BeginTabBar("Simulator Select"))
                 {
-                    DrawGUISim();
-                    ImGui.EndTabItem();
-                }
+                    if (ImGui.BeginTabItem("GUI Sim"))
+                    {
+                        DrawGUISim();
+                        ImGui.EndTabItem();
+                    }
 
-                if (ImGui.BeginTabItem("Mass Sim Mode"))
-                {
-                    SimulatorUIVeynVersion.Draw();
-                    ImGui.EndTabItem();
+                    if (ImGui.BeginTabItem("Mass Sim Mode"))
+                    {
+                        SimulatorUIVeynVersion.Draw();
+                        ImGui.EndTabItem();
+                    }
                 }
             }
-
+            catch { }
 
         }
 

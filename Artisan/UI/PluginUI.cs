@@ -96,192 +96,196 @@ namespace Artisan.UI
 
         public override void Draw()
         {
-            if (DalamudInfo.IsOnStaging())
-            {
-                var scale = ImGui.GetIO().FontGlobalScale;
-                ImGui.GetIO().FontGlobalScale = scale * 1.5f;
-                using (var f = ImRaii.PushFont(ImGui.GetFont()))
-                {
-                    ImGuiEx.TextWrapped($"Listen buddy, you're on Dalamud staging, there's every chance any problems you might encounter is specific to Dalamud's testing and not Artisan. I don't make this plugin to work on staging, so don't expect any fixes unless the problem makes it to Dalamud release.");
-                    ImGui.Separator();
-
-                    ImGui.Spacing();
-                    ImGui.GetIO().FontGlobalScale = scale;
-                }
-
-            }
-            var region = ImGui.GetContentRegionAvail();
-            var itemSpacing = ImGui.GetStyle().ItemSpacing;
-
-            var topLeftSideHeight = region.Y;
-
-            ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(5f.Scale(), 0));
             try
             {
-                ShowEnduranceMessage();
-
-                using (var table = ImRaii.Table($"ArtisanTableContainer", 2, ImGuiTableFlags.Resizable))
+                if (DalamudInfo.IsOnStaging())
                 {
-                    if (!table)
-                        return;
-
-                    ImGui.TableSetupColumn("##LeftColumn", ImGuiTableColumnFlags.WidthFixed, ImGui.GetWindowWidth() / 2);
-
-                    ImGui.TableNextColumn();
-
-                    var regionSize = ImGui.GetContentRegionAvail();
-
-                    ImGui.PushStyleVar(ImGuiStyleVar.SelectableTextAlign, new Vector2(0.5f, 0.5f));
-                    using (var leftChild = ImRaii.Child($"###ArtisanLeftSide", regionSize with { Y = topLeftSideHeight }, false, ImGuiWindowFlags.NoDecoration))
+                    var scale = ImGui.GetIO().FontGlobalScale;
+                    ImGui.GetIO().FontGlobalScale = scale * 1.5f;
+                    using (var f = ImRaii.PushFont(ImGui.GetFont()))
                     {
-                        var imagePath = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/artisan-icon.png");
-
-                        if (ThreadLoadImageHandler.TryGetTextureWrap(imagePath, out var logo))
-                        {
-                            ImGuiEx.LineCentered("###ArtisanLogo", () =>
-                            {
-                                ImGui.Image(logo.Handle, new(125f.Scale(), 125f.Scale()));
-                                if (ImGui.IsItemHovered())
-                                {
-                                    ImGui.BeginTooltip();
-                                    ImGui.Text($"You are the 69th person to find this secret. Nice!");
-                                    ImGui.EndTooltip();
-                                }
-                            });
-
-                        }
-                        ImGui.Spacing();
+                        ImGuiEx.TextWrapped($"Listen buddy, you're on Dalamud staging, there's every chance any problems you might encounter is specific to Dalamud's testing and not Artisan. I don't make this plugin to work on staging, so don't expect any fixes unless the problem makes it to Dalamud release.");
                         ImGui.Separator();
 
-                        if (ImGui.Selectable("Overview", OpenWindow == OpenWindow.Overview))
-                        {
-                            OpenWindow = OpenWindow.Overview;
-                        }
-                        if (ImGui.Selectable("Settings", OpenWindow == OpenWindow.Main))
-                        {
-                            OpenWindow = OpenWindow.Main;
-                        }
                         ImGui.Spacing();
-                        if (ImGui.Selectable("Endurance", OpenWindow == OpenWindow.Endurance))
+                        ImGui.GetIO().FontGlobalScale = scale;
+                    }
+
+                }
+                var region = ImGui.GetContentRegionAvail();
+                var itemSpacing = ImGui.GetStyle().ItemSpacing;
+
+                var topLeftSideHeight = region.Y;
+
+                ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(5f.Scale(), 0));
+                try
+                {
+                    ShowEnduranceMessage();
+
+                    using (var table = ImRaii.Table($"ArtisanTableContainer", 2, ImGuiTableFlags.Resizable))
+                    {
+                        if (!table)
+                            return;
+
+                        ImGui.TableSetupColumn("##LeftColumn", ImGuiTableColumnFlags.WidthFixed, ImGui.GetWindowWidth() / 2);
+
+                        ImGui.TableNextColumn();
+
+                        var regionSize = ImGui.GetContentRegionAvail();
+
+                        ImGui.PushStyleVar(ImGuiStyleVar.SelectableTextAlign, new Vector2(0.5f, 0.5f));
+                        using (var leftChild = ImRaii.Child($"###ArtisanLeftSide", regionSize with { Y = topLeftSideHeight }, false, ImGuiWindowFlags.NoDecoration))
                         {
-                            OpenWindow = OpenWindow.Endurance;
-                        }
-                        ImGui.Spacing();
-                        if (ImGui.Selectable("Macros", OpenWindow == OpenWindow.Macro))
-                        {
-                            OpenWindow = OpenWindow.Macro;
-                        }
-                        ImGui.Spacing();
-                        if (ImGui.Selectable("Raphael Cache", OpenWindow == OpenWindow.RaphaelCache))
-                        {
-                            OpenWindow = OpenWindow.RaphaelCache;
-                        }
-                        ImGui.Spacing();
-                        if (ImGui.Selectable("Recipe Assigner", OpenWindow == OpenWindow.Assigner))
-                        {
-                            OpenWindow = OpenWindow.Assigner;
-                        }
-                        ImGui.Spacing();
-                        if (ImGui.Selectable("Crafting Lists", OpenWindow == OpenWindow.Lists))
-                        {
-                            OpenWindow = OpenWindow.Lists;
-                        }
-                        ImGui.Spacing();
-                        if (ImGui.Selectable("List Builder", OpenWindow == OpenWindow.SpecialList))
-                        {
-                            OpenWindow = OpenWindow.SpecialList;
-                        }
-                        ImGui.Spacing();
-                        if (ImGui.Selectable("FC Workshops", OpenWindow == OpenWindow.FCWorkshop))
-                        {
-                            OpenWindow = OpenWindow.FCWorkshop;
-                        }
-                        ImGui.Spacing();
-                        if (ImGui.Selectable("Simulator", OpenWindow == OpenWindow.Simulator))
-                        {
-                            OpenWindow = OpenWindow.Simulator;
-                        }
-                        ImGui.Spacing();
-                        if (ImGui.Selectable("About", OpenWindow == OpenWindow.About))
-                        {
-                            OpenWindow = OpenWindow.About;
-                        }
+                            var imagePath = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/artisan-icon.png");
+
+                            if (ThreadLoadImageHandler.TryGetTextureWrap(imagePath, out var logo))
+                            {
+                                ImGuiEx.LineCentered("###ArtisanLogo", () =>
+                                {
+                                    ImGui.Image(logo.Handle, new(125f.Scale(), 125f.Scale()));
+                                    if (ImGui.IsItemHovered())
+                                    {
+                                        ImGui.BeginTooltip();
+                                        ImGui.Text($"You are the 69th person to find this secret. Nice!");
+                                        ImGui.EndTooltip();
+                                    }
+                                });
+
+                            }
+                            ImGui.Spacing();
+                            ImGui.Separator();
+
+                            if (ImGui.Selectable("Overview", OpenWindow == OpenWindow.Overview))
+                            {
+                                OpenWindow = OpenWindow.Overview;
+                            }
+                            if (ImGui.Selectable("Settings", OpenWindow == OpenWindow.Main))
+                            {
+                                OpenWindow = OpenWindow.Main;
+                            }
+                            ImGui.Spacing();
+                            if (ImGui.Selectable("Endurance", OpenWindow == OpenWindow.Endurance))
+                            {
+                                OpenWindow = OpenWindow.Endurance;
+                            }
+                            ImGui.Spacing();
+                            if (ImGui.Selectable("Macros", OpenWindow == OpenWindow.Macro))
+                            {
+                                OpenWindow = OpenWindow.Macro;
+                            }
+                            ImGui.Spacing();
+                            if (ImGui.Selectable("Raphael Cache", OpenWindow == OpenWindow.RaphaelCache))
+                            {
+                                OpenWindow = OpenWindow.RaphaelCache;
+                            }
+                            ImGui.Spacing();
+                            if (ImGui.Selectable("Recipe Assigner", OpenWindow == OpenWindow.Assigner))
+                            {
+                                OpenWindow = OpenWindow.Assigner;
+                            }
+                            ImGui.Spacing();
+                            if (ImGui.Selectable("Crafting Lists", OpenWindow == OpenWindow.Lists))
+                            {
+                                OpenWindow = OpenWindow.Lists;
+                            }
+                            ImGui.Spacing();
+                            if (ImGui.Selectable("List Builder", OpenWindow == OpenWindow.SpecialList))
+                            {
+                                OpenWindow = OpenWindow.SpecialList;
+                            }
+                            ImGui.Spacing();
+                            if (ImGui.Selectable("FC Workshops", OpenWindow == OpenWindow.FCWorkshop))
+                            {
+                                OpenWindow = OpenWindow.FCWorkshop;
+                            }
+                            ImGui.Spacing();
+                            if (ImGui.Selectable("Simulator", OpenWindow == OpenWindow.Simulator))
+                            {
+                                OpenWindow = OpenWindow.Simulator;
+                            }
+                            ImGui.Spacing();
+                            if (ImGui.Selectable("About", OpenWindow == OpenWindow.About))
+                            {
+                                OpenWindow = OpenWindow.About;
+                            }
 
 
 #if DEBUG
-                        drawDebugTab();
+                            drawDebugTab();
 #else
                         if(GenericHelpers.IsKeyPressed(Keys.LControlKey) && GenericHelpers.IsKeyPressed(Keys.LShiftKey)) drawDebugTab();
 #endif
-                        void drawDebugTab()
-                        {
-                            ImGui.Spacing();
-                            if(ImGui.Selectable("DEBUG", OpenWindow == OpenWindow.Debug))
+                            void drawDebugTab()
                             {
-                                OpenWindow = OpenWindow.Debug;
+                                ImGui.Spacing();
+                                if (ImGui.Selectable("DEBUG", OpenWindow == OpenWindow.Debug))
+                                {
+                                    OpenWindow = OpenWindow.Debug;
+                                }
+                                ImGui.Spacing();
                             }
-                            ImGui.Spacing();
+
+
                         }
 
-
-                    }
-
-                    ImGui.PopStyleVar();
-                    ImGui.TableNextColumn();
-                    using (var rightChild = ImRaii.Child($"###ArtisanRightSide", Vector2.Zero, false))
-                    {
-                        switch (OpenWindow)
+                        ImGui.PopStyleVar();
+                        ImGui.TableNextColumn();
+                        using (var rightChild = ImRaii.Child($"###ArtisanRightSide", Vector2.Zero, false))
                         {
-                            case OpenWindow.Main:
-                                DrawMainWindow();
-                                break;
-                            case OpenWindow.Endurance:
-                                Endurance.Draw();
-                                break;
-                            case OpenWindow.Lists:
-                                CraftingListUI.Draw();
-                                break;
-                            case OpenWindow.About:
-                                AboutTab.Draw("Artisan");
-                                break;
-                            case OpenWindow.Debug:
-                                DebugTab.Draw();
-                                break;
-                            case OpenWindow.Macro:
-                                MacroUI.Draw();
-                                break;
-                            case OpenWindow.RaphaelCache:
-                                RaphaelCacheUI.Draw();
-                                break;
-                            case OpenWindow.Assigner:
-                                AssignerUI.Draw();
-                                break;
-                            case OpenWindow.FCWorkshop:
-                                FCWorkshopUI.Draw();
-                                break;
-                            case OpenWindow.SpecialList:
-                                SpecialLists.Draw();
-                                break;
-                            case OpenWindow.Overview:
-                                DrawOverview();
-                                break;
-                            case OpenWindow.Simulator:
-                                SimulatorUI.Draw();
-                                break;
-                            case OpenWindow.None:
-                                break;
-                            default:
-                                break;
+                            switch (OpenWindow)
+                            {
+                                case OpenWindow.Main:
+                                    DrawMainWindow();
+                                    break;
+                                case OpenWindow.Endurance:
+                                    Endurance.Draw();
+                                    break;
+                                case OpenWindow.Lists:
+                                    CraftingListUI.Draw();
+                                    break;
+                                case OpenWindow.About:
+                                    AboutTab.Draw("Artisan");
+                                    break;
+                                case OpenWindow.Debug:
+                                    DebugTab.Draw();
+                                    break;
+                                case OpenWindow.Macro:
+                                    MacroUI.Draw();
+                                    break;
+                                case OpenWindow.RaphaelCache:
+                                    RaphaelCacheUI.Draw();
+                                    break;
+                                case OpenWindow.Assigner:
+                                    AssignerUI.Draw();
+                                    break;
+                                case OpenWindow.FCWorkshop:
+                                    FCWorkshopUI.Draw();
+                                    break;
+                                case OpenWindow.SpecialList:
+                                    SpecialLists.Draw();
+                                    break;
+                                case OpenWindow.Overview:
+                                    DrawOverview();
+                                    break;
+                                case OpenWindow.Simulator:
+                                    SimulatorUI.Draw();
+                                    break;
+                                case OpenWindow.None:
+                                    break;
+                                default:
+                                    break;
+                            }
+                            ;
                         }
-                        ;
                     }
                 }
+                catch (Exception ex)
+                {
+                    ex.Log();
+                }
+                ImGui.PopStyleVar();
             }
-            catch (Exception ex)
-            {
-                ex.Log();
-            }
-            ImGui.PopStyleVar();
+            catch { }
         }
 
         private void DrawOverview()

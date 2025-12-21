@@ -105,10 +105,10 @@ namespace Artisan.CraftingLists
         public static void SetID(this NewCraftingList list)
         {
             var rng = new Random();
-            var proposedRNG = rng.Next(1, 50000);
+            var proposedRNG = rng.Next(100, 50000);
             while (P.Config.NewCraftingLists.Where(x => x.ID == proposedRNG).Any())
             {
-                proposedRNG = rng.Next(1, 50000);
+                proposedRNG = rng.Next(100, 50000);
             }
 
             list.ID = proposedRNG;

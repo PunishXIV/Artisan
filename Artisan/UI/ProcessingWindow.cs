@@ -46,64 +46,68 @@ namespace Artisan.UI
 
         public unsafe override void Draw()
         {
-            if (CraftingListUI.Processing)
+            try
             {
-                CraftingListFunctions.ProcessList(CraftingListUI.selectedList);
-
-                //if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
-                //{
-                //    P.PluginUi.IsOpen = true;
-                //}
-
-                ImGui.Text($"Now Processing: {CraftingListUI.selectedList.Name}");
-                ImGui.Separator();
-                ImGui.Spacing();
-                if (CraftingListUI.CurrentProcessedItem != 0)
+                if (CraftingListUI.Processing)
                 {
-                    ImGuiEx.TextV($"Crafting: {LuminaSheets.RecipeSheet[CraftingListUI.CurrentProcessedItem].ItemResult.Value.Name.ToDalamudString().ToString()}");
-                    ImGuiEx.TextV($"Current Item Progress: {CraftingListUI.CurrentProcessedItemCount} / {CraftingListUI.CurrentProcessedItemListCount}");
-                    ImGuiEx.TextV($"Overall List Progress: {CraftingListFunctions.CurrentIndex + 1} / {CraftingListUI.selectedList.ExpandedList.Count}");
+                    CraftingListFunctions.ProcessList(CraftingListUI.selectedList);
 
-                    string duration = CraftingListFunctions.ListEndTime == TimeSpan.Zero ? "Unknown" : string.Format("{0:D2}d {1:D2}h {2:D2}m {3:D2}s", CraftingListFunctions.ListEndTime.Days, CraftingListFunctions.ListEndTime.Hours, CraftingListFunctions.ListEndTime.Minutes, CraftingListFunctions.ListEndTime.Seconds);
-                    ImGuiEx.TextV($"Approximate Remaining Duration: {duration}");
+                    //if (ImGuiEx.AddHeaderIcon("OpenConfig", FontAwesomeIcon.Cog, new ImGuiEx.HeaderIconOptions() { Tooltip = "Open Config" }))
+                    //{
+                    //    P.PluginUi.IsOpen = true;
+                    //}
 
-                }
-
-                if (!CraftingListFunctions.Paused)
-                {
-                    if (ImGui.Button("Pause"))
+                    ImGui.Text($"Now Processing: {CraftingListUI.selectedList.Name}");
+                    ImGui.Separator();
+                    ImGui.Spacing();
+                    if (CraftingListUI.CurrentProcessedItem != 0)
                     {
-                        CraftingListFunctions.Paused = true;
+                        ImGuiEx.TextV($"Crafting: {LuminaSheets.RecipeSheet[CraftingListUI.CurrentProcessedItem].ItemResult.Value.Name.ToDalamudString().ToString()}");
+                        ImGuiEx.TextV($"Current Item Progress: {CraftingListUI.CurrentProcessedItemCount} / {CraftingListUI.CurrentProcessedItemListCount}");
+                        ImGuiEx.TextV($"Overall List Progress: {CraftingListFunctions.CurrentIndex + 1} / {CraftingListUI.selectedList.ExpandedList.Count}");
+
+                        string duration = CraftingListFunctions.ListEndTime == TimeSpan.Zero ? "Unknown" : string.Format("{0:D2}d {1:D2}h {2:D2}m {3:D2}s", CraftingListFunctions.ListEndTime.Days, CraftingListFunctions.ListEndTime.Hours, CraftingListFunctions.ListEndTime.Minutes, CraftingListFunctions.ListEndTime.Seconds);
+                        ImGuiEx.TextV($"Approximate Remaining Duration: {duration}");
+
+                    }
+
+                    if (!CraftingListFunctions.Paused)
+                    {
+                        if (ImGui.Button("Pause"))
+                        {
+                            CraftingListFunctions.Paused = true;
+                            P.TM.Abort();
+                            CraftingListFunctions.CLTM.Abort();
+                            PreCrafting.Tasks.Clear();
+                        }
+                    }
+                    else
+                    {
+                        if (ImGui.Button("Resume"))
+                        {
+                            if (Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
+                            {
+                                var recipe = LuminaSheets.RecipeSheet[CraftingListUI.CurrentProcessedItem];
+                                PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), default));
+                            }
+
+                            CraftingListFunctions.Paused = false;
+                        }
+                    }
+
+                    ImGui.SameLine();
+                    if (ImGui.Button("Cancel"))
+                    {
+                        CraftingListUI.Processing = false;
+                        CraftingListFunctions.Paused = false;
                         P.TM.Abort();
                         CraftingListFunctions.CLTM.Abort();
                         PreCrafting.Tasks.Clear();
+                        Crafting.CraftFinished -= CraftingListUI.UpdateListTimer;
                     }
-                }
-                else
-                {
-                    if (ImGui.Button("Resume"))
-                    {
-                        if (Crafting.CurState is Crafting.State.IdleNormal or Crafting.State.IdleBetween)
-                        {
-                            var recipe = LuminaSheets.RecipeSheet[CraftingListUI.CurrentProcessedItem];
-                            PreCrafting.Tasks.Add((() => PreCrafting.TaskSelectRecipe(recipe), default));
-                        }
-
-                        CraftingListFunctions.Paused = false;
-                    }
-                }
-
-                ImGui.SameLine();
-                if (ImGui.Button("Cancel"))
-                {
-                    CraftingListUI.Processing = false;
-                    CraftingListFunctions.Paused = false;
-                    P.TM.Abort();
-                    CraftingListFunctions.CLTM.Abort();
-                    PreCrafting.Tasks.Clear();
-                    Crafting.CraftFinished -= CraftingListUI.UpdateListTimer;
                 }
             }
+            catch { }
         }
     }
 }

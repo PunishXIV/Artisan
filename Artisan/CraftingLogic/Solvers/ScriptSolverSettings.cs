@@ -62,51 +62,54 @@ public class ScriptSolverSettings
 
     public bool Draw()
     {
-        ImGui.TextWrapped($"This is a very advanced feature, aimed at users wishing to create their own dynamic solvers using C#. Please visit the github source code and view the Demoscripts folder for an example. No support will be given as to learning C# to do this.");
-        ImGui.Separator();
-        Script? toDel = null;
-        foreach (var s in Scripts)
+        try
         {
-            var state = s.CompilationState();
-
-            using var scope = ImRaii.PushId(s.ID);
-
-            using (ImRaii.Disabled(state == CompilationState.InProgress))
+            ImGui.TextWrapped($"This is a very advanced feature, aimed at users wishing to create their own dynamic solvers using C#. Please visit the github source code and view the Demoscripts folder for an example. No support will be given as to learning C# to do this.");
+            ImGui.Separator();
+            Script? toDel = null;
+            foreach (var s in Scripts)
             {
-                // TODO: show icon depending on state...
-                if (ImGui.Button($"Recompile: {state}", new(100, 0)))
-                    _compiler.Recompile(s);
-                if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                var state = s.CompilationState();
+
+                using var scope = ImRaii.PushId(s.ID);
+
+                using (ImRaii.Disabled(state == CompilationState.InProgress))
                 {
-                    ImGui.BeginTooltip();
-                    ImGui.TextUnformatted($"Compilation output:\n{s.CompilationOutput()}");
-                    ImGui.EndTooltip();
+                    // TODO: show icon depending on state...
+                    if (ImGui.Button($"Recompile: {state}", new(100, 0)))
+                        _compiler.Recompile(s);
+                    if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                    {
+                        ImGui.BeginTooltip();
+                        ImGui.TextUnformatted($"Compilation output:\n{s.CompilationOutput()}");
+                        ImGui.EndTooltip();
+                    }
                 }
+
+                ImGui.SameLine();
+                if (ImGui.Button("Delete"))
+                    toDel = s;
+                ImGui.SameLine();
+                ImGui.TextUnformatted($"[{s.ID}] {s.SourcePath}");
             }
 
+            ImGui.InputText("New script path", ref _newPath, 256);
             ImGui.SameLine();
-            if (ImGui.Button("Delete"))
-                toDel = s;
-            ImGui.SameLine();
-            ImGui.TextUnformatted($"[{s.ID}] {s.SourcePath}");
-        }
+            if (ImGui.Button("Add") && _newPath.Length > 0 && !Scripts.Any(s => s.SourcePath == _newPath))
+            {
+                AddNewScript(new(_newPath));
+                _newPath = "";
+                return true;
+            }
 
-        ImGui.InputText("New script path", ref _newPath, 256);
-        ImGui.SameLine();
-        if (ImGui.Button("Add") && _newPath.Length > 0 && !Scripts.Any(s => s.SourcePath == _newPath))
-        {
-            AddNewScript(new(_newPath));
-            _newPath = "";
-            return true;
+            if (toDel != null)
+            {
+                toDel.UpdateCompilation(CompilationState.Deleted, "Deletion in progress", null);
+                Scripts.Remove(toDel);
+                return true;
+            }
         }
-
-        if (toDel != null)
-        {
-            toDel.UpdateCompilation(CompilationState.Deleted, "Deletion in progress", null);
-            Scripts.Remove(toDel);
-            return true;
-        }
-
+        catch { }
         return false;
     }
 

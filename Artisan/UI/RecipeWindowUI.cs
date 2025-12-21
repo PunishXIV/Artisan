@@ -61,33 +61,37 @@ namespace Artisan
 
         public override void Draw()
         {
-            if (Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.BetweenAreas])
+            try
             {
-                HideCraftingMenuWindow(reset: true);
-                HideCosmicCraftingMenuWindow(reset: true);
+                if (Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.BetweenAreas])
+                {
+                    HideCraftingMenuWindow(reset: true);
+                    HideCosmicCraftingMenuWindow(reset: true);
+                }
+
+                if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] || Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
+                {
+                    DrawOptions();
+                }
+                else
+                {
+                    HideCraftingMenuWindow(reset: true);
+                    HideCosmicCraftingMenuWindow(reset: true);
+                }
+
+                DrawSearchReplace();
+
+                DrawEnduranceCounter();
+                DrawCosmicEnduranceCounter();
+
+                DrawWorkshopOverlay();
+
+                DrawSupplyMissionOverlay();
+
+                DrawMacroOptions();
+                DrawCosmicWindowOptions();
             }
-
-            if (!Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.Crafting] || Svc.Condition[Dalamud.Game.ClientState.Conditions.ConditionFlag.PreparingToCraft])
-            {
-                DrawOptions();
-            }
-            else
-            {
-                HideCraftingMenuWindow(reset: true);
-                HideCosmicCraftingMenuWindow(reset: true);
-            }
-
-            DrawSearchReplace();
-
-            DrawEnduranceCounter();
-            DrawCosmicEnduranceCounter();
-
-            DrawWorkshopOverlay();
-
-            DrawSupplyMissionOverlay();
-
-            DrawMacroOptions();
-            DrawCosmicWindowOptions();
+            catch { }
         }
 
         public static RecipeWindowUI Create()

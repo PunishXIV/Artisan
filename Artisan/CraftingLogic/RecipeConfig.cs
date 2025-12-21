@@ -4,21 +4,23 @@ using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
 using ECommons;
+using ECommons.Configuration;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using ECommons.GameHelpers;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Numerics;
-using ECommons.GameHelpers;
-using System.Diagnostics.Tracing;
+using static FFXIVClientStructs.FFXIV.Client.UI.AddonItemDetailCompare;
 
 namespace Artisan.CraftingLogic;
 
@@ -270,6 +272,9 @@ public class RecipeConfig
 
             ImGui.EndCombo();
         }
+
+        if (!Crafting.EnoughDelinsForCraft(this, craft))
+            ImGuiEx.TextCentered(ImGuiColors.DalamudRed, $"You do not have enough {Svc.Data.GetExcelSheet<Item>().GetRow(28724).Name} for this macro.");
 
         changed |= RaphaelCache.DrawRaphaelDropdown(craft, liveStats);
 

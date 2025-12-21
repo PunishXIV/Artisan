@@ -82,90 +82,94 @@ namespace Artisan.UI
 
         public override void Draw()
         {
-            if (RaphaelCache.InProgressAny())
+            try
             {
-                ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "Raphael is generating. Please wait...");
-                return;
-            }
-
-            if (!P.Config.DisableHighlightedAction)
-                Hotbars.MakeButtonsGlow(CraftingProcessor.NextRec.Action);
-
-            if (Crafting.CurCraft != null && !Crafting.CurCraft.CraftExpert && Crafting.CurRecipe?.SecretRecipeBook.RowId > 0 && Crafting.CurCraft?.CraftLevel == Crafting.CurCraft?.StatLevel && !CraftingProcessor.ActiveSolver.IsType<MacroSolver>())
-            {
-                ImGui.Dummy(new System.Numerics.Vector2(12f));
-                ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.");
-            }
-
-            bool autoMode = P.Config.AutoMode;
-            if (ImGui.Checkbox("Auto Action Mode", ref autoMode))
-            {
-                P.Config.AutoMode = autoMode;
-                P.Config.Save();
-            }
-
-            if (autoMode && !P.Config.ReplicateMacroDelay)
-            {
-                var delay = P.Config.AutoDelay;
-                ImGui.PushItemWidth(200);
-                if (ImGui.SliderInt("Set delay (ms)", ref delay, 0, 1000))
+                if (RaphaelCache.InProgressAny())
                 {
-                    if (delay < 0) delay = 0;
-                    if (delay > 1000) delay = 1000;
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "Raphael is generating. Please wait...");
+                    return;
+                }
 
-                    P.Config.AutoDelay = delay;
+                if (!P.Config.DisableHighlightedAction)
+                    Hotbars.MakeButtonsGlow(CraftingProcessor.NextRec.Action);
+
+                if (Crafting.CurCraft != null && !Crafting.CurCraft.CraftExpert && Crafting.CurRecipe?.SecretRecipeBook.RowId > 0 && Crafting.CurCraft?.CraftLevel == Crafting.CurCraft?.StatLevel && !CraftingProcessor.ActiveSolver.IsType<MacroSolver>())
+                {
+                    ImGui.Dummy(new System.Numerics.Vector2(12f));
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "This is a current level master recipe. Your success rate may vary so it is recommended to use an Artisan macro or manually solve this.");
+                }
+
+                bool autoMode = P.Config.AutoMode;
+                if (ImGui.Checkbox("Auto Action Mode", ref autoMode))
+                {
+                    P.Config.AutoMode = autoMode;
                     P.Config.Save();
                 }
-            }
 
-            if (Endurance.RecipeID != 0 && !CraftingListUI.Processing && Endurance.Enable)
-            {
-                if (ImGui.Button("Disable Endurance"))
+                if (autoMode && !P.Config.ReplicateMacroDelay)
                 {
-                    Endurance.ToggleEndurance(false);
-                    P.TM.Abort();
-                    CraftingListFunctions.CLTM.Abort();
-                    PreCrafting.Tasks.Clear();
+                    var delay = P.Config.AutoDelay;
+                    ImGui.PushItemWidth(200);
+                    if (ImGui.SliderInt("Set delay (ms)", ref delay, 0, 1000))
+                    {
+                        if (delay < 0) delay = 0;
+                        if (delay > 1000) delay = 1000;
+
+                        P.Config.AutoDelay = delay;
+                        P.Config.Save();
+                    }
+                }
+
+                if (Endurance.RecipeID != 0 && !CraftingListUI.Processing && Endurance.Enable)
+                {
+                    if (ImGui.Button("Disable Endurance"))
+                    {
+                        Endurance.ToggleEndurance(false);
+                        P.TM.Abort();
+                        CraftingListFunctions.CLTM.Abort();
+                        PreCrafting.Tasks.Clear();
+                    }
+                }
+
+                if (!Endurance.Enable && Crafting.IsTrial)
+                    ImGui.Checkbox("Trial Craft Repeat", ref RepeatTrial);
+
+                if (CraftingProcessor.ActiveSolver)
+                {
+                    var text = $"Using {CraftingProcessor.ActiveSolver.Name}";
+                    if (CraftingProcessor.NextRec.Comment.Length > 0)
+                        text += $" ({CraftingProcessor.NextRec.Comment})";
+                    ImGuiEx.TextWrapped(text.Replace("%", ""));
+                }
+
+                if (P.Config.CraftingX && Endurance.Enable)
+                    ImGui.Text($"Remaining Crafts: {P.Config.CraftX}");
+
+                if (_estimatedCraftEnd != default)
+                {
+                    var diff = _estimatedCraftEnd - DateTime.Now;
+                    string duration = string.Format("{0:D2}h {1:D2}m {2:D2}s", diff.Hours, diff.Minutes, diff.Seconds);
+                    ImGui.Text($"Approximate Remaining Duration: {duration}");
+                }
+
+                if (!P.Config.AutoMode)
+                {
+                    ImGui.Text("Semi-Manual Mode");
+
+                    var action = CraftingProcessor.NextRec.Action;
+                    using var disable = ImRaii.Disabled(action == Skills.None);
+
+                    if (ImGui.Button("Execute recommended action"))
+                    {
+                        ActionManagerEx.UseSkill(action);
+                    }
+                    if (ImGui.Button("Fetch Recommendation"))
+                    {
+                        ShowRecommendation(action);
+                    }
                 }
             }
-
-            if (!Endurance.Enable && Crafting.IsTrial)
-                ImGui.Checkbox("Trial Craft Repeat", ref RepeatTrial);
-
-            if (CraftingProcessor.ActiveSolver)
-            {
-                var text = $"Using {CraftingProcessor.ActiveSolver.Name}";
-                if (CraftingProcessor.NextRec.Comment.Length > 0)
-                    text += $" ({CraftingProcessor.NextRec.Comment})";
-                ImGuiEx.TextWrapped(text.Replace("%", ""));
-            }
-
-            if (P.Config.CraftingX && Endurance.Enable)
-                ImGui.Text($"Remaining Crafts: {P.Config.CraftX}");
-
-            if (_estimatedCraftEnd != default)
-            {
-                var diff = _estimatedCraftEnd - DateTime.Now;
-                string duration = string.Format("{0:D2}h {1:D2}m {2:D2}s", diff.Hours, diff.Minutes, diff.Seconds);
-                ImGui.Text($"Approximate Remaining Duration: {duration}");
-            }
-
-            if (!P.Config.AutoMode)
-            {
-                ImGui.Text("Semi-Manual Mode");
-
-                var action = CraftingProcessor.NextRec.Action;
-                using var disable = ImRaii.Disabled(action == Skills.None);
-
-                if (ImGui.Button("Execute recommended action"))
-                {
-                    ActionManagerEx.UseSkill(action);
-                }
-                if (ImGui.Button("Fetch Recommendation"))
-                {
-                    ShowRecommendation(action);
-                }
-            }
+            catch { } //Idaf about your error windows
         }
 
         private void ShowRecommendation(Skills action)
