@@ -12,6 +12,7 @@ using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.Logging;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -373,15 +374,25 @@ public static unsafe class Crafting
 
                 if (rc.SolverType.Contains("Raphael") && !RaphaelCache.HasSolution(CurCraft, out _))
                 {
-                    var key = RaphaelCache.GetKey(CurCraft);
-                    if (RaphaelCache.Tasks.ContainsKey(key))
-                        return State.WaitStart;
+                    if (RaphaelCache.CLIExists())
+                    {
+                        var key = RaphaelCache.GetKey(CurCraft);
+                        if (RaphaelCache.Tasks.ContainsKey(key))
+                            return State.WaitStart;
 
-                    Svc.Log.Debug("Raphael set as config but has no solution, generating now...");
-                    var raphConfig = RaphaelCache.GetConfigFromTempOrDefault(CurCraft);
+                        Svc.Log.Debug("Raphael set as config but has no solution, generating now...");
+                        var raphConfig = RaphaelCache.GetConfigFromTempOrDefault(CurCraft);
 
-                    RaphaelCache.Build(CurCraft, raphConfig);
-                    return State.WaitStart; // wait for solution to be ready
+                        RaphaelCache.Build(CurCraft, raphConfig);
+                        return State.WaitStart; // wait for solution to be ready
+                    }
+                    else
+                    {
+                        if (EzThrottler.Throttle("CLIWarning", TimeSpan.FromSeconds(10)))
+                            DuoLog.Warning("Raphael CLI not found. Please check your anti-virus and ensure 'raphael-cli.exe' is whitelisted and re-install Artisan. Crafting will not start.");
+
+                        return State.InvalidState;
+                    }
                 }
             }
             CurStep = BuildStepState(synthWindow, null, CurCraft);
