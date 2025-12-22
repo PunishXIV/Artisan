@@ -3,13 +3,16 @@ using Artisan.CraftingLogic;
 using Artisan.GameInterop;
 using Artisan.Sounds;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Game.Text;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using ECommons.DalamudServices;
 using ECommons.Logging;
-using Dalamud.Game.Text.SeStringHandling;
-using System.Linq;
 using Lumina.Excel.Sheets;
+using Lumina.Excel.Sheets.Experimental;
+using System.Collections.Generic;
+using System.Linq;
+using Item = Lumina.Excel.Sheets.Item;
 
 namespace Artisan.Autocraft
 {
@@ -34,6 +37,12 @@ namespace Artisan.Autocraft
                     {
                         if (Endurance.Enable && P.Config.EnduranceStopNQ && !item.IsHQ)
                         {
+                            if (Crafting.CurCraft is not null)
+                            {
+                                var config = P.Config.RecipeConfigs.GetValueOrDefault(Crafting.CurCraft.Recipe.RowId) ?? new();
+                                if (config.SolverType.Contains("Progress"))
+                                    return;
+                            }
                             Endurance.ToggleEndurance(false);
                             Svc.Toasts.ShowError("You crafted a non-HQ item. Disabling Endurance.");
                             DuoLog.Error("You crafted a non-HQ item. Disabling Endurance.");
@@ -50,7 +59,7 @@ namespace Artisan.Autocraft
             Svc.Chat.ChatMessage -= ScanForHQItems;
         }
 
-        private static void OnCraftFinished(Recipe? recipe, CraftState craft, StepState finalStep, bool cancelled)
+        private static void OnCraftFinished(Lumina.Excel.Sheets.Recipe? recipe, CraftState craft, StepState finalStep, bool cancelled)
         {
             Svc.Log.Debug($"Craft Finished");
 
