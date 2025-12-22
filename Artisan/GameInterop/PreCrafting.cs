@@ -369,10 +369,11 @@ public unsafe static class PreCrafting
         if (IsItemEquipped(ItemId))
             return TaskResult.Done;
 
+        var itemSheet = LuminaSheets.ItemSheet[ItemId];
         var pos = FindItemInInventory(ItemId, [InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3, InventoryType.Inventory4, InventoryType.ArmoryMainHand, InventoryType.ArmoryHands]);
         if (pos == null)
         {
-            DuoLog.Error($"Failed to find item {LuminaSheets.ItemSheet[ItemId].Name} (ID: {ItemId}) in inventory");
+            DuoLog.Error($"Failed to find item {itemSheet.Name} (ID: {ItemId}) in inventory");
             Endurance.ToggleEndurance(false);
             if (CraftingListUI.Processing)
                 CraftingListFunctions.Paused = true;
@@ -380,32 +381,8 @@ public unsafe static class PreCrafting
             return TaskResult.Abort;
         }
 
-        var agentId = pos.Value.inv is InventoryType.ArmoryMainHand or InventoryType.ArmoryHands ? AgentId.ArmouryBoard : AgentId.Inventory;
-        var addonId = AgentModule.Instance()->GetAgentByInternalId(agentId)->GetAddonId();
-        var ctx = AgentInventoryContext.Instance();
-        ctx->OpenForItemSlot(pos.Value.inv, pos.Value.slot, 0, addonId);
+        InventoryManager.Instance()->MoveItemSlot(pos.Value.inv, pos.Value.slot, InventoryType.EquippedItems, (ushort)(itemSheet.EquipSlotCategory.RowId - 1), true);
 
-        var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu").Address;
-        if (contextMenu != null)
-        {
-            for (int i = 0; i < contextMenu->AtkValuesCount; i++)
-            {
-                var firstEntryIsEquip = ctx->EventIds[i] == 25; // i'th entry will fire eventid 7+i; eventid 25 is 'equip'
-                if (firstEntryIsEquip)
-                {
-                    Svc.Log.Debug($"Equipping item #{ItemId} from {pos.Value.inv} @ {pos.Value.slot}, index {i}");
-                    Callback.Fire(contextMenu, true, 0, i - 7, 0, 0, 0); // p2=-1 is close, p2=0 is exec first command
-                }
-            }
-            Callback.Fire(contextMenu, true, 0, -1, 0, 0, 0);
-            equipAttemptLoops++;
-
-            if (equipAttemptLoops >= 5)
-            {
-                DuoLog.Error($"Equip option not found after 5 attempts. Aborting.");
-                return TaskResult.Abort;
-            }
-        }
         return TaskResult.Retry;
     }
 
@@ -549,12 +526,12 @@ public unsafe static class PreCrafting
 
     public static bool IsItemEquipped(uint ItemId) => InventoryManager.Instance()->GetItemCountInContainer(ItemId, InventoryType.EquippedItems) > 0;
 
-    private static (InventoryType inv, int slot)? FindItemInInventory(uint ItemId, IEnumerable<InventoryType> inventories)
+    private static (InventoryType inv, ushort slot)? FindItemInInventory(uint ItemId, IEnumerable<InventoryType> inventories)
     {
         foreach (var inv in inventories)
         {
             var cont = InventoryManager.Instance()->GetInventoryContainer(inv);
-            for (int i = 0; i < cont->Size; ++i)
+            for (ushort i = 0; i < cont->Size; ++i)
             {
                 if (cont->GetInventorySlot(i)->ItemId == ItemId)
                 {

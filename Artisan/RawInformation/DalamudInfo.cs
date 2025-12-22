@@ -1,4 +1,5 @@
-﻿using ECommons.DalamudServices;
+﻿using ECommons;
+using ECommons.DalamudServices;
 using ECommons.Reflection;
 using Newtonsoft.Json;
 using System;
@@ -19,18 +20,28 @@ namespace Artisan.RawInformation
                 return IsStaging;
             }
 
-            var v = Svc.PluginInterface.GetDalamudVersion();
-            if (v.BetaTrack.Equals("release", StringComparison.CurrentCultureIgnoreCase))
+            try
             {
+                var v = Svc.PluginInterface.GetDalamudVersion();
+                if (v.BetaTrack.Equals("release", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    StagingChecked = true;
+                    IsStaging = false;
+                    return false;
+                }
+                else
+                {
+                    StagingChecked = false;
+                    IsStaging = true;
+                    return true;
+                }
+            }
+            catch(Exception ex)
+            {
+                ex.Log("Probably CN or something");
                 StagingChecked = true;
                 IsStaging = false;
                 return false;
-            }
-            else
-            {
-                StagingChecked = false;
-                IsStaging = true;
-                return true;
             }
         }
     }

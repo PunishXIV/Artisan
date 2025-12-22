@@ -12,5 +12,5 @@
     "RepoUrl": "https://github.com/PunishXIV/Artisan",
     "DalamudApiLevel": 14,
     "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
-    "ChangeLog":  "- Update staging check.\n- More Raphael safeguards.\n- Removal of Ensure Reliability from Raphael because it's too problematic"
+    "ChangeLog":  "- Fix issue with staging check (hopefully).\n- Equipping items should now work again."
 }

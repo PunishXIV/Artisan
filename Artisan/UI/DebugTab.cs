@@ -395,6 +395,10 @@ namespace Artisan.UI
                 {
                     Spiritbond.ExtractFirstMateria();
                 }
+                if (ImGui.Button("Debug Equip Item"))
+                {
+                    PreCrafting.TaskEquipItem(49374);
+                }
 
                 if (ImGui.Button($"Pandora IPC"))
                 {
