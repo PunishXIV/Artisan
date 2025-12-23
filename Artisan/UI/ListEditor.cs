@@ -1290,6 +1290,7 @@ internal class ListEditor : Window, IDisposable
         var stats = CharacterStats.GetBaseStatsForClassHeuristic((Job)((uint)Job.CRP + recipe.CraftType.RowId));
         stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ), CharacterInfo.FCCraftsmanshipbuff);
         var craft = Crafting.BuildCraftStateForRecipe(stats, (Job)((uint)Job.CRP + recipe.CraftType.RowId), recipe);
+        craft.InitialQuality = Simulator.GetStartingQuality(recipe, hqSim, craft.StatLevel);
         if (config.DrawSolver(craft))
         {
             P.Config.RecipeConfigs[selectedListItem] = config;

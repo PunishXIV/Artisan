@@ -8,10 +8,8 @@ using Dalamud.Interface.Components;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
-using ECommons.GameHelpers;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
-using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -22,7 +20,6 @@ using System.Numerics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using TerraFX.Interop.Windows;
 
 namespace Artisan.CraftingLogic.Solvers
 {
@@ -417,14 +414,7 @@ namespace Artisan.CraftingLogic.Solvers
                     ImGuiEx.TextCentered(ImGuiColors.DalamudRed, "No Raphael Solution Generated.");
                     if (P.Config.RaphaelSolverConfig.AutoGenerate && CraftingProcessor.GetAvailableSolversForRecipe(craft, true).Any() && (!craft.CraftExpert || (craft.CraftExpert && P.Config.RaphaelSolverConfig.GenerateOnExperts)))
                     {
-                        if (liveStats && Player.JobId == craft.Recipe.CraftType.RowId + 8)
-                        {
-                            Build(craft, TempConfigs[key]);
-                        }
-                        else
-                        {
-                            ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"Raphael solution will auto-generate when current job is {Svc.Data.GetExcelSheet<ClassJob>().GetRow(craft.Recipe.CraftType.RowId + 8).Abbreviation}.");
-                        }
+                        Build(craft, TempConfigs[key]);
                     }
                 }
 
@@ -503,7 +493,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         public bool Draw()
         {
-                bool changed = false;
+            bool changed = false;
             try
             {
 
