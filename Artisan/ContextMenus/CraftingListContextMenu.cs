@@ -1,18 +1,17 @@
-﻿using Artisan.CraftingLists;
-using Artisan.RawInformation;
-using ECommons.DalamudServices;
-using System;
-using System.Linq;
-using OtterGui;
+﻿using Artisan.Autocraft;
+using Artisan.CraftingLists;
 using Artisan.IPC;
-using Artisan.Autocraft;
+using Artisan.RawInformation;
 using Artisan.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Gui.ContextMenu;
-using FFXIVClientStructs.FFXIV.Client.UI;
-using System.Collections.Generic;
 using ECommons;
+using ECommons.DalamudServices;
+using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Artisan.ContextMenus;
 
@@ -28,7 +27,7 @@ internal static class CraftingListContextMenu
     public const int RecipeNoteContextItemId = 0x398;
     public const int AgentItemContextItemId = 0x28;
     public const int GatheringNoteContextItemId = 0xA0;
-    public const int ItemSearchContextItemId = 0x17D0;
+    public const int ItemSearchContextItemId = 6192;
     public const int ChatLogContextItemId = 0x948;
 
     public const int SubmarinePartsMenuContextItemId = 0x54;
@@ -293,6 +292,24 @@ internal static class CraftingListContextMenu
     private unsafe static uint? GetObjectItemId(IntPtr agent, int offset)
         => agent != IntPtr.Zero ? GetObjectItemId(*(uint*)(agent + offset)) : null;
 
+
+    private static unsafe void DebugObjectItemId(IntPtr agent, uint itemId)
+    {
+        for (int i = 0; i <= 9999; i++)
+        {
+            try
+            {
+                var id = GetObjectItemId(*(uint*)(agent + i));
+                if (id == itemId)
+                    Svc.Log.Debug($"Your target is {i}");
+            }
+            catch
+            {
+
+            }
+        }
+    }
+
     private static uint? GetObjectItemId(string name, int offset)
         => GetObjectItemId(Svc.GameGui.FindAgentInterface(name), offset);
 
@@ -324,7 +341,7 @@ internal static class CraftingListContextMenu
         }
         else
         {
-            CraftingListUI.selectedList.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = P.Config.ContextMenuLoops, ListItemOptions = new ListItemOptions() { NQOnly = CraftingListUI.selectedList.AddAsQuickSynth } });   
+            CraftingListUI.selectedList.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = P.Config.ContextMenuLoops, ListItemOptions = new ListItemOptions() { NQOnly = CraftingListUI.selectedList.AddAsQuickSynth } });
         }
 
         CraftingListHelpers.TidyUpList(CraftingListUI.selectedList);
