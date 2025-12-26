@@ -93,6 +93,8 @@ internal class ListEditor : Window, IDisposable
 
     private bool hqSim = false;
 
+    private int addMoreCount = 0;
+
     public ListEditor(int listId)
         : base($"List Editor###{listId}")
     {
@@ -1114,6 +1116,83 @@ internal class ListEditor : Window, IDisposable
 
             NeedsToRefreshTable = true;
         }
+
+        ImGuiEx.TextWrapped($"Add More To List");
+        ImGuiEx.SetNextItemFullWidth(-30);
+        if (ImGui.InputInt("###AddMoreQuantity", ref addMoreCount))
+        {
+            if (addMoreCount < 0)
+                addMoreCount = 0;
+        }
+
+        if (ImGui.Button($"Add to List###AddToList{selectedListItem}", new Vector2((ImGui.GetContentRegionAvail().X / 2)-30, 30)))
+        {
+            SelectedListMateralsNew.Clear();
+            listMaterialsNew.Clear();
+
+            if (SelectedList.Recipes.Any(x => x.ID == selectedListItem))
+            {
+                SelectedList.Recipes.First(x => x.ID == selectedListItem).Quantity += checked(addMoreCount);
+            }
+            else
+            {
+                SelectedList.Recipes.Add(new ListItem() { ID = selectedListItem, Quantity = checked(addMoreCount) });
+            }
+
+            if (TidyAfter)
+                CraftingListHelpers.TidyUpList(SelectedList);
+
+            if (SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions is null)
+            {
+                SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions = new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth };
+            }
+            else
+            {
+                SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions.NQOnly = SelectedList.AddAsQuickSynth;
+            }
+
+            RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
+
+            NeedsToRefreshTable = true;
+
+            P.Config.Save();
+        }
+
+        ImGui.SameLine();
+        if (ImGui.Button($"Add to List (with all sub-crafts)###AddToListSubs{selectedListItem}", new Vector2((ImGui.GetContentRegionAvail().X)-30, 30)))
+        {
+            SelectedListMateralsNew.Clear();
+            listMaterialsNew.Clear();
+
+            CraftingListUI.AddAllSubcrafts(recipe, SelectedList, 1, addMoreCount);
+
+            Svc.Log.Debug($"Adding: {recipe.ItemResult.Value.Name.ToDalamudString().ToString()} {addMoreCount} times");
+            if (SelectedList.Recipes.Any(x => x.ID == selectedListItem))
+            {
+                SelectedList.Recipes.First(x => x.ID == selectedListItem).Quantity += addMoreCount;
+            }
+            else
+            {
+                SelectedList.Recipes.Add(new ListItem() { ID = selectedListItem, Quantity = addMoreCount });
+            }
+
+            if (TidyAfter)
+                CraftingListHelpers.TidyUpList(SelectedList);
+
+            if (SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions is null)
+            {
+                SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions = new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth };
+            }
+            else
+            {
+                SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions.NQOnly = SelectedList.AddAsQuickSynth;
+            }
+
+            RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
+            RefreshTable(null, true);
+            P.Config.Save();
+        }
+
 
         if (SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions is null)
         {
