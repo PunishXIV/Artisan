@@ -11,15 +11,25 @@ using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
+using System;
 using System.Linq;
+using System.Runtime.Serialization;
 
 namespace Artisan.CraftingLogic;
 
+[Serializable]
 public class RecipeConfig
 {
     public const uint Default = 0;
     public const uint Disabled = 1;
 
+    [NonSerialized]
+    public string TempSolverType = "";
+    [NonSerialized]
+    public int TempSolverFlavour = -1;
+
+    public string CurrentSolverType => TempSolverType != "" ? TempSolverType : SolverType;
+    public int CurrentSolverFlavour => TempSolverFlavour != -1 ? TempSolverFlavour : SolverFlavour;
 
     public string SolverType = ""; // TODO: ideally it should be a Type?, but that causes problems for serialization
     public int SolverFlavour;
@@ -268,7 +278,7 @@ public class RecipeConfig
         if (!Crafting.EnoughDelinsForCraft(this, craft, out var req))
         {
             ImGuiEx.TextCentered(ImGuiColors.DalamudRed, $"You do not have enough {Svc.Data.GetExcelSheet<Item>().GetRow(28724).Name} for this solver ({req} required).");
-            if (this.SolverType.Contains("Raphael"))
+            if (this.CurrentSolverType.Contains("Raphael"))
             {
                 ImGuiEx.TextCentered(ImGuiColors.DalamudYellow, $"An alternative solution will be used/generated when you start crafting.");
             }

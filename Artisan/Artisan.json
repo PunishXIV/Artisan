@@ -12,5 +12,5 @@
     "RepoUrl": "https://github.com/PunishXIV/Artisan",
     "DalamudApiLevel": 14,
     "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
-    "ChangeLog":  "- Progress only solver will no longer disable Endurance upon completing a craft if the setting to disable on NQ crafts is enabled.\n- Fix Marketboard context menu integration.\n- List editor UI simulation result will now work better with Raphael solutions."
+    "ChangeLog":  "- IPC added to allow other plugins to change the solvers for any recipe (Developers: Please see Github for usage)."
 }

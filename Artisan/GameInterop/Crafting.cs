@@ -372,7 +372,7 @@ public static unsafe class Crafting
                 if (CurCraft.Specialist && !EnoughDelinsForCraft(rc, CurCraft, out _))
                     CurCraft.Specialist = false;
 
-                if (rc.SolverType.Contains("Raphael") && !RaphaelCache.HasSolution(CurCraft, out _))
+                if (rc.CurrentSolverType.Contains("Raphael") && !RaphaelCache.HasSolution(CurCraft, out _))
                 {
                     if (RaphaelCache.CLIExists())
                     {
@@ -567,14 +567,14 @@ public static unsafe class Crafting
     {
         bool enoughDelins = true;
         numReq = 0;
-        if (config.SolverType.Contains("Macro"))
+        if (config.CurrentSolverType.Contains("Macro"))
         {
             var macro = P.Config.MacroSolverConfig.FindMacro(config.SolverFlavour);
             numReq = macro.Steps.Count(x => x.Action is Skills.CarefulObservation or Skills.HeartAndSoul or Skills.QuickInnovation);
             if (numReq > Crafting.DelineationCount())
                 enoughDelins = false;
         }
-        else if (config.SolverType.Contains("Raphael"))
+        else if (config.CurrentSolverType.Contains("Raphael"))
         {
             var key = RaphaelCache.GetKey(craft);
             if (RaphaelCache.HasSolution(craft, out var macro))

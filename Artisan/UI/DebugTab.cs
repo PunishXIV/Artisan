@@ -180,7 +180,7 @@ namespace Artisan.UI
                         ImGui.TableNextColumn();
                         ImGui.Text($"{v.requiredSquadronManual}");
                         ImGui.TableNextColumn();
-                        ImGui.Text($"{v.SolverType.Split('.').Last()}");
+                        ImGui.Text($"{v.CurrentSolverType.Split('.').Last()}");
                         ImGui.TableNextColumn();
                         ImGui.Text($"{v.SolverFlavour}");
                     }
@@ -299,6 +299,15 @@ namespace Artisan.UI
                         IPC.IPC.CraftX(Endurance.RecipeID, 1);
                     }
                     ImGui.Text($"IPC Override: {Endurance.IPCOverride}");
+
+                    if (ImGui.Button("Change Current Craft To Progress Only (Temp)"))
+                    {
+                        IPC.IPC.ChangeSolver(Endurance.RecipeID, "Progress Only Solver", true);
+                    }
+                    if (ImGui.Button("Change Current Craft To Progress Only (Permanent)"))
+                    {
+                        IPC.IPC.ChangeSolver(Endurance.RecipeID, "Progress Only Solver", false);
+                    }
                 }
 
                 if (ImGui.CollapsingHeader("Collectables"))

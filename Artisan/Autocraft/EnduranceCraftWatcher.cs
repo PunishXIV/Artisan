@@ -40,7 +40,7 @@ namespace Artisan.Autocraft
                             if (Crafting.CurCraft is not null)
                             {
                                 var config = P.Config.RecipeConfigs.GetValueOrDefault(Crafting.CurCraft.Recipe.RowId) ?? new();
-                                if (config.SolverType.Contains("Progress"))
+                                if (config.CurrentSolverType.Contains("Progress"))
                                     return;
                             }
                             Endurance.ToggleEndurance(false);

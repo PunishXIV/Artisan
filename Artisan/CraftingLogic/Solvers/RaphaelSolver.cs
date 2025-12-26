@@ -350,7 +350,7 @@ namespace Artisan.CraftingLogic.Solvers
                 }
 
                 var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).FirstOrNull(x => x.Name == $"Raphael Recipe Solver");
-                var solverIsRaph = config.SolverType == opt?.Def.GetType().FullName!;
+                var solverIsRaph = config.CurrentSolverType == opt?.Def.GetType().FullName!;
                 if (hasSolution)
                 {
                     var curStats = CharacterStats.GetCurrentStats();

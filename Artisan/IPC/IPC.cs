@@ -1,13 +1,16 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.CraftingLogic;
 using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Dalamud.Game.ClientState.Conditions;
 using ECommons;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using ECommons.Logging;
 using OtterGui;
 using System;
+using System.Collections.Generic;
 
 namespace Artisan.IPC
 {
@@ -48,6 +51,8 @@ namespace Artisan.IPC
 
             Svc.PluginInterface.GetIpcProvider<ushort, int, object>("Artisan.CraftItem").RegisterAction(CraftX);
             Svc.PluginInterface.GetIpcProvider<bool>("Artisan.IsBusy").RegisterFunc(IsBusy);
+
+            Svc.PluginInterface.GetIpcProvider<uint, string, bool, object>("Artisan.ChangeSolver").RegisterAction(ChangeSolver);
         }
 
         internal static void Dispose()
@@ -64,6 +69,8 @@ namespace Artisan.IPC
 
             Svc.PluginInterface.GetIpcProvider<ushort, int, object>("Artisan.CraftItem").UnregisterAction();
             Svc.PluginInterface.GetIpcProvider<ushort, int, object>("Artisan.IsBusy").UnregisterFunc();
+
+            Svc.PluginInterface.GetIpcProvider<uint, string, bool, object>("Artisan.ChangeSolver").UnregisterAction();
         }
 
         static bool GetEnduranceStatus()
@@ -134,6 +141,43 @@ namespace Artisan.IPC
             return Endurance.Enable || CraftingListUI.Processing || P.TM.NumQueuedTasks > 0 || P.CTM.NumQueuedTasks > 0 || !(Crafting.CurState is Crafting.State.IdleBetween or Crafting.State.IdleNormal);
         }
 
+
+        /// <summary>
+        /// Changes the solver for a given recipe.
+        /// </summary>
+        /// <param name="recipeId">The recipe ID</param>
+        /// <param name="solverName">Name of the solver as displayed in the UI. Note, if changing to a macro, you must include the "Macro: " part too.</param>
+        /// <param name="temporary">If you only want the change to work until the plugin is reloaded.</param>
+        public static void ChangeSolver(uint recipeId, string solverName, bool temporary)
+        {
+            var config = P.Config.RecipeConfigs.GetValueOrDefault(recipeId) ?? new();
+            if (LuminaSheets.RecipeSheet.TryGetValue(recipeId, out var recipe))
+            {
+                var job = (Job)((uint)Job.CRP + recipe.CraftType.RowId);
+                var stats = CharacterStats.GetBaseStatsForClassHeuristic(job);
+                var craft = Crafting.BuildCraftStateForRecipe(stats, job, recipe);
+                var solvers = CraftingProcessor.GetAvailableSolversForRecipe(craft, false);
+
+                foreach (var solver in solvers)
+                {
+                    if (solver.Name == solverName)
+                    {
+                        if (temporary)
+                        {
+                            config.TempSolverType = solver.Def.GetType().FullName!;
+                            config.TempSolverFlavour = solver.Flavour;
+                        }
+                        else
+                        {
+                            config.SolverType = solver.Def.GetType().FullName!;
+                            config.SolverFlavour = solver.Flavour;
+                            P.Config.Save();
+                        }
+                    }
+                }
+            }
+
+        }
         public enum ArtisanMode
         {
             None = 0,
