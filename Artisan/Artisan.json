@@ -1,16 +1,16 @@
 {
-    "Author": "Taurenkey (Puni.sh)",
-    "Name": "Artisan",
-    "Punchline": "A 'simple' crafting plugin.",
-    "Description": "The all-in-one crafting plugin.",
-    "InternalName": "Artisan",
-    "ApplicableVersion": "any",
-    "IconUrl": "https://s3.puni.sh/media/plugin/6/icon-3h8wd5b9qr.png",
-    "Tags": [
-        "crafting"
-    ],
-    "RepoUrl": "https://github.com/PunishXIV/Artisan",
-    "DalamudApiLevel": 14,
-    "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
-    "ChangeLog":  "- IPC added to allow other plugins to change the solvers for any recipe (Developers: Please see Github for usage)."
+  "Author": "Taurenkey (Puni.sh)",
+  "Name": "Artisan",
+  "Punchline": "A 'simple' crafting plugin.",
+  "Description": "The all-in-one crafting plugin.",
+  "InternalName": "Artisan",
+  "ApplicableVersion": "any",
+  "IconUrl": "https://s3.puni.sh/media/plugin/6/icon-3h8wd5b9qr.png",
+  "Tags": [
+    "crafting"
+  ],
+  "RepoUrl": "https://github.com/PunishXIV/Artisan",
+  "DalamudApiLevel": 14,
+  "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
+  "ChangeLog": "List editor changes:\n- Apply All has been added for solvers (USE CAREFULLY!).\n- \"Remove all unnecessary sub-crafts after adding\" checkbox has been updated to remove and add sub-crafts and defaulted to on."
 }

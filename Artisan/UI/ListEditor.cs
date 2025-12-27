@@ -2,6 +2,7 @@
 
 using Autocraft;
 using CraftingLists;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
@@ -17,7 +18,6 @@ using global::Artisan.CraftingLogic.Solvers;
 using global::Artisan.GameInterop;
 using global::Artisan.RawInformation.Character;
 using global::Artisan.UI.Tables;
-using Dalamud.Bindings.ImGui;
 using IPC;
 using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
@@ -63,7 +63,7 @@ internal class ListEditor : Window, IDisposable
 
     private ListFolders ListsUI = new();
 
-    private bool TidyAfter;
+    private bool TidyAfter = true;
 
     private int timesToAdd = 1;
 
@@ -565,44 +565,16 @@ internal class ListEditor : Window, IDisposable
             if (timesToAdd < 1)
                 ImGui.EndDisabled();
 
-            ImGui.Checkbox("Remove all unnecessary subcrafts after adding", ref TidyAfter);
-        }
 
+        }
+        ImGui.Checkbox("Adjust all sub-crafts after changing quantities", ref TidyAfter);
+        ImGuiComponents.HelpMarker("This has been reworked! Having this enabled will adjust all quantities in your list rather than just removing unrequired crafts. It will now also add more crafts where required. It will also sort the list afterwards to make sure it's crafting in the right order in case you have removed items.\n\n" +
+            "Quick disclaimer: This will treat whatever item you have selected as a \"Final Craft\" and only adjust sub-crafts required for that item, and not anything this item may be used for e.g changing lumber won't update crafts that use that lumber.");
         ImGui.Separator();
 
         if (ImGui.Button($"Sort Recipes"))
         {
-            List<ListItem> newList = new();
-            List<ListOrderCheck> order = new();
-            foreach (var item in SelectedList.Recipes.Distinct())
-            {
-                var orderCheck = new ListOrderCheck();
-                var r = LuminaSheets.RecipeSheet[item.ID];
-                orderCheck.RecID = r.RowId;
-                int maxDepth = 0;
-                foreach (var ing in r.Ingredients().Where(x => x.Amount > 0).Select(x => x.Item.RowId))
-                {
-                    CheckIngredientRecipe(ing, orderCheck);
-                    if (orderCheck.RecipeDepth > maxDepth)
-                    {
-                        maxDepth = orderCheck.RecipeDepth;
-                    }
-                    orderCheck.RecipeDepth = 0;
-                }
-                orderCheck.RecipeDepth = maxDepth;
-                orderCheck.ListQuantity = item.Quantity;
-                orderCheck.ops = item.ListItemOptions ?? new ListItemOptions();
-                order.Add(orderCheck);
-            }
-
-            foreach (var ord in order.OrderBy(x => x.RecipeDepth).ThenBy(x => x.RecipeDiff).ThenBy(x => x.CraftType))
-            {
-                newList.Add(new ListItem() { ID = ord.RecID, Quantity = ord.ListQuantity, ListItemOptions = ord.ops });
-            }
-
-            SelectedList.Recipes = newList;
-            RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
-            P.Config.Save();
+            SortList();
         }
 
         if (ImGui.IsItemHovered())
@@ -620,6 +592,41 @@ internal class ListEditor : Window, IDisposable
         string duration = listTime == TimeSpan.Zero ? "Unknown" : string.Format("{0:D2}d {1:D2}h {2:D2}m {3:D2}s", listTime.Days, listTime.Hours, listTime.Minutes, listTime.Seconds);
         ImGui.SameLine();
         ImGui.Text($"Approximate List Time: {duration}");
+    }
+
+    private void SortList()
+    {
+        List<ListItem> newList = new();
+        List<ListOrderCheck> order = new();
+        foreach (var item in SelectedList.Recipes.Distinct())
+        {
+            var orderCheck = new ListOrderCheck();
+            var r = LuminaSheets.RecipeSheet[item.ID];
+            orderCheck.RecID = r.RowId;
+            int maxDepth = 0;
+            foreach (var ing in r.Ingredients().Where(x => x.Amount > 0).Select(x => x.Item.RowId))
+            {
+                CheckIngredientRecipe(ing, orderCheck);
+                if (orderCheck.RecipeDepth > maxDepth)
+                {
+                    maxDepth = orderCheck.RecipeDepth;
+                }
+                orderCheck.RecipeDepth = 0;
+            }
+            orderCheck.RecipeDepth = maxDepth;
+            orderCheck.ListQuantity = item.Quantity;
+            orderCheck.ops = item.ListItemOptions ?? new ListItemOptions();
+            order.Add(orderCheck);
+        }
+
+        foreach (var ord in order.OrderBy(x => x.RecipeDepth).ThenBy(x => x.RecipeDiff).ThenBy(x => x.CraftType))
+        {
+            newList.Add(new ListItem() { ID = ord.RecID, Quantity = ord.ListQuantity, ListItemOptions = ord.ops });
+        }
+
+        SelectedList.Recipes = newList;
+        RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
+        P.Config.Save();
     }
 
     TimeSpan listTime;
@@ -1104,95 +1111,39 @@ internal class ListEditor : Window, IDisposable
         var recipe = LuminaSheets.RecipeSheet[RecipeSelector.Current.ID];
         var count = RecipeSelector.Items[RecipeSelector.CurrentIdx].Quantity;
 
-        ImGui.TextWrapped("Adjust Quantity");
+        ImGuiEx.LineCentered(() => ImGuiEx.TextUnderlined($"{recipe.ItemResult.Value.Name}"));
+
+		ImGui.TextWrapped("Adjust Quantity");
         ImGuiEx.SetNextItemFullWidth(-30);
-        if (ImGui.InputInt("###AdjustQuantity", ref count))
+        if (ImGui.InputInt("###AdjustQuantity", ref count, flags: ImGuiInputTextFlags.EnterReturnsTrue))
         {
             if (count >= 0)
             {
                 SelectedList.Recipes.First(x => x.ID == selectedListItem).Quantity = count;
+
+                if (TidyAfter)
+                {
+                    CraftingListHelpers.TidyUpList(SelectedList);
+
+                    SelectedListMateralsNew.Clear();
+                    listMaterialsNew.Clear();
+
+                    CraftingListUI.AddAllSubcrafts(recipe, SelectedList, 1, count);
+
+                    RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
+                    RefreshTable(null, true);
+                    P.Config.Save();
+
+                    CraftingListHelpers.TidyUpList(SelectedList);
+                    SortList();
+                    var newIdx = RecipeSelector.Items.IndexOf(x => x.ID == selectedListItem);
+                    RecipeSelector.SetCurrent(newIdx);
+                }
+
                 P.Config.Save();
             }
-
             NeedsToRefreshTable = true;
         }
-
-        ImGuiEx.TextWrapped($"Add More To List");
-        ImGuiEx.SetNextItemFullWidth(-30);
-        if (ImGui.InputInt("###AddMoreQuantity", ref addMoreCount))
-        {
-            if (addMoreCount < 0)
-                addMoreCount = 0;
-        }
-
-        if (ImGui.Button($"Add to List###AddToList{selectedListItem}", new Vector2((ImGui.GetContentRegionAvail().X / 2)-30, 30)))
-        {
-            SelectedListMateralsNew.Clear();
-            listMaterialsNew.Clear();
-
-            if (SelectedList.Recipes.Any(x => x.ID == selectedListItem))
-            {
-                SelectedList.Recipes.First(x => x.ID == selectedListItem).Quantity += checked(addMoreCount);
-            }
-            else
-            {
-                SelectedList.Recipes.Add(new ListItem() { ID = selectedListItem, Quantity = checked(addMoreCount) });
-            }
-
-            if (TidyAfter)
-                CraftingListHelpers.TidyUpList(SelectedList);
-
-            if (SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions is null)
-            {
-                SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions = new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth };
-            }
-            else
-            {
-                SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions.NQOnly = SelectedList.AddAsQuickSynth;
-            }
-
-            RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
-
-            NeedsToRefreshTable = true;
-
-            P.Config.Save();
-        }
-
-        ImGui.SameLine();
-        if (ImGui.Button($"Add to List (with all sub-crafts)###AddToListSubs{selectedListItem}", new Vector2((ImGui.GetContentRegionAvail().X)-30, 30)))
-        {
-            SelectedListMateralsNew.Clear();
-            listMaterialsNew.Clear();
-
-            CraftingListUI.AddAllSubcrafts(recipe, SelectedList, 1, addMoreCount);
-
-            Svc.Log.Debug($"Adding: {recipe.ItemResult.Value.Name.ToDalamudString().ToString()} {addMoreCount} times");
-            if (SelectedList.Recipes.Any(x => x.ID == selectedListItem))
-            {
-                SelectedList.Recipes.First(x => x.ID == selectedListItem).Quantity += addMoreCount;
-            }
-            else
-            {
-                SelectedList.Recipes.Add(new ListItem() { ID = selectedListItem, Quantity = addMoreCount });
-            }
-
-            if (TidyAfter)
-                CraftingListHelpers.TidyUpList(SelectedList);
-
-            if (SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions is null)
-            {
-                SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions = new ListItemOptions { NQOnly = SelectedList.AddAsQuickSynth };
-            }
-            else
-            {
-                SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions.NQOnly = SelectedList.AddAsQuickSynth;
-            }
-
-            RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
-            RefreshTable(null, true);
-            P.Config.Save();
-        }
-
 
         if (SelectedList.Recipes.First(x => x.ID == selectedListItem).ListItemOptions is null)
         {
