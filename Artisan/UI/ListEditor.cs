@@ -132,7 +132,7 @@ internal class ListEditor : Window, IDisposable
     {
         token = source.Token;
         Table = null;
-        P.UniversalsisClient.PlayerWorld = Svc.ClientState.LocalPlayer?.CurrentWorld.RowId;
+        P.UniversalsisClient.PlayerWorld = Svc.Objects.LocalPlayer?.CurrentWorld.RowId;
         if (RegenerateTask == null || RegenerateTask.IsCompleted)
         {
             Svc.Log.Debug($"Starting regeneration");
@@ -1370,12 +1370,28 @@ internal class ListEditor : Window, IDisposable
         stats.AddConsumables(new(config.RequiredFood, config.RequiredFoodHQ), new(config.RequiredPotion, config.RequiredPotionHQ), CharacterInfo.FCCraftsmanshipbuff);
         var craft = Crafting.BuildCraftStateForRecipe(stats, (Job)((uint)Job.CRP + recipe.CraftType.RowId), recipe);
         craft.InitialQuality = Simulator.GetStartingQuality(recipe, hqSim, craft.StatLevel);
-        if (config.DrawSolver(craft))
+        if (config.DrawSolver(craft, true, false))
         {
             P.Config.RecipeConfigs[selectedListItem] = config;
             P.Config.Save();
         }
-        
+
+        ImGui.SameLine();
+
+        if (ImGui.Button($"Apply to all###SolverOnAll"))
+        {
+            foreach (var r in SelectedList.Recipes.Distinct())
+            {
+                var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
+                o.SolverType = config.SolverType;
+                o.SolverFlavour = config.SolverFlavour;
+                P.Config.RecipeConfigs[r.ID] = o;
+            }
+            P.Config.Save();
+        }
+
+        RaphaelCache.DrawRaphaelDropdown(craft, false);
+
         ImGuiEx.TextV("Requirements:");
         ImGui.SameLine();
         using var style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(0, ImGui.GetStyle().ItemSpacing.Y));

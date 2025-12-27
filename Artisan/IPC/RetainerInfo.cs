@@ -246,9 +246,9 @@ namespace Artisan.IPC
                         ulong retainerId = 0;
                         var retainer = RetainerManager.Instance()->GetRetainerBySortedIndex((uint)i);
 
-                        if (P.Config.RetainerIDs.Count(x => x.Value == Svc.ClientState.LocalContentId) > i)
+                        if (P.Config.RetainerIDs.Count(x => x.Value == Svc.PlayerState.ContentId) > i)
                         {
-                            retainerId = P.Config.RetainerIDs.Where(x => x.Value == Svc.ClientState.LocalContentId).Select(x => x.Key).ToArray()[i];
+                            retainerId = P.Config.RetainerIDs.Where(x => x.Value == Svc.PlayerState.ContentId).Select(x => x.Key).ToArray()[i];
                         }
                         else
                         {
@@ -256,11 +256,11 @@ namespace Artisan.IPC
                                 retainerId = retainer->RetainerId;
                         }
 
-                        if (retainer->RetainerId > 0 && !P.Config.RetainerIDs.Any(x => x.Key == retainer->RetainerId && x.Value == Svc.ClientState.LocalContentId))
+                        if (retainer->RetainerId > 0 && !P.Config.RetainerIDs.Any(x => x.Key == retainer->RetainerId && x.Value == Svc.PlayerState.ContentId))
                         {
                             if (retainer->Available)
                             {
-                                P.Config.RetainerIDs.Add(retainer->RetainerId, Svc.ClientState.LocalContentId);
+                                P.Config.RetainerIDs.Add(retainer->RetainerId, Svc.PlayerState.ContentId);
                                 P.Config.Save();
                             }
                         }
@@ -548,7 +548,7 @@ namespace Artisan.IPC
             {
                 if ((x.ObjectKind == ObjectKind.Housing || x.ObjectKind == ObjectKind.EventObj) && x.Name.ToString().EqualsIgnoreCaseAny(BellName, "リテイナーベル"))
                 {
-                    if (Vector3.Distance(x.Position, Svc.ClientState.LocalPlayer.Position) < GetValidInteractionDistance(x) && x.IsTargetable())
+                    if (Vector3.Distance(x.Position, Svc.Objects.LocalPlayer.Position) < GetValidInteractionDistance(x) && x.IsTargetable())
                     {
                         return x;
                     }

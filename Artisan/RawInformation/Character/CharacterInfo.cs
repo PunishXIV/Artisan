@@ -15,15 +15,15 @@ namespace Artisan.RawInformation.Character
     {
         public static unsafe void UpdateCharaStats()
         {
-            if (Svc.ClientState.LocalPlayer is null) return;
+            if (Svc.Objects.LocalPlayer is null) return;
 
-            JobID = (Job)(Svc.ClientState.LocalPlayer?.ClassJob.Value.RowId ?? 0);
-            CharacterLevel = Svc.ClientState.LocalPlayer?.Level;
-            CurrentCP = Svc.ClientState.LocalPlayer.CurrentCp;
-            MaxCP = Svc.ClientState.LocalPlayer.MaxCp;
+            JobID = (Job)(Svc.Objects.LocalPlayer?.ClassJob.Value.RowId ?? 0);
+            CharacterLevel = Svc.Objects.LocalPlayer?.Level;
+            CurrentCP = Svc.Objects.LocalPlayer.CurrentCp;
+            MaxCP = Svc.Objects.LocalPlayer.MaxCp;
             Craftsmanship = PlayerState.Instance()->Attributes[70];
             Control = PlayerState.Instance()->Attributes[71];
-            FCCraftsmanshipbuff = Svc.ClientState.LocalPlayer?.StatusList.FirstOrDefault(x => x.StatusId == 356);
+            FCCraftsmanshipbuff = Svc.Objects.LocalPlayer?.StatusList.FirstOrDefault(x => x.StatusId == 356);
         }
 
         public static byte? CharacterLevel;

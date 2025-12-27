@@ -316,7 +316,7 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if (Svc.ClientState.LocalPlayer.ClassJob.RowId != recipe.CraftType.Value.RowId + 8)
+            if (Svc.Objects.LocalPlayer.ClassJob.RowId != recipe.CraftType.Value.RowId + 8)
             {
                 PreCrafting.equipGearsetLoops = 0;
                 PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
@@ -333,7 +333,7 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if (Svc.ClientState.LocalPlayer.Level < recipe.RecipeLevelTable.Value.ClassJobLevel - 5 && Svc.ClientState.LocalPlayer.ClassJob.RowId == recipe.CraftType.Value.RowId + 8 && !isCrafting && !preparing)
+            if (Svc.Objects.LocalPlayer.Level < recipe.RecipeLevelTable.Value.ClassJobLevel - 5 && Svc.Objects.LocalPlayer.ClassJob.RowId == recipe.CraftType.Value.RowId + 8 && !isCrafting && !preparing)
             {
                 DuoLog.Error("Insufficient level to craft this item. Moving on.");
                 var currentRecipe = selectedList.ExpandedList[CurrentIndex];

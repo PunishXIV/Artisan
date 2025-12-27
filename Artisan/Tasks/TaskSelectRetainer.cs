@@ -104,7 +104,7 @@ internal unsafe static class RetainerListHandlers
 
     internal static bool TryGetCurrentRetainer(out string name)
     {
-        if (Svc.Condition[ConditionFlag.OccupiedSummoningBell] && ProperOnLogin.PlayerPresent && Svc.Objects.Where(x => x.ObjectKind == ObjectKind.Retainer).OrderBy(x => Vector3.Distance(Svc.ClientState.LocalPlayer.Position, x.Position)).TryGetFirst(out var obj))
+        if (Svc.Condition[ConditionFlag.OccupiedSummoningBell] && ProperOnLogin.PlayerPresent && Svc.Objects.Where(x => x.ObjectKind == ObjectKind.Retainer).OrderBy(x => Vector3.Distance(Svc.Objects.LocalPlayer.Position, x.Position)).TryGetFirst(out var obj))
         {
             name = obj.Name.ToString();
             return true;

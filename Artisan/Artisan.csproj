@@ -96,7 +96,7 @@
   <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="13.1.0" />
     <PackageReference Include="Discord.Net.Webhook" Version="3.15.3" />
-    <PackageReference Include="ECommons" Version="3.1.0.2" />
+    <PackageReference Include="ECommons" Version="3.1.0.10" />
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
     <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.10.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" />

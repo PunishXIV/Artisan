@@ -126,7 +126,7 @@ namespace Artisan.Autocraft
         {
             if (config == null || !config.PotionEnabled)
                 return true; // don't need a pot
-            var potBuff = Svc.ClientState.LocalPlayer.StatusList.FirstOrDefault(x => x.StatusId == 49 & x.RemainingTime > 10f);
+            var potBuff = Svc.Objects.LocalPlayer.StatusList.FirstOrDefault(x => x.StatusId == 49 & x.RemainingTime > 10f);
             if (potBuff == null)
                 return false; // don't have any well-fed buff
             var desiredPot = LuminaSheets.ItemSheet[config.RequiredPotion].ItemAction.Value;
@@ -141,7 +141,7 @@ namespace Artisan.Autocraft
         {
             if (config == null || !config.ManualEnabled)
                 return true; // don't need a manual
-            return Svc.ClientState.LocalPlayer?.StatusList.Any(x => x.StatusId == 45) == true;
+            return Svc.Objects.LocalPlayer?.StatusList.Any(x => x.StatusId == 45) == true;
         }
 
         internal static bool IsSquadronManualled(RecipeConfig? config)
@@ -150,7 +150,7 @@ namespace Artisan.Autocraft
                 return true; // don't need a squadron manual
             // Squadron engineering/spiritbonding/rationing/gear manual.
             uint[] SquadronManualBuffss = { 1082, 1083, 1084, 1085 };
-            return Svc.ClientState.LocalPlayer?.StatusList.Any(x => SquadronManualBuffss.Contains(x.StatusId)) == true;
+            return Svc.Objects.LocalPlayer?.StatusList.Any(x => SquadronManualBuffss.Contains(x.StatusId)) == true;
         }
 
         internal static bool UseItem(uint id, bool hq = false)

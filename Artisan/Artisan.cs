@@ -1,4 +1,4 @@
-﻿global using Player = ECommons.GameHelpers.LegacyPlayer.Player;
+﻿global using Player = ECommons.GameHelpers.Player;
 using Artisan.Autocraft;
 using Artisan.ContextMenus;
 using Artisan.CraftingLists;
