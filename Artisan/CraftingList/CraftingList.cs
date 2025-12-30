@@ -70,6 +70,8 @@ namespace Artisan.CraftingLists
         public int RepairPercent = 50;
 
         public bool AddAsQuickSynth;
+
+        public bool TidyAfter = true;
     }
 
     public class ListItem
@@ -143,6 +145,7 @@ namespace Artisan.CraftingLists
             list.Repair = P.Config.DefaultListRepair;
             list.RepairPercent = P.Config.DefaultListRepairPercent;
             list.AddAsQuickSynth = P.Config.DefaultListQuickSynth;
+            list.TidyAfter = P.Config.DefaultAdjustQuantities;
 
             if (list.AddAsQuickSynth)
             {

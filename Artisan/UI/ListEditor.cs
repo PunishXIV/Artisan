@@ -63,8 +63,6 @@ internal class ListEditor : Window, IDisposable
 
     private ListFolders ListsUI = new();
 
-    private bool TidyAfter = true;
-
     private int timesToAdd = 1;
 
     public readonly RecipeSelector RecipeSelector;
@@ -94,6 +92,7 @@ internal class ListEditor : Window, IDisposable
     private bool hqSim = false;
 
     private int addMoreCount = 0;
+    private bool loading;
 
     public ListEditor(int listId)
         : base($"List Editor###{listId}")
@@ -504,7 +503,7 @@ internal class ListEditor : Window, IDisposable
                     SelectedList.Recipes.Add(new ListItem() { ID = SelectedRecipe.Value.RowId, Quantity = checked(timesToAdd) });
                 }
 
-                if (TidyAfter)
+                if (SelectedList.TidyAfter)
                     CraftingListHelpers.TidyUpList(SelectedList);
 
                 if (SelectedList.Recipes.First(x => x.ID == SelectedRecipe.Value.RowId).ListItemOptions is null)
@@ -543,7 +542,7 @@ internal class ListEditor : Window, IDisposable
                     SelectedList.Recipes.Add(new ListItem() { ID = SelectedRecipe.Value.RowId, Quantity = timesToAdd });
                 }
 
-                if (TidyAfter)
+                if (SelectedList.TidyAfter)
                     CraftingListHelpers.TidyUpList(SelectedList);
 
                 if (SelectedList.Recipes.First(x => x.ID == SelectedRecipe.Value.RowId).ListItemOptions is null)
@@ -567,7 +566,9 @@ internal class ListEditor : Window, IDisposable
 
 
         }
-        ImGui.Checkbox("Adjust all sub-crafts after changing quantities", ref TidyAfter);
+        if (ImGui.Checkbox("Adjust all sub-crafts after changing quantities", ref SelectedList.TidyAfter))
+            P.Config.Save();
+
         ImGuiComponents.HelpMarker("This has been reworked! Having this enabled will adjust all quantities in your list rather than just removing unrequired crafts. It will now also add more crafts where required. It will also sort the list afterwards to make sure it's crafting in the right order in case you have removed items.\n\n" +
             "Quick disclaimer: This will treat whatever item you have selected as a \"Final Craft\" and only adjust sub-crafts required for that item, and not anything this item may be used for e.g changing lumber won't update crafts that use that lumber.");
         ImGui.Separator();
@@ -592,6 +593,13 @@ internal class ListEditor : Window, IDisposable
         string duration = listTime == TimeSpan.Zero ? "Unknown" : string.Format("{0:D2}d {1:D2}h {2:D2}m {3:D2}s", listTime.Days, listTime.Hours, listTime.Minutes, listTime.Seconds);
         ImGui.SameLine();
         ImGui.Text($"Approximate List Time: {duration}");
+
+        if (loading)
+        {
+            ImGui.SameLine();
+            ImGuiEx.LineCentered(() => ImGuiEx.TextUnderlined(GradientColor.Get(ImGuiColors.DalamudWhite, ImGuiColors.DalamudYellow, 200), "REFRESHING LIST QUANTITIES"));
+        }
+
     }
 
     private void SortList()
@@ -1113,34 +1121,33 @@ internal class ListEditor : Window, IDisposable
 
         ImGuiEx.LineCentered(() => ImGuiEx.TextUnderlined($"{recipe.ItemResult.Value.Name}"));
 
-		ImGui.TextWrapped("Adjust Quantity");
+        ImGui.TextWrapped("Adjust Quantity");
         ImGuiEx.SetNextItemFullWidth(-30);
-        if (ImGui.InputInt("###AdjustQuantity", ref count, flags: ImGuiInputTextFlags.EnterReturnsTrue))
+        ImGui.InputInt("###AdjustQuantity", ref count);
+        if (ImGui.IsItemDeactivatedAfterEdit())
         {
             if (count >= 0)
             {
-                SelectedList.Recipes.First(x => x.ID == selectedListItem).Quantity = count;
-
-                if (TidyAfter)
+                Task.Run(() =>
                 {
-                    CraftingListHelpers.TidyUpList(SelectedList);
+                    loading = true;
+                    SelectedList.Recipes.First(x => x.ID == selectedListItem).Quantity = count;
 
-                    SelectedListMateralsNew.Clear();
-                    listMaterialsNew.Clear();
+                    if (SelectedList.TidyAfter)
+                    {
+                        CraftingListUI.AddAllSubcrafts(recipe, SelectedList, 1, count);
+                        RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
 
-                    CraftingListUI.AddAllSubcrafts(recipe, SelectedList, 1, count);
+                        CraftingListHelpers.TidyUpList(SelectedList);
 
-                    RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
-                    RefreshTable(null, true);
+                        SortList();
+                        var newIdx = RecipeSelector.Items.IndexOf(x => x.ID == selectedListItem);
+                        RecipeSelector.SetCurrent(newIdx);
+                    }
+
                     P.Config.Save();
-
-                    CraftingListHelpers.TidyUpList(SelectedList);
-                    SortList();
-                    var newIdx = RecipeSelector.Items.IndexOf(x => x.ID == selectedListItem);
-                    RecipeSelector.SetCurrent(newIdx);
-                }
-
-                P.Config.Save();
+                    loading = false;
+                });
             }
             NeedsToRefreshTable = true;
         }
@@ -1256,6 +1263,7 @@ internal class ListEditor : Window, IDisposable
         {
             if (config.DrawPotion(true))
             {
+                Svc.Log.Debug($"Updated pot for {selectedListItem}");
                 P.Config.RecipeConfigs[selectedListItem] = config;
                 P.Config.Save();
             }

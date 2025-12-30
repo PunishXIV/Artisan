@@ -112,6 +112,7 @@ namespace Artisan
         public bool DefaultListRepair = false;
         public int DefaultListRepairPercent = 50;
         public bool DefaultListQuickSynth = false;
+        public bool DefaultAdjustQuantities = true;
         public bool ResetTimesToAdd = false;
         public bool SkipMacroStepIfUnable = false;
         public bool DisableAllaganTools = false;

@@ -12,5 +12,5 @@
   "RepoUrl": "https://github.com/PunishXIV/Artisan",
   "DalamudApiLevel": 14,
   "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
-  "ChangeLog": "List editor changes:\n- Apply All has been added for solvers (USE CAREFULLY!).\n- \"Remove all unnecessary sub-crafts after adding\" checkbox has been updated to remove and add sub-crafts and defaulted to on."
+  "ChangeLog": "- Fixed issue whenever a Raphael solver is generated and set as solver for all similar crafts it would also set the same consumables."
 }

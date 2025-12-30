@@ -3,13 +3,12 @@ using Artisan.RawInformation;
 using ECommons;
 using ECommons.DalamudServices;
 using Lumina.Excel.Sheets;
-using OtterGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 internal static class CraftingListHelpers
-{    
+{
     internal static Dictionary<uint, bool> SelectedRecipesCraftable = new();
 
     public static void AddRecipeIngredientsToList(Recipe? recipe, ref Dictionary<uint, int> ingredientList, bool addSublist = true, NewCraftingList? selectedList = null)
@@ -92,18 +91,20 @@ internal static class CraftingListHelpers
             if (SelectedRecipesCraftable[requiredItem.Key])
             {
                 var recipe = GetIngredientRecipe(requiredItem.Key);
-                if (list.Recipes.Any(x => x.ID == recipe.Value.RowId))
+                if (list.Recipes.Any(x => x.ID == recipe?.RowId))
                 {
-                    var crafting = list.Recipes.First(x => x.ID == recipe.Value.RowId).Quantity * recipe.Value.AmountResult;
-                    
+                    double? amountRes = recipe?.AmountResult;
+                    var crafting = list.Recipes.First(x => x.ID == recipe?.RowId).Quantity * amountRes;
+
                     if (crafting > requiredItem.Value)
                     {
-                        double quant = Math.Ceiling((double)requiredItem.Value / recipe.Value.AmountResult);
-                        list.Recipes.First(x => x.ID == recipe.Value.RowId).Quantity = (int)quant;
+                        double quant = Math.Ceiling(requiredItem.Value / amountRes ?? 0);
+                        list.Recipes.First(x => x.ID == recipe?.RowId).Quantity = (int)quant;
                     }
                 }
 
             }
         }
+
     }
 }

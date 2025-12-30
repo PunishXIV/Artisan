@@ -217,7 +217,8 @@ namespace Artisan.CraftingLogic.Solvers
                                     if (autoSwitchOk(c.Recipe.RowId))
                                     {
                                         Svc.Log.Information($"Switching {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) to Raphael solver");
-                                        P.Config.RecipeConfigs[c.Recipe.RowId] = config;
+                                        P.Config.RecipeConfigs[c.Recipe.RowId].SolverType = config.SolverType;
+                                        P.Config.RecipeConfigs[c.Recipe.RowId].SolverFlavour = config.SolverFlavour;
                                     }
                                     else
                                         Svc.Log.Information($"Skipping {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) because it already has a macro assigned");
