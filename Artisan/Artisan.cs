@@ -3,6 +3,7 @@ using Artisan.Autocraft;
 using Artisan.ContextMenus;
 using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
+using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.IPC;
 using Artisan.RawInformation;
@@ -215,6 +216,15 @@ public unsafe class Artisan : IDalamudPlugin
         if (CraftingListUI.Processing && !CraftingListFunctions.Paused)
         {
             CraftingListFunctions.ListEndTime -= framework.UpdateDelta;
+        }
+
+        var raphFinishedTasks = RaphaelCache.Tasks
+            .Where(x => x.Value.Item2.IsCompleted || x.Value.Item2.IsFaulted || x.Value.Item2.IsCanceled)
+            .ToList();
+
+        foreach (var key in raphFinishedTasks)
+        {
+            RaphaelCache.Tasks.Remove(key);
         }
     }
 

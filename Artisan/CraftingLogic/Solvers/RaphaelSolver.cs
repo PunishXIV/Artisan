@@ -230,8 +230,8 @@ namespace Artisan.CraftingLogic.Solvers
                     P.Config.Save();
 
                     Svc.Log.Information("Tidying up task.");
-                    Tasks.Remove(key, out var _);
-                }, cts.Token);
+                    Tasks.TryRemove(key, out var _);
+                }, cts.Token).ContinueWith(t => Tasks.TryRemove(key, out var _));
 
                 Tasks.TryAdd(key, new(cts, task));
             }
