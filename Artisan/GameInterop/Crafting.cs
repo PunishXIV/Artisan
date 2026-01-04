@@ -400,6 +400,18 @@ public static unsafe class Crafting
                 Svc.Log.Error($"Unexpected initial state: {CurStep}");
 
             IsTrial = synthWindow->AtkUnitBase.AtkValues[1] is { Type: FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool, Byte: 1 };
+            if (CurCraft.IsCosmic)
+            {
+                CurCraft.CraftQualityMin1 = (int)synthWindow->AtkValues[22].UInt * 10;
+                CurCraft.CraftQualityMin2 = (int)synthWindow->AtkValues[23].UInt * 10;
+                CurCraft.CraftQualityMin3 = (int)synthWindow->AtkValues[24].UInt * 10;
+
+                if (CurCraft.CraftQualityMin3 == 0)
+                {
+                    CurCraft.CraftQualityMin3 = CurCraft.CraftQualityMin2;
+                    CurCraft.CraftQualityMin2 = CurCraft.CraftQualityMin1;
+                }
+            }
             CraftStarted?.Invoke(CurRecipe.Value, CurCraft, CurStep, IsTrial);
             return State.InProgress;
         }
