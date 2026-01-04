@@ -127,6 +127,11 @@ public static class CraftingProcessor
                 return;
             }
             _activeSolver = autoSolver.CreateSolver(craft);
+            if (_activeSolver is null)
+            {
+                SolverFailed?.Invoke(recipe, "No active solver selected.");
+                return;
+            }
             ActiveSolver = new(autoSolver.Name, _activeSolver);
         }
 

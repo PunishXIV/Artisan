@@ -12,5 +12,5 @@
   "RepoUrl": "https://github.com/PunishXIV/Artisan",
   "DalamudApiLevel": 14,
   "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
-  "ChangeLog": "- Fixed issue whenever a Raphael solver is generated and set as solver for all similar crafts it would also set the same consumables."
+  "ChangeLog": "- More messaging regarding unsupported solvers."
 }

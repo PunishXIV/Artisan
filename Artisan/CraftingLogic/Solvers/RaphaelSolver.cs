@@ -217,8 +217,10 @@ namespace Artisan.CraftingLogic.Solvers
                                     if (autoSwitchOk(c.Recipe.RowId))
                                     {
                                         Svc.Log.Information($"Switching {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) to Raphael solver");
-                                        P.Config.RecipeConfigs[c.Recipe.RowId].SolverType = config.SolverType;
-                                        P.Config.RecipeConfigs[c.Recipe.RowId].SolverFlavour = config.SolverFlavour;
+                                        var switchConfig = P.Config.RecipeConfigs.GetValueOrDefault(c.Recipe.RowId) ?? new();
+                                        switchConfig.SolverType = opt.Def.GetType().FullName!;
+                                        switchConfig.SolverFlavour = opt.Flavour;
+                                        P.Config.RecipeConfigs[c.Recipe.RowId] = switchConfig;
                                     }
                                     else
                                         Svc.Log.Information($"Skipping {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) because it already has a macro assigned");
@@ -231,7 +233,7 @@ namespace Artisan.CraftingLogic.Solvers
 
                     Svc.Log.Information("Tidying up task.");
                     Tasks.TryRemove(key, out var _);
-                }, cts.Token).ContinueWith(t => Tasks.TryRemove(key, out var _));
+                }, cts.Token);
 
                 Tasks.TryAdd(key, new(cts, task));
             }

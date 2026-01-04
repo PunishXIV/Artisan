@@ -6,6 +6,7 @@ using Artisan.RawInformation.Character;
 using Artisan.UI;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Style;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
@@ -246,10 +247,15 @@ public class RecipeConfig
     public bool DrawSolver(CraftState craft, bool hasButton = false, bool liveStats = true)
     {
         bool changed = false;
+        var solver = CraftingProcessor.GetSolverForRecipe(this, craft);
+        if (string.IsNullOrEmpty(solver.Name))
+        {
+            ImGuiEx.Text(ImGuiColors.DalamudRed, "Unable to select default solver. Please select from dropdown.");
+        }
         ImGuiEx.TextV($"Solver:");
         ImGui.SameLine(130f.Scale());
         if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
-        var solver = CraftingProcessor.GetSolverForRecipe(this, craft);
+
         if (ImGui.BeginCombo("##solver", solver.Name))
         {
             foreach (var opt in CraftingProcessor.GetAvailableSolversForRecipe(craft, true))
