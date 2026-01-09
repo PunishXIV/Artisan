@@ -12,6 +12,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Artisan.ContextMenus;
 
@@ -325,36 +326,39 @@ internal static class CraftingListContextMenu
 
     private static void AddToList(uint ItemId, uint craftType, bool withPrecraft = false)
     {
-        CraftingListUI.listMaterialsNew.Clear();
-        if (!LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.RowId == ItemId && x.CraftType.RowId == craftType, out var recipe))
+        Task.Run(() =>
         {
-            recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.RowId == ItemId);
-        }
-        if (recipe.Number == 0) return;
-        if (withPrecraft)
-            CraftingListUI.AddAllSubcrafts(recipe, CraftingListUI.selectedList, 1, P.Config.ContextMenuLoops);
-
-
-        if (CraftingListUI.selectedList.Recipes.Any(x => x.ID == recipe.RowId))
-        {
-            CraftingListUI.selectedList.Recipes.First(x => x.ID == recipe.RowId).Quantity += P.Config.ContextMenuLoops;
-        }
-        else
-        {
-            CraftingListUI.selectedList.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = P.Config.ContextMenuLoops, ListItemOptions = new ListItemOptions() { NQOnly = CraftingListUI.selectedList.AddAsQuickSynth } });
-        }
-
-        CraftingListHelpers.TidyUpList(CraftingListUI.selectedList);
-        foreach (var w in P.ws.Windows)
-        {
-            if (w.WindowName == $"List Editor###{CraftingListUI.selectedList.ID}")
+            CraftingListUI.listMaterialsNew.Clear();
+            if (!LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.RowId == ItemId && x.CraftType.RowId == craftType, out var recipe))
             {
-                (w as ListEditor).RecipeSelector.Items = CraftingListUI.selectedList.Recipes.ToList();
-                (w as ListEditor).RefreshTable(null, true);
+                recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.RowId == ItemId);
             }
-        }
+            if (recipe.Number == 0) return;
+            if (withPrecraft)
+                CraftingListUI.AddAllSubcrafts(recipe, CraftingListUI.selectedList, 1, P.Config.ContextMenuLoops);
 
-        P.Config.Save();
+
+            if (CraftingListUI.selectedList.Recipes.Any(x => x.ID == recipe.RowId))
+            {
+                CraftingListUI.selectedList.Recipes.First(x => x.ID == recipe.RowId).Quantity += P.Config.ContextMenuLoops;
+            }
+            else
+            {
+                CraftingListUI.selectedList.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = P.Config.ContextMenuLoops, ListItemOptions = new ListItemOptions() { NQOnly = CraftingListUI.selectedList.AddAsQuickSynth } });
+            }
+
+            CraftingListHelpers.TidyUpList(CraftingListUI.selectedList);
+            foreach (var w in P.ws.Windows)
+            {
+                if (w.WindowName == $"List Editor###{CraftingListUI.selectedList.ID}")
+                {
+                    (w as ListEditor).RecipeSelector.Items = CraftingListUI.selectedList.Recipes.ToList();
+                    (w as ListEditor).RefreshTable(null, true);
+                }
+            }
+
+            P.Config.Save();
+        });
     }
 
     public static void Dispose()

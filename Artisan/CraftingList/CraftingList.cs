@@ -72,6 +72,8 @@ namespace Artisan.CraftingLists
         public bool AddAsQuickSynth;
 
         public bool TidyAfter = true;
+
+        public bool OnlyRestockNonCrafted = false;
     }
 
     public class ListItem

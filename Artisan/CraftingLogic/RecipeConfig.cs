@@ -258,7 +258,7 @@ public class RecipeConfig
 
         if (ImGui.BeginCombo("##solver", solver.Name))
         {
-            foreach (var opt in CraftingProcessor.GetAvailableSolversForRecipe(craft, true))
+            foreach (var opt in CraftingProcessor.GetAvailableSolversForRecipe(craft, true).OrderByDescending(x => x.Priority))
             {
                 if (opt == default) continue;
                 if (opt.UnsupportedReason.Length > 0)

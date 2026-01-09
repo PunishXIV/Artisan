@@ -441,6 +441,10 @@ namespace Artisan.IPC
             foreach (var material in materialList.OrderByDescending(x => x.Key))
             {
                 Svc.Log.Debug($"{material}");
+                bool isCrafted = LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.RowId == material.Key);
+                if (isCrafted && list.OnlyRestockNonCrafted)
+                    continue;
+
                 var invCount = CraftingListUI.NumberOfIngredient(material.Key);
                 if (invCount < material.Value)
                 {
@@ -459,7 +463,8 @@ namespace Artisan.IPC
                 TM.Enqueue(() => Svc.Framework.Update += Tick);
                 TM.Enqueue(() => AutoRetainerIPC.Suppress());
                 TM.EnqueueBell();
-                TM.DelayNext("BellInteracted", 200);
+                TM.DelayNext("BellInteracted", 1000);
+                TM.Enqueue(() => Svc.Condition[ConditionFlag.OccupiedSummoningBell]);
 
                 foreach (var retainer in RetainerData)
                 {
