@@ -66,7 +66,7 @@ namespace Artisan.CraftingLogic.Solvers
 
                 if (config.EnsureReliability)
                 {
-                    Svc.Log.Error("Ensuring reliability is enabled, this may take a while. NO SUPPORT GIVEN IF ENABLED.");
+                    Svc.Log.Warning("Ensuring reliability is enabled, this may take a while. NO SUPPORT GIVEN IF ENABLED.");
                     extraArgsBuilder.Append($"--adversarial "); // must always have a space after
                 }
 

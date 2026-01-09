@@ -9,7 +9,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
-            if (!craft.CraftExpert && !craft.CraftCollectible)
+            if ((!craft.CraftExpert && !craft.CraftCollectible) || craft.IsCosmic)
             yield return new(this, 0, 1, "Progress Only Solver");
         }
     }

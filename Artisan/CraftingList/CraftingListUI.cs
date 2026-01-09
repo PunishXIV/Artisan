@@ -233,7 +233,7 @@ namespace Artisan.CraftingLists
         public static TimeSpan GetCraftDuration(uint recipeId, bool qs)
         {
             if (qs)
-                return TimeSpan.FromSeconds(3);
+                return TimeSpan.FromSeconds(2);
 
             var recipe = LuminaSheets.RecipeSheet[recipeId];
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId) ?? new();
