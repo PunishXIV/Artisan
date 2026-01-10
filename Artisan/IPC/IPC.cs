@@ -166,11 +166,13 @@ namespace Artisan.IPC
                         {
                             config.TempSolverType = solver.Def.GetType().FullName!;
                             config.TempSolverFlavour = solver.Flavour;
+                            P.Config.RecipeConfigs[recipeId] = config;
                         }
                         else
                         {
                             config.SolverType = solver.Def.GetType().FullName!;
                             config.SolverFlavour = solver.Flavour;
+                            P.Config.RecipeConfigs[recipeId] = config;
                             P.Config.Save();
                         }
                     }
