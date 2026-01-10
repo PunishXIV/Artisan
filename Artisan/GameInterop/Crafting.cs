@@ -575,7 +575,7 @@ public static unsafe class Crafting
         numReq = 0;
         if (config.CurrentSolverType.Contains("Macro"))
         {
-            var macro = P.Config.MacroSolverConfig.FindMacro(config.SolverFlavour);
+            var macro = P.Config.MacroSolverConfig.FindMacro(config.CurrentSolverFlavour);
             numReq = macro.Steps.Count(x => x.Action is Skills.CarefulObservation or Skills.HeartAndSoul or Skills.QuickInnovation);
             if (numReq > Crafting.DelineationCount())
                 enoughDelins = false;

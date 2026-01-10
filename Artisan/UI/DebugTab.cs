@@ -182,7 +182,7 @@ namespace Artisan.UI
                         ImGui.TableNextColumn();
                         ImGui.Text($"{v.CurrentSolverType.Split('.').Last()}");
                         ImGui.TableNextColumn();
-                        ImGui.Text($"{v.SolverFlavour}");
+                        ImGui.Text($"{v.CurrentSolverFlavour}");
                     }
                     ImGui.EndTable();
                 }
@@ -300,13 +300,13 @@ namespace Artisan.UI
                     }
                     ImGui.Text($"IPC Override: {Endurance.IPCOverride}");
 
-                    if (ImGui.Button("Change Current Craft To Progress Only (Temp)"))
+                    if (ImGui.Button("Change Current Craft To Raphael (Temp)"))
                     {
-                        IPC.IPC.ChangeSolver(Endurance.RecipeID, "Progress Only Solver", true);
+                        IPC.IPC.ChangeSolver(Endurance.RecipeID, "Raphael Recipe Solver", true);
                     }
-                    if (ImGui.Button("Change Current Craft To Progress Only (Permanent)"))
+                    if (ImGui.Button("Change Current Craft To Raphael Only (Permanent)"))
                     {
-                        IPC.IPC.ChangeSolver(Endurance.RecipeID, "Progress Only Solver", false);
+                        IPC.IPC.ChangeSolver(Endurance.RecipeID, "Raphael Recipe Solver", false);
                     }
                     if (ImGui.Button("Reset back to non-temp solver"))
                     {
