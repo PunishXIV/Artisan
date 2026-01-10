@@ -53,6 +53,7 @@ namespace Artisan.IPC
             Svc.PluginInterface.GetIpcProvider<bool>("Artisan.IsBusy").RegisterFunc(IsBusy);
 
             Svc.PluginInterface.GetIpcProvider<uint, string, bool, object>("Artisan.ChangeSolver").RegisterAction(ChangeSolver);
+            Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempSolverBackToNormal").RegisterAction(SetTempSolverBackToNormal);
         }
 
         internal static void Dispose()
@@ -71,6 +72,7 @@ namespace Artisan.IPC
             Svc.PluginInterface.GetIpcProvider<ushort, int, object>("Artisan.IsBusy").UnregisterFunc();
 
             Svc.PluginInterface.GetIpcProvider<uint, string, bool, object>("Artisan.ChangeSolver").UnregisterAction();
+            Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempSolverBackToNormal").UnregisterAction();
         }
 
         static bool GetEnduranceStatus()
@@ -179,6 +181,16 @@ namespace Artisan.IPC
                 }
             }
 
+        }
+
+        public static void SetTempSolverBackToNormal(uint recipeId)
+        {
+            var config = P.Config.RecipeConfigs.GetValueOrDefault(recipeId) ?? new();
+            if (config.TempSolverFlavour != -1)
+            {
+                config.TempSolverFlavour = -1;
+                config.TempSolverType = "";
+            }
         }
         public enum ArtisanMode
         {

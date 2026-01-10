@@ -308,6 +308,10 @@ namespace Artisan.UI
                     {
                         IPC.IPC.ChangeSolver(Endurance.RecipeID, "Progress Only Solver", false);
                     }
+                    if (ImGui.Button("Reset back to non-temp solver"))
+                    {
+                        IPC.IPC.SetTempSolverBackToNormal(Endurance.RecipeID);
+                    }
                 }
 
                 if (ImGui.CollapsingHeader("Collectables"))
