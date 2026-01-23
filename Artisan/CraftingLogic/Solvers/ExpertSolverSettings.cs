@@ -1,14 +1,15 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Textures.TextureWraps;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
-using Dalamud.Bindings.ImGui;
 using System;
-using static Artisan.RawInformation.AddonExtensions;
 using System.Numerics;
+using static Artisan.RawInformation.AddonExtensions;
 
 namespace Artisan.CraftingLogic.Solvers;
 
@@ -28,12 +29,36 @@ public class ExpertSolverSettings
     public bool MidBaitPliantWithObserveAfterIQ = true; // if true, when very low on durability and without manip active after iq has 10 stacks, we use observe rather than normal manip or inno+finnesse
     public bool MidPrimedManipPreQuality = true; // if true, allow using primed manipulation during pre-quality phase
     public bool MidPrimedManipAfterIQ = true; // if true, allow using primed manipulation during after iq has 10 stacks
-    public bool MidKeepHighDuraUnbuffed = true; // if true, observe rather than use actions during unfavourable conditions to conserve durability when no buffs are active
-    public bool MidKeepHighDuraVeneration = false; // if true, observe rather than use actions during unfavourable conditions to conserve durability when veneration is active
+    public enum MidKeepHighDuraSetting  // what to do in pre-quality when dura is starting to run low
+    {
+        MidKeepHighDuraUnbuffed,        // fish for procs with observe to conserve dura, as long as veneration isn't up
+        MidKeepHighDuraVeneration,      // fish for procs with observe to conserve dura, no matter what
+        MidUseDura                      // don't fish for procs, keep using durability
+    }
+    public string GetMidKeepHighDuraSettingName(MidKeepHighDuraSetting value)
+        => value switch
+        {
+            MidKeepHighDuraSetting.MidKeepHighDuraUnbuffed => $"Use {Skills.Observe.NameOfAction()} for a better {ConditionString.ToLower()}, as long as {Buffs.Veneration.NameOfBuff()} isn't on",
+            MidKeepHighDuraSetting.MidKeepHighDuraVeneration => $"Use {Skills.Observe.NameOfAction()} for a better {ConditionString.ToLower()}, even during {Buffs.Veneration.NameOfBuff()}",
+            MidKeepHighDuraSetting.MidUseDura or _ => $"Don't use {Skills.Observe.NameOfAction()}, just keep going",
+        };
+    public MidKeepHighDuraSetting MidKeepHighDura = MidKeepHighDuraSetting.MidKeepHighDuraUnbuffed;
+    public enum MidAllowIntensiveSetting  // how to handle good procs before finishable progress
+    {
+        MidAllowIntensiveUnbuffed,        // use intensive synthesis no matter what
+        MidAllowIntensiveVeneration,      // use intensive synthesis as long as veneration is up
+        MidNoIntensive                    // don't use intensive synthesis (good will be used for tricks or precise)
+    }
+    public string GetMidAllowIntensiveSettingName(MidAllowIntensiveSetting value)
+        => value switch
+        {
+            MidAllowIntensiveSetting.MidNoIntensive => $"Don't use {Skills.IntensiveSynthesis.NameOfAction()}",
+            MidAllowIntensiveSetting.MidAllowIntensiveVeneration => $"Use {Skills.IntensiveSynthesis.NameOfAction()} as long as {Buffs.Veneration.NameOfBuff()} is on",
+            MidAllowIntensiveSetting.MidAllowIntensiveUnbuffed or _ => $"Use {Skills.IntensiveSynthesis.NameOfAction()} regardless of buffs"
+        };
+    public MidAllowIntensiveSetting MidAllowIntensive = MidAllowIntensiveSetting.MidNoIntensive;
     public bool MidAllowVenerationGoodOmen = true; // if true, we allow using veneration during iq phase if we lack a lot of progress on good omen
     public bool MidAllowVenerationAfterIQ = true; // if true, we allow using veneration after iq is fully stacked if we still lack a lot of progress
-    public bool MidAllowIntensiveUnbuffed = false; // if true, we allow spending good condition on intensive if we still need progress when no buffs are active
-    public bool MidAllowIntensiveVeneration = false; // if true, we allow spending good condition on intensive if we still need progress when veneration is active
     public bool MidAllowPrecise = true; // if true, we allow spending good condition on precise touch if we still need iq
     public bool MidAllowSturdyPreсise = false; // if true,we consider sturdy+h&s+precise touch a good move for building iq
     public bool MidAllowCenteredHasty = true; // if true, we consider centered hasty touch a good move for building iq (85% reliability)
@@ -72,53 +97,169 @@ public class ExpertSolverSettings
                 ImGui.SameLine();
                 ImGui.TextWrapped($"icon in the crafting log.");
             }
+
             ImGui.Indent();
-            if (ImGui.CollapsingHeader("Opener Settings"))
+            ImGui.Dummy(new Vector2(0, 5f));
+            if (ImGui.CollapsingHeader("Opener"))
             {
-                changed |= ImGui.Checkbox($"Use {Skills.Reflect.NameOfAction()} instead of {Skills.MuscleMemory.NameOfAction()} for the opener", ref UseReflectOpener);
-                changed |= ImGui.Checkbox($"Allow spending {Skills.MuscleMemory.NameOfAction()} on {Skills.IntensiveSynthesis.NameOfAction()} (400%) rather than {Skills.RapidSynthesis.NameOfAction()} (500%) if {Condition.Good.ToLocalizedString()} {ConditionString}", ref MuMeIntensiveGood);
-                changed |= ImGui.Checkbox($"If {Condition.Malleable.ToLocalizedString()} {ConditionString} during {Skills.MuscleMemory.NameOfAction()}, use {Skills.HeartAndSoul.NameOfAction()} + {Skills.IntensiveSynthesis.NameOfAction()}", ref MuMeIntensiveMalleable);
-                changed |= ImGui.Checkbox($"If at last step of {Skills.MuscleMemory.NameOfAction()} and not {Condition.Centered.ToLocalizedString()} {ConditionString}, use {Skills.IntensiveSynthesis.NameOfAction()} (forcing via {Skills.HeartAndSoul.NameOfAction()} if necessary)", ref MuMeIntensiveLastResort);
-                changed |= ImGui.Checkbox($"Use {Skills.Manipulation.NameOfAction()} on {Condition.Primed.ToLocalizedString()} {ConditionString}, if {Skills.Veneration.NameOfAction()} is already active", ref MuMePrimedManip);
-                changed |= ImGui.Checkbox($"{Skills.Observe.NameOfAction()} during unfavourable {ConditionString} instead of spending {DurabilityString} on {Skills.RapidSynthesis.NameOfAction()}", ref MuMeAllowObserve);
-                ImGui.Text($"Allow {Skills.Manipulation.NameOfAction()} only if more than this amount of steps remain on {Skills.MuscleMemory.NameOfAction()}");
-                ImGui.PushItemWidth(250);
-                changed |= ImGui.SliderInt("###MumeMinStepsForManip", ref MuMeMinStepsForManip, 0, 5);
-                ImGui.Text($"Allow {Skills.Veneration.NameOfAction()} only if more than this amount of steps remain on {Skills.MuscleMemory.NameOfAction()}");
-                ImGui.PushItemWidth(250);
-                changed |= ImGui.SliderInt("###MuMeMinStepsForVene", ref MuMeMinStepsForVene, 0, 5);
+                changed |= ImGui.Checkbox($"Use {Skills.Reflect.NameOfAction()} instead of {Skills.MuscleMemory.NameOfAction()}", ref UseReflectOpener);
+                if (!UseReflectOpener)
+                {
+                    ImGui.Dummy(new Vector2(0, 5f));
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, $"These settings only apply while {Skills.MuscleMemory.NameOfAction()} is active at the start of a craft.");
+                    ImGui.Dummy(new Vector2(0, 5f));
+                    changed |= ImGui.Checkbox($"When ●{Condition.Good.ToLocalizedString()}, prioritize {Skills.IntensiveSynthesis.NameOfAction()} (400%) over {Skills.RapidSynthesis.NameOfAction()} (500%)", ref MuMeIntensiveGood);
+                    changed |= ImGui.Checkbox($"When ●{Condition.Malleable.ToLocalizedString()}, use {Skills.HeartAndSoul.NameOfAction()} + {Skills.IntensiveSynthesis.NameOfAction()} (if available)", ref MuMeIntensiveMalleable);
+                    changed |= ImGui.Checkbox($"When ●{Condition.Primed.ToLocalizedString()} and {Skills.Veneration.NameOfAction()} is already active, use {Skills.Manipulation.NameOfAction()}", ref MuMePrimedManip);
+                    ImGuiComponents.HelpMarker($"If this is disabled, {Skills.Manipulation.NameOfAction()} will only be used during ●{Condition.Pliant.ToLocalizedString()} while {Skills.MuscleMemory.NameOfAction()} is active.");
+                    changed |= ImGui.Checkbox($"When ●{Condition.Normal.ToLocalizedString()} or other irrelevant {ConditionString.ToLower()}, use {Skills.Observe.NameOfAction()} instead of {Skills.RapidSynthesis.NameOfAction()}", ref MuMeAllowObserve);
+                    ImGuiComponents.HelpMarker($"This saves {DurabilityString.ToLower()} at the cost of {Skills.MuscleMemory.NameOfAction()} steps.");
+                    changed |= ImGui.Checkbox($"When 1 step left on {Skills.MuscleMemory.NameOfAction()} and not ●{Condition.Centered.ToLocalizedString()}, use {Skills.IntensiveSynthesis.NameOfAction()} (forcing via {Skills.HeartAndSoul.NameOfAction()} if necessary)", ref MuMeIntensiveLastResort);
+                    ImGuiComponents.HelpMarker($"{Skills.RapidSynthesis.NameOfAction()} will still be used if the last step is ●{Condition.Centered.ToLocalizedString()}.");
+                    ImGui.Text($"Use these skills only if {Skills.MuscleMemory.NameOfAction()} has at least this many steps left:");
+                    ImGuiComponents.HelpMarker($"The solver will still only use these skills under an appropriate {ConditionString.ToLower()}.");
+                    // these have a minimum of 1 to avoid using a buff on the final turn of MuMe
+                    ImGui.PushItemWidth(250);
+                    changed |= ImGui.SliderInt($"{Skills.Manipulation.NameOfAction()}###MumeMinStepsForManip", ref MuMeMinStepsForManip, 1, 5);
+                    ImGui.PushItemWidth(250);
+                    changed |= ImGui.SliderInt($"{Skills.Veneration.NameOfAction()}###MuMeMinStepsForVene", ref MuMeMinStepsForVene, 1, 5);
+                    ImGui.Dummy(new Vector2(0, 5f));
+                }
             }
-            if (ImGui.CollapsingHeader("Main Rotation Settings"))
+
+            if (ImGui.CollapsingHeader($"Main Rotation - Pre-{QualityString} Phase"))
             {
-                ImGui.Text($"Minimum {Buffs.InnerQuiet.NameOfBuff()} stacks to spend {Skills.HeartAndSoul.NameOfAction()} on {Skills.PreciseTouch.NameOfAction()} (10 to disable)");
+                ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, $"These settings apply after the opener, but before reaching max {Buffs.InnerQuiet.NameOfBuff()} stacks.");
+
+                // Pre-quality dura/CP settings
+                ImGui.Dummy(new Vector2(0, 5f));
+                ImGui.TextWrapped($"General");
+                ImGui.Indent();
+                changed |= ImGui.Checkbox($"When {DurabilityString.ToLower()} is critical, use {Skills.Observe.NameOfAction()} to try and proc a favorable {ConditionString.ToLower()} for {Skills.Manipulation.NameOfAction()}", ref MidBaitPliantWithObservePreQuality);
+                ImGuiComponents.HelpMarker($"Fishes for ●{Condition.Pliant.ToLocalizedString()} (and ●{Condition.Primed.ToLocalizedString()} if the appropriate option is enabled.) If disabled, {Skills.Manipulation.NameOfAction()} will be used immediately regardless of {ConditionString.ToLower()}.");
+                changed |= ImGui.Checkbox($"Use {Skills.Manipulation.NameOfAction()} during ●{Condition.Primed.ToLocalizedString()}", ref MidPrimedManipPreQuality);
+                ImGuiComponents.HelpMarker($"If disabled, ●{Condition.Primed.ToLocalizedString()} will generally be treated like ●{Condition.Normal.ToLocalizedString()} during this phase.");
+                ImGui.Unindent();
+
+                // Pre-quality progress settings
+                ImGui.Dummy(new Vector2(0, 5f));
+                ImGui.TextWrapped($"{ProgressString}");
+                ImGui.Indent();
+                changed |= ImGui.Checkbox($"Prioritize {ProgressString.ToLower()} over {Buffs.InnerQuiet.NameOfBuff()} and {QualityString.ToLower()}", ref MidFinishProgressBeforeQuality);
+                ImGuiComponents.HelpMarker($"This setting will use {Buffs.Veneration.NameOfBuff()} and {Skills.RapidSynthesis.NameOfAction()} to max out progress ASAP, regardless of {Buffs.InnerQuiet.NameOfBuff()} stacks or the current step's {ConditionString.ToLower()} (less flexible, but tries to ensure craft completion.) If disabled, the solver won't prioritize {ProgressString.ToLower()} actions or force {Buffs.Veneration.NameOfBuff()} until reaching max {Buffs.InnerQuiet.NameOfBuff()} stacks (more flexible, but might fail to finish the craft in a worst-case scenario.)");
+                ImGui.TextWrapped($"When {DurabilityString.ToLower()} starts to run low and we need to use {Skills.RapidSynthesis.NameOfAction()}:");
+                ImGui.PushItemWidth(400);
+                if (ImGui.BeginCombo("##midKeepHighDuraSetting", GetMidKeepHighDuraSettingName(MidKeepHighDura)))
+                {
+                    foreach (MidKeepHighDuraSetting x in Enum.GetValues<MidKeepHighDuraSetting>())
+                    {
+                        if (ImGui.Selectable(GetMidKeepHighDuraSettingName(x)))
+                        {
+                            MidKeepHighDura = x;
+                            changed = true;
+                        }
+                    }
+                    ImGui.EndCombo();
+                }
+                ImGui.TextWrapped($"When ●{Condition.Good.ToLocalizedString()} and still working on {ProgressString.ToLower()}:");
+                ImGuiComponents.HelpMarker($"If disabled, ●{Condition.Good.ToLocalizedString()} will be used on {Skills.PreciseTouch.NameOfAction()} or {Skills.TricksOfTrade.NameOfAction()} (if allowed by other settings), even with {ProgressString.ToLower()} remaining.");
+                if (ImGui.BeginCombo("##midAllowIntensiveSetting", GetMidAllowIntensiveSettingName(MidAllowIntensive)))
+                {
+                    foreach (MidAllowIntensiveSetting x in Enum.GetValues<MidAllowIntensiveSetting>())
+                    {
+                        if (ImGui.Selectable(GetMidAllowIntensiveSettingName(x)))
+                        {
+                            MidAllowIntensive = x;
+                            changed = true;
+                        }
+                    }
+                    ImGui.EndCombo();
+                }
+                changed |= ImGui.Checkbox($"Use {Skills.Veneration.NameOfAction()} during ●{Condition.GoodOmen.ToLocalizedString()} with large {ProgressString.ToLower()} deficit", ref MidAllowVenerationGoodOmen);
+                ImGuiComponents.HelpMarker($"Specifically if the upcoming ●{Condition.Good.ToLocalizedString()} step's {Skills.IntensiveSynthesis.NameOfAction()} won't max out {ProgressString.ToLower()} without {Skills.Veneration.NameOfAction()}.");
+                ImGui.Unindent();
+
+                // Pre-quality Inner Quiet settings
+                ImGui.Dummy(new Vector2(0, 5f));
+                ImGui.TextWrapped($"{Buffs.InnerQuiet.NameOfBuff()}");
+                ImGui.Indent();
+                changed |= ImGui.Checkbox($"When ●{Condition.Good.ToLocalizedString()}, use {Skills.PreciseTouch.NameOfAction()}", ref MidAllowPrecise);
+                ImGuiComponents.HelpMarker($"{Skills.IntensiveSynthesis.NameOfAction()} takes priority with {ProgressString.ToLower()} remaining, unless disabled by other settings. If both options are disabled, ●{Condition.Good.ToLocalizedString()} will be used on {Skills.TricksOfTrade.NameOfAction()}.");
+                ImGui.TextWrapped($"Use {Skills.HeartAndSoul.NameOfAction()} to force {Skills.PreciseTouch.NameOfAction()}:");
+                ImGui.Indent();
+                changed |= ImGui.Checkbox($"When ●{Condition.Sturdy.ToLocalizedString()}", ref MidAllowSturdyPreсise);
                 ImGui.PushItemWidth(250);
-                changed |= ImGui.SliderInt($"###MidMinIQForHSPrecise", ref MidMinIQForHSPrecise, 0, 10);
-                changed |= ImGui.Checkbox($"On low {DurabilityString}, prefer {Skills.Observe.NameOfAction()} over non-{Condition.Pliant.ToLocalizedString()} {Skills.Manipulation.NameOfAction()} before {Buffs.InnerQuiet.NameOfBuff()} has 10 stacks", ref MidBaitPliantWithObservePreQuality);
-                changed |= ImGui.Checkbox($"On low {DurabilityString}, prefer {Skills.Observe.NameOfAction()} over non-{Condition.Pliant.ToLocalizedString()} {Skills.Manipulation.NameOfAction()} / {Skills.Innovation.NameOfAction()}+{Skills.TrainedFinesse.NameOfAction()} after {Buffs.InnerQuiet.NameOfBuff()} has 10 stacks", ref MidBaitPliantWithObserveAfterIQ);
-                changed |= ImGui.Checkbox($"Use {Skills.Manipulation.NameOfAction()} on {Condition.Primed.ToLocalizedString()} {ConditionString} before {Buffs.InnerQuiet.NameOfBuff()} has 10 stacks", ref MidPrimedManipPreQuality);
-                changed |= ImGui.Checkbox($"Use {Skills.Manipulation.NameOfAction()} on {Condition.Primed.ToLocalizedString()} {ConditionString} after {Buffs.InnerQuiet.NameOfBuff()} has 10 stacks, if enough CP is available to utilize {DurabilityString} well", ref MidPrimedManipAfterIQ);
-                changed |= ImGui.Checkbox($"Allow {Skills.Observe.NameOfAction()} during unfavourable {ConditionString} without buffs", ref MidKeepHighDuraUnbuffed);
-                changed |= ImGui.Checkbox($"Allow {Skills.Observe.NameOfAction()} during unfavourable {ConditionString} under {Buffs.Veneration.NameOfBuff()}", ref MidKeepHighDuraVeneration);
-                changed |= ImGui.Checkbox($"Allow {Skills.Veneration.NameOfAction()} if we still have large {ProgressString} deficit (more than {Skills.IntensiveSynthesis.NameOfAction()} can complete) on {Condition.GoodOmen.ToLocalizedString()}", ref MidAllowVenerationGoodOmen);
-                changed |= ImGui.Checkbox($"Allow {Skills.Veneration.NameOfAction()} if we still have large {ProgressString} deficit (more than {Skills.RapidSynthesis.NameOfAction()} can complete) after {Buffs.InnerQuiet.NameOfBuff()} has 10 stacks", ref MidAllowVenerationAfterIQ);
-                changed |= ImGui.Checkbox($"Spend {Condition.Good.ToLocalizedString()} {ConditionString} on {Skills.IntensiveSynthesis.NameOfAction()} if we need more {ProgressString} without buffs", ref MidAllowIntensiveUnbuffed);
-                changed |= ImGui.Checkbox($"Spend {Condition.Good.ToLocalizedString()} {ConditionString} on {Skills.IntensiveSynthesis.NameOfAction()} if we need more {ProgressString} under {Skills.Veneration.NameOfAction()}", ref MidAllowIntensiveVeneration);
-                changed |= ImGui.Checkbox($"Spend {Condition.Good.ToLocalizedString()} {ConditionString} on {Skills.PreciseTouch.NameOfAction()} if we need more {Buffs.InnerQuiet.NameOfBuff()} stacks", ref MidAllowPrecise);
-                changed |= ImGui.Checkbox($"Consider {Condition.Sturdy.ToLocalizedString()} {ConditionString} {Skills.HeartAndSoul.NameOfAction()} + {Skills.PreciseTouch.NameOfAction()} a good move for building {Buffs.InnerQuiet.NameOfBuff()} stacks", ref MidAllowSturdyPreсise);
-                changed |= ImGui.Checkbox($"Consider {Condition.Centered.ToLocalizedString()} {ConditionString} {Skills.HastyTouch.NameOfAction()} a good move for building {Buffs.InnerQuiet.NameOfBuff()} stacks (85% success, 10 {DurabilityString})", ref MidAllowCenteredHasty);
-                changed |= ImGui.Checkbox($"Consider {Condition.Sturdy.ToLocalizedString()} {ConditionString} {Skills.HastyTouch.NameOfAction()} a good move for building {Buffs.InnerQuiet.NameOfBuff()} stacks (50% success, 5 {DurabilityString})", ref MidAllowSturdyHasty);
-                changed |= ImGui.Checkbox($"Consider {Skills.PreparatoryTouch.NameOfAction()} a good move under {Condition.Good.ToLocalizedString()} {ConditionString} + {Buffs.Innovation.NameOfBuff()} + {Buffs.GreatStrides.NameOfBuff()}, assuming we have enough {DurabilityString}", ref MidAllowGoodPrep);
-                changed |= ImGui.Checkbox($"Consider {Skills.PreparatoryTouch.NameOfAction()} a good move under {Condition.Sturdy.ToLocalizedString()} {ConditionString} + {Buffs.Innovation.NameOfBuff()}, assuming we have enough {DurabilityString}", ref MidAllowSturdyPrep);
-                changed |= ImGui.Checkbox($"Use {Skills.GreatStrides.NameOfAction()} before {Skills.Innovation.NameOfAction()} + {QualityString} combos", ref MidGSBeforeInno);
-                changed |= ImGui.Checkbox($"Finish {ProgressString} before starting {QualityString} phase", ref MidFinishProgressBeforeQuality);
-                changed |= ImGui.Checkbox($"{Skills.Observe.NameOfAction()} on {Condition.GoodOmen.ToLocalizedString()} {ConditionString} if we would otherwise use {Skills.TricksOfTrade.NameOfAction()} on {Condition.Good.ToLocalizedString()} {ConditionString}", ref MidObserveGoodOmenForTricks);
-                changed |= ImGui.Checkbox($"Allow {Skills.RapidSynthesis.NameOfAction()} to be used if expert solver is stuck. Disabling may interrupt AFK crafting, but is safer for semi-afk", ref RapidSynthYoloAllowed);
+                changed |= ImGui.SliderInt($"At this many {Buffs.InnerQuiet.NameOfBuff()} stacks (10 to disable)###MidMinIQForHSPrecise", ref MidMinIQForHSPrecise, 0, 10);
+                ImGui.Unindent();
+                ImGui.TextWrapped($"Use {Skills.HastyTouch.NameOfAction()} and {Skills.DaringTouch.NameOfAction()}:");
+                ImGui.Indent();
+                changed |= ImGui.Checkbox($"When ●{Condition.Centered.ToLocalizedString()} (85% success, 10 {DurabilityString.ToLower()})", ref MidAllowCenteredHasty);
+                changed |= ImGui.Checkbox($"When ●{Condition.Sturdy.ToLocalizedString()} (60% success, 5 {DurabilityString.ToLower()})", ref MidAllowSturdyHasty);
+                ImGui.Unindent();
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 5f));
+            }
+
+            if (ImGui.CollapsingHeader($"Main Rotation - {QualityString} Phase"))
+            {
+                ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, $"These settings apply after reaching max {Buffs.InnerQuiet.NameOfBuff()} stacks.");
+
+                // Mid-quality dura/CP settings
+                ImGui.Dummy(new Vector2(0, 5f));
+                ImGui.TextWrapped($"General");
+                ImGui.Indent();
+                changed |= ImGui.Checkbox($"When {DurabilityString.ToLower()} is very low, use {Skills.Observe.NameOfAction()} to proc a favorable {ConditionString.ToLower()} for restoring {DurabilityString.ToLower()}", ref MidBaitPliantWithObserveAfterIQ);
+                ImGuiComponents.HelpMarker($"Fishes for ●{Condition.Pliant.ToLocalizedString()} (and possibly ●{Condition.Primed.ToLocalizedString()}). If disabled, actions that restore or require 0 {DurabilityString.ToLower()} will be used immediately regardless of {ConditionString.ToLower()}.");
+                changed |= ImGui.Checkbox($"Use {Skills.Manipulation.NameOfAction()} during ●{Condition.Primed.ToLocalizedString()} if enough CP is left to effectively use the restored {DurabilityString.ToLower()}", ref MidPrimedManipAfterIQ);
+                changed |= ImGui.Checkbox($"On ●{Condition.GoodOmen.ToLocalizedString()}, prioritize {Skills.Observe.NameOfAction()} → {Skills.TricksOfTrade.NameOfAction()} when not under buffs", ref MidObserveGoodOmenForTricks);
+                ImGuiComponents.HelpMarker($"If disabled, the solver will prioritize a buff skill and spend the ●{Condition.Good.ToLocalizedString()} turn on {ProgressString.ToLower()} or {QualityString.ToLower()}. Enabling this option is generally more efficient.");
+                ImGui.Unindent();
+
+                // Mid-quality progress settings
+                ImGui.Dummy(new Vector2(0, 5f));
+                ImGui.TextWrapped($"{ProgressString}");
+                ImGui.Indent();
+                changed |= ImGui.Checkbox($"Use {Skills.Veneration.NameOfAction()} with large {ProgressString.ToLower()} deficit", ref MidAllowVenerationAfterIQ);
+                ImGuiComponents.HelpMarker($"Specifically if a single {Skills.IntensiveSynthesis.NameOfAction()} couldn't finish the craft without {Skills.Veneration.NameOfAction()}, even this late in the craft. Overridden by the \"Prioritize {ProgressString.ToLower()}\" setting, if enabled.");
+                ImGui.Unindent();
+
+                // Mid-quality action settings
+                ImGui.Dummy(new Vector2(0, 5f));
+                ImGui.TextWrapped($"{QualityString}");
+                ImGui.Indent();
+                ImGui.TextWrapped($"Use {Skills.PreparatoryTouch.NameOfAction()}:");
+                ImGui.Indent();
+                changed |= ImGui.Checkbox($"Under ●{Condition.Good.ToLocalizedString()} + {Buffs.Innovation.NameOfBuff()} + {Buffs.GreatStrides.NameOfBuff()}", ref MidAllowGoodPrep);
+                changed |= ImGui.Checkbox($"Under ●{Condition.Sturdy.ToLocalizedString()} + {Buffs.Innovation.NameOfBuff()}", ref MidAllowSturdyPrep);
+                ImGui.Unindent();
+                changed |= ImGui.Checkbox($"Use {Skills.GreatStrides.NameOfAction()} before non-finisher {QualityString.ToLower()} combos", ref MidGSBeforeInno);
+                ImGuiComponents.HelpMarker($"ex. {Buffs.Innovation.NameOfBuff()} → {Skills.Observe.NameOfAction()} → {Skills.AdvancedTouch.NameOfAction()}. Enabling this uses more CP but less {DurabilityString.ToLower()}, and may help avoid a usage of an expensive {DurabilityString.ToLower()}-related action.");
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 5f));
+            }
+
+            if (ImGui.CollapsingHeader($"Finisher"))
+            {
+                ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, $"These settings apply when close to max {QualityString.ToLower()} or when running out of other options.");
+
+                ImGui.Dummy(new Vector2(0, 5f));
+                ImGui.TextWrapped($"Use {Skills.CarefulObservation.NameOfAction()} to try and proc ●{Condition.Good.ToLocalizedString()}:");
+                ImGui.Indent();
+                changed |= ImGui.Checkbox($"For {Skills.ByregotsBlessing.NameOfAction()} as a makeshift {Skills.GreatStrides.NameOfAction()}", ref FinisherBaitGoodByregot);
+                ImGuiComponents.HelpMarker($"Invoked when {Skills.GreatStrides.NameOfAction()} + {Skills.ByregotsBlessing.NameOfAction()} would get us there, but we don't have enough CP for {Skills.GreatStrides.NameOfAction()} or standard {Skills.Observe.NameOfAction()}.");
+                changed |= ImGui.Checkbox($"For {Skills.TricksOfTrade.NameOfAction()} if really low on CP", ref EmergencyCPBaitGood);
+                ImGuiComponents.HelpMarker($"Invoked when totally out of other options and even {Skills.ByregotsBlessing.NameOfAction()} wouldn't be enough {QualityString.ToLower()}.");
+                ImGui.Unindent();
+                changed |= ImGui.Checkbox($"Allow finishing with {Skills.RapidSynthesis.NameOfAction()} when out of options", ref RapidSynthYoloAllowed);
+                ImGuiComponents.HelpMarker($"If disabled, the solver will do nothing instead, which may interrupt AFK expert crafting. Usually safe to enable, as it will only be invoked with no CP or {DurabilityString.ToLower()} left.");
+                ImGui.Dummy(new Vector2(0, 5f));
             }
             ImGui.Unindent();
+
+            // Misc. settings
+            ImGui.Dummy(new Vector2(0, 5f));
             changed |= ImGui.Checkbox("Max out Ishgard Restoration recipes instead of just hitting max breakpoint", ref MaxIshgardRecipes);
             ImGuiComponents.HelpMarker("This will try to maximise quality to earn more Skyward points.");
-            changed |= ImGui.Checkbox($"Finisher: use {Skills.CarefulObservation.NameOfAction()} to try baiting {Condition.Good.ToLocalizedString()} {ConditionString} for {Skills.ByregotsBlessing.NameOfAction()}", ref FinisherBaitGoodByregot);
-            changed |= ImGui.Checkbox($"Emergency: use {Skills.CarefulObservation.NameOfAction()} to try baiting {Condition.Good.ToLocalizedString()} {ConditionString} for {Skills.TricksOfTrade.NameOfAction()} if really low on CP", ref EmergencyCPBaitGood);
             changed |= ImGui.Checkbox($"Use {Skills.MaterialMiracle.NameOfAction()} in Cosmic Exploration", ref UseMaterialMiracle);
             ImGui.PushItemWidth(250);
             changed |= ImGui.SliderInt($"Minimum steps to execute before trying {Skills.MaterialMiracle.NameOfAction()}###MinimumStepsBeforeMiracle", ref MinimumStepsBeforeMiracle, 0, 20);

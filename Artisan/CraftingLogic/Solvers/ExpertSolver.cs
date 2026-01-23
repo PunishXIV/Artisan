@@ -197,8 +197,8 @@ public class ExpertSolver : Solver
         // build up iq, or finish up progress before moving to quality
         // see if there are nice conditions to exploit
         var venerationActive = progressDeficit > 0 && step.VenerationLeft > 0;
-        var allowObserveOnLowDura = venerationActive ? cfg.MidKeepHighDuraVeneration : cfg.MidKeepHighDuraUnbuffed;
-        var allowIntensive = venerationActive ? cfg.MidAllowIntensiveVeneration : cfg.MidAllowIntensiveUnbuffed;
+        var allowObserveOnLowDura = venerationActive ? cfg.MidKeepHighDura == ExpertSolverSettings.MidKeepHighDuraSetting.MidKeepHighDuraVeneration : cfg.MidKeepHighDura == ExpertSolverSettings.MidKeepHighDuraSetting.MidKeepHighDuraUnbuffed;
+        var allowIntensive = venerationActive ? cfg.MidAllowIntensive == ExpertSolverSettings.MidAllowIntensiveSetting.MidAllowIntensiveVeneration : cfg.MidAllowIntensive == ExpertSolverSettings.MidAllowIntensiveSetting.MidAllowIntensiveUnbuffed;
         var allowPrecise = cfg.MidAllowPrecise && (!allowObserveOnLowDura || step.ManipulationLeft > 0 || step.Durability > 25) /*&& !venerationActive*/;
         if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, allowIntensive, cfg.MidFinishProgressBeforeQuality) is var highPrioProgress && highPrioProgress != Skills.None)
             return new(SafeCraftAction(craft, step, highPrioProgress), "mid pre quality: high-prio progress");
@@ -214,7 +214,7 @@ public class ExpertSolver : Solver
             return new(duraAction, "mid pre quality: durability");
 
         // dura is fine - see what else can we do
-        if (step.Condition == Condition.GoodOmen && cfg.MidAllowVenerationGoodOmen && cfg.MidAllowIntensiveVeneration && progressDeficit > Simulator.CalculateProgress(craft, step, Skills.IntensiveSynthesis) && CU(craft, step, Skills.Veneration))
+        if (step.Condition == Condition.GoodOmen && cfg.MidAllowVenerationGoodOmen && cfg.MidAllowIntensive == ExpertSolverSettings.MidAllowIntensiveSetting.MidAllowIntensiveVeneration && progressDeficit > Simulator.CalculateProgress(craft, step, Skills.IntensiveSynthesis) && CU(craft, step, Skills.Veneration))
             return new(Skills.Veneration, "mid pre quality: good omen vene"); // next step would be intensive, vene is a good choice here
 
         if (cfg.MidFinishProgressBeforeQuality && progressDeficit > 0 && step.VenerationLeft == 0)
