@@ -12,5 +12,5 @@
   "RepoUrl": "https://github.com/PunishXIV/Artisan",
   "DalamudApiLevel": 14,
   "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
-  "ChangeLog": "- Updated Expert Solver configs by @pksage."
+  "ChangeLog": "- Updated Expert Solver configs by @pksage.\n- Add option to skip consumables based on craft level difference (in General Settings)."
 }
