@@ -1,15 +1,17 @@
-﻿using Artisan.RawInformation;
+﻿using Artisan.CraftingLogic;
+using Artisan.GameInterop;
+using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
+using ECommons.Logging;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ECommons.Logging;
-using Artisan.GameInterop;
-using FFXIVClientStructs.FFXIV.Client.Game;
-using Artisan.CraftingLogic;
-using Lumina.Excel.Sheets;
 
 namespace Artisan.Autocraft
 {
@@ -258,6 +260,18 @@ namespace Artisan.Autocraft
         {
             if (requiredItem == 0) return true;
             return InventoryManager.Instance()->GetInventoryItemCount(requiredItem, requiredItemHQ) > 0;
+        }
+
+        public static bool SkippingConsumablesByConfig(Recipe recipe)
+        {
+            var craftLevel = recipe.RecipeLevelTable.Value.ClassJobLevel;
+            var ourLevel = CharacterInfo.JobLevel((Job)(recipe.CraftType.Value.RowId + 8));
+            var diffAllowed = P.Config.ConsumableLevelGapDifference;
+            var diff = Math.Max(0, ourLevel - craftLevel);
+            if (diffAllowed < diff)
+                return true;
+            else
+                return false;
         }
     }
 }

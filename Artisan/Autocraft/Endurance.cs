@@ -346,7 +346,7 @@ namespace Artisan.Autocraft
 
                 var config = P.Config.RecipeConfigs.GetValueOrDefault(RecipeID) ?? new();
                 PreCrafting.CraftType type = P.Config.QuickSynthMode && recipe.CanQuickSynth && P.ri.HasRecipeCrafted(recipe.RowId) ? PreCrafting.CraftType.Quick : PreCrafting.CraftType.Normal;
-                bool needConsumables = PreCrafting.NeedsConsumablesCheck(type, config);
+                bool needConsumables = PreCrafting.NeedsConsumablesCheck(type, config, recipe);
                 bool hasConsumables = PreCrafting.HasConsumablesCheck(config);
 
                 if (P.Config.AbortIfNoFoodPot && needConsumables && !hasConsumables)

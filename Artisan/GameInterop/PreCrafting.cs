@@ -6,10 +6,12 @@ using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
+using Dalamud.Interface.Colors;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using ECommons.ImGuiMethods;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -67,7 +69,7 @@ public unsafe static class PreCrafting
                 return 0;
             }
         }
-        catch( Exception ex)
+        catch (Exception ex)
         {
             ex.Log();
         }
@@ -138,7 +140,7 @@ public unsafe static class PreCrafting
             bool hasIngredients = GetNumberCraftable(recipe) > 0;
             bool needClassChange = requiredClass != CharacterInfo.JobID;
             bool needEquipItem = recipe.ItemRequired.RowId > 0 && (needClassChange || !IsItemEquipped(recipe.ItemRequired.RowId));
-            bool needConsumables = NeedsConsumablesCheck(type, config);
+            bool needConsumables = NeedsConsumablesCheck(type, config, recipe);
             bool hasConsumables = HasConsumablesCheck(config);
 
             // handle errors when we're forbidden from rectifying them automatically
@@ -185,13 +187,18 @@ public unsafe static class PreCrafting
                 Tasks.Add((() => TaskEquipItem(recipe.ItemRequired.RowId), default));
             }
 
-            bool needFood = config != default && ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && !ConsumableChecker.IsFooded(config);
-            bool needPot = config != default && ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) && !ConsumableChecker.IsPotted(config);
-            bool needManual = config != default && ConsumableChecker.HasItem(config.RequiredManual, false) && !ConsumableChecker.IsManualled(config);
-            bool needSquadronManual = config != default && ConsumableChecker.HasItem(config.RequiredSquadronManual, false) && !ConsumableChecker.IsSquadronManualled(config);
+            var skippingConsumables = ConsumableChecker.SkippingConsumablesByConfig(recipe);
 
-            if (needFood || needPot || needManual || needSquadronManual)
-                Tasks.Add((() => TaskUseConsumables(config, type), default));
+            if (!skippingConsumables)
+            {
+                bool needFood = config != default && ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && !ConsumableChecker.IsFooded(config);
+                bool needPot = config != default && ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) && !ConsumableChecker.IsPotted(config);
+                bool needManual = config != default && ConsumableChecker.HasItem(config.RequiredManual, false) && !ConsumableChecker.IsManualled(config);
+                bool needSquadronManual = config != default && ConsumableChecker.HasItem(config.RequiredSquadronManual, false) && !ConsumableChecker.IsSquadronManualled(config);
+
+                if (needFood || needPot || needManual || needSquadronManual)
+                    Tasks.Add((() => TaskUseConsumables(config, type), default));
+            }
             Tasks.Add((() => TaskSelectRecipe(recipe), TimeSpan.FromMilliseconds(500)));
             timeWasteLoops = 1;
             Tasks.Add((() => TimeWasteLoop(), TimeSpan.FromMilliseconds(10))); //This is needed for controller players, else if they're near an NPC it will target them and exit the craft as the button is interpreted as target and not confirm.
@@ -212,9 +219,11 @@ public unsafe static class PreCrafting
         DuoLog.Error($"Can't craft {recipe.ItemResult.Value.Name.ToDalamudString()}: required consumables not up and missing {string.Join(", ", missingConsumables)}");
     }
 
-    internal static bool NeedsConsumablesCheck(CraftType type, RecipeConfig? config)
+    internal static bool NeedsConsumablesCheck(CraftType type, RecipeConfig? config, Recipe recipe)
     {
-        // TODO: repair & extract materia
+        if (ConsumableChecker.SkippingConsumablesByConfig(recipe))
+            return false;
+
         return (type == CraftType.Normal || (type == CraftType.Trial && P.Config.UseConsumablesTrial) || (type == CraftType.Quick && P.Config.UseConsumablesQuickSynth)) && (!ConsumableChecker.IsFooded(config) || !ConsumableChecker.IsPotted(config) || !ConsumableChecker.IsManualled(config) || !ConsumableChecker.IsSquadronManualled(config));
     }
 

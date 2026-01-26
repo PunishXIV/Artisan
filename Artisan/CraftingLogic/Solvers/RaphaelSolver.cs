@@ -1,5 +1,4 @@
-﻿using Artisan.Autocraft;
-using Artisan.GameInterop;
+﻿using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.UI;
 using Dalamud.Bindings.ImGui;
@@ -353,66 +352,10 @@ namespace Artisan.CraftingLogic.Solvers
 
                 var opt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).FirstOrNull(x => x.Name == $"Raphael Recipe Solver");
                 var solverIsRaph = config.CurrentSolverType == opt?.Def.GetType().FullName!;
-                if (hasSolution)
+                if (!hasSolution)
                 {
-                    var curStats = CharacterStats.GetCurrentStats();
-
-                    if (!solverIsRaph)
-                    {
-                        if (liveStats)
-                        {
-                            ImGuiEx.TextCentered($"Raphael Solution Has Been Generated. (Click to Switch)");
-                            if (ImGui.IsItemClicked())
-                            {
-                                config.SolverType = opt?.Def.GetType().FullName!;
-                                config.SolverFlavour = (int)(opt?.Flavour);
-                            }
-                        }
-                        else
-                        {
-                            ImGuiEx.TextCentered($"Raphael Solution Has Been Generated.");
-                        }
-                    }
-                    else
-                    {
-                        ImGuiEx.TextCentered($"Solution Key: {key}");
-                        var playerIsJob = Player.ClassJob.RowId == craft.Recipe.CraftType.RowId + 8;
-                        var parts = KeyParts(key);
-                        if (!playerIsJob)
-                            ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"Not currently job.");
-                        else
-                        {
-                            if (curStats.Craftsmanship == craft.StatCraftsmanship)
-                                ImGuiEx.TextCentered(ImGuiColors.HealerGreen, $"Craftsmanship meets solution requirement: {parts.Crafts}.");
-                            else
-                            {
-                                ImGuiEx.TextCentered(ImGuiColors.DPSRed, $"There is a craftsmanship difference between the solution ({craft.StatCraftsmanship}) and current ({curStats.Craftsmanship}).\nRaphael won't be used until this is resolved.");
-                                var foodIsCrafts = ConsumableChecker.GetItemConsumableProperties(LuminaSheets.ItemSheet[config.RequiredFood], false)?.Params.Any(x => x.BaseParam.RowId is 70);
-                                if (foodIsCrafts == true)
-                                    ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"(Set food is craftsmanship food, this issue will likely be resolved once the buff is applied)");
-
-                                var potIsCrafts = ConsumableChecker.GetItemConsumableProperties(LuminaSheets.ItemSheet[config.RequiredPotion], false)?.Params.Any(x => x.BaseParam.RowId is 70);
-                                if (potIsCrafts == true)
-                                    ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"(Set potion is craftsmanship potion, this issue will likely be resolved once the buff is applied)");
-
-                                if ((foodIsCrafts == null || foodIsCrafts == false) && (potIsCrafts == null || potIsCrafts == false))
-                                    ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"(You currently have a Well Fed/Medicated buff granting you craftsmanship\n that is not set as your food/potion, removing the buff(s) may resolve this)");
-
-                                var diffPos = Math.Abs(craft.StatCraftsmanship - curStats.Craftsmanship);
-                                var diffAct = (craft.StatCraftsmanship - curStats.Craftsmanship);
-                                if (diffPos % 5 == 0)
-                                    if (diffAct > 0)
-                                        ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"(This solution may have been generated with a Free Company Craftsmanship buff which you no longer have)");
-                                    else
-                                        ImGuiEx.TextCentered(ImGuiColors.DalamudOrange, $"(You may have a Free Company Craftsmanship buff that was not active when this solution was generated)");
-                            }
-                        }
-
-                    }
-                }
-                else
-                {
-                    ImGuiEx.TextCentered(ImGuiColors.DalamudRed, "No Raphael Solution Generated.");
+                    if (solverIsRaph)
+                        ImGuiEx.TextCentered(ImGuiColors.DalamudRed, "No Raphael Solution Generated.");
                     if (P.Config.RaphaelSolverConfig.AutoGenerate && CraftingProcessor.GetAvailableSolversForRecipe(craft, true).Any() && (!craft.CraftExpert || (craft.CraftExpert && P.Config.RaphaelSolverConfig.GenerateOnExperts)))
                     {
                         Build(craft, TempConfigs[key]);

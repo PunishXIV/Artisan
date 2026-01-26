@@ -69,6 +69,7 @@ namespace Artisan
         public bool ShowOnlyCraftableRetainers = false;
         public bool Materia = false;
         public bool LockMiniMenuR = true;
+        public int ConsumableLevelGapDifference = 10;
 
         public bool EnduranceStopFail = false;
         public bool EnduranceStopNQ = false;

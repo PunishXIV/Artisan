@@ -290,6 +290,9 @@ public class RecipeConfig
             }
         }
 
+        if (ConsumableChecker.SkippingConsumablesByConfig(craft.Recipe))
+            ImGuiEx.Text(ImGuiColors.DalamudRed, "Consumables will not be used due to level difference setting.");
+
         if (!hasButton)
             RaphaelCache.DrawRaphaelDropdown(craft, liveStats);
 

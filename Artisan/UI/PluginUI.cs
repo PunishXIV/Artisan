@@ -22,6 +22,8 @@ using System.Numerics;
 using ThreadLoadImageHandler = ECommons.ImGuiMethods.ThreadLoadImageHandler;
 using ECommons.Automation;
 using ECommons.WindowsFormsReflector;
+using System.Text;
+using ECommons.ExcelServices;
 
 namespace Artisan.UI
 {
@@ -548,6 +550,26 @@ namespace Artisan.UI
                 {
                     P.Config.Save();
                 }
+
+                ImGui.SetNextItemWidth(32f.Scale());
+                if (ImGui.InputInt("Don't use consumables when level difference with craft is greater than", ref P.Config.ConsumableLevelGapDifference))
+                {
+                    if (P.Config.ConsumableLevelGapDifference < 0)
+                        P.Config.ConsumableLevelGapDifference = 0;
+
+                    P.Config.Save();
+                }
+
+                StringBuilder helper = new("You will not use consumables on crafts below this level for each of the following jobs:\n\n");
+                for (uint i = (uint)Job.CRP; i <= (uint)Job.ALC; i++)
+                {
+                    var j = Svc.Data.GetExcelSheet<ClassJob>().GetRow(i).Abbreviation.ToString().ToUpper();
+                    var l = CharacterInfo.JobLevel((Job)i);
+                    var d = Math.Max(1, l - P.Config.ConsumableLevelGapDifference);
+                    helper.Append($"{j} - {d}\n");
+                }
+                var maxLevel = Svc.Data.GetExcelSheet<RecipeLevelTable>().Max(x => x.ClassJobLevel);
+                ImGuiComponents.HelpMarker($"Set this to {maxLevel} to disable.\r\n{helper}");
 
                 ImGui.Indent();
                 if (ImGui.CollapsingHeader("Default Consumables"))

@@ -370,7 +370,7 @@ namespace Artisan.CraftingLists
             {
                 selectedList.Recipes.First(x => x.ID == CraftingListUI.CurrentProcessedItem).ListItemOptions = new ListItemOptions();
             }
-            bool needConsumables = PreCrafting.NeedsConsumablesCheck(type, config);
+            bool needConsumables = PreCrafting.NeedsConsumablesCheck(type, config, recipe);
             bool hasConsumables = PreCrafting.HasConsumablesCheck(config);
 
             if (P.Config.AbortIfNoFoodPot && needConsumables && !hasConsumables)
@@ -380,20 +380,25 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            bool needFood = type is PreCrafting.CraftType.Quick && !P.Config.UseConsumablesQuickSynth ? false : config != default && ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && !ConsumableChecker.IsFooded(config);
-            bool needPot = type is PreCrafting.CraftType.Quick && !P.Config.UseConsumablesQuickSynth ? false : config != default && ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) && !ConsumableChecker.IsPotted(config);
-            bool needManual = type is PreCrafting.CraftType.Quick && !P.Config.UseConsumablesQuickSynth ? false : config != default && ConsumableChecker.HasItem(config.RequiredManual, false) && !ConsumableChecker.IsManualled(config);
-            bool needSquadronManual = type is PreCrafting.CraftType.Quick && !P.Config.UseConsumablesQuickSynth ? false : config != default && ConsumableChecker.HasItem(config.RequiredSquadronManual, false) && !ConsumableChecker.IsSquadronManualled(config);
+            var skippingConsumables = ConsumableChecker.SkippingConsumablesByConfig(recipe);
 
-            if (needFood || needPot || needManual || needSquadronManual)
+            if (!skippingConsumables)
             {
-                if (!CLTM.IsBusy && !PreCrafting.Occupied())
+                bool needFood = type is PreCrafting.CraftType.Quick && !P.Config.UseConsumablesQuickSynth ? false : config != default && ConsumableChecker.HasItem(config.RequiredFood, config.RequiredFoodHQ) && !ConsumableChecker.IsFooded(config);
+                bool needPot = type is PreCrafting.CraftType.Quick && !P.Config.UseConsumablesQuickSynth ? false : config != default && ConsumableChecker.HasItem(config.RequiredPotion, config.RequiredPotionHQ) && !ConsumableChecker.IsPotted(config);
+                bool needManual = type is PreCrafting.CraftType.Quick && !P.Config.UseConsumablesQuickSynth ? false : config != default && ConsumableChecker.HasItem(config.RequiredManual, false) && !ConsumableChecker.IsManualled(config);
+                bool needSquadronManual = type is PreCrafting.CraftType.Quick && !P.Config.UseConsumablesQuickSynth ? false : config != default && ConsumableChecker.HasItem(config.RequiredSquadronManual, false) && !ConsumableChecker.IsSquadronManualled(config);
+
+                if (needFood || needPot || needManual || needSquadronManual)
                 {
-                    CLTM.Enqueue(() => PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200))));
-                    CLTM.Enqueue(() => PreCrafting.Tasks.Add((() => PreCrafting.TaskUseConsumables(config, type), TimeSpan.FromMilliseconds(200))));
-                    CLTM.DelayNext(100);
+                    if (!CLTM.IsBusy && !PreCrafting.Occupied())
+                    {
+                        CLTM.Enqueue(() => PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200))));
+                        CLTM.Enqueue(() => PreCrafting.Tasks.Add((() => PreCrafting.TaskUseConsumables(config, type), TimeSpan.FromMilliseconds(200))));
+                        CLTM.DelayNext(100);
+                    }
+                    return;
                 }
-                return;
             }
 
             if (Crafting.CurState is Crafting.State.IdleBetween or Crafting.State.IdleNormal && !PreCrafting.Occupied())
