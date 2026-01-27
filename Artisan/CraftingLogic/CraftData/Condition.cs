@@ -16,6 +16,7 @@ namespace Artisan.CraftingLogic.CraftData
         Malleable = 7,
         Primed = 8,
         GoodOmen = 9,
+        Robust = 10,
 
         Unknown
     }
@@ -33,5 +34,6 @@ namespace Artisan.CraftingLogic.CraftData
         Malleable = 128,
         Primed = 256,
         GoodOmen = 512,
+        Robust = 1024,
     }
 }

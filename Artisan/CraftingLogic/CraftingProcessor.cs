@@ -80,7 +80,6 @@ public static class CraftingProcessor
         if (solver == null)
             return null;
 
-        Svc.Log.Debug($"{flavour}");
         foreach (var f in solver.Flavours(craft).Where(f => f.Flavour == flavour))
             return f;
         return null;

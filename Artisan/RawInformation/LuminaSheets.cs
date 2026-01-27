@@ -225,17 +225,17 @@ namespace Artisan.RawInformation
 
         }
 
-        public static bool MissionHasMaterialMiracle(this Recipe recipe)
+        public static bool MissionHasExtraAction(this Recipe recipe, out uint action)
         {
+            action = 0;
             try
             {
-
                 Svc.Data.GameData.Options.PanicOnSheetChecksumMismatch = false;
                 var id = recipe.RowId;
                 //First, find the MissionRecipe with our recipe
                 var missionRec = Svc.Data.GetExcelSheet<WKSMissionRecipe>().FirstOrDefault(missionRec => missionRec.Recipe.Any(recipe => recipe.RowId == id));
                 //Bail if there's no MissionRecipe (this isn't a Cosmic Craft)
-                if(missionRec.RowId == 0)
+                if (missionRec.RowId == 0)
                     return false;
 
                 //Next, find the MissionUnit that has our MissionRecipe row
@@ -245,9 +245,11 @@ namespace Artisan.RawInformation
                 var missionToDo = Svc.Data.GetExcelSheet<WKSMissionToDo>().GetRow(missionUnit.MissionToDo[0].RowId);
 
                 //Svc.Log.Verbose($"{id} -> {missionRec.RowId} -> {missionUnit.RowId} -> {missionToDo.RowId} -> {missionToDo.Unknown0}");
-                return missionToDo.TemporaryAction.RowId == (uint)Skills.MaterialMiracle;
+                action = missionToDo.TemporaryAction.RowId;
+
+                return true;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Svc.Log.Error($"Error in MissionHasMaterialMiracle: {e}");
                 return false;

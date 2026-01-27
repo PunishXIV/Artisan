@@ -91,6 +91,7 @@ public static unsafe class Crafting
     {
         stats.Level = stats.Level == default ? CharacterInfo.JobLevel(job) : stats.Level;
         var lt = recipe.Number == 0 && stats.Level < 100 ? Svc.Data.GetExcelSheet<RecipeLevelTable>().First(x => x.ClassJobLevel == stats.Level) : recipe.RecipeLevelTable.Value;
+        bool recipeHasExtraAction = recipe.MissionHasExtraAction(out var act);
         var res = new CraftState()
         {
             ItemId = recipe.ItemResult.RowId,
@@ -119,7 +120,8 @@ public static unsafe class Crafting
             CollectableMetadataKey = recipe.CollectableMetadataKey,
             IsCosmic = recipe.Number == 0,
             ConditionFlags = (ConditionFlags)lt.ConditionsFlag,
-            MissionHasMaterialMiracle = recipe.MissionHasMaterialMiracle(),
+            MissionHasMaterialMiracle = act is (uint)Skills.MaterialMiracle,
+            MissionHasSteadyHand = act is (uint)Skills.SteadyHand,
             LevelTable = lt,
         };
 
@@ -598,8 +600,36 @@ public static unsafe class Crafting
         try
         {
             if (DutyActionManager.GetInstanceIfReady() != null)
-                return (uint)(DutyActionManager.GetInstanceIfReady()->CurCharges[1] + DutyActionManager.GetInstanceIfReady()->CurCharges[0]);
+            {
+                var dutyAction1 = DutyActionManager.GetInstanceIfReady()->ActionId[0];
+                var dutyAction2 = DutyActionManager.GetInstanceIfReady()->ActionId[1];
+                if (dutyAction1 == (uint)Skills.MaterialMiracle)
+                    return DutyActionManager.GetInstanceIfReady()->CurCharges[0];
+                if (dutyAction2 == (uint)Skills.MaterialMiracle)
+                    return DutyActionManager.GetInstanceIfReady()->CurCharges[1];
+            }
+            return 0;
+        }
+        catch (Exception e)
+        {
+            ECommons.GenericHelpers.Log(e);
+            return 0;
+        }
+    }
 
+    public unsafe static uint SteadyHandCharges()
+    {
+        try
+        {
+            if (DutyActionManager.GetInstanceIfReady() != null)
+            {
+                var dutyAction1 = DutyActionManager.GetInstanceIfReady()->ActionId[0];
+                var dutyAction2 = DutyActionManager.GetInstanceIfReady()->ActionId[1];
+                if (dutyAction1 == (uint)Skills.SteadyHand)
+                    return DutyActionManager.GetInstanceIfReady()->CurCharges[0];
+                if (dutyAction2 == (uint)Skills.SteadyHand)
+                    return DutyActionManager.GetInstanceIfReady()->CurCharges[1];
+            }
             return 0;
         }
         catch (Exception e)
@@ -650,6 +680,8 @@ public static unsafe class Crafting
         ret.PrevComboAction = predictedStep?.PrevComboAction ?? Skills.None;
         ret.MaterialMiracleCharges = MaterialMiracleCharges();
         ret.MaterialMiracleActive = GetStatus(Buffs.MaterialMiracle) != null;
+        ret.SteadyHandCharges = SteadyHandCharges();
+        ret.SteadyHandLeft = GetStatus(Buffs.SteadyHand)?.Param ?? 0;
         ret.ObserveCounter = predictedStep?.ObserveCounter ?? 0;
 
         return ret;
@@ -739,7 +771,7 @@ public static unsafe class Crafting
                         PluginLog.Error($"An unexpected error occurred. CurCraft={CurCraft}, CurStep={CurStep}");
                         goto Original;
                     }
-                    _predictedNextStep = Simulator.Execute(CurCraft!, CurStep!, advancePayload->LastActionId == (uint)Skills.MaterialMiracle ? Skills.MaterialMiracle : SkillActionMap.ActionToSkill(advancePayload->LastActionId), advancePayload->Flags.HasFlag(CraftingEventHandler.StepFlags.LastActionSucceeded) ? 0 : 1, 1).Item2;
+                    _predictedNextStep = Simulator.Execute(CurCraft!, CurStep!, advancePayload->LastActionId == (uint)Skills.MaterialMiracle ? Skills.MaterialMiracle : advancePayload->LastActionId == (uint)Skills.SteadyHand ? Skills.SteadyHand : SkillActionMap.ActionToSkill(advancePayload->LastActionId), advancePayload->Flags.HasFlag(CraftingEventHandler.StepFlags.LastActionSucceeded) ? 0 : 1, 1).Item2;
                     _predictedNextStep.Condition = (Condition)(advancePayload->ConditionPlus1 - 1);
                     // fix up predicted state to match what game sends
                     if (complete)

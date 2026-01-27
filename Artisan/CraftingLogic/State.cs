@@ -39,6 +39,7 @@ public record class CraftState
     public bool IsCosmic;
     public ConditionFlags ConditionFlags;
     public bool MissionHasMaterialMiracle;
+    public bool MissionHasSteadyHand;
     public int InitialQuality;
 
     public uint ItemId;
@@ -82,6 +83,8 @@ public record class StepState
     public uint MaterialMiracleCharges;
     public bool MaterialMiracleActive;
     public int ObserveCounter;
+    public uint SteadyHandCharges;
+    public int SteadyHandLeft;
 
     public override string ToString() => $"#{Index} {Condition}: {Progress}/{Quality}/{Durability}/{RemainingCP}; {BuffsString()}; Prev={PrevComboAction}{(PrevActionFailed ? " (failed)" : "")}";
 
@@ -105,6 +108,7 @@ public record class StepState
         sb.Append($", CO={CarefulObservationLeft}, HS={(HeartAndSoulActive ? "active" : HeartAndSoulAvailable ? "avail" : "none")}");
         sb.Append($", QuickInno:{QuickInnoAvailable}/{QuickInnoLeft}/{InnovationLeft}");
         sb.Append($", MaterialMiracleActive:{MaterialMiracleActive} / {MaterialMiracleCharges}");
+        sb.Append($", SteadyHandLeft:{SteadyHandLeft}");
         return sb.ToString();
     }
 }

@@ -221,6 +221,8 @@ namespace Artisan.UI
                     ImGui.Text($"Can insta delicate: {Crafting.CurStep.Index == 1 && StandardSolver.CanFinishCraft(Crafting.CurCraft, Crafting.CurStep, Skills.DelicateSynthesis) && StandardSolver.CalculateNewQuality(Crafting.CurCraft, Crafting.CurStep, Skills.DelicateSynthesis) >= Crafting.CurCraft.CraftQualityMin3}");
                     ImGui.Text($"Flags: {Crafting.CurCraft.ConditionFlags}");
                     ImGui.Text($"Material Miracle Charges: {Crafting.CurStep.MaterialMiracleCharges}");
+                    ImGui.Text($"Steady Hand Charges: {Crafting.CurStep.SteadyHandCharges}");
+                    ImGui.Text($"Steady Hand Stacks: {Crafting.CurStep.SteadyHandLeft}");
                 }
 
                 if (ImGui.CollapsingHeader("Spiritbonds"))

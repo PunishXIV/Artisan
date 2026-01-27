@@ -15,6 +15,7 @@
             HeartAndSoul = 2665,
             Expedience = 3812,
             TrainedPerfection = 3813,
-            MaterialMiracle = 4220;
+            MaterialMiracle = 4220,
+            SteadyHand = 4839;
     }
 }
