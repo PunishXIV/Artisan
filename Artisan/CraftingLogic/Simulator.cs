@@ -297,7 +297,7 @@ public static class Simulator
         Skills.DaringTouch => step.ExpedienceLeft > 0,
         Skills.QuickInnovation => step.QuickInnoLeft > 0 && step.InnovationLeft == 0,
         Skills.MaterialMiracle => step.MaterialMiracleCharges > 0 && !step.MaterialMiracleActive,
-        Skills.SteadyHand => step.SteadyHandCharges > 0 && step.SteadyHandLeft == 0,
+        Skills.SteadyHand => step.SteadyHandCharges > 0,
         _ => true
     } && craft.StatLevel >= MinLevel(action) && step.RemainingCP >= GetCPCost(step, action);
 
@@ -320,7 +320,7 @@ public static class Simulator
                 Skills.DaringTouch => "Hasty Touch did not succeed",
                 Skills.QuickInnovation => !craft.Specialist ? "You are not a specialist" : Crafting.DelineationCount() == 0 ? "You have run out of Delineations." : step.QuickInnoLeft == 0 ? "You don't have Quick Innovation available anymore for this craft" : step.InnovationLeft > 0 ? "You have an Innovation buff" : "",
                 Skills.MaterialMiracle => !craft.MissionHasMaterialMiracle ? "This craft cannot use Material Miracle" : step.MaterialMiracleActive ? "You already have Material Miracle active" : step.MaterialMiracleCharges == 0 ? "You have no more Material Miracle charges" : "",
-                Skills.SteadyHand => !craft.MissionHasSteadyHand ? "This craft cannot use Steady Hand" : step.SteadyHandLeft > 0 ? "You already have Steady Hand active" : step.SteadyHandCharges == 0 ? "You have no more Steady Hand charges" : "",
+                Skills.SteadyHand => !craft.MissionHasSteadyHand ? "This craft cannot use Steady Hand" : step.SteadyHandCharges == 0 ? "You have no more Steady Hand charges" : "",
             };
 
             return true;
