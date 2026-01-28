@@ -144,7 +144,7 @@ public class ExpertSolver : Solver
             if (CU(craft, step, Skills.RapidSynthesis))
                 return Skills.RapidSynthesis;
         }
-        else if (step.Condition == Condition.Sturdy)
+        else if (step.Condition is Condition.Sturdy or Condition.Robust)
         {
             // last-chance intensive or rapid, regardless of veneration
             return SolveOpenerMuMeTouch(craft, step, cfg.MuMeIntensiveLastResort && lastChance);
@@ -423,7 +423,7 @@ public class ExpertSolver : Solver
             // note: using tricks here seems to be a slight loss according to craft, which is expected
         }
 
-        if (step.Condition == Condition.Sturdy)
+        if (step.Condition is Condition.Sturdy or Condition.Robust)
         {
             // during sturdy, prep becomes 300/500p for 40cp+10dura = 5.17/8.62 p/cp (depending on gs)
             // in comparison, focused (assuming we did observe before) is 225/375p for 18cp+5dura = 8.33/13.89p/cp - it is more efficient
@@ -522,7 +522,7 @@ public class ExpertSolver : Solver
         if (cfg.MidPrimedManipPreQuality && step.Condition == Condition.Primed && step.ManipulationLeft == 0 && availableCP >= Simulator.GetCPCost(step, Skills.Manipulation) && CU(craft, step, Skills.Manipulation))
             return Skills.Manipulation;
 
-        var criticalDurabilityThreshold = step.Condition != Condition.Sturdy ? 10 : 5;
+        var criticalDurabilityThreshold = (step.Condition is Condition.Sturdy or Condition.Robust) ? 5 : 10;
         var wantObserveOnLowDura = allowObserveOnLowDura && step.Condition switch
         {
             Condition.Normal or Condition.Good or Condition.GoodOmen or Condition.Primed => true, // these are all 'observable'
@@ -623,7 +623,7 @@ public class ExpertSolver : Solver
             if (step.TrainedPerfectionActive && CU(craft, step, Skills.Groundwork))
                 return Skills.Groundwork;
         }
-        if ((progBeforeQual || (step.Condition is Condition.Centered or Condition.Sturdy or Condition.Malleable)) && step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && !step.TrainedPerfectionActive && CU(craft, step, Skills.RapidSynthesis))
+        if ((progBeforeQual || (step.Condition is Condition.Centered or Condition.Sturdy or Condition.Robust or Condition.Malleable)) && step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && !step.TrainedPerfectionActive && CU(craft, step, Skills.RapidSynthesis))
             return Skills.RapidSynthesis;
         return Skills.None;
     }
@@ -646,12 +646,12 @@ public class ExpertSolver : Solver
             return Skills.DaringTouch;
         if (step.Condition == Condition.Centered && cfg.MidAllowCenteredHasty && step.Durability > Simulator.GetDurabilityCost(step, Skills.HastyTouch) && CU(craft, step, Skills.HastyTouch))
             return Skills.HastyTouch;
-        if (step.Condition == Condition.Sturdy && cfg.MidAllowSturdyPreсise && (step.HeartAndSoulActive || step.HeartAndSoulAvailable) && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreciseTouch))
+        if ((step.Condition is Condition.Sturdy or Condition.Robust) && cfg.MidAllowSturdyPreсise && (step.HeartAndSoulActive || step.HeartAndSoulAvailable) && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreciseTouch))
             return step.HeartAndSoulActive && CU(craft, step, Skills.PreciseTouch) ? Skills.PreciseTouch : Skills.HeartAndSoul;
         // Fix the issue where any hasty touch > sturdy condition would use hasty touch instead of daring touch with cfg.MidAllowSturdyHasty set
-        if (step.Condition == Condition.Sturdy && step.Durability > Simulator.GetDurabilityCost(step, Skills.DaringTouch) && CU(craft, step, Skills.DaringTouch))
+        if ((step.Condition is Condition.Sturdy or Condition.Robust) && step.Durability > Simulator.GetDurabilityCost(step, Skills.DaringTouch) && CU(craft, step, Skills.DaringTouch))
             return cfg.MidAllowSturdyHasty ? Skills.DaringTouch : Simulator.NextTouchCombo(step, craft);
-        if (step.Condition == Condition.Sturdy && step.Durability > Simulator.GetDurabilityCost(step, Skills.HastyTouch))
+        if ((step.Condition is Condition.Sturdy or Condition.Robust) && step.Durability > Simulator.GetDurabilityCost(step, Skills.HastyTouch))
             return cfg.MidAllowSturdyHasty ? Skills.HastyTouch : Simulator.NextTouchCombo(step, craft);
         return Skills.None;
     }

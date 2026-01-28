@@ -40,6 +40,7 @@ public class MacroSolverSettings
         public bool ExcludeMalleable = false;
         public bool ExcludePrimed = false;
         public bool ExcludeGoodOmen = false;
+        public bool ExcludeRobust = false;
         public bool ReplaceOnExclude = false;
         public Skills ReplacementAction = Skills.None;
 
@@ -52,7 +53,8 @@ public class MacroSolverSettings
                                             ExcludePliant||
                                             ExcludeMalleable ||
                                             ExcludePrimed ||
-                                            ExcludeGoodOmen;
+                                            ExcludeGoodOmen ||
+                                            ExcludeRobust;
     }
 
     public List<Macro> Macros = new();

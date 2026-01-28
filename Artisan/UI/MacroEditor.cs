@@ -264,6 +264,8 @@ namespace Artisan.UI
                                 P.Config.Save();
                             if (ImGui.Checkbox($"Good Omen", ref step.ExcludeGoodOmen))
                                 P.Config.Save();
+                            if (ImGui.Checkbox($"Robust", ref step.ExcludeRobust))
+                                P.Config.Save();
 
                             ImGui.Columns(1);
                             ImGui.PopStyleVar();
