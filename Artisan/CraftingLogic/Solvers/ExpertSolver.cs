@@ -2,6 +2,7 @@
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using System.Collections.Generic;
+using TerraFX.Interop.Windows;
 
 namespace Artisan.CraftingLogic.Solvers;
 
@@ -724,15 +725,14 @@ public class ExpertSolver : Solver
 
     private static Skills SolveFinishProgress(CraftState craft, StepState step)
     {
-        // we have some options to finish the progress:
-        // - rapid spam is efficient, but can fail - we use it if we can't do a guaranteed finish
-        // - prudent can be thought of converting 11cp into 5 dura, which is less efficient than baiting pliant (which is random to an extent), but more efficient than normal manip
-        // current algo:
-        // - if we get pliant and have enough cp to do 4 observe+focused after that, we use it
-        // - otherwise as long as we have cp, we use most efficient actions; we observe if we're low on dura, trying to bait better conditions
-        // - if we're out of cp, we spam rapid, and then finish with careful/basic
-        // TODO: veneration outside pliant/good-omen
-        // TODO: primed? probably quite pointless at this point...
+        // can we just finish it with a single action and not worry about all of this?
+        var remainingProgress = craft.CraftProgress - step.Progress;
+        if (Simulator.CalculateProgress(craft, step, Skills.BasicSynthesis) >= remainingProgress)
+            return Skills.BasicSynthesis;
+        if (Simulator.CalculateProgress(craft, step, Skills.CarefulSynthesis) >= remainingProgress && CU(craft, step, Skills.CarefulSynthesis))
+            return Skills.CarefulSynthesis;
+
+        // intensive is always the best bet if it's safe to do so; otherwise, use the condition on CP because we'll need it
         if (step.Condition is Condition.Good or Condition.Excellent)
         {
             if (CanUseSynthForFinisher(craft, step, Skills.IntensiveSynthesis) && CU(craft, step, Skills.IntensiveSynthesis))
@@ -741,11 +741,24 @@ public class ExpertSolver : Solver
                 return Skills.TricksOfTrade;
         }
 
+        // can't finish in one action, so we have some options:
+        // - rapid spam is efficient, but can fail - we use it if we can't do a guaranteed finish
+        // - prudent can be thought of converting 11cp into 5 dura, which is less efficient than baiting pliant (which is random to an extent), but more efficient than normal manip
+        // current algo:
+        // - hope for pliant to restore dura
+        // - otherwise as long as we have cp, we use most efficient actions; we observe if we're low on dura, trying to bait better conditions
+        // - if we're out of cp, we spam rapid, and then finish with careful/basic
+        // TODO: veneration outside pliant/good-omen
+        // TODO: primed? probably quite pointless at this point...
         if (step.Condition == Condition.Pliant)
         {
-            if (step.ManipulationLeft <= 1 && step.RemainingCP >= 48 + 4 * 12 && CU(craft, step, Skills.Manipulation))
+            // rough guess as to how much CP we'd want left over to make a repair action worth it
+            var extraFinishCP = Skills.CarefulSynthesis.StandardCPCost() * 4;
+            if (step.ManipulationLeft <= 1 && step.RemainingCP >= Simulator.GetCPCost(step, Skills.Manipulation) + extraFinishCP && CU(craft, step, Skills.Manipulation))
                 return Skills.Manipulation;
-            if (step.Durability + mmDuraRestored + (step.ManipulationLeft > 0 ? 5 : 0) <= craft.CraftDurability && step.RemainingCP >= 44 + 3 * 12 && CU(craft, step, Skills.MastersMend))
+            if (step.Durability + immaculateDuraMinimum <= craft.CraftDurability && step.RemainingCP >= Simulator.GetCPCost(step, Skills.ImmaculateMend) + extraFinishCP && CU(craft, step, Skills.ImmaculateMend))
+                return Skills.ImmaculateMend;
+            if (step.Durability + mmDuraRestored + (step.ManipulationLeft > 0 ? 5 : 0) <= craft.CraftDurability && step.RemainingCP >= Simulator.GetCPCost(step, Skills.MastersMend) + extraFinishCP && CU(craft, step, Skills.MastersMend))
                 return Skills.MastersMend;
             if (step.RemainingCP >= Simulator.GetCPCost(step, Skills.Veneration) && step.VenerationLeft <= 1 && CU(craft, step, Skills.Veneration))
                 return Skills.Veneration; // good use of pliant
@@ -767,7 +780,7 @@ public class ExpertSolver : Solver
         if (step.Condition == Condition.Malleable && CanUseSynthForFinisher(craft, step, Skills.IntensiveSynthesis) && (step.HeartAndSoulAvailable || step.HeartAndSoulActive) && step.Progress + Simulator.CalculateProgress(craft, step, step.RemainingCP >= Skills.CarefulSynthesis.StandardCPCost() ? Skills.CarefulSynthesis : Skills.BasicSynthesis) < craft.CraftProgress)
             return step.HeartAndSoulActive && CU(craft, step, Skills.IntensiveSynthesis) ? Skills.IntensiveSynthesis : Skills.HeartAndSoul;
 
-        if (step.Condition is Condition.Normal or Condition.Pliant or Condition.Centered or Condition.Primed && step.ManipulationLeft > 0 && step.Durability <= 10 && step.RemainingCP >= Simulator.GetCPCost(step, Skills.Observe) + 5 && CU(craft, step, Skills.Observe))
+        if (step.Condition is Condition.Normal or Condition.Pliant or Condition.Centered or Condition.Primed && step.ManipulationLeft > 0 && step.Durability <= 10 && step.RemainingCP >= Simulator.GetCPCost(step, Skills.Observe) + Skills.CarefulSynthesis.StandardCPCost() && CU(craft, step, Skills.Observe))
             return Skills.Observe; // regen a bit of dura and use focused
 
         if (CanUseSynthForFinisher(craft, step, Skills.CarefulSynthesis) && CU(craft, step, Skills.CarefulSynthesis))
@@ -779,7 +792,6 @@ public class ExpertSolver : Solver
         // we're out of cp, use rapids if we have some dura left
         if (Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) < step.Durability && CU(craft, step, Skills.RapidSynthesis))
             return Skills.RapidSynthesis;
-
 
         // and we're out of dura - finish craft with basic if it's ok, otherwise try rapid
         if (step.Progress + Simulator.CalculateProgress(craft, step, Skills.BasicSynthesis) >= craft.CraftProgress)
