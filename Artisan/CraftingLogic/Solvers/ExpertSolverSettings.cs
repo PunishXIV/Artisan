@@ -187,14 +187,14 @@ public class ExpertSolverSettings
                 ImGuiComponents.HelpMarker($"{Skills.IntensiveSynthesis.NameOfAction()} takes priority with {ProgressString.ToLower()} remaining, unless disabled by other settings. If both options are disabled, ● {Condition.Good.ToLocalizedString()} will be used on {Skills.TricksOfTrade.NameOfAction()}.");
                 ImGui.TextWrapped($"Use {Skills.HeartAndSoul.NameOfAction()} to force {Skills.PreciseTouch.NameOfAction()}:");
                 ImGui.Indent();
-                changed |= ImGui.Checkbox($"When ● {Condition.Sturdy.ToLocalizedString()}", ref MidAllowSturdyPreсise);
+                changed |= ImGui.Checkbox($"When ● {Condition.Sturdy.ToLocalizedString()}/{Condition.Robust.ToLocalizedString()}", ref MidAllowSturdyPreсise);
                 ImGui.PushItemWidth(250);
                 changed |= ImGui.SliderInt($"At this many {Buffs.InnerQuiet.NameOfBuff()} stacks (10 to disable)###MidMinIQForHSPrecise", ref MidMinIQForHSPrecise, 0, 10);
                 ImGui.Unindent();
                 ImGui.TextWrapped($"Use {Skills.HastyTouch.NameOfAction()} and {Skills.DaringTouch.NameOfAction()}:");
                 ImGui.Indent();
                 changed |= ImGui.Checkbox($"When ● {Condition.Centered.ToLocalizedString()} (85% success, 10 {DurabilityString.ToLower()})", ref MidAllowCenteredHasty);
-                changed |= ImGui.Checkbox($"When ● {Condition.Sturdy.ToLocalizedString()} (60% success, 5 {DurabilityString.ToLower()})", ref MidAllowSturdyHasty);
+                changed |= ImGui.Checkbox($"When ● {Condition.Sturdy.ToLocalizedString()}/{Condition.Robust.ToLocalizedString()} (60% success, 5 {DurabilityString.ToLower()})", ref MidAllowSturdyHasty);
                 ImGui.Unindent();
                 ImGui.Unindent();
                 ImGui.Dummy(new Vector2(0, 5f));
@@ -230,7 +230,7 @@ public class ExpertSolverSettings
                 ImGui.TextWrapped($"Use {Skills.PreparatoryTouch.NameOfAction()}:");
                 ImGui.Indent();
                 changed |= ImGui.Checkbox($"Under ● {Condition.Good.ToLocalizedString()} + {Buffs.Innovation.NameOfBuff()} + {Buffs.GreatStrides.NameOfBuff()}", ref MidAllowGoodPrep);
-                changed |= ImGui.Checkbox($"Under ● {Condition.Sturdy.ToLocalizedString()} + {Buffs.Innovation.NameOfBuff()}", ref MidAllowSturdyPrep);
+                changed |= ImGui.Checkbox($"Under ● {Condition.Sturdy.ToLocalizedString()}/{Condition.Robust.ToLocalizedString()} + {Buffs.Innovation.NameOfBuff()}", ref MidAllowSturdyPrep);
                 ImGui.Unindent();
                 changed |= ImGui.Checkbox($"Use {Skills.GreatStrides.NameOfAction()} before non-finisher {QualityString.ToLower()} combos", ref MidGSBeforeInno);
                 ImGuiComponents.HelpMarker($"ex. {Buffs.Innovation.NameOfBuff()} → {Skills.Observe.NameOfAction()} → {Skills.AdvancedTouch.NameOfAction()}. Enabling this uses more CP but less {DurabilityString.ToLower()}, and may help avoid a usage of an expensive {DurabilityString.ToLower()}-related action.");
