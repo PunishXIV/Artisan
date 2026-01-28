@@ -5,6 +5,7 @@ using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI.ImGUI;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
 using ECommons;
@@ -12,10 +13,8 @@ using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 using Microsoft.CodeAnalysis;
-using OtterGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -80,6 +79,8 @@ namespace Artisan.UI
         private static bool hoverMode = false;
         private static bool hoverStepAdded = false;
         private static string simGSName;
+        private static bool solverIsRaph => _selectedSolver?.Name.Contains("Raphael") == true;
+
 
         private class IngredientLayouts
         {
@@ -115,9 +116,28 @@ namespace Artisan.UI
                         ImGui.EndTabItem();
                     }
                 }
+
+                UpdateCraftForRaphael();
             }
             catch { }
 
+        }
+
+        private static void UpdateCraftForRaphael()
+        {
+            if (SelectedRecipe is not null)
+            {
+                _selectedCraft = Crafting.BuildCraftStateForRecipe(SimStats, Job.CRP.Add(SelectedRecipe.Value.CraftType.RowId), SelectedRecipe.Value);
+                if (solverIsRaph == true && _selectedCraft is not null)
+                {
+                    _selectedCraft.InitialQuality = startingQuality;
+                    if (RaphaelCache.HasSolution(_selectedCraft, out _))
+                    {
+                        var raph = new RaphaelSolverDefintion().Flavours(null!).First();
+                        _selectedSolver = new(raph.Name, raph.CreateSolver(_selectedCraft));
+                    }
+                }
+            }
         }
 
         private static void DrawGUISim()
@@ -135,7 +155,7 @@ namespace Artisan.UI
                 DrawGearSetDropdown();
 
                 if (!CustomStatMode)
-                DrawConsumablesDropdown();
+                    DrawConsumablesDropdown();
 
                 DrawStatInfo();
 
@@ -225,7 +245,7 @@ namespace Artisan.UI
                     hoverMode = false;
                     ImGui.EndChild();
                 }
-                catch (Exception ex) 
+                catch (Exception ex)
                 {
                     ex.Log();
                 }
@@ -551,6 +571,35 @@ namespace Artisan.UI
         {
             if (_selectedSolver != null && (SimGS != null || CustomStatMode))
             {
+                if (solverIsRaph && !RaphaelCache.HasSolution(_selectedCraft, out var _))
+                {
+                    var key = RaphaelCache.GetKey(_selectedCraft);
+                    if (!RaphaelCache.Tasks.ContainsKey(key))
+                    {
+                        if (ImGui.Button("Generate Solution"))
+                        {
+                            if (RaphaelCache.CLIExists())
+                            {
+                                Svc.Log.Debug("Raphael set as config but has no solution, generating now...");
+                                var raphConfig = RaphaelCache.GetConfigFromTempOrDefault(_selectedCraft);
+
+                                RaphaelCache.Build(_selectedCraft, raphConfig);
+                                return; // wait for solution to be ready
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ImGui.Text($"Generating solution, please wait.");
+                        if (ImGui.Button("Cancel Raphael Generation"))
+                        {
+                            RaphaelCache.Tasks.TryRemove(key, out var task);
+                            task.Item1.Cancel();
+                        }
+                    }
+                    ResetSim();
+                    return;
+                }
                 ImGuiEx.SetNextItemFullWidth();
                 if (ImGui.Button($"Run Simulated Solver"))
                 {
@@ -724,7 +773,6 @@ namespace Artisan.UI
                 if (selected)
                 {
                     _selectedSolver = new(opt.Name, opt.CreateSolver(_selectedCraft));
-
                 }
             }
         }
@@ -862,7 +910,7 @@ namespace Artisan.UI
         {
             if (!CustomStatMode)
             {
-                if (ImGui.Button($"Switch to Custom Stat Mode", new (ImGui.GetContentRegionAvail().X, 0)))
+                if (ImGui.Button($"Switch to Custom Stat Mode", new(ImGui.GetContentRegionAvail().X, 0)))
                     CustomStatMode = true;
             }
             else
@@ -952,7 +1000,7 @@ namespace Artisan.UI
                     Specialist = gsSpecialist,
                     SplendorCosmic = gsSplend,
                     Manipulation = gsManip,
-                    Level = gsLevel,    
+                    Level = gsLevel,
                 };
 
                 ResolveSteps();
