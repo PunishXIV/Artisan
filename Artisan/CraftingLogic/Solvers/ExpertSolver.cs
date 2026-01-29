@@ -209,7 +209,7 @@ public class ExpertSolver : Solver
         var allowObserveOnLowDura = venerationActive ? cfg.MidKeepHighDura == ExpertSolverSettings.MidKeepHighDuraSetting.MidKeepHighDuraVeneration : cfg.MidKeepHighDura == ExpertSolverSettings.MidKeepHighDuraSetting.MidKeepHighDuraUnbuffed;
         var allowIntensive = venerationActive ? cfg.MidAllowIntensive == ExpertSolverSettings.MidAllowIntensiveSetting.MidAllowIntensiveVeneration : cfg.MidAllowIntensive == ExpertSolverSettings.MidAllowIntensiveSetting.MidAllowIntensiveUnbuffed;
         var allowPrecise = cfg.MidAllowPrecise && (!allowObserveOnLowDura || step.ManipulationLeft > 0 || step.Durability > 25) /*&& !venerationActive*/;
-        if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, allowIntensive, cfg.MidFinishProgressBeforeQuality) is var highPrioProgress && highPrioProgress != Skills.None)
+        if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, allowIntensive, progressDeficit, cfg.MidFinishProgressBeforeQuality) is var highPrioProgress && highPrioProgress != Skills.None)
             return new(SafeCraftAction(craft, step, highPrioProgress), "mid pre quality: high-prio progress");
         if (step.IQStacks < maxIQStacks && SolveMidHighPriorityIQ(cfg, craft, step, allowPrecise) is var highPrioIQ && highPrioIQ != Skills.None)
             return new(highPrioIQ, "mid pre quality: high-prio iq");
@@ -269,7 +269,7 @@ public class ExpertSolver : Solver
     {
         // no buffs up, this is a good chance to get some dura back if needed, and then get some iq/progress/quality, maybe start dedicated progress/quality phase
         // first see whether we have some nice conditions to exploit for progress or iq
-        if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, true, cfg.MidFinishProgressBeforeQuality) is var highPrioProgress && highPrioProgress != Skills.None)
+        if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, true, progressDeficit, cfg.MidFinishProgressBeforeQuality) is var highPrioProgress && highPrioProgress != Skills.None)
             return new(SafeCraftAction(craft, step, highPrioProgress), "mid start quality: high-prio progress");
         if (step.Condition == Condition.Good && CU(craft, step, Skills.TricksOfTrade))
             return new(Skills.TricksOfTrade, "mid start quality: high-prio tricks");
@@ -621,7 +621,7 @@ public class ExpertSolver : Solver
         return effectiveDura <= 10 ? 0 : estCPNeededToUtilizeCurrentDura + extraHalfCombos * estHalfComboCost;
     }
 
-    private static Skills SolveMidHighPriorityProgress(CraftState craft, StepState step, bool allowIntensive, bool progBeforeQual)
+    private static Skills SolveMidHighPriorityProgress(CraftState craft, StepState step, bool allowIntensive, int progressDeficit, bool progBeforeQual)
     {
         // high-priority progress actions (exploit conditions)
         if (step.Condition == Condition.Good && allowIntensive && step.Durability > Simulator.GetDurabilityCost(step, Skills.IntensiveSynthesis) && CU(craft, step, Skills.IntensiveSynthesis))
@@ -636,6 +636,20 @@ public class ExpertSolver : Solver
             if (step.TrainedPerfectionActive && CU(craft, step, Skills.Groundwork))
                 return Skills.Groundwork;
         }
+
+        // if we're forcing progress, see if a safe crafting action can get us within striking distance before resorting to rapid
+        if (progBeforeQual && Simulator.CalculateProgress(craft, step, Skills.PrudentSynthesis) >= progressDeficit)
+        {
+            // normally careful is slightly better progress per cp/dura, but we know this will be the penultimate progress action, so prudent to save dura
+            if (step.Durability > Simulator.GetDurabilityCost(step, Skills.PrudentSynthesis) && CU(craft, step, Skills.PrudentSynthesis))
+                return Skills.PrudentSynthesis;
+            if (step.Durability > Simulator.GetDurabilityCost(step, Skills.CarefulSynthesis) && CU(craft, step, Skills.CarefulSynthesis)) // if not enough CP for prudent
+                return Skills.CarefulSynthesis;
+            if (Simulator.CalculateProgress(craft, step, Skills.BasicSynthesis) >= progressDeficit && step.Durability > Simulator.GetDurabilityCost(step, Skills.BasicSynthesis)) // if things are really dire but we're close to done
+                return Skills.BasicSynthesis;
+        }
+
+        // if forcing progress or there's a nice condition for it, use rapid; otherwise no progress right now
         if ((progBeforeQual || (step.Condition is Condition.Centered or Condition.Sturdy or Condition.Robust or Condition.Malleable)) && step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && !step.TrainedPerfectionActive && CU(craft, step, Skills.RapidSynthesis))
             return Skills.RapidSynthesis;
         return Skills.None;
