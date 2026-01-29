@@ -209,25 +209,30 @@ public class ExpertSolver : Solver
         var allowObserveOnLowDura = venerationActive ? cfg.MidKeepHighDura == ExpertSolverSettings.MidKeepHighDuraSetting.MidKeepHighDuraVeneration : cfg.MidKeepHighDura == ExpertSolverSettings.MidKeepHighDuraSetting.MidKeepHighDuraUnbuffed;
         var allowIntensive = venerationActive ? cfg.MidAllowIntensive == ExpertSolverSettings.MidAllowIntensiveSetting.MidAllowIntensiveVeneration : cfg.MidAllowIntensive == ExpertSolverSettings.MidAllowIntensiveSetting.MidAllowIntensiveUnbuffed;
         var allowPrecise = cfg.MidAllowPrecise && (!allowObserveOnLowDura || step.ManipulationLeft > 0 || step.Durability > 25) /*&& !venerationActive*/;
-        if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, allowIntensive, progressDeficit, cfg.MidFinishProgressBeforeQuality) is var highPrioProgress && highPrioProgress != Skills.None)
+
+        // check durability first to make sure we don't waste pliant/etc.
+        var duraAction = SolveMidDurabilityPreQuality(cfg, craft, step, availableCP, allowObserveOnLowDura, progressDeficit > 0);
+        if (duraAction != Skills.None)
+            return new(duraAction, "mid pre quality: durability");
+
+        // keep veneration running if we're forcing progress; otherwise don't because we're mixing quality and progress
+        if (cfg.MidFinishProgressBeforeQuality && progressDeficit > 0 && step.VenerationLeft == 0)
+            return new(Skills.Veneration, "mid pre quality: progress finish vene");
+
+        // check for progress-friendly conditions, or force progress if specified
+        if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, allowIntensive, progressDeficit, cfg) is var highPrioProgress && highPrioProgress != Skills.None)
             return new(SafeCraftAction(craft, step, highPrioProgress), "mid pre quality: high-prio progress");
+
+        // check for IQ-friendly conditions
         if (step.IQStacks < maxIQStacks && SolveMidHighPriorityIQ(cfg, craft, step, allowPrecise) is var highPrioIQ && highPrioIQ != Skills.None)
             return new(highPrioIQ, "mid pre quality: high-prio iq");
         if (step.Condition == Condition.Good && CU(craft, step, Skills.TricksOfTrade))
             return new(Skills.TricksOfTrade, "mid pre quality: high-prio tricks"); // progress/iq below decided not to use good, so spend it on tricks
         // TODO: observe on good omen?..
 
-        // ok, durability management time
-        var duraAction = SolveMidDurabilityPreQuality(cfg, craft, step, availableCP, allowObserveOnLowDura, progressDeficit > 0);
-        if (duraAction != Skills.None)
-            return new(duraAction, "mid pre quality: durability");
-
-        // dura is fine - see what else can we do
-        if (step.Condition == Condition.GoodOmen && cfg.MidAllowVenerationGoodOmen && cfg.MidAllowIntensive == ExpertSolverSettings.MidAllowIntensiveSetting.MidAllowIntensiveVeneration && progressDeficit > Simulator.CalculateProgress(craft, step, Skills.IntensiveSynthesis) && CU(craft, step, Skills.Veneration))
+        // see what else can we do
+        if (step.Condition == Condition.GoodOmen && cfg.MidAllowVenerationGoodOmen && cfg.MidAllowIntensive != ExpertSolverSettings.MidAllowIntensiveSetting.MidNoIntensive && progressDeficit > Simulator.CalculateProgress(craft, step, Skills.IntensiveSynthesis) && CU(craft, step, Skills.Veneration))
             return new(Skills.Veneration, "mid pre quality: good omen vene"); // next step would be intensive, vene is a good choice here
-
-        if (cfg.MidFinishProgressBeforeQuality && progressDeficit > 0 && step.VenerationLeft == 0)
-            return new(Skills.Veneration, "mid pre quality: progress finish vene");
 
         if (step.IQStacks < maxIQStacks && !venerationActive)
         {
@@ -269,7 +274,7 @@ public class ExpertSolver : Solver
     {
         // no buffs up, this is a good chance to get some dura back if needed, and then get some iq/progress/quality, maybe start dedicated progress/quality phase
         // first see whether we have some nice conditions to exploit for progress or iq
-        if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, true, progressDeficit, cfg.MidFinishProgressBeforeQuality) is var highPrioProgress && highPrioProgress != Skills.None)
+        if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, true, progressDeficit, cfg) is var highPrioProgress && highPrioProgress != Skills.None)
             return new(SafeCraftAction(craft, step, highPrioProgress), "mid start quality: high-prio progress");
         if (step.Condition == Condition.Good && CU(craft, step, Skills.TricksOfTrade))
             return new(Skills.TricksOfTrade, "mid start quality: high-prio tricks");
@@ -285,6 +290,7 @@ public class ExpertSolver : Solver
         if (duraAction != Skills.None)
             return new(duraAction, "mid start quality: durability");
 
+        // TODO: it's very unlikely that trained perfection would still be up here, but maybe it should be handled?
         // dura is fine - see what else can we do
         if (step.Condition == Condition.GoodOmen && cfg.MidAllowVenerationGoodOmen && progressDeficit > Simulator.CalculateProgress(craft, step, Skills.IntensiveSynthesis) && CU(craft, step, Skills.Veneration))
             return new(Skills.Veneration, "mid start quality: good omen vene"); // next step would be intensive, vene is a good choice here
@@ -517,9 +523,13 @@ public class ExpertSolver : Solver
         if (step.ManipulationLeft > 0 && step.Durability + 5 > craft.CraftDurability)
             return Skills.None; // we're high on dura, doing anything here will waste manip durability
 
+        // primed manipulation is a reasonable action (check this before pliant in case the craft can't proc pliant)
+        if (cfg.MidPrimedManipPreQuality && step.Condition == Condition.Primed && step.ManipulationLeft == 0 && availableCP >= Simulator.GetCPCost(step, Skills.Manipulation) && CU(craft, step, Skills.Manipulation))
+            return Skills.Manipulation;
+
         if (step.Condition == Condition.Pliant || !craft.ConditionFlags.HasFlag(ConditionFlags.Pliant))
         {
-            // see if we can utilize pliant for repairs
+            // see if we can utilize pliant for repairs, or force if pliant will never come up
             if (step.Durability + immaculateDuraMinimum + (step.ManipulationLeft > 0 ? 5 : 0) <= craft.CraftDurability && CU(craft, step, Skills.ImmaculateMend))
                 return Skills.ImmaculateMend;
             if (step.ManipulationLeft <= 1 && availableCP >= Simulator.GetCPCost(step, Skills.Manipulation) && CU(craft, step, Skills.Manipulation))
@@ -528,10 +538,6 @@ public class ExpertSolver : Solver
                 return Skills.MastersMend;
             return Skills.None;
         }
-
-        // primed manipulation is a reasonable action too
-        if (cfg.MidPrimedManipPreQuality && step.Condition == Condition.Primed && step.ManipulationLeft == 0 && availableCP >= Simulator.GetCPCost(step, Skills.Manipulation) && CU(craft, step, Skills.Manipulation))
-            return Skills.Manipulation;
 
         var criticalDurabilityThreshold = (step.Condition is Condition.Sturdy or Condition.Robust) ? 5 : 10;
         var wantObserveOnLowDura = allowObserveOnLowDura && step.Condition switch
@@ -546,11 +552,25 @@ public class ExpertSolver : Solver
             // we really need to do something about durability, we don't even have useful actions to perform
             if (step.Condition == Condition.Good && CU(craft, step, Skills.TricksOfTrade))
                 return Skills.TricksOfTrade;
-            if (step.ManipulationLeft > 0 && CU(craft, step, Skills.Observe))
-                return Skills.Observe; // just regen a bit...
-            // TODO: consider careful observation to bait pliant - this sounds much worse than using them to try baiting good byregot
-            if (cfg.MidBaitPliantWithObservePreQuality && craft.ConditionFlags.HasFlag(ConditionFlags.Pliant) && CU(craft, step, Skills.Observe) && step.RemainingCP > Skills.Observe.StandardCPCost() + Skills.Manipulation.StandardCPCost() / 2)
-                return Skills.Observe; // try baiting pliant - this will save us 48cp at the cost of ~7+24cp
+
+            // trained perfection is a valid alternate observe here if we haven't used it yet
+            if (step.ManipulationLeft > 0) 
+            {
+                // just regen a bit...
+                if (step.TrainedPerfectionAvailable && CU(craft, step, Skills.TrainedPerfection))
+                    return Skills.TrainedPerfection;
+                if (CU(craft, step, Skills.Observe))
+                    return Skills.Observe; 
+            }
+            if (cfg.MidBaitPliantWithObservePreQuality && craft.ConditionFlags.HasFlag(ConditionFlags.Pliant))
+            {
+                // try baiting pliant - this will save us 48cp at the cost of ~7+24cp
+                // TODO: consider careful observation to bait pliant - this sounds much worse than using them to try baiting good byregot
+                if (step.TrainedPerfectionAvailable && CU(craft, step, Skills.TrainedPerfection) && step.RemainingCP > (Skills.Manipulation.StandardCPCost() / 2))
+                    return Skills.TrainedPerfection;
+                if (CU(craft, step, Skills.Observe) && step.RemainingCP > Skills.Observe.StandardCPCost() + (Skills.Manipulation.StandardCPCost() / 2))
+                    return Skills.Observe;
+            }
             if (step.Durability <= criticalDurabilityThreshold && CU(craft, step, Skills.Manipulation))
                 return Skills.Manipulation; // bait the bullet and manip on normal
         }
@@ -621,24 +641,39 @@ public class ExpertSolver : Solver
         return effectiveDura <= 10 ? 0 : estCPNeededToUtilizeCurrentDura + extraHalfCombos * estHalfComboCost;
     }
 
-    private static Skills SolveMidHighPriorityProgress(CraftState craft, StepState step, bool allowIntensive, int progressDeficit, bool progBeforeQual)
+    private static Skills SolveMidHighPriorityProgress(CraftState craft, StepState step, bool allowIntensive, int progressDeficit, ExpertSolverSettings cfg)
     {
         // high-priority progress actions (exploit conditions)
-        if (step.Condition == Condition.Good && allowIntensive && step.Durability > Simulator.GetDurabilityCost(step, Skills.IntensiveSynthesis) && CU(craft, step, Skills.IntensiveSynthesis))
+        // intensive is worth spending TP on if enabled by current settings
+        if (step.Condition == Condition.Good && allowIntensive && (!step.TrainedPerfectionActive || !cfg.MidUseTPForQuality) && step.Durability > Simulator.GetDurabilityCost(step, Skills.IntensiveSynthesis) && CU(craft, step, Skills.IntensiveSynthesis))
             return Skills.IntensiveSynthesis;
 
-        if (craft.ConditionFlags.HasFlag(ConditionFlags.Malleable) || step.MaterialMiracleActive)
+        if (step.TrainedPerfectionActive)
         {
-            if (step.TrainedPerfectionAvailable && CU(craft, step, Skills.TrainedPerfection))
-                return Skills.TrainedPerfection;
-            if (step.TrainedPerfectionActive && step.Condition is not Condition.Malleable && step.ObserveCounter < 2 && CU(craft, step, Skills.Observe))
+            // skip the rest of the progress logic entirely if forcing TP to be spent on prep
+            if (cfg.MidUseTPForQuality)
+                return Skills.None;
+
+            // *don't* spend TP on Good outside of intensive, it should prioritize prep or tricks; even if forcing progress we'd rather get the free CP
+            if (step.Condition == Condition.Good)
+                return (cfg.MidFinishProgressBeforeQuality && CU(craft, step, Skills.TricksOfTrade)) ? Skills.TricksOfTrade : Skills.None;
+
+            // do spend TP on a 0-dura groundwork for malleable, or if it will finish the deficit regardless
+            var isGWEnough = Simulator.CalculateProgress(craft, step, Skills.Groundwork) >= progressDeficit;
+            if ((step.Condition == Condition.Malleable || isGWEnough) && CU(craft, step, Skills.Groundwork))
+                return Skills.Groundwork;
+
+            // bait malleable per the setting; we've already accounted for conditions we don't want to miss
+            // TODO: adjust the setting so the baited condition can spend TP on either progress or IQ, whichever comes up first
+            if (step.ObserveCounter < cfg.MidMaxBaitStepsForTP && (craft.ConditionFlags.HasFlag(ConditionFlags.Malleable) || step.MaterialMiracleActive) && CU(craft, step, Skills.Observe))
                 return Skills.Observe;
-            if (step.TrainedPerfectionActive && CU(craft, step, Skills.Groundwork))
+
+            if (CU(craft, step, Skills.Groundwork))
                 return Skills.Groundwork;
         }
 
-        // if we're forcing progress, see if a safe crafting action can get us within striking distance before resorting to rapid
-        if (progBeforeQual && Simulator.CalculateProgress(craft, step, Skills.PrudentSynthesis) >= progressDeficit)
+        // see if a safe crafting action can get us within striking distance before resorting to rapid
+        if (Simulator.CalculateProgress(craft, step, Skills.PrudentSynthesis) >= progressDeficit)
         {
             // normally careful is slightly better progress per cp/dura, but we know this will be the penultimate progress action, so prudent to save dura
             if (step.Durability > Simulator.GetDurabilityCost(step, Skills.PrudentSynthesis) && CU(craft, step, Skills.PrudentSynthesis))
@@ -649,37 +684,91 @@ public class ExpertSolver : Solver
                 return Skills.BasicSynthesis;
         }
 
-        // if forcing progress or there's a nice condition for it, use rapid; otherwise no progress right now
-        if ((progBeforeQual || (step.Condition is Condition.Centered or Condition.Sturdy or Condition.Robust or Condition.Malleable)) && step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && !step.TrainedPerfectionActive && CU(craft, step, Skills.RapidSynthesis))
+        // if we're forcing progress, the logic differs quite a bit
+        if (cfg.MidFinishProgressBeforeQuality)
+        {
+            // similarly, if a non-malleable groundwork will get us there, set up TP for it instead of risking rapid...
+            var willGWBeEnough = (Simulator.BaseProgress(craft) * 360 / 100) >= progressDeficit;
+            if (!cfg.MidUseTPForQuality && step.TrainedPerfectionAvailable && willGWBeEnough && CU(craft, step, Skills.TrainedPerfection))
+                return Skills.TrainedPerfection;
+
+            // ...and while we favor rapid if it has a favorable condition...
+            if (step.Condition is Condition.Centered or Condition.Sturdy or Condition.Robust or Condition.Malleable && step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && CU(craft, step, Skills.RapidSynthesis))
+                return Skills.RapidSynthesis;
+
+            // ...we should still set up TP->groundwork before rapid on any other condition
+            if (!cfg.MidUseTPForQuality && step.TrainedPerfectionAvailable && CU(craft, step, Skills.TrainedPerfection))
+                return Skills.TrainedPerfection;
+
+            // now it's time to risk it for the progress biscuit, even on bad conditions
+            if (step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && CU(craft, step, Skills.RapidSynthesis))
+                return Skills.RapidSynthesis;
+        }
+
+        // use rapid if there's a nice condition for it
+        if (step.Condition is Condition.Centered or Condition.Sturdy or Condition.Robust or Condition.Malleable && step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && CU(craft, step, Skills.RapidSynthesis))
             return Skills.RapidSynthesis;
+
+        if (step.TrainedPerfectionAvailable && !cfg.MidUseTPForQuality)
+        {
+            // don't burn a Good on setting up TP; if we didn't already use it on intensive, let the quality solver figure it out
+            if (step.Condition == Condition.Good)
+                return Skills.None;
+
+            // set up TP->groundwork
+            if (step.TrainedPerfectionAvailable && CU(craft, step, Skills.TrainedPerfection))
+                return Skills.TrainedPerfection;
+        }
+
         return Skills.None;
     }
 
     private static Skills SolveMidHighPriorityIQ(ExpertSolverSettings cfg, CraftState craft, StepState step, bool allowPrecise)
     {
+        // high-priority IQ-building actions (exploit conditions)
+        // precise is worth spending TP on if enabled by current settings
         if (step.Condition is Condition.Good or Condition.Excellent && allowPrecise && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreciseTouch) && CU(craft, step, Skills.PreciseTouch))
             return Skills.PreciseTouch;
-        if (step.TrainedPerfectionAvailable && CU(craft, step, Skills.TrainedPerfection))
-            return Skills.TrainedPerfection;
-        if (step.TrainedPerfectionActive && step.InnovationLeft == 0 && CU(craft, step, Skills.Innovation))
-            return Skills.Innovation;
-        if (step.TrainedPerfectionActive && step.GreatStridesLeft == 0 && CU(craft, step, Skills.GreatStrides))
-            return Skills.GreatStrides;
-        if (step.GreatStridesLeft > 1 && step.InnovationLeft > 1 && step.Condition is not Condition.Good)
-            return Skills.Observe; // try and bait good
-        if (step.TrainedPerfectionActive && CU(craft, step, Skills.PreparatoryTouch))
-            return Skills.PreparatoryTouch;
-        if (step.Condition == Condition.Centered && cfg.MidAllowCenteredHasty && step.Durability > Simulator.GetDurabilityCost(step, Skills.DaringTouch) && CU(craft, step, Skills.DaringTouch))
-            return Skills.DaringTouch;
-        if (step.Condition == Condition.Centered && cfg.MidAllowCenteredHasty && step.Durability > Simulator.GetDurabilityCost(step, Skills.HastyTouch) && CU(craft, step, Skills.HastyTouch))
-            return Skills.HastyTouch;
-        if ((step.Condition is Condition.Sturdy or Condition.Robust) && cfg.MidAllowSturdyPreсise && (step.HeartAndSoulActive || step.HeartAndSoulAvailable) && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreciseTouch))
+
+        if (step.TrainedPerfectionActive)
+        {
+            if (step.Condition is Condition.Good or Condition.Pliant && CU(craft, step, Skills.PreparatoryTouch))
+                return Skills.PreparatoryTouch;
+
+            // bait good or pliant per the setting
+            if (step.ObserveCounter < cfg.MidMaxBaitStepsForTP && CU(craft, step, Skills.Observe))
+                return Skills.Observe;
+
+            // TODO: check for or force inno/gs? seems not worth it at low iq stacks
+            if (CU(craft, step, Skills.PreparatoryTouch))
+                return Skills.PreparatoryTouch;
+        }
+
+        // use hasty/daring on favorable conditions, but only if the appropriate settings are enabled
+        var hastyAction = CU(craft, step, Skills.DaringTouch) ? Skills.DaringTouch : Skills.HastyTouch;
+        if (step.Condition == Condition.Centered && cfg.MidAllowCenteredHasty && step.Durability > Simulator.GetDurabilityCost(step, hastyAction) && CU(craft, step, hastyAction))
+            return hastyAction;
+
+        // if not using hasty on sturdy/robust, start or continue a touch combo - worst case it's a discounted prudent
+        // TODO: worth using prep here on high enough iq stacks?
+        if (step.Condition is Condition.Sturdy or Condition.Robust && step.Durability > Simulator.GetDurabilityCost(step, hastyAction) && CU(craft, step, hastyAction))
+            return cfg.MidAllowSturdyHasty ? hastyAction : Simulator.NextTouchCombo(step, craft);
+
+        // force h&s->precise on sturdy/robust if enabled
+        if (step.Condition is Condition.Sturdy or Condition.Robust && cfg.MidAllowSturdyPreсise && (step.HeartAndSoulActive || step.HeartAndSoulAvailable) && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreciseTouch))
             return step.HeartAndSoulActive && CU(craft, step, Skills.PreciseTouch) ? Skills.PreciseTouch : Skills.HeartAndSoul;
-        // Fix the issue where any hasty touch > sturdy condition would use hasty touch instead of daring touch with cfg.MidAllowSturdyHasty set
-        if ((step.Condition is Condition.Sturdy or Condition.Robust) && step.Durability > Simulator.GetDurabilityCost(step, Skills.DaringTouch) && CU(craft, step, Skills.DaringTouch))
-            return cfg.MidAllowSturdyHasty ? Skills.DaringTouch : Simulator.NextTouchCombo(step, craft);
-        if ((step.Condition is Condition.Sturdy or Condition.Robust) && step.Durability > Simulator.GetDurabilityCost(step, Skills.HastyTouch))
-            return cfg.MidAllowSturdyHasty ? Skills.HastyTouch : Simulator.NextTouchCombo(step, craft);
+
+        if (step.TrainedPerfectionAvailable)
+        {
+            // don't burn a Good on setting up TP, it's leaving free CP on the table
+            if (step.Condition == Condition.Good)
+                return Skills.None;
+
+            // set up TP->prep
+            if (step.TrainedPerfectionAvailable && CU(craft, step, Skills.TrainedPerfection))
+                return Skills.TrainedPerfection;
+        }
+
         return Skills.None;
     }
 
