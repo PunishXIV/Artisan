@@ -352,6 +352,7 @@ internal static class SimulatorUIVeynVersion
             craft.CraftConditionProbabilities[(int)Condition.Malleable] = manyConditions ? 0.10f : 0.12f;
             craft.CraftConditionProbabilities[(int)Condition.Primed] = manyConditions ? 0.12f : 0.15f;
             craft.CraftConditionProbabilities[(int)Condition.GoodOmen] = 0.12f;
+            craft.CraftConditionProbabilities[(int)Condition.Robust] = 0.12f;
             for (Condition i = Condition.Good; i < Condition.Unknown; ++i)
                 if ((potentialConditions & (1 << (int)i)) == 0)
                     craft.CraftConditionProbabilities[(int)i] = 0;

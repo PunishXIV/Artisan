@@ -29,6 +29,8 @@ public class ExpertSolverSettings
     public bool MidBaitPliantWithObserveAfterIQ = true; // if true, when very low on durability and without manip active after iq has 10 stacks, we use observe rather than normal manip or inno+finnesse
     public bool MidPrimedManipPreQuality = true; // if true, allow using primed manipulation during pre-quality phase
     public bool MidPrimedManipAfterIQ = true; // if true, allow using primed manipulation during after iq has 10 stacks
+    public bool MidUseTPForQuality = false; // if true, trained perfection will be used on prep touch instead of groundwork
+    public int MidMaxBaitStepsForTP = 0; // how many observes should be used to bait favorable conditions for trained perfection; 0 to disable
     public enum MidKeepHighDuraSetting  // what to do in pre-quality when dura is starting to run low
     {
         MidKeepHighDuraUnbuffed,        // fish for procs with observe to conserve dura, as long as veneration isn't up
@@ -135,6 +137,10 @@ public class ExpertSolverSettings
                 ImGui.Dummy(new Vector2(0, 5f));
                 ImGui.TextWrapped($"General");
                 ImGui.Indent();
+                changed |= ImGui.Checkbox($"Save {Skills.TrainedPerfection.NameOfAction()} for {Skills.PreparatoryTouch.NameOfAction()} instead of {Skills.Groundwork.NameOfAction()}", ref MidUseTPForQuality);
+                ImGui.PushItemWidth(150);
+                changed |= ImGui.SliderInt($"{Skills.Observe.NameOfAction()} this many times for {ConditionString.ToLower()} during {Skills.TrainedPerfection.NameOfAction()}  (0 to disable)###MidMaxBaitStepsForTP", ref MidMaxBaitStepsForTP, 0, 5);
+                ImGuiComponents.HelpMarker($"Fishes for ● {Condition.Malleable.ToLocalizedString()} when {Skills.TrainedPerfection.NameOfAction()} is being used for {Skills.Groundwork.NameOfAction()}, or ● {Condition.Good.ToLocalizedString()}/{Condition.Pliant.ToLocalizedString()} if it's being used for {Skills.PreparatoryTouch.NameOfAction()}.");
                 changed |= ImGui.Checkbox($"When {DurabilityString.ToLower()} is critical, use {Skills.Observe.NameOfAction()} to try and proc a favorable {ConditionString.ToLower()} for {Skills.Manipulation.NameOfAction()}", ref MidBaitPliantWithObservePreQuality);
                 ImGuiComponents.HelpMarker($"Fishes for ● {Condition.Pliant.ToLocalizedString()} (and ● {Condition.Primed.ToLocalizedString()} if the appropriate option is enabled.) If disabled, {Skills.Manipulation.NameOfAction()} will be used immediately regardless of {ConditionString.ToLower()}.");
                 changed |= ImGui.Checkbox($"Use {Skills.Manipulation.NameOfAction()} during ● {Condition.Primed.ToLocalizedString()}", ref MidPrimedManipPreQuality);
@@ -187,14 +193,14 @@ public class ExpertSolverSettings
                 ImGuiComponents.HelpMarker($"{Skills.IntensiveSynthesis.NameOfAction()} takes priority with {ProgressString.ToLower()} remaining, unless disabled by other settings. If both options are disabled, ● {Condition.Good.ToLocalizedString()} will be used on {Skills.TricksOfTrade.NameOfAction()}.");
                 ImGui.TextWrapped($"Use {Skills.HeartAndSoul.NameOfAction()} to force {Skills.PreciseTouch.NameOfAction()}:");
                 ImGui.Indent();
-                changed |= ImGui.Checkbox($"When ● {Condition.Sturdy.ToLocalizedString()}", ref MidAllowSturdyPreсise);
+                changed |= ImGui.Checkbox($"When ● {Condition.Sturdy.ToLocalizedString()}/{Condition.Robust.ToLocalizedString()}", ref MidAllowSturdyPreсise);
                 ImGui.PushItemWidth(250);
                 changed |= ImGui.SliderInt($"At this many {Buffs.InnerQuiet.NameOfBuff()} stacks (10 to disable)###MidMinIQForHSPrecise", ref MidMinIQForHSPrecise, 0, 10);
                 ImGui.Unindent();
                 ImGui.TextWrapped($"Use {Skills.HastyTouch.NameOfAction()} and {Skills.DaringTouch.NameOfAction()}:");
                 ImGui.Indent();
                 changed |= ImGui.Checkbox($"When ● {Condition.Centered.ToLocalizedString()} (85% success, 10 {DurabilityString.ToLower()})", ref MidAllowCenteredHasty);
-                changed |= ImGui.Checkbox($"When ● {Condition.Sturdy.ToLocalizedString()} (60% success, 5 {DurabilityString.ToLower()})", ref MidAllowSturdyHasty);
+                changed |= ImGui.Checkbox($"When ● {Condition.Sturdy.ToLocalizedString()}/{Condition.Robust.ToLocalizedString()} (60% success, 5 {DurabilityString.ToLower()})", ref MidAllowSturdyHasty);
                 ImGui.Unindent();
                 ImGui.Unindent();
                 ImGui.Dummy(new Vector2(0, 5f));
@@ -230,7 +236,7 @@ public class ExpertSolverSettings
                 ImGui.TextWrapped($"Use {Skills.PreparatoryTouch.NameOfAction()}:");
                 ImGui.Indent();
                 changed |= ImGui.Checkbox($"Under ● {Condition.Good.ToLocalizedString()} + {Buffs.Innovation.NameOfBuff()} + {Buffs.GreatStrides.NameOfBuff()}", ref MidAllowGoodPrep);
-                changed |= ImGui.Checkbox($"Under ● {Condition.Sturdy.ToLocalizedString()} + {Buffs.Innovation.NameOfBuff()}", ref MidAllowSturdyPrep);
+                changed |= ImGui.Checkbox($"Under ● {Condition.Sturdy.ToLocalizedString()}/{Condition.Robust.ToLocalizedString()} + {Buffs.Innovation.NameOfBuff()}", ref MidAllowSturdyPrep);
                 ImGui.Unindent();
                 changed |= ImGui.Checkbox($"Use {Skills.GreatStrides.NameOfAction()} before non-finisher {QualityString.ToLower()} combos", ref MidGSBeforeInno);
                 ImGuiComponents.HelpMarker($"ex. {Buffs.Innovation.NameOfBuff()} → {Skills.Observe.NameOfAction()} → {Skills.AdvancedTouch.NameOfAction()}. Enabling this uses more CP but less {DurabilityString.ToLower()}, and may help avoid a usage of an expensive {DurabilityString.ToLower()}-related action.");
