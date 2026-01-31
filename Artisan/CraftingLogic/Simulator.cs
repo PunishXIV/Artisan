@@ -35,6 +35,8 @@ public static class Simulator
         SucceededSomeQuality,
         [Description($"Craft has completed, no quality required")]
         SucceededNoQualityReq,
+        [Description($"Craft has completed, quality required met")]
+        SucceededMetQualityReq,
 
         Count
     }
@@ -103,8 +105,13 @@ public static class Simulator
         }
         else
         {
-            if (craft.CraftRequiredQuality > 0 && step.Quality < craft.CraftRequiredQuality)
+            if (craft.CraftRequiredQuality > 0)
+            {
+                if (step.Quality < craft.CraftRequiredQuality)
                 return CraftStatus.FailedMinQuality;
+
+                return CraftStatus.SucceededMetQualityReq;
+            }
 
             return CraftStatus.SucceededNoQualityReq;
         }
@@ -132,6 +139,7 @@ public static class Simulator
             CraftStatus.SucceededMaxQuality => $"Craft completed with full quality in {time.TotalSeconds:f0}s!",
             CraftStatus.SucceededSomeQuality => $"Craft completed but didn't max out quality ({hq}%) in {time.TotalSeconds:f0}s",
             CraftStatus.SucceededNoQualityReq => $"Craft completed, no quality required in {time.TotalSeconds:f0}s!",
+            CraftStatus.SucceededMetQualityReq => $"Craft completed and minimum quality required met in {time.TotalSeconds:f0}s!",
             CraftStatus.Count => "You shouldn't be able to see this. Report it please.",
             _ => "You shouldn't be able to see this. Report it please.",
         };
@@ -148,6 +156,7 @@ public static class Simulator
             CraftStatus.SucceededMaxQuality => ImGuiColors.ParsedGreen,
             CraftStatus.SucceededSomeQuality => new Vector4(1 - (hq / 100f), 0 + (hq / 100f), 1 - (hq / 100f), 255),
             CraftStatus.SucceededNoQualityReq => ImGuiColors.ParsedGreen,
+            CraftStatus.SucceededMetQualityReq => ImGuiColors.ParsedGreen,
             CraftStatus.Count => ImGuiColors.DalamudWhite,
             _ => ImGuiColors.DalamudWhite,
         };
