@@ -62,7 +62,8 @@ public class MacroSolver : Solver, ICraftValidator
                 (s.ExcludePliant && step.Condition == Condition.Pliant) ||
                 (s.ExcludeMalleable && step.Condition == Condition.Malleable) ||
                 (s.ExcludePrimed && step.Condition == Condition.Primed) ||
-                (s.ExcludeGoodOmen && step.Condition == Condition.GoodOmen))
+                (s.ExcludeGoodOmen && step.Condition == Condition.GoodOmen) ||
+                (s.ExcludeRobust && step.Condition == Condition.Robust))
             {
                 if (s.ReplaceOnExclude)
                 {
