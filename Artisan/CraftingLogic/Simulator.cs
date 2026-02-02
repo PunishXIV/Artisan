@@ -66,7 +66,7 @@ public static class Simulator
             TrainedPerfectionAvailable = craft.StatLevel >= MinLevel(Skills.TrainedPerfection),
             Condition = Condition.Normal,
             MaterialMiracleCharges = (uint)(craft.MissionHasMaterialMiracle ? 1 : 0),
-            SteadyHandCharges = (uint)(craft.MissionHasSteadyHand ? 1 : 0),
+            SteadyHandCharges = craft.MissionHasSteadyHand ? 2 : 0,
         };
 
     public static CraftStatus Status(CraftState craft, StepState step)

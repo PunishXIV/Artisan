@@ -53,12 +53,12 @@ namespace Artisan.CraftingLogic.Solvers
 
             if (CLIExists() && !Tasks.ContainsKey(key))
             {
-                P.Config.RaphaelSolverCacheV4.TryRemove(key, out _);
+                P.Config.RaphaelSolverCacheV5.TryRemove(key, out _);
 
                 Svc.Log.Information("Spawning Raphael process");
 
                 var manipulation = craft.UnlockedManipulation ? "--manipulation" : "";
-                var itemText = $"--custom-recipe {craft.LevelTable.RowId} {craft.CraftProgress} {(craft.CraftCollectible ? craft.CraftQualityMin3 : craft.CraftQualityMax)} {craft.CraftDurability} {(craft.CraftExpert ? "1" : "0")}";
+                var itemText = $"--custom-recipe {craft.LevelTable.RowId} {craft.CraftProgress} {(craft.CraftCollectible ? craft.CraftQualityMin3 : craft.CraftQualityMax)} {craft.CraftDurability} {(craft.CraftExpert ? "1" : "0")} --stellar-steady-hand {craft.CurrentSteadyHandCharges}";
                 var extraArgsBuilder = new StringBuilder();
 
                 extraArgsBuilder.Append($"--initial {craft.InitialQuality} "); // must always have a space after
@@ -136,11 +136,11 @@ namespace Artisan.CraftingLogic.Solvers
                     Svc.Log.Information("Raphael process completed, output generated");
                     var rng = new Random();
                     var ID = rng.Next(50001, 10000000);
-                    while (P.Config.RaphaelSolverCacheV4.Any(kv => kv.Value.ID == ID))
+                    while (P.Config.RaphaelSolverCacheV5.Any(kv => kv.Value.ID == ID))
                         ID = rng.Next(50001, 10000000);
 
                     var cleansedOutput = output.Replace("[", "").Replace("]", "").Replace("\"", "").Split(", ").Select(x => int.TryParse(x, out int n) ? n : 0);
-                    P.Config.RaphaelSolverCacheV4[key] = new MacroSolverSettings.Macro()
+                    P.Config.RaphaelSolverCacheV5[key] = new MacroSolverSettings.Macro()
                     {
                         ID = ID,
                         Name = key,
@@ -157,7 +157,7 @@ namespace Artisan.CraftingLogic.Solvers
                     };
 
                     Svc.Log.Information("Raphael macro generated and stored in cache.");
-                    if (P.Config.RaphaelSolverCacheV4[key] == null || P.Config.RaphaelSolverCacheV4[key].Steps.Count == 0)
+                    if (P.Config.RaphaelSolverCacheV5[key] == null || P.Config.RaphaelSolverCacheV5[key].Steps.Count == 0)
                     {
                         Svc.Log.Error($"Raphael failed to generate a valid macro. This could be one of the following reasons:" +
                             $"\n- If you are not running Windows, Raphael may not be compatible with your OS." +
@@ -240,7 +240,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         public static string GetKey(CraftState craft)
         {
-            return $"{craft.CraftLevel}/{craft.CraftProgress}/{craft.CraftQualityMax}/{craft.CraftDurability}-{craft.StatCraftsmanship}/{craft.StatControl}/{craft.StatCP}-{(craft.CraftExpert ? "Ex" : "St")}/{craft.InitialQuality}/{(craft.Specialist ? "Sp" : "Re")}";
+            return $"{craft.CraftLevel}/{craft.CraftProgress}/{craft.CraftQualityMax}/{craft.CraftDurability}-{craft.StatCraftsmanship}/{craft.StatControl}/{craft.StatCP}-{(craft.CraftExpert ? "Ex" : "St")}/{craft.InitialQuality}/{(craft.Specialist ? "Sp" : "Re")}/Steady{craft.CurrentSteadyHandCharges}";
         }
 
         public static RaphaelSolutionConfig GetConfigFromTempOrDefault(CraftState craft)
@@ -293,7 +293,7 @@ namespace Artisan.CraftingLogic.Solvers
         {
             var thisKey = GetKey(craft);
             raphaelSolutionConfig = null;
-            var sol = P.Config.RaphaelSolverCacheV4.FirstOrNull(x => x.Key == thisKey);
+            var sol = P.Config.RaphaelSolverCacheV5.FirstOrNull(x => x.Key == thisKey);
             if (sol != null)
             {
                 raphaelSolutionConfig = sol.Value.Value;
@@ -475,9 +475,9 @@ namespace Artisan.CraftingLogic.Solvers
 
                 ImGuiComponents.HelpMarker($"If a solution takes longer than this many minutes to generate, it will cancel the generation task.");
 
-                if (ImGui.Button($"Clear raphael macro cache (Currently {P.Config.RaphaelSolverCacheV4.Count} stored)"))
+                if (ImGui.Button($"Clear raphael macro cache (Currently {P.Config.RaphaelSolverCacheV5.Count} stored)"))
                 {
-                    P.Config.RaphaelSolverCacheV4.Clear();
+                    P.Config.RaphaelSolverCacheV5.Clear();
                     changed |= true;
                 }
 

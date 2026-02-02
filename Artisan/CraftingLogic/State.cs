@@ -40,6 +40,7 @@ public record class CraftState
     public ConditionFlags ConditionFlags;
     public bool MissionHasMaterialMiracle;
     public bool MissionHasSteadyHand;
+    public int CurrentSteadyHandCharges;
     public int InitialQuality;
 
     public uint ItemId;
@@ -83,7 +84,7 @@ public record class StepState
     public uint MaterialMiracleCharges;
     public bool MaterialMiracleActive;
     public int ObserveCounter;
-    public uint SteadyHandCharges;
+    public int SteadyHandCharges;
     public int SteadyHandLeft;
 
     public override string ToString() => $"#{Index} {Condition}: {Progress}/{Quality}/{Durability}/{RemainingCP}; {BuffsString()}; Prev={PrevComboAction}{(PrevActionFailed ? " (failed)" : "")}";
