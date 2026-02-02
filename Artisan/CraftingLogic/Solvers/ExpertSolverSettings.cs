@@ -29,7 +29,22 @@ public class ExpertSolverSettings
     public bool MidBaitPliantWithObserveAfterIQ = true; // if true, when very low on durability and without manip active after iq has 10 stacks, we use observe rather than normal manip or inno+finnesse
     public bool MidPrimedManipPreQuality = true; // if true, allow using primed manipulation during pre-quality phase
     public bool MidPrimedManipAfterIQ = true; // if true, allow using primed manipulation during after iq has 10 stacks
-    public bool MidUseTPForQuality = false; // if true, trained perfection will be used on prep touch instead of groundwork
+    public enum MidUseTPSetting  // where to use trained perfection
+    {
+        MidUseTPGroundwork,        // use TP on groundwork for high-prio progress
+        MidUseTPPrepIQ,            // use TP on preparatory touch to build IQ stacks
+        MidUseTPEitherPreQuality,  // use TP on either of the options above, depending on which status comes up first (default groundwork)
+        MidUseTPPrepQuality        // use TP on prep touch after 10 IQ, with GS+Inno
+    }
+    public string GetMidUseTPSettingName(MidUseTPSetting value)
+        => value switch
+        {
+            MidUseTPSetting.MidUseTPGroundwork => $"(Early) {Skills.Groundwork.NameOfAction()}",
+            MidUseTPSetting.MidUseTPPrepIQ => $"(Early) {Skills.PreparatoryTouch.NameOfAction()} (build {Buffs.InnerQuiet.NameOfBuff()})",
+            MidUseTPSetting.MidUseTPEitherPreQuality => $"(Early) Either action based on {ConditionString.ToLower()}",
+            MidUseTPSetting.MidUseTPPrepQuality or _ => $"(Late) {Skills.PreparatoryTouch.NameOfAction()} at max {Buffs.InnerQuiet.NameOfBuff()} (focus {QualityString.ToLower()})",
+        };
+    public MidUseTPSetting MidUseTP = MidUseTPSetting.MidUseTPGroundwork;
     public int MidMaxBaitStepsForTP = 0; // how many observes should be used to bait favorable conditions for trained perfection; 0 to disable
     public enum MidKeepHighDuraSetting  // what to do in pre-quality when dura is starting to run low
     {
@@ -137,10 +152,24 @@ public class ExpertSolverSettings
                 ImGui.Dummy(new Vector2(0, 5f));
                 ImGui.TextWrapped($"General");
                 ImGui.Indent();
-                changed |= ImGui.Checkbox($"Save {Skills.TrainedPerfection.NameOfAction()} for {Skills.PreparatoryTouch.NameOfAction()} instead of {Skills.Groundwork.NameOfAction()}", ref MidUseTPForQuality);
+                ImGui.TextWrapped($"Use {Skills.TrainedPerfection.NameOfAction()} on:");
+                ImGuiComponents.HelpMarker($"The \"(Late)\" option will try to use {Skills.PreparatoryTouch.NameOfAction()} under {Buffs.Innovation.NameOfBuff()} and {Buffs.GreatStrides.NameOfBuff()}. \"Either action\" is most effective when paired with the {Skills.Observe.NameOfAction()} setting below, and will default to {Skills.Groundwork.NameOfAction()} on a neutral {ConditionString.ToLower()}.");
+                ImGui.PushItemWidth(400);
+                if (ImGui.BeginCombo("##midUseTPSetting", GetMidUseTPSettingName(MidUseTP)))
+                {
+                    foreach (MidUseTPSetting x in Enum.GetValues<MidUseTPSetting>())
+                    {
+                        if (ImGui.Selectable(GetMidUseTPSettingName(x)))
+                        {
+                            MidUseTP = x;
+                            changed = true;
+                        }
+                    }
+                    ImGui.EndCombo();
+                }
                 ImGui.PushItemWidth(150);
                 changed |= ImGui.SliderInt($"{Skills.Observe.NameOfAction()} this many times for {ConditionString.ToLower()} during {Skills.TrainedPerfection.NameOfAction()}  (0 to disable)###MidMaxBaitStepsForTP", ref MidMaxBaitStepsForTP, 0, 5);
-                ImGuiComponents.HelpMarker($"Fishes for ● {Condition.Malleable.ToLocalizedString()} when {Skills.TrainedPerfection.NameOfAction()} is being used for {Skills.Groundwork.NameOfAction()}, or ● {Condition.Good.ToLocalizedString()}/{Condition.Pliant.ToLocalizedString()} if it's being used for {Skills.PreparatoryTouch.NameOfAction()}.");
+                ImGuiComponents.HelpMarker($"Fishes for ● {Condition.Malleable.ToLocalizedString()} when {Skills.TrainedPerfection.NameOfAction()} is being used for {Skills.Groundwork.NameOfAction()}, or ● {Condition.Good.ToLocalizedString()}/{Condition.Pliant.ToLocalizedString()} for {Skills.PreparatoryTouch.NameOfAction()}.");
                 changed |= ImGui.Checkbox($"When {DurabilityString.ToLower()} is critical, use {Skills.Observe.NameOfAction()} to try and proc a favorable {ConditionString.ToLower()} for {Skills.Manipulation.NameOfAction()}", ref MidBaitPliantWithObservePreQuality);
                 ImGuiComponents.HelpMarker($"Fishes for ● {Condition.Pliant.ToLocalizedString()} (and ● {Condition.Primed.ToLocalizedString()} if the appropriate option is enabled.) If disabled, {Skills.Manipulation.NameOfAction()} will be used immediately regardless of {ConditionString.ToLower()}.");
                 changed |= ImGui.Checkbox($"Use {Skills.Manipulation.NameOfAction()} during ● {Condition.Primed.ToLocalizedString()}", ref MidPrimedManipPreQuality);
