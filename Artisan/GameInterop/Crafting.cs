@@ -40,7 +40,7 @@ public static unsafe class Crafting
         InvalidState, // we're in a state we probably shouldn't be, such as reloading the plugin mid-craft
     }
 
-    public static State CurState { get; private set; } = State.InvalidState;
+    public static State CurState { get; set; } = State.InvalidState;
     public static event Action<State>? StateChanged;
 
     public static Recipe? CurRecipe { get; private set; }

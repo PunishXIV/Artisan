@@ -147,16 +147,19 @@ public unsafe static class PreCrafting
             if (P.Config.DontEquipItems && needClassChange)
             {
                 DuoLog.Error($"Can't craft {recipe.ItemResult.Value.Name.ToDalamudString()}: wrong class, {requiredClass} needed");
+                PauseOrDisableModes();
                 return;
             }
             if (P.Config.DontEquipItems && needEquipItem)
             {
                 DuoLog.Error($"Can't craft {recipe.ItemResult.Value.Name.ToDalamudString()}: required item {recipe.ItemRequired.Value.Name} not equipped");
+                PauseOrDisableModes();
                 return;
             }
             if (P.Config.AbortIfNoFoodPot && needConsumables && !hasConsumables)
             {
                 MissingConsumablesMessage(recipe, config);
+                PauseOrDisableModes();
                 return;
             }
 
@@ -210,6 +213,15 @@ public unsafe static class PreCrafting
         {
             ex.Log();
         }
+    }
+
+    private static void PauseOrDisableModes()
+    {
+        if (Endurance.Enable)
+            Endurance.ToggleEndurance(false);
+
+        if (CraftingListUI.Processing)
+            CraftingListFunctions.Paused = true;
     }
 
     internal static void MissingConsumablesMessage(Recipe recipe, RecipeConfig? config)
