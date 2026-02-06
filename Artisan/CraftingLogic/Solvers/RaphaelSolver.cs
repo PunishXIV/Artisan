@@ -120,7 +120,7 @@ namespace Artisan.CraftingLogic.Solvers
                         Tasks.TryRemove(key, out var t);
                         if (Crafting.CurState is Crafting.State.WaitStart)
                         {
-                            DuoLog.Error("Raphael has timed out before a solution could be generated. Crafting will not start.");
+                            DuoLog.Error("Raphael has timed out or cancelled before a solution could be generated. Crafting will not start, please restart this craft.");
                             Crafting.CurState = Crafting.State.InvalidState;
                         }
                     }
