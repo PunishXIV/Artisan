@@ -92,7 +92,14 @@ namespace Artisan.UI
                     {
                         foreach (var t in RaphaelCache.Tasks)
                         {
-                            t.Value.Item1.Cancel();
+                            try
+                            {
+                                t.Value.Item1.Cancel();
+                            }
+                            catch (Exception e)
+                            {
+                                e.Log("Emergency button pushed but couldn't cancel?");
+                            }
                         }
                         RaphaelCache.Tasks.Clear();
                     }
