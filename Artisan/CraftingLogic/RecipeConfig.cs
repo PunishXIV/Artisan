@@ -55,12 +55,13 @@ public class RecipeConfig
     public bool RequiredPotionHQ => requiredPotion == Default ? P.Config.DefaultConsumables.requiredPotionHQ : requiredPotionHQ;
 
 
-    public string FoodName => requiredFood == Default ? $"{P.Config.DefaultConsumables.FoodName} (Default)" : RequiredFood == Disabled ? "Disabled" : $"{(RequiredFoodHQ ? " " : "")}{ConsumableChecker.Food.FirstOrDefault(x => x.Id == RequiredFood).Name}";
-    public string PotionName => requiredPotion == Default ? $"{P.Config.DefaultConsumables.PotionName} (Default)" : RequiredPotion == Disabled ? "Disabled" : $"{(RequiredPotionHQ ? " " : "")}{ConsumableChecker.Pots.FirstOrDefault(x => x.Id == RequiredPotion).Name}";
-    public string ManualName => requiredManual == Default ? $"{P.Config.DefaultConsumables.ManualName} (Default)" : RequiredManual == Disabled ? "Disabled" : $"{ConsumableChecker.Manuals.FirstOrDefault(x => x.Id == RequiredManual).Name}";
-    public string SquadronManualName => requiredSquadronManual == Default ? $"{P.Config.DefaultConsumables.SquadronManualName} (Default)" : RequiredSquadronManual == Disabled ? "Disabled" : $"{ConsumableChecker.SquadronManuals.FirstOrDefault(x => x.Id == RequiredSquadronManual).Name}";
+    public string FoodName => requiredFood == Default ? $"{P.Config.DefaultConsumables.FoodName} (Default)" : RequiredFood == Disabled ? "Disabled" : $"{(RequiredFoodHQ ? " " : "")}{ConsumableChecker.Food.FirstOrDefault(x => x.Id == RequiredFood).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredFood, RequiredFoodHQ)})";
+    public string PotionName => requiredPotion == Default ? $"{P.Config.DefaultConsumables.PotionName} (Default)" : RequiredPotion == Disabled ? "Disabled" : $"{(RequiredPotionHQ ? " " : "")}{ConsumableChecker.Pots.FirstOrDefault(x => x.Id == RequiredPotion).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredPotion, RequiredPotionHQ)})";
+    public string ManualName => requiredManual == Default ? $"{P.Config.DefaultConsumables.ManualName} (Default)" : RequiredManual == Disabled ? "Disabled" : $"{ConsumableChecker.Manuals.FirstOrDefault(x => x.Id == RequiredManual).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredManual, false)})";
+    public string SquadronManualName => requiredSquadronManual == Default ? $"{P.Config.DefaultConsumables.SquadronManualName} (Default)" : RequiredSquadronManual == Disabled ? "Disabled" : $"{ConsumableChecker.SquadronManuals.FirstOrDefault(x => x.Id == RequiredSquadronManual).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredManual, false)})";
 
-
+    [NonSerialized]
+    private float _largestName;
 
     public bool Draw(uint recipeId)
     {
@@ -73,6 +74,7 @@ public class RecipeConfig
         if (craft.InitialQuality == 0)
             craft.InitialQuality = Simulator.GetStartingQuality(recipe, false, craft.StatLevel);
         bool changed = false;
+        _largestName = Math.Max(Math.Max(Math.Max(ImGui.CalcTextSize(FoodName).X.Scale(), ImGui.CalcTextSize(PotionName).X.Scale()), ImGui.CalcTextSize(ManualName).X.Scale()), ImGui.CalcTextSize(SquadronManualName).X.Scale()) + 32f.Scale();
         changed |= DrawFood();
         changed |= DrawPotion();
         changed |= DrawManual();
@@ -88,11 +90,12 @@ public class RecipeConfig
         ImGuiEx.TextV("Food Usage:");
         ImGui.SameLine(130f.Scale());
         if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
+        else ImGui.PushItemWidth(_largestName);
         if (ImGui.BeginCombo("##foodBuff", FoodName))
         {
             if (this != P.Config.DefaultConsumables)
             {
-                if (ImGui.Selectable($"Default ({P.Config.DefaultConsumables.FoodName})"))
+                if (ImGui.Selectable($"{P.Config.DefaultConsumables.FoodName} (Default)"))
                 {
                     requiredFood = Default;
                     requiredFoodHQ = false;
@@ -107,7 +110,7 @@ public class RecipeConfig
             }
             foreach (var x in ConsumableChecker.GetFood(true))
             {
-                if (ImGui.Selectable($"{x.Name}"))
+                if (ImGui.Selectable($"{x.Name} (Qty: {ConsumableChecker.NumberOfConsumable(x.Id, false)})"))
                 {
                     requiredFood = x.Id;
                     requiredFoodHQ = false;
@@ -116,7 +119,7 @@ public class RecipeConfig
             }
             foreach (var x in ConsumableChecker.GetFood(true, true))
             {
-                if (ImGui.Selectable($" {x.Name}"))
+                if (ImGui.Selectable($" {x.Name} (Qty: {ConsumableChecker.NumberOfConsumable(x.Id, true)})"))
                 {
                     requiredFood = x.Id;
                     requiredFoodHQ = true;
@@ -134,11 +137,12 @@ public class RecipeConfig
         ImGuiEx.TextV("Medicine Usage:");
         ImGui.SameLine(130f.Scale());
         if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
+        else ImGui.PushItemWidth(_largestName);
         if (ImGui.BeginCombo("##potBuff", PotionName))
         {
             if (this != P.Config.DefaultConsumables)
             {
-                if (ImGui.Selectable($"Default ({P.Config.DefaultConsumables.PotionName})"))
+                if (ImGui.Selectable($"{P.Config.DefaultConsumables.PotionName} (Default)"))
                 {
                     requiredPotion = Default;
                     requiredPotionHQ = false;
@@ -153,7 +157,7 @@ public class RecipeConfig
             }
             foreach (var x in ConsumableChecker.GetPots(true))
             {
-                if (ImGui.Selectable($"{x.Name}"))
+                if (ImGui.Selectable($"{x.Name} (Qty: {ConsumableChecker.NumberOfConsumable(x.Id, false)})"))
                 {
                     requiredPotion = x.Id;
                     requiredPotionHQ = false;
@@ -162,7 +166,7 @@ public class RecipeConfig
             }
             foreach (var x in ConsumableChecker.GetPots(true, true))
             {
-                if (ImGui.Selectable($" {x.Name}"))
+                if (ImGui.Selectable($" {x.Name} (Qty: {ConsumableChecker.NumberOfConsumable(x.Id, true)})"))
                 {
                     requiredPotion = x.Id;
                     requiredPotionHQ = true;
@@ -180,11 +184,12 @@ public class RecipeConfig
         ImGuiEx.TextV("Manual Usage:");
         ImGui.SameLine(130f.Scale());
         if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
+        else ImGui.PushItemWidth(_largestName);
         if (ImGui.BeginCombo("##manualBuff", ManualName))
         {
             if (this != P.Config.DefaultConsumables)
             {
-                if (ImGui.Selectable($"Default ({P.Config.DefaultConsumables.ManualName})"))
+                if (ImGui.Selectable($"{P.Config.DefaultConsumables.ManualName} (Default)"))
                 {
                     requiredManual = Default;
                     changed = true;
@@ -197,7 +202,7 @@ public class RecipeConfig
             }
             foreach (var x in ConsumableChecker.GetManuals(true))
             {
-                if (ImGui.Selectable($"{x.Name}"))
+                if (ImGui.Selectable($"{x.Name} (Qty: {ConsumableChecker.NumberOfConsumable(x.Id, false)})"))
                 {
                     requiredManual = x.Id;
                     changed = true;
@@ -216,11 +221,12 @@ public class RecipeConfig
         ImGuiEx.TextV("Squadron Manual:");
         ImGui.SameLine(130f.Scale());
         if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
+        else ImGui.PushItemWidth(_largestName);
         if (ImGui.BeginCombo("##squadronManualBuff", SquadronManualName))
         {
             if (this != P.Config.DefaultConsumables)
             {
-                if (ImGui.Selectable($"Default ({P.Config.DefaultConsumables.SquadronManualName})"))
+                if (ImGui.Selectable($"{P.Config.DefaultConsumables.SquadronManualName} (Default)"))
                 {
                     requiredSquadronManual = Default;
                     changed = true;
@@ -233,7 +239,7 @@ public class RecipeConfig
             }
             foreach (var x in ConsumableChecker.GetSquadronManuals(true))
             {
-                if (ImGui.Selectable($"{x.Name}"))
+                if (ImGui.Selectable($"{x.Name} (Qty: {ConsumableChecker.NumberOfConsumable(x.Id, false)})"))
                 {
                     requiredSquadronManual = x.Id;
                     changed = true;

@@ -262,6 +262,11 @@ namespace Artisan.Autocraft
             return InventoryManager.Instance()->GetInventoryItemCount(requiredItem, requiredItemHQ) > 0;
         }
 
+        internal static int NumberOfConsumable(uint item, bool hq)
+        {
+            return InventoryManager.Instance()->GetInventoryItemCount(item, hq);
+        }
+
         public static bool SkippingConsumablesByConfig(Recipe recipe)
         {
             var craftLevel = recipe.RecipeLevelTable.Value.ClassJobLevel;
