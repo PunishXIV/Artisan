@@ -1,8 +1,10 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using ECommons.DalamudServices;
 using System.Collections.Generic;
 using TerraFX.Interop.Windows;
+using static Artisan.CraftingLogic.Solvers.ExpertSolverProfiles;
 using static Artisan.CraftingLogic.Solvers.ExpertSolverSettings;
 
 namespace Artisan.CraftingLogic.Solvers;
@@ -75,7 +77,16 @@ public class ExpertSolver : Solver
     const int immaculateDuraMinimum = 45;
     const int maxIQStacksForWasteNot = 4;
 
-    public override Recommendation Solve(CraftState craft, StepState step) => SolveNextStep(P.Config.ExpertSolverConfig, craft, step);
+    public ExpertProfile ActiveProfile = new();
+
+    public override void SetActiveProfile(ExpertProfile activeProfile)
+    {
+        Svc.Log.Information($"Setting expert profile ID {activeProfile.ID}");
+        ActiveProfile = activeProfile;
+    }
+
+    public override Recommendation Solve(CraftState craft, StepState step) => SolveNextStep(ActiveProfile.Settings, craft, step);
+    
 
     public static Recommendation SolveNextStep(ExpertSolverSettings cfg, CraftState craft, StepState step)
     {
@@ -125,7 +136,7 @@ public class ExpertSolver : Solver
         }
 
         // try to finish the craft
-        return new(SolveFinishProgress(craft, step, qualityTarget), isMid ? "finish emergency" : "finish");
+        return new(SolveFinishProgress(cfg, craft, step, qualityTarget), isMid ? "finish emergency" : "finish");
     }
 
     private static Skills SolveOpenerMuMe(ExpertSolverSettings cfg, CraftState craft, StepState step)
@@ -1017,7 +1028,7 @@ public class ExpertSolver : Solver
         return new(Skills.None, "fq: not enough"); // byregot is not enough
     }
 
-    private static Skills SolveFinishProgress(CraftState craft, StepState step, int qualityTarget)
+    private static Skills SolveFinishProgress(ExpertSolverSettings cfg, CraftState craft, StepState step, int qualityTarget)
     {
         var remainingProgress = craft.CraftProgress - step.Progress;
         var remainingQuality = qualityTarget - step.Quality;
@@ -1126,7 +1137,7 @@ public class ExpertSolver : Solver
             return Skills.RapidSynthesis;
         if (CU(craft, step, Skills.Observe))
             return Skills.Observe;
-        return P.Config.ExpertSolverConfig.RapidSynthYoloAllowed ? Skills.RapidSynthesis : Skills.None;
+        return cfg.RapidSynthYoloAllowed ? Skills.RapidSynthesis : Skills.None;
     }
 
     private static bool CanUseSynthForFinisher(CraftState craft, StepState step, Skills action)

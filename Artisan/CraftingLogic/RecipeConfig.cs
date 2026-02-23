@@ -60,6 +60,7 @@ public class RecipeConfig
 
     public string SolverType = ""; // TODO: ideally it should be a Type?, but that causes problems for serialization
     public int SolverFlavour;
+    public int expertProfileID = (int)Default;
     public uint requiredFood = Default;
     public uint requiredPotion = Default;
     public uint requiredManual = Default;
@@ -114,12 +115,16 @@ public class RecipeConfig
         var craft = Crafting.BuildCraftStateForRecipe(stats, (Job)((uint)Job.CRP + recipe.CraftType.RowId), recipe);
         if (craft.InitialQuality == 0)
             craft.InitialQuality = Simulator.GetStartingQuality(recipe, false, craft.StatLevel);
+        var liveStats = Player.ClassJob.RowId == craft.Recipe.CraftType.RowId + 8;
         bool changed = false;
         changed |= DrawFood();
         changed |= DrawPotion();
         changed |= DrawManual();
         changed |= DrawSquadronManual();
-        changed |= DrawSolver(craft, liveStats: Player.ClassJob.RowId == craft.Recipe.CraftType.RowId + 8);
+        changed |= DrawSolver(craft, liveStats: liveStats);
+        changed |= DrawExpertProfiles(craft);
+        DrawWarnings(craft);
+        RaphaelCache.DrawRaphaelDropdown(craft, liveStats);
         DrawSimulator(craft);
         return changed;
     }
@@ -253,8 +258,6 @@ public class RecipeConfig
         return changed;
     }
 
-
-
     public bool DrawSquadronManual(bool hasButton = false)
     {
         bool changed = false;
@@ -327,6 +330,43 @@ public class RecipeConfig
             ImGui.EndCombo();
         }
 
+        return changed;
+    }
+
+    public bool DrawExpertProfiles(CraftState craft, bool hasButton = false)
+    {
+        bool changed = false;
+        if (this.CurrentSolverType.Contains("Expert") || this.CurrentSolverType == "" && craft.CraftExpert)
+        {
+            var expertProfile = CraftingProcessor.GetExpertProfileForRecipe(this);
+            if (string.IsNullOrEmpty(expertProfile.Name))
+            {
+                ImGuiEx.Text(ImGuiColors.DalamudRed, "Unable to select an expert solver profile. Please select from dropdown.");
+            }
+
+            ImGuiEx.TextV($"Expert Profile:");
+            ImGui.SameLine(130f.Scale());
+            if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
+
+            if (ImGui.BeginCombo("##expertProfile", expertProfile.Name))
+            {
+                foreach (var c in P.Config.ExpertSolverProfiles.GetExpertProfilesWithDefault())
+                {
+                    bool selected = c.Name == expertProfile.Name;
+                    if (ImGui.Selectable(c.Name, selected))
+                    {
+                        expertProfileID = c.ID;
+                        changed = true;
+                    }
+                }
+                ImGui.EndCombo();
+            }
+        }
+        return changed;
+    }
+
+    public void DrawWarnings(CraftState craft)
+    {
         if (!Crafting.EnoughDelinsForCraft(this, craft, out var req))
         {
             ImGuiEx.TextCentered(ImGuiColors.DalamudRed, $"You do not have enough {Svc.Data.GetExcelSheet<Item>().GetRow(28724).Name} for this solver ({req} required).");
@@ -338,11 +378,6 @@ public class RecipeConfig
 
         if (ConsumableChecker.SkippingConsumablesByConfig(craft.Recipe))
             ImGuiEx.Text(ImGuiColors.DalamudRed, "Consumables will not be used due to level difference setting.");
-
-        if (!hasButton)
-            RaphaelCache.DrawRaphaelDropdown(craft, liveStats);
-
-        return changed;
     }
 
     public unsafe void DrawSimulator(CraftState craft)
