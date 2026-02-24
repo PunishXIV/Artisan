@@ -130,7 +130,7 @@ public class ExpertSolver : Solver
 
     private static Skills SolveOpenerMuMe(ExpertSolverSettings cfg, CraftState craft, StepState step)
     {
-        bool lastChance = step.MuscleMemoryLeft == 1 || step.Durability <= 20;
+        bool lastChance = step.MuscleMemoryLeft == 1;
         int rapidDura = Simulator.GetDurabilityCost(step, Skills.RapidSynthesis);
 
         if (step.SteadyHandLeft > 0 && step.Durability > rapidDura && CU(craft, step, Skills.RapidSynthesis))
@@ -155,10 +155,10 @@ public class ExpertSolver : Solver
                 return Skills.Manipulation;
         }
         // high-prio manip regardless of condition (will usually only happen on very low dura recipes)
-        if (step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation) && !lastChance)
+        if (step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation))
         {
             // respect the manip setting on low but usable dura
-            if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForManip && step.Durability <= rapidDura + 5)
+            if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForManip && step.Durability <= rapidDura + 5 && !lastChance)
                 return Skills.Manipulation;
             // force manip regardless of setting if we would fail otherwise
             if (step.Durability <= rapidDura)
@@ -184,7 +184,7 @@ public class ExpertSolver : Solver
             // last-chance half-dura intensive/rapid, regardless of veneration
             return SolveOpenerMuMeTouch(craft, step, cfg.MuMeIntensiveLastResort);
         }
-        if (step.Condition == Condition.Malleable)
+        if (step.Condition == Condition.Malleable && step.Durability > rapidDura)
         {
             // last-chance OR preferred intensive/rapid, regardless of veneration
             return SolveOpenerMuMeTouch(craft, step, cfg.MuMeIntensiveMalleable || cfg.MuMeIntensiveLastResort && lastChance);
@@ -198,13 +198,13 @@ public class ExpertSolver : Solver
 
         // ok we have a condition that isn't as important as manip or veneration
         // force manip, regardless of settings or condition, if we can't do anything else
-        if (step.Durability < rapidDura && step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation))
+        if (step.Durability <= rapidDura && step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation))
             return Skills.Manipulation;
         if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForVene && step.VenerationLeft == 0 && CU(craft, step, Skills.Veneration))
             return Skills.Veneration;
 
         // half-dura conditions are a worthy usage of durability at this point (don't observe)
-        if (step.Condition is Condition.Sturdy or Condition.Robust && CU(craft, step, Skills.RapidSynthesis))
+        if (step.Condition is Condition.Sturdy or Condition.Robust && step.Durability > rapidDura && CU(craft, step, Skills.RapidSynthesis))
             return SolveOpenerMuMeTouch(craft, step, cfg.MuMeIntensiveLastResort && lastChance);
         if (cfg.MuMeAllowObserve && step.MuscleMemoryLeft > 1 && step.Durability < craft.CraftDurability)
         {
@@ -214,6 +214,10 @@ public class ExpertSolver : Solver
             if (CU(craft, step, Skills.Observe))
                 return Skills.Observe;
         }
+
+        // make absolutely sure we're not about to break; maybe manip and mume are both still up
+        if (step.Durability <= rapidDura && CU(craft, step, Skills.Observe))
+            return Skills.Observe;
 
         return SolveOpenerMuMeTouch(craft, step, cfg.MuMeIntensiveLastResort && lastChance);
     }
