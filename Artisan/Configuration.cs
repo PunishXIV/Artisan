@@ -169,6 +169,7 @@ namespace Artisan
         public RaphaelSolverSettings RaphaelSolverConfig = new();
         public ConcurrentDictionary<string, MacroSolverSettings.Macro> RaphaelSolverCacheV4 = [];
         public ConcurrentDictionary<string, MacroSolverSettings.Macro> RaphaelSolverCacheV5 = [];
+        public bool ShowLevelingRecipeProgress = true;
 
         public void Save()
         {

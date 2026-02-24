@@ -371,6 +371,38 @@ namespace Artisan.UI
                     ImGui.Text($"Repair Price: {RepairManager.GetNPCRepairPrice()}");
 
                 }
+                if (ImGui.CollapsingHeader("Recipe Level Completion"))
+                {
+                    ImGui.Columns(8);
+                    for (int i = (int)Job.CRP; i <= (int)Job.CUL; i++)
+                    {
+                        var j = (Job)i;
+                        for (uint l = 0; l <= 39; l++)
+                        {
+                            var sheet = Svc.Data.GetExcelSheet<RecipeNotebookList>();
+                            uint row = (uint)(((i - 8)  * 40) + l);
+                            if (sheet.TryGetRow(row, out var d))
+                            {
+                                var division = Svc.Data.GetExcelSheet<NotebookDivision>().GetRow(l);
+                                int count = d.Count;
+                                if (count == 0)
+                                    continue;
+
+                                int completed = 0;
+                                for (int r = 0; r < count; r++)
+                                {
+                                    var recipe = d.Recipe[r];
+                                    if (P.ri.HasRecipeCrafted(recipe.RowId))
+                                        completed++;
+                                }
+
+                                ImGui.Text($"{j} - {division.Name} | {completed}/{count}");
+                            }
+                        }
+                        ImGui.NextColumn();
+                    }
+                    ImGui.Columns(1);
+                }
 
                 ImGui.Separator();
 

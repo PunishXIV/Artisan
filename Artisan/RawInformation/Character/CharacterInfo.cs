@@ -2,6 +2,7 @@
 using Dalamud.Utility.Signatures;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
+using ECommons.Throttlers;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel.Sheets;
@@ -42,7 +43,7 @@ namespace Artisan.RawInformation.Character
 
         public static unsafe int JobLevel(Job job) => PlayerState.Instance()->ClassJobLevels[Svc.Data.GetExcelSheet<ClassJob>()?.GetRow((uint)job).ExpArrayIndex ?? 0];
 
-        internal static bool IsManipulationUnlocked(Job job) =>  job switch
+        internal static bool IsManipulationUnlocked(Job job) => job switch
         {
             Job.CRP => QuestUnlocked(67979),
             Job.BSM => QuestUnlocked(68153),
@@ -117,20 +118,20 @@ namespace Artisan.RawInformation.Character
 
         private List<uint> Uncompletables = new List<uint>()
         {
-            30971, 30987, 31023, 31052,31094, 31157, 31192, 31217, 30001, 30002, 30003, 30004, 30005, 30006, 
+            30971, 30987, 31023, 31052,31094, 31157, 31192, 31217, 30001, 30002, 30003, 30004, 30005, 30006,
             30007, 30008, 30009, 30010, 30011, 30012, 30013, 30014, 30015, 30016, 30017, 30018, 30019, 30020,
-            30021, 30022, 30023, 30024, 30025, 30026, 30027, 30028, 30029, 30030, 30031, 30032, 30033, 30034, 
-            30035, 30036, 30037, 30038, 30039, 30040, 30041, 30042, 30043, 30044, 30045, 30046, 30047, 30048, 
-            30049, 30050, 30051, 30052, 30053, 30054, 30055, 30056, 30057, 30058, 30059, 30060, 30061, 30062, 
-            30063, 30064, 30065, 30066, 30067, 30068, 30069, 30070, 30071, 30072, 30073, 30074, 30075, 30076, 
-            30077, 30078, 30079, 30080, 30081, 30082, 30083, 30084, 30085, 30086, 30087, 30088, 30089, 30090, 
-            30091, 30092, 30093, 30094, 30095, 30096, 30097, 30098, 30099, 30100, 30101, 30102, 30103, 30104, 
-            30105, 30106, 30107, 30108, 30109, 30110, 30111, 30112, 30113, 30114, 30115, 30116, 30117, 30118, 
-            30119, 30120, 30121, 30122, 30123, 30124, 30125, 30126, 30127, 30128, 30129, 30130, 30131, 30132, 
-            30133, 30134, 30135, 30136, 30137, 30138, 30139, 30140, 30141, 30142, 30143, 30144, 30145, 30146, 
-            30147, 30148, 30149, 30150, 30151, 30152, 30354, 30355, 30356, 30357, 30358, 30359, 30360, 30361, 
-            30362, 30363, 30364, 30365, 30366, 30367, 30368, 30369, 30370, 30371, 30372, 30373, 30374, 30375, 
-            30376, 30377, 30378, 30379, 30380, 30381, 30382, 30383, 30384, 30385, 30386, 30387, 30388, 30389, 
+            30021, 30022, 30023, 30024, 30025, 30026, 30027, 30028, 30029, 30030, 30031, 30032, 30033, 30034,
+            30035, 30036, 30037, 30038, 30039, 30040, 30041, 30042, 30043, 30044, 30045, 30046, 30047, 30048,
+            30049, 30050, 30051, 30052, 30053, 30054, 30055, 30056, 30057, 30058, 30059, 30060, 30061, 30062,
+            30063, 30064, 30065, 30066, 30067, 30068, 30069, 30070, 30071, 30072, 30073, 30074, 30075, 30076,
+            30077, 30078, 30079, 30080, 30081, 30082, 30083, 30084, 30085, 30086, 30087, 30088, 30089, 30090,
+            30091, 30092, 30093, 30094, 30095, 30096, 30097, 30098, 30099, 30100, 30101, 30102, 30103, 30104,
+            30105, 30106, 30107, 30108, 30109, 30110, 30111, 30112, 30113, 30114, 30115, 30116, 30117, 30118,
+            30119, 30120, 30121, 30122, 30123, 30124, 30125, 30126, 30127, 30128, 30129, 30130, 30131, 30132,
+            30133, 30134, 30135, 30136, 30137, 30138, 30139, 30140, 30141, 30142, 30143, 30144, 30145, 30146,
+            30147, 30148, 30149, 30150, 30151, 30152, 30354, 30355, 30356, 30357, 30358, 30359, 30360, 30361,
+            30362, 30363, 30364, 30365, 30366, 30367, 30368, 30369, 30370, 30371, 30372, 30373, 30374, 30375,
+            30376, 30377, 30378, 30379, 30380, 30381, 30382, 30383, 30384, 30385, 30386, 30387, 30388, 30389,
             30390, 30391, 30392, 30393, 30394, 30395, 30396, 30397, 30398, 30399, 30400, 30401
         };
 
@@ -143,9 +144,45 @@ namespace Artisan.RawInformation.Character
             return GetIsGatheringItemGathered(recipe) != 0;
         }
 
+        public static Dictionary<(Job Job, uint LevelBracket), (int Completed, int Total)> CompletedRecipes = new();
+
+        public static void UpdateCompletedRecipes()
+        {
+            if (!EzThrottler.Throttle("CompletedRecipesUpdate", TimeSpan.FromSeconds(5)))
+                return;
+
+            CompletedRecipes.Clear();
+            for (int i = (int)Job.CRP; i <= (int)Job.CUL; i++)
+            {
+                var j = (Job)i;
+                for (uint l = 0; l <= 39; l++)
+                {
+                    var sheet = Svc.Data.GetExcelSheet<RecipeNotebookList>();
+                    uint row = (uint)(((i - 8) * 40) + l);
+                    if (sheet.TryGetRow(row, out var d))
+                    {
+                        var division = Svc.Data.GetExcelSheet<NotebookDivision>().GetRow(l);
+                        int count = d.Count;
+                        if (count == 0)
+                            continue;
+
+                        int completed = 0;
+                        for (int r = 0; r < count; r++)
+                        {
+                            var recipe = d.Recipe[r];
+                            if (P.ri.HasRecipeCrafted(recipe.RowId))
+                                completed++;
+                        }
+
+                        CompletedRecipes[(j, l)] = (completed, count);
+                    }
+                }
+            }
+        }
+
         public void Dispose()
         {
-            
+
         }
 
         internal RecipeInformation()
