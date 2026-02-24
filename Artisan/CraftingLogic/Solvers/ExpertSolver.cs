@@ -635,7 +635,7 @@ public class ExpertSolver : Solver
 
         // well, gg. might as well use quick inno to get as much quality as we can (helps on stellar missions, for example)
         if (cfg.FinisherUseQuickInno && step.QuickInnoAvailable)
-            return new(Skills.Observe, "mid quality: emergency quick inno->byregot");
+            return new(Skills.QuickInnovation, "mid quality: emergency quick inno->byregot");
 
         return new(Skills.ByregotsBlessing, "mid quality: emergency byregot");
     }
