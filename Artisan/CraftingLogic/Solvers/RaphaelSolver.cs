@@ -19,6 +19,7 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
+using TerraFX.Interop.Windows;
 
 namespace Artisan.CraftingLogic.Solvers
 {
@@ -194,7 +195,10 @@ namespace Artisan.CraftingLogic.Solvers
                 finally
                 {
                     if (info.Succeeded)
+                    {
+                        AuotSwitch(craft, key);
                         P.Config.Save();
+                    }
                     Tasks.TryRemove(key, out _);
                 }
             }, cts.Token);
@@ -202,6 +206,68 @@ namespace Artisan.CraftingLogic.Solvers
             Tasks.TryAdd(key, info);
         }
 
+        private static void AuotSwitch(CraftState craft, string key)
+        {
+            static bool autoSwitchOk(uint recipeId)
+            {
+                if (P.Config.RaphaelSolverConfig.AutoSwitchOverManual)
+                    return true;
+
+                if (P.Config.RecipeConfigs.TryGetValue(recipeId, out var cfg))
+                    // flavours: 0 = standard, expert; 3 = raphael; otherwise = macro/script
+                    return cfg.SolverFlavour is 0 or 3;
+
+                return true;
+            }
+
+            if (P.Config.RaphaelSolverConfig.AutoSwitch)
+            {
+                Svc.Log.Information("Auto-switch is enabled, switching solver for recipe if applicable.");
+                if (!P.Config.RaphaelSolverConfig.AutoSwitchOnAll)
+                {
+                    Svc.Log.Debug("Switching to Raphael solver - Single");
+                    var nopt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).FirstOrNull(x => x.Name == $"Raphael Recipe Solver");
+                    if (nopt is { } opt)
+                    {
+                        if (autoSwitchOk(craft.Recipe.RowId))
+                        {
+                            Svc.Log.Information("AutoSwitchOk, setting");
+                            var config = P.Config.RecipeConfigs.GetValueOrDefault(craft.Recipe.RowId) ?? new();
+                            config.SolverType = opt.Def.GetType().FullName!;
+                            config.SolverFlavour = opt.Flavour;
+                            P.Config.RecipeConfigs[craft.Recipe.RowId] = config;
+                        }
+                        else
+                            Svc.Log.Information("Never mind, recipe already has a macro assigned");
+                    }
+                }
+                else
+                {
+                    var crafts = AllValidCrafts(key).ToList();
+                    Svc.Log.Information($"Applying solver to {crafts.Count} recipes.");
+                    var nopt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).FirstOrNull(x => x.Name == $"Raphael Recipe Solver");
+                    if (nopt is { } opt)
+                    {
+                        var config = P.Config.RecipeConfigs.GetValueOrDefault(craft.Recipe.RowId) ?? new();
+                        config.SolverType = opt.Def.GetType().FullName!;
+                        config.SolverFlavour = opt.Flavour;
+                        foreach (var c in crafts)
+                        {
+                            if (autoSwitchOk(c.Recipe.RowId))
+                            {
+                                Svc.Log.Information($"Switching {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) to Raphael solver");
+                                var switchConfig = P.Config.RecipeConfigs.GetValueOrDefault(c.Recipe.RowId) ?? new();
+                                switchConfig.SolverType = opt.Def.GetType().FullName!;
+                                switchConfig.SolverFlavour = opt.Flavour;
+                                P.Config.RecipeConfigs[c.Recipe.RowId] = switchConfig;
+                            }
+                            else
+                                Svc.Log.Information($"Skipping {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) because it already has a macro assigned");
+                        }
+                    }
+                }
+            }
+        }
 
         public static string GetKey(CraftState craft)
         {
