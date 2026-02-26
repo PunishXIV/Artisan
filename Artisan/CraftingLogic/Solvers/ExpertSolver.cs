@@ -115,7 +115,7 @@ public class ExpertSolver : Solver
             if (step.RemainingCP >= Simulator.GetCPCost(step, midAction.Action))
                 return midAction;
             // try restoring some cp...
-            var emergencyAction = EmergencyRestoreCP(cfg, craft, step);
+            var emergencyAction = EmergencyRestoreCP(cfg, craft, step, true);
             if (emergencyAction != Skills.None)
                 return new(emergencyAction, "mid: emergency cp");
             // oh well, bail...
@@ -433,7 +433,7 @@ public class ExpertSolver : Solver
             if (step.PrevComboAction == Skills.Observe && CanUseActionSafelyInFinisher(step, Skills.AdvancedTouch, freeCP) && CU(craft, step, Skills.AdvancedTouch))
                 return new(Skills.AdvancedTouch, "mid quality gs-only: after observe?"); // this is weird, why would we do gs->observe?.. maybe we're low on cp?
 
-            if (step.GreatStridesLeft == 1)
+            if (step.GreatStridesLeft == 1 && !step.ExpertEmergency)
             {
                 // we really want to use gs now on other touches (prudent/finesse), doing inno now would waste it
                 // TODO: hasty? basic combo? non-tp prep?
@@ -541,7 +541,7 @@ public class ExpertSolver : Solver
             return new(Skills.TrainedFinesse, "mid quality: alt");
 
         // we're low on cp, see if we can regain some cp via tricks
-        var emergencyAction = EmergencyRestoreCP(cfg, craft, step);
+        var emergencyAction = EmergencyRestoreCP(cfg, craft, step, false);
         if (emergencyAction != Skills.None)
             return new(emergencyAction, "mid quality: emergency cp");
         if (CanUseActionSafelyInFinisher(step, Skills.DaringTouch, freeCP) && CU(craft, step, Skills.DaringTouch))
@@ -554,6 +554,7 @@ public class ExpertSolver : Solver
             return new(Skills.GreatStrides, "mid quality: emergency gs+byregot");
         if (step.Condition is not Condition.Good and not Condition.Excellent && step.Durability > 10)
         {
+            step.ExpertEmergency = true; // set here to avoid certain other logic going forward
             // try baiting good
             if (step.GreatStridesLeft != 1 && step.InnovationLeft != 1 && availableCP >= Simulator.GetCPCost(step, Skills.Observe) + Skills.ByregotsBlessing.StandardCPCost() && CU(craft, step, Skills.Observe))
                 return new(Skills.Observe, "mid quality: emergency byregot bait good");
@@ -1000,11 +1001,12 @@ public class ExpertSolver : Solver
     public static Skills SafeCraftAction(CraftState craft, StepState step, Skills action) => Simulator.WillFinishCraft(craft, step, action) ? Skills.FinalAppraisal : action;
 
     // try to use tricks, if needed use h&s
-    public static Skills EmergencyRestoreCP(ExpertSolverSettings cfg, CraftState craft, StepState step)
+    public static Skills EmergencyRestoreCP(ExpertSolverSettings cfg, CraftState craft, StepState step, bool forceTricks)
     {
-        if (Simulator.CanUseAction(craft, step, Skills.TricksOfTrade))
+        bool tricksAllowed = forceTricks || (!step.ExpertEmergency && step.PrevComboAction != Skills.QuickInnovation);
+        if (Simulator.CanUseAction(craft, step, Skills.TricksOfTrade) && tricksAllowed)
             return Skills.TricksOfTrade;
-        if (step.HeartAndSoulAvailable && CU(craft, step, Skills.HeartAndSoul))
+        if (step.HeartAndSoulAvailable && tricksAllowed && CU(craft, step, Skills.HeartAndSoul))
             return Skills.HeartAndSoul;
         if (cfg.EmergencyCPBaitGood && step.CarefulObservationLeft > 0 && CU(craft, step, Skills.CarefulObservation))
             return Skills.CarefulObservation; // try baiting good?..

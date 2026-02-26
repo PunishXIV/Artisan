@@ -688,6 +688,7 @@ public static unsafe class Crafting
         ret.SteadyHandCharges = SteadyHandCharges();
         ret.SteadyHandLeft = GetStatus(Buffs.SteadyHand)?.Param ?? 0;
         ret.ObserveCounter = predictedStep?.ObserveCounter ?? 0;
+        ret.ExpertEmergency = predictedStep?.ExpertEmergency ?? false;
 
         return ret;
     }
