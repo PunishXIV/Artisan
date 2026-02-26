@@ -45,6 +45,19 @@ public class RecipeConfig
         }
     }
 
+    [NonSerialized]
+    public uint TempRequiredFood = 0;
+    [NonSerialized]
+    public bool TempFoodHQ = true;
+    [NonSerialized]
+    public uint TempRequiredPotion = 0;
+    [NonSerialized]
+    public bool TempPotionHQ = true;
+    [NonSerialized]
+    public uint TempRequiredManual = 0;
+    [NonSerialized]
+    public uint TempRequiredSquadronManual = 0;
+
     public string SolverType = ""; // TODO: ideally it should be a Type?, but that causes problems for serialization
     public int SolverFlavour;
     public uint requiredFood = Default;
@@ -61,18 +74,18 @@ public class RecipeConfig
     public bool SquadronManualEnabled => RequiredSquadronManual != Disabled;
 
 
-    public uint RequiredFood => requiredFood == Default ? P.Config.DefaultConsumables.requiredFood : requiredFood;
-    public uint RequiredPotion => requiredPotion == Default ? P.Config.DefaultConsumables.requiredPotion : requiredPotion;
-    public uint RequiredManual => requiredManual == Default ? P.Config.DefaultConsumables.requiredManual : requiredManual;
-    public uint RequiredSquadronManual => requiredSquadronManual == Default ? P.Config.DefaultConsumables.requiredSquadronManual : requiredSquadronManual;
-    public bool RequiredFoodHQ => requiredFood == Default ? P.Config.DefaultConsumables.requiredFoodHQ : requiredFoodHQ;
-    public bool RequiredPotionHQ => requiredPotion == Default ? P.Config.DefaultConsumables.requiredPotionHQ : requiredPotionHQ;
+    public uint RequiredFood => TempRequiredFood != 0 ? TempRequiredFood : (requiredFood == Default ? P.Config.DefaultConsumables.requiredFood : requiredFood);
+    public uint RequiredPotion => TempRequiredPotion != 0 ? TempRequiredPotion : (requiredPotion == Default ? P.Config.DefaultConsumables.requiredPotion : requiredPotion);
+    public uint RequiredManual => TempRequiredManual != 0 ? TempRequiredManual : (requiredManual == Default ? P.Config.DefaultConsumables.requiredManual : requiredManual);
+    public uint RequiredSquadronManual => TempRequiredSquadronManual != 0 ? TempRequiredSquadronManual : (requiredSquadronManual == Default ? P.Config.DefaultConsumables.requiredSquadronManual : requiredSquadronManual);
+    public bool RequiredFoodHQ => TempRequiredFood != 0 ? TempFoodHQ : (requiredFood == Default ? P.Config.DefaultConsumables.requiredFoodHQ : requiredFoodHQ);
+    public bool RequiredPotionHQ => TempRequiredPotion != 0 ? TempPotionHQ : (requiredPotion == Default ? P.Config.DefaultConsumables.requiredPotionHQ : requiredPotionHQ);
 
 
-    public string FoodName => requiredFood == Default ? $"{P.Config.DefaultConsumables.FoodName} (Default)" : RequiredFood == Disabled ? "Disabled" : $"{(RequiredFoodHQ ? " " : "")}{ConsumableChecker.Food.FirstOrDefault(x => x.Id == RequiredFood).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredFood, RequiredFoodHQ)})";
-    public string PotionName => requiredPotion == Default ? $"{P.Config.DefaultConsumables.PotionName} (Default)" : RequiredPotion == Disabled ? "Disabled" : $"{(RequiredPotionHQ ? " " : "")}{ConsumableChecker.Pots.FirstOrDefault(x => x.Id == RequiredPotion).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredPotion, RequiredPotionHQ)})";
-    public string ManualName => requiredManual == Default ? $"{P.Config.DefaultConsumables.ManualName} (Default)" : RequiredManual == Disabled ? "Disabled" : $"{ConsumableChecker.Manuals.FirstOrDefault(x => x.Id == RequiredManual).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredManual, false)})";
-    public string SquadronManualName => requiredSquadronManual == Default ? $"{P.Config.DefaultConsumables.SquadronManualName} (Default)" : RequiredSquadronManual == Disabled ? "Disabled" : $"{ConsumableChecker.SquadronManuals.FirstOrDefault(x => x.Id == RequiredSquadronManual).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredManual, false)})";
+    public string FoodName => requiredFood == Default && TempRequiredFood == 0 ? $"{P.Config.DefaultConsumables.FoodName} (Default)" : RequiredFood == Disabled ? "Disabled" : $"{(RequiredFoodHQ ? " " : "")}{ConsumableChecker.Food.FirstOrDefault(x => x.Id == RequiredFood).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredFood, RequiredFoodHQ)})";
+    public string PotionName => requiredPotion == Default && TempRequiredPotion == 0 ? $"{P.Config.DefaultConsumables.PotionName} (Default)" : RequiredPotion == Disabled ? "Disabled" : $"{(RequiredPotionHQ ? " " : "")}{ConsumableChecker.Pots.FirstOrDefault(x => x.Id == RequiredPotion).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredPotion, RequiredPotionHQ)})";
+    public string ManualName => requiredManual == Default && TempRequiredManual == 0 ? $"{P.Config.DefaultConsumables.ManualName} (Default)" : RequiredManual == Disabled ? "Disabled" : $"{ConsumableChecker.Manuals.FirstOrDefault(x => x.Id == RequiredManual).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredManual, false)})";
+    public string SquadronManualName => requiredSquadronManual == Default && TempRequiredSquadronManual == 0 ? $"{P.Config.DefaultConsumables.SquadronManualName} (Default)" : RequiredSquadronManual == Disabled  ? "Disabled" : $"{ConsumableChecker.SquadronManuals.FirstOrDefault(x => x.Id == RequiredSquadronManual).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredSquadronManual, false)})";
 
     public float GetLargestName()
     {
