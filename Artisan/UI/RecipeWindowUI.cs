@@ -102,7 +102,7 @@ namespace Artisan
             if (!P.Config.ShowLevelingRecipeProgress)
                 return;
 
-            if (AgentRecipeNote.Instance()->SelectedRecipeCategoryPage != 0)
+            if (AgentRecipeNote.Instance()->SelectedRecipeCategoryPage != 0 || AgentRecipeNote.Instance()->RecipeSearchOpen)
                 return;
 
             try
