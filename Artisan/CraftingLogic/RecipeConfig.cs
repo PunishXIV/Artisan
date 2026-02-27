@@ -63,6 +63,11 @@ public class RecipeConfig
     public string SolverType = ""; // TODO: ideally it should be a Type?, but that causes problems for serialization
     public int SolverFlavour;
     public int expertProfileID = (int)Default;
+
+    public uint expertMaxSteadyUses = Default;
+    public bool expertUseMaterialMiracle = false;
+    public uint expertMinimumStepsBeforeMiracle = Default;
+
     public uint requiredFood = Default;
     public uint requiredPotion = Default;
     public uint requiredManual = Default;

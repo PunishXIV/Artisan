@@ -345,8 +345,13 @@ internal class ExpertSolverSettingsUI
             changed |= ImGui.Checkbox("Max out Ishgard Restoration recipes instead of just hitting max breakpoint", ref s.MaxIshgardRecipes);
             ImGuiComponents.HelpMarker("This will try to maximise quality to earn more Skyward points.");
             ImGui.Unindent();
+
             ImGui.TextWrapped($"Cosmic Exploration");
+            changed |= ImGui.Checkbox("Override per-recipe Cosmic Exploration settings###overrideCosmic", ref s.OverrideCosmicRecipeSettings);
+            ImGuiComponents.HelpMarker("By default, Cosmic Exploration settings are tracked for each recipe and ignore the selected expert profile. Enable this option to instead use the settings below.");
+
             ImGui.Indent();
+            if (!s.OverrideCosmicRecipeSettings) ImGui.BeginDisabled();
             changed |= CheckboxWithIcons("UseMaterialMiracle", ref s.UseMaterialMiracle, "Use [s!MaterialMiracle]");
             ImGui.PushItemWidth(250);
             if (s.UseMaterialMiracle)
@@ -356,6 +361,7 @@ internal class ExpertSolverSettingsUI
             }
             changed |= SliderIntWithIcons("MaxSteadyUses", ref s.MaxSteadyUses, 0, 2, "Max [s!SteadyHand] uses per craft");
             HelpMarkerWithIcons(["[s!SteadyHand] will be used ASAP to guarantee [s!RapidSynthesis].", "Set to 0 to disable."]);
+            if (!s.OverrideCosmicRecipeSettings) ImGui.EndDisabled();
             ImGui.Unindent();
         }
         catch (Exception ex)
