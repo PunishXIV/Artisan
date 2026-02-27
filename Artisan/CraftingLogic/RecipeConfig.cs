@@ -5,6 +5,7 @@ using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using ECommons;
 using ECommons.DalamudServices;
@@ -15,6 +16,7 @@ using Lumina.Excel.Sheets;
 using System;
 using System.Diagnostics.Tracing;
 using System.Linq;
+using System.Numerics;
 
 namespace Artisan.CraftingLogic;
 
@@ -345,9 +347,21 @@ public class RecipeConfig
             }
 
             ImGuiEx.TextV($"Expert Profile:");
-            ImGui.SameLine(130f.Scale());
-            if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
+            ImGui.SameLine();
 
+            ImGuiEx.IconWithTooltip(new Vector4(0.5f, 0.5f, 0.5f, 1f), FontAwesomeIcon.PencilAlt, "Add or edit expert solver profiles");
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            }
+            if (ImGui.IsItemClicked())
+            {
+                P.PluginUi.OpenWindow = UI.OpenWindow.ExpertProfiles;
+                P.PluginUi.IsOpen = true;
+            }
+            ImGui.SameLine(130f.Scale());
+
+            if (hasButton) ImGuiEx.SetNextItemFullWidth(-120);
             if (ImGui.BeginCombo("##expertProfile", expertProfile.Name))
             {
                 foreach (var c in P.Config.ExpertSolverProfiles.GetExpertProfilesWithDefault())
@@ -360,7 +374,7 @@ public class RecipeConfig
                     }
                 }
                 ImGui.EndCombo();
-            }
+            }            
         }
         return changed;
     }

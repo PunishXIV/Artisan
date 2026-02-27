@@ -1,5 +1,7 @@
 ﻿using Artisan.Autocraft;
 using Artisan.CraftingLists;
+using Artisan.CraftingLogic;
+using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.IPC;
 using Artisan.RawInformation;
@@ -7,16 +9,19 @@ using Artisan.RawInformation.Character;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
 using System.Collections.Generic;
 using System.Linq;
+using static Artisan.CraftingLogic.Solvers.ExpertSolverProfiles;
 
 namespace Artisan.UI
 {
     internal class CraftMenuWindowUI : Window
     {
         public bool EnableMacroOptions { get; set; }
+        public ExpertSolverSettingsUI ExpertSettingsUI = new();
 
         public CraftMenuWindowUI(string windowName, ImGuiWindowFlags flags) : base(windowName, flags)
         {
@@ -97,26 +102,30 @@ namespace Artisan.UI
                     ImGuiEx.Text(ImGuiColors.DalamudYellow, $"Missing Ingredients:\r\n- {string.Join("\r\n- ", PreCrafting.MissingIngredients(recipe))}");
                 }
 
+                ExpertProfile profile = CraftingProcessor.GetExpertProfileForRecipe(config);
+                ExpertSolverSettings expCfg = profile.ID == 0 ? P.Config.ExpertSolverConfig : profile.Settings;
                 if (Crafting.MaterialMiracleCharges() > 0 && (config.SolverIsStandard || config.SolverIsExpert))
                 {
-                    bool useMatMiracle = LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert ? P.Config.ExpertSolverConfig.UseMaterialMiracle : P.Config.UseMaterialMiracle;
-                    int delayMatMiracle = LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert ? P.Config.ExpertSolverConfig.MinimumStepsBeforeMiracle : P.Config.MinimumStepsBeforeMiracle;
+                    bool useMatMiracle = LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert ? expCfg.UseMaterialMiracle : P.Config.UseMaterialMiracle;
+                    int delayMatMiracle = LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert ? expCfg.MinimumStepsBeforeMiracle : P.Config.MinimumStepsBeforeMiracle;
                     bool multiMatMiracle = P.Config.MaterialMiracleMulti;
-                    
-                    if (ImGui.Checkbox("Use Material Miracle", ref useMatMiracle))
+
+                    string miracleStr = config.SolverIsExpert ? "[ex] Use [s!MaterialMiracle]" : "Use [s!MaterialMiracle]";
+                    if (ExpertSettingsUI.CheckboxWithIcons("useMatMiracle", ref useMatMiracle, miracleStr))
                     {
                         if (LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert)
-                            P.Config.ExpertSolverConfig.UseMaterialMiracle = useMatMiracle;
+                            expCfg.UseMaterialMiracle = useMatMiracle;
                         else
                             P.Config.UseMaterialMiracle = useMatMiracle;
                     }
+                    ImGuiComponents.HelpMarker($"This setting only applies to the standard and expert solvers. To change Raphael solver usage, go to Settings > Raphael Solver Settings.");
                     if (useMatMiracle)
                     {
-                        ImGui.Text("Minimum Steps Before Using Material Miracle");
+                        ImGui.Text("After this many steps:");
                         if (ImGui.SliderInt("###MaterialMiracleSlider", ref delayMatMiracle, 0, 20))
                         {
                             if (LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert)
-                                P.Config.ExpertSolverConfig.MinimumStepsBeforeMiracle = delayMatMiracle;
+                                expCfg.MinimumStepsBeforeMiracle = delayMatMiracle;
                             else
                                 P.Config.MinimumStepsBeforeMiracle = delayMatMiracle;
                         }
@@ -132,12 +141,9 @@ namespace Artisan.UI
                 // todo: this should also reference the raphael steady setting for non-experts
                 if (Crafting.SteadyHandCharges() > 0 && LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert)
                 {
-                    int maxSteadyUses = P.Config.ExpertSolverConfig.MaxSteadyUses;
-                    ImGui.Text($"Max {Skills.SteadyHand.NameOfAction()} uses");
-                    if (ImGui.SliderInt($"###MaxStellarHand", ref maxSteadyUses, 0, 2))
-                    {
-                        P.Config.ExpertSolverConfig.MaxSteadyUses = maxSteadyUses;
-                    }
+                    ImGui.PushItemWidth(100);
+                    ExpertSettingsUI.SliderIntWithIcons("MaxSteadyUses", ref expCfg.MaxSteadyUses, 0, 2, "[ex] Max [s!SteadyHand] uses");
+                    ImGuiComponents.HelpMarker($"This setting only applies to the current expert solver profile. To change Raphael solver usage, go to Settings > Raphael Solver Settings.");
                 }
 
                 if (EnableMacroOptions)
