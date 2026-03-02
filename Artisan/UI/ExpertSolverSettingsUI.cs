@@ -99,7 +99,7 @@ internal class ExpertSolverSettingsUI
             ImGui.Dummy(new Vector2(0, 5f));
             if (!s.UseReflectOpener)
             {
-                DrawIconText(ImGuiColors.DalamudYellow, "These settings only apply while [s!MuscleMemory] is active at the start of a craft.");
+                DrawIconText("These settings only apply while [s!MuscleMemory] is active at the start of a craft.", color: ImGuiColors.DalamudYellow);
                 ImGui.Dummy(new Vector2(0, 5f));
 
                 changed |= CheckboxWithIcons("MuMeIntensiveGood", ref s.MuMeIntensiveGood, "When [c!Good], prioritize [s!IntensiveSynthesis] (400%) over [s!RapidSynthesis] (500%)");
@@ -453,28 +453,19 @@ internal class ExpertSolverSettingsUI
     /// Custom HelpMarker that supports skill icons and colorful condition dots.
     /// </summary>
     /// <param name="str">The helpText string with custom markup.</param>
-    public void HelpMarkerWithIcons(string str) => HelpMarkerWithIcons([str], []);
-
-    /// <summary>
-    /// Custom HelpMarker that supports skill icons and colorful condition dots.
-    /// </summary>
-    /// <param name="str">The helpText string with custom markup.</param>
     /// <param name="args">Substitution strings for the helpText string.</param>
-    public void HelpMarkerWithIcons(string str, object[] args) => HelpMarkerWithIcons([str], args);
-
-    /// <summary>
-    /// Custom HelpMarker that supports skill icons and colorful condition dots.
-    /// </summary>
-    /// <param name="lines">An Array of helpText strings with custom markup.</param>
-    public void HelpMarkerWithIcons(string[] lines) => HelpMarkerWithIcons(lines, []);
+    public void HelpMarkerWithIcons(string str, object[]? args = null) => HelpMarkerWithIcons([str], args);
 
     /// <summary>
     /// Custom HelpMarker that supports skill icons and colorful condition dots.
     /// </summary>
     /// <param name="lines">An Array of helpText strings with custom markup.</param>
     /// <param name="args">Substitution strings for each helpText string.</param>
-    public void HelpMarkerWithIcons(string[] lines, object[] args)
+    public void HelpMarkerWithIcons(string[] lines, object[]? args = null)
     {
+        if (args == null)
+            args = [];
+
         ImGui.SameLine();
 
         using (ImRaii.PushFont(UiBuilder.IconFont))
@@ -496,17 +487,12 @@ internal class ExpertSolverSettingsUI
     /// <param name="ID">A unique ID for the checkbox.</param>
     /// <param name="val">The boolean setting to attach to the checkbox.</param>
     /// <param name="str">The string with custom markup for the checkbox's label.</param>
-    public bool CheckboxWithIcons(string ID, ref bool val, string str) => CheckboxWithIcons(ID, ref val, str, []);
-
-    /// <summary>
-    /// Custom ImGui.Checkbox that supports skill icons and colorful condition dots in its label.
-    /// </summary>
-    /// <param name="ID">A unique ID for the checkbox.</param>
-    /// <param name="val">The boolean setting to attach to the checkbox.</param>
-    /// <param name="str">The string with custom markup for the checkbox's label.</param>
     /// <param name="args">Substitution strings for the checkbox's label.</param>
-    public bool CheckboxWithIcons(string ID, ref bool val, string str, object[] args)
+    public bool CheckboxWithIcons(string ID, ref bool val, string str, object[]? args = null)
     {
+        if (args == null)
+            args = [];
+
         bool changed = false;
 
         ImGui.PushID(ID);
@@ -527,19 +513,12 @@ internal class ExpertSolverSettingsUI
     /// <param name="min">Minimum value for the slider.</param>
     /// <param name="max">Maximum value for the slider.</param>
     /// <param name="str">The string with custom markup for the slider's label.</param>
-    public bool SliderIntWithIcons(string ID, ref int val, int min, int max, string str) => SliderIntWithIcons(ID, ref val, min, max, str, []);
-
-    /// <summary>
-    /// Custom ImGui.SliderInt that supports skill icons and colorful condition dots in its label.
-    /// </summary>
-    /// <param name="ID">A unique ID for the slider.</param>
-    /// <param name="val">The int setting to attach to the slider.</param>
-    /// <param name="min">Minimum value for the slider.</param>
-    /// <param name="max">Maximum value for the slider.</param>
-    /// <param name="str">The string with custom markup for the slider's label.</param>
     /// <param name="args">Substitution strings for the slider's label.</param>
-    public bool SliderIntWithIcons(string ID, ref int val, int min, int max, string str, object[] args)
+    public bool SliderIntWithIcons(string ID, ref int val, int min, int max, string str, object[]? args = null)
     {
+        if (args == null)
+            args = [];
+
         bool changed = false;
 
         ImGui.PushID(ID);
@@ -556,30 +535,15 @@ internal class ExpertSolverSettingsUI
     /// Draws Text, colorized Text, and Image elements from a string with custom markup.
     /// </summary>
     /// <param name="str">The string with custom markup to be rendered.</param>
-    public void DrawIconText(string str) => DrawIconText(ImGuiColors.DalamudWhite, str, []);
-
-    /// <summary>
-    /// Draws Text, colorized Text, and Image elements from a string with custom markup.
-    /// </summary>
-    /// <param name="color">The color to be used for standard strings.</param>
-    /// <param name="str">The string with custom markup to be rendered.</param>
-    public void DrawIconText(Vector4 color, string str) => DrawIconText(color, str, []);
-
-    /// <summary>
-    /// Draws Text, colorized Text, and Image elements from a string with custom markup.
-    /// </summary>
-    /// <param name="str">The string with custom markup to be rendered.</param>
     /// <param name="args">Substitution strings for the primary string.</param>
-    public void DrawIconText(string str, object[] args) => DrawIconText(ImGuiColors.DalamudWhite, str, args);
-
-    /// <summary>
-    /// Draws Text, colorized Text, and Image elements from a string with custom markup.
-    /// </summary>
     /// <param name="color">The color to be used for standard strings.</param>
-    /// <param name="str">The string with custom markup to be rendered.</param>
-    /// <param name="args">Substitution strings for the primary string.</param>
-    public void DrawIconText(Vector4 color, string str, object[] args)
+    public void DrawIconText(string str, object[]? args = null, Vector4? color = null)
     {
+        if (args == null)
+            args = [];
+        if (color == null)
+            color = ImGuiColors.DalamudWhite;
+
         SkillIconID skillIcon;
         Condition condition;
         Skills skill;
