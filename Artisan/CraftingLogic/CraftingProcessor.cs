@@ -157,6 +157,7 @@ public static class CraftingProcessor
             if (_activeSolver.GetType().FullName.Contains("Expert"))
             {
                 var expertProfile = P.Config.ExpertSolverProfiles.FindExpertProfile(recipeConfig.expertProfileID) ?? P.Config.ExpertSolverProfiles.GetDefaultProfile();
+                expertProfile.SetPerRecipeSettings(recipeConfig);
                 _activeSolver.SetActiveProfile(expertProfile);
             }
             ActiveSolver = new(autoSolver.Name, _activeSolver);

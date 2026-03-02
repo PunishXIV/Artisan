@@ -3,16 +3,39 @@ using ECommons.DalamudServices;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using TerraFX.Interop.Windows;
+using static Artisan.CraftingLogic.Solvers.ExpertSolverProfiles;
 
 namespace Artisan.CraftingLogic.Solvers;
 
 public class ExpertSolverProfiles
 {
+    [Serializable]
     public class ExpertProfile
     {
         public int ID { get; set; }
         public string Name { get; set; } = "";
         public ExpertSolverSettings Settings { get; set; } = new();
+
+        [NonSerialized]
+        public int? PerRecipeMaxSteadyUses = null;
+        [NonSerialized]
+        public bool? PerRecipeUseMaterialMiracle = null;
+        [NonSerialized]
+        public int? PerRecipeMinimumStepsBeforeMiracle = null;
+
+        public void SetPerRecipeSettings(RecipeConfig recipeConfig)
+        {
+            this.PerRecipeMaxSteadyUses = (int)recipeConfig.expertMaxSteadyUses;
+            this.PerRecipeUseMaterialMiracle = recipeConfig.expertUseMaterialMiracle;
+            this.PerRecipeMinimumStepsBeforeMiracle = (int)recipeConfig.expertMinimumStepsBeforeMiracle;
+        }
+
+        public int GetMaxSteadyUses() => this.Settings.OverrideCosmicRecipeSettings ? this.Settings.MaxSteadyUses : (this.PerRecipeMaxSteadyUses ?? this.Settings.MaxSteadyUses);
+
+        public bool GetUseMaterialMiracle() => this.Settings.OverrideCosmicRecipeSettings ? this.Settings.UseMaterialMiracle : (this.PerRecipeUseMaterialMiracle ?? this.Settings.UseMaterialMiracle);
+
+        public int GetMinimumStepsBeforeMiracle() => this.Settings.OverrideCosmicRecipeSettings ? this.Settings.MinimumStepsBeforeMiracle : (this.PerRecipeMinimumStepsBeforeMiracle ?? this.Settings.MinimumStepsBeforeMiracle);
     }
 
     public List<ExpertProfile> ExpertProfiles = new();
