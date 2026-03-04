@@ -184,7 +184,7 @@ namespace Artisan.UI
                 {
                     if (LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert && SolverIs(config, "expert"))
                     {
-                        int maxSteady = expCfg.OverrideCosmicRecipeSettings ? expCfg.MaxSteadyUses : (int)config.ExpertMaxSteadyUses;
+                        int maxSteady = expCfg.OverrideCosmicRecipeSettings ? expCfg.MaxSteadyUses : (int)config.expertMaxSteadyUses;
 
                         ImGui.PushItemWidth(100);
                         if (expCfg.OverrideCosmicRecipeSettings && SolverIs(config, "expert"))
