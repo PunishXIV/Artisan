@@ -45,7 +45,8 @@ namespace Artisan
         public bool UseSimulatedStartingQuality = false;
         public bool DisableHighlightedAction = false;
 
-        public ExpertSolverSettings ExpertSolverConfig = new();
+        public ExpertSolverSettings ExpertSolverConfig = new(); // the global expert profile/settings
+        public ExpertSolverProfiles ExpertSolverProfiles = new(); // handles all expert profiles, including the global one
         public MacroSolverSettings MacroSolverConfig = new();
         public ScriptSolverSettings ScriptSolverConfig = new();
 
