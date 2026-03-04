@@ -92,8 +92,13 @@ namespace Artisan.UI
                     return;
                 }
                 var changed = false;
-                var config = P.Config.RecipeConfigs.GetValueOrDefault(Endurance.RecipeID) ?? new();
+                var foundRecipe = P.Config.RecipeConfigs.GetValueOrDefault(Endurance.RecipeID);
+                var config = foundRecipe ?? new();
                 var autoMode = P.Config.AutoMode;
+
+                // save a new config entry for expert recipes so per-recipe settings work as expected
+                if (foundRecipe == null && LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert)
+                    changed = true;
 
                 if (ImGui.Checkbox("Automatic Action Execution Mode", ref autoMode))
                 {
