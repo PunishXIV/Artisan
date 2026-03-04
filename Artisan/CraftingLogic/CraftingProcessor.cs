@@ -101,7 +101,7 @@ public static class CraftingProcessor
 
     public static ExpertProfile GetExpertProfileForRecipe(RecipeConfig? recipeConfig)
     {
-        var profileID = recipeConfig?.expertProfileID ?? 0;
+        var profileID = recipeConfig?.ExpertProfileID ?? 0;
         foreach (var c in P.Config.ExpertSolverProfiles.GetExpertProfilesWithDefault().Where(c => c.ID == profileID))
             return c;
 
@@ -156,7 +156,7 @@ public static class CraftingProcessor
             }
             if (_activeSolver.GetType().FullName.Contains("Expert"))
             {
-                var expertProfile = P.Config.ExpertSolverProfiles.FindExpertProfile(recipeConfig.expertProfileID) ?? P.Config.ExpertSolverProfiles.GetDefaultProfile();
+                var expertProfile = P.Config.ExpertSolverProfiles.FindExpertProfile(recipeConfig.ExpertProfileID) ?? P.Config.ExpertSolverProfiles.GetDefaultProfile();
                 expertProfile.SetPerRecipeSettings(recipeConfig);
                 _activeSolver.SetActiveProfile(expertProfile);
             }

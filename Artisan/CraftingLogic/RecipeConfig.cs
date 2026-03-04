@@ -60,6 +60,15 @@ public class RecipeConfig
     [NonSerialized]
     public uint TempRequiredSquadronManual = 0;
 
+    [NonSerialized]
+    public int? TempExpertProfileID = null;
+    [NonSerialized]
+    public uint? TempExpertMaxSteadyUses = null;
+    [NonSerialized]
+    public bool? TempExpertUseMaterialMiracle = null;
+    [NonSerialized]
+    public uint? TempExpertMinimumStepsBeforeMiracle = null;
+
     public string SolverType = ""; // TODO: ideally it should be a Type?, but that causes problems for serialization
     public int SolverFlavour;
     public int expertProfileID = (int)Default;
@@ -94,6 +103,11 @@ public class RecipeConfig
     public string PotionName => requiredPotion == Default && TempRequiredPotion == 0 ? $"{P.Config.DefaultConsumables.PotionName} (Default)" : RequiredPotion == Disabled ? "Disabled" : $"{(RequiredPotionHQ ? " " : "")}{ConsumableChecker.Pots.FirstOrDefault(x => x.Id == RequiredPotion).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredPotion, RequiredPotionHQ)})";
     public string ManualName => requiredManual == Default && TempRequiredManual == 0 ? $"{P.Config.DefaultConsumables.ManualName} (Default)" : RequiredManual == Disabled ? "Disabled" : $"{ConsumableChecker.Manuals.FirstOrDefault(x => x.Id == RequiredManual).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredManual, false)})";
     public string SquadronManualName => requiredSquadronManual == Default && TempRequiredSquadronManual == 0 ? $"{P.Config.DefaultConsumables.SquadronManualName} (Default)" : RequiredSquadronManual == Disabled  ? "Disabled" : $"{ConsumableChecker.SquadronManuals.FirstOrDefault(x => x.Id == RequiredSquadronManual).Name} (Qty: {ConsumableChecker.NumberOfConsumable(RequiredSquadronManual, false)})";
+
+    public int ExpertProfileID => TempExpertProfileID ?? expertProfileID;
+    public uint ExpertMaxSteadyUses => TempExpertMaxSteadyUses ?? expertMaxSteadyUses;
+    public bool ExpertUseMaterialMiracle => TempExpertUseMaterialMiracle ?? expertUseMaterialMiracle;
+    public uint ExpertMinimumStepsBeforeMiracle => TempExpertMinimumStepsBeforeMiracle ?? expertMinimumStepsBeforeMiracle;
 
     public float GetLargestName()
     {
