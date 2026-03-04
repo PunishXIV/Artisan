@@ -84,6 +84,7 @@ public record class StepState
     public uint MaterialMiracleCharges;
     public bool MaterialMiracleActive;
     public int ObserveCounter;
+    public bool ExpertEmergency;
     public int SteadyHandCharges;
     public int SteadyHandLeft;
     public int SteadyHandsUsed;

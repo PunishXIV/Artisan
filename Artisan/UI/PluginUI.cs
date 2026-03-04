@@ -30,6 +30,7 @@ namespace Artisan.UI
     unsafe internal class PluginUI : Window
     {
         public event EventHandler<bool>? CraftingWindowStateChanged;
+        public ExpertSolverSettingsUI ExpertSettingsUI = new();
 
 
         private bool visible = false;
@@ -176,6 +177,11 @@ namespace Artisan.UI
                                 OpenWindow = OpenWindow.Macro;
                             }
                             ImGui.Spacing();
+                            if (ImGui.Selectable("Expert Profiles", OpenWindow == OpenWindow.ExpertProfiles))
+                            {
+                                OpenWindow = OpenWindow.ExpertProfiles;
+                            }
+                            ImGui.Spacing();
                             if (ImGui.Selectable("Raphael Cache", OpenWindow == OpenWindow.RaphaelCache))
                             {
                                 OpenWindow = OpenWindow.RaphaelCache;
@@ -253,6 +259,9 @@ namespace Artisan.UI
                                     break;
                                 case OpenWindow.Macro:
                                     MacroUI.Draw();
+                                    break;
+                                case OpenWindow.ExpertProfiles:
+                                    ExpertProfilesUI.Draw();
                                     break;
                                 case OpenWindow.RaphaelCache:
                                     RaphaelCacheUI.Draw();
@@ -750,23 +759,23 @@ namespace Artisan.UI
 
             }
             bool openExpert = false;
-            if (ImGui.CollapsingHeader("Expert Recipe Solver Settings"))
+            if (ImGui.CollapsingHeader("Global Expert Recipe Solver Settings"))
             {
                 openExpert = true;
-                if (P.Config.ExpertSolverConfig.expertIcon is not null)
+                if (P.PluginUi.ExpertSettingsUI.expertIcon is not null)
                 {
                     ImGui.SameLine();
-                    ImGui.Image(P.Config.ExpertSolverConfig.expertIcon.Handle, new(P.Config.ExpertSolverConfig.expertIcon.Width * ImGuiHelpers.GlobalScaleSafe, ImGui.GetItemRectSize().Y), new(0, 0), new Vector2(1, 1), new(0.94f, 0.57f, 0f, 1f));
+                    ImGui.Image(P.PluginUi.ExpertSettingsUI.expertIcon.Handle, new(P.PluginUi.ExpertSettingsUI.expertIcon.Width * ImGuiHelpers.GlobalScaleSafe, ImGui.GetItemRectSize().Y), new(0, 0), new Vector2(1, 1), new(0.94f, 0.57f, 0f, 1f));
                 }
-                if (P.Config.ExpertSolverConfig.Draw())
+                if (P.PluginUi.ExpertSettingsUI.DrawGlobalSettings(P.Config.ExpertSolverConfig))
                     P.Config.Save();
             }
             if (!openExpert)
             {
-                if (P.Config.ExpertSolverConfig.expertIcon is not null)
+                if (P.PluginUi.ExpertSettingsUI.expertIcon is not null)
                 {
                     ImGui.SameLine();
-                    ImGui.Image(P.Config.ExpertSolverConfig.expertIcon.Handle, new(P.Config.ExpertSolverConfig.expertIcon.Width * ImGuiHelpers.GlobalScaleSafe, ImGui.GetItemRectSize().Y), new(0, 0), new Vector2(1, 1), new(0.94f, 0.57f, 0f, 1f));
+                    ImGui.Image(P.PluginUi.ExpertSettingsUI.expertIcon.Handle, new(P.PluginUi.ExpertSettingsUI.expertIcon.Width * ImGuiHelpers.GlobalScaleSafe, ImGui.GetItemRectSize().Y), new(0, 0), new Vector2(1, 1), new(0.94f, 0.57f, 0f, 1f));
                 }
             }
 
@@ -1061,5 +1070,6 @@ namespace Artisan.UI
         Simulator = 10,
         RaphaelCache = 11,
         Assigner = 12,
+        ExpertProfiles = 13,
     }
 }
