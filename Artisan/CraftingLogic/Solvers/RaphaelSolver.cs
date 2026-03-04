@@ -153,7 +153,7 @@ namespace Artisan.CraftingLogic.Solvers
                         if (process.ExitCode != 0)
                         {
                             if (!string.IsNullOrWhiteSpace(error))
-                                DuoLog.Error(error.Split('\r', '\n')[0]);
+                                DuoLog.Error(error);
 
                             info.Succeeded = false;
                             cts.Cancel();

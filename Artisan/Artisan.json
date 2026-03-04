@@ -12,5 +12,5 @@
   "RepoUrl": "https://github.com/PunishXIV/Artisan",
   "DalamudApiLevel": 14,
   "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
-  "ChangeLog": "- More expert solver tweaks and additions by @pksage.\n- Leveling recipe progress in Recipe Window added."
+  "ChangeLog": "- IPC added for setting consumables."
 }
