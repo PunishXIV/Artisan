@@ -26,9 +26,9 @@ public class ExpertSolverProfiles
 
         public void SetPerRecipeSettings(RecipeConfig recipeConfig)
         {
-            this.PerRecipeMaxSteadyUses = (int)recipeConfig.expertMaxSteadyUses;
-            this.PerRecipeUseMaterialMiracle = recipeConfig.expertUseMaterialMiracle;
-            this.PerRecipeMinimumStepsBeforeMiracle = (int)recipeConfig.expertMinimumStepsBeforeMiracle;
+            this.PerRecipeMaxSteadyUses = (int)recipeConfig.ExpertMaxSteadyUses;
+            this.PerRecipeUseMaterialMiracle = recipeConfig.ExpertUseMaterialMiracle;
+            this.PerRecipeMinimumStepsBeforeMiracle = (int)recipeConfig.ExpertMinimumStepsBeforeMiracle;
         }
 
         public int GetMaxSteadyUses() => this.Settings.OverrideCosmicRecipeSettings ? this.Settings.MaxSteadyUses : (this.PerRecipeMaxSteadyUses ?? this.Settings.MaxSteadyUses);

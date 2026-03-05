@@ -129,8 +129,8 @@ namespace Artisan.UI
                 ExpertSolverSettings expCfg = profile.ID == 0 ? P.Config.ExpertSolverConfig : profile.Settings;
                 if (Crafting.MaterialMiracleCharges() > 0 && (SolverIs(config, "standard") || SolverIs(config, "expert")))
                 {
-                    bool useMatMiracle = LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert ? expCfg.OverrideCosmicRecipeSettings ? expCfg.UseMaterialMiracle : config.expertUseMaterialMiracle : P.Config.UseMaterialMiracle;
-                    int delayMatMiracle = LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert ? expCfg.OverrideCosmicRecipeSettings ? expCfg.MinimumStepsBeforeMiracle : (int)config.expertMinimumStepsBeforeMiracle : P.Config.MinimumStepsBeforeMiracle;
+                    bool useMatMiracle = LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert ? expCfg.OverrideCosmicRecipeSettings ? expCfg.UseMaterialMiracle : config.ExpertUseMaterialMiracle : P.Config.UseMaterialMiracle;
+                    int delayMatMiracle = LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert ? expCfg.OverrideCosmicRecipeSettings ? expCfg.MinimumStepsBeforeMiracle : (int)config.ExpertMinimumStepsBeforeMiracle : P.Config.MinimumStepsBeforeMiracle;
                     bool multiMatMiracle = P.Config.MaterialMiracleMulti;
 
                     string miracleStr = SolverIs(config, "expert") ? "[ex] Use [s!MaterialMiracle]" : "Use [s!MaterialMiracle]";
@@ -189,7 +189,7 @@ namespace Artisan.UI
                 {
                     if (LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert && SolverIs(config, "expert"))
                     {
-                        int maxSteady = expCfg.OverrideCosmicRecipeSettings ? expCfg.MaxSteadyUses : (int)config.expertMaxSteadyUses;
+                        int maxSteady = expCfg.OverrideCosmicRecipeSettings ? expCfg.MaxSteadyUses : (int)config.ExpertMaxSteadyUses;
 
                         ImGui.PushItemWidth(100);
                         if (expCfg.OverrideCosmicRecipeSettings && SolverIs(config, "expert"))
