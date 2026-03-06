@@ -3,12 +3,10 @@ using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.GameInterop;
 using Artisan.RawInformation;
-using Dalamud.Game.ClientState.Conditions;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.Logging;
-using OtterGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -67,6 +65,9 @@ namespace Artisan.IPC
 
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeSquadronManual").RegisterAction(ChangeSquadronManual);
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempSquadronManualBackToNormal").RegisterAction(SetTempSquadronManualBackToNormal);
+
+            Svc.PluginInterface.GetIpcProvider<Dictionary<int, string>>("Artisan.GetLists").RegisterFunc(GetLists);
+            Svc.PluginInterface.GetIpcProvider<int, object>("Artisan.StartListById").RegisterAction(StartListById);
         }
 
         internal static void Dispose()
@@ -98,6 +99,9 @@ namespace Artisan.IPC
 
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeSquadronManual").UnregisterAction();
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempSquadronManualBackToNormal").UnregisterAction();
+
+            Svc.PluginInterface.GetIpcProvider<Dictionary<int, string>>("Artisan.GetLists").UnregisterFunc();
+            Svc.PluginInterface.GetIpcProvider<int, object>("Artisan.StartListById").UnregisterAction();
         }
 
         static bool GetEnduranceStatus()
@@ -358,6 +362,31 @@ namespace Artisan.IPC
             {
                 config.TempRequiredSquadronManual = 0;
             }
+        }
+
+        /// <summary>
+        /// Returns a dictionary mapping each crafting list ID to its name.
+        /// </summary>
+        public static Dictionary<int, string> GetLists()
+        {
+            return P.Config.NewCraftingLists.ToDictionary(x => x.ID, x => x.Name ?? string.Empty);
+        }
+
+        /// <summary>
+        /// Starts a crafting list by its ID.
+        /// </summary>
+        /// <param name="listId">The ID of the crafting list to start.</param>
+        public static void StartListById(int listId)
+        {
+            var list = P.Config.NewCraftingLists.FirstOrDefault(x => x.ID == listId);
+            if (list == null)
+                throw new Exception($"Crafting list with ID {listId} not found.");
+
+            if (P.ws.Windows.TryGetFirst(x => x.WindowName.Contains(listId.ToString(), StringComparison.CurrentCultureIgnoreCase), out var window))
+                window.IsOpen = false;
+
+            CraftingListUI.selectedList = list;
+            CraftingListUI.StartList();
         }
 
         public enum ArtisanMode
