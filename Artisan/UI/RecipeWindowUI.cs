@@ -3,7 +3,9 @@ using Artisan.CraftingLists;
 using Artisan.FCWorkshops;
 using Artisan.GameInterop;
 using Artisan.RawInformation;
+using Artisan.RawInformation.Character;
 using Artisan.UI;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ECommons;
@@ -13,7 +15,6 @@ using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 using System;
 using System.Linq;
@@ -44,7 +45,7 @@ namespace Artisan
                 }
             }
         }
-        
+
         private RecipeWindowUI() : base("###RecipeWindow", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoNavInputs | ImGuiWindowFlags.NoNavFocus | ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoFocusOnAppearing)
         {
             Size = new Vector2(0, 0);
@@ -90,8 +91,85 @@ namespace Artisan
 
                 DrawMacroOptions();
                 DrawCosmicWindowOptions();
+
+                DrawRecipeCompletion();
             }
             catch { }
+        }
+
+        private unsafe void DrawRecipeCompletion()
+        {
+            if (!P.Config.ShowLevelingRecipeProgress)
+                return;
+
+            if (AgentRecipeNote.Instance()->SelectedRecipeCategoryPage != 0 || AgentRecipeNote.Instance()->RecipeSearchOpen)
+                return;
+
+            try
+            {
+                var recipeWindow = Svc.GameGui.GetAddonByName("RecipeNote", 1);
+                if (recipeWindow == IntPtr.Zero)
+                    return;
+
+                var addonPtr = (AtkUnitBase*)recipeWindow.Address;
+                if (addonPtr == null)
+                    return;
+
+                var n = addonPtr->GetNodeById(39)->GetAsAtkComponentTreeList();
+                if (n == null)
+                    return;
+
+                RecipeInformation.UpdateCompletedRecipes();
+                var job = (Job)AgentRecipeNote.Instance()->SelectedCraftType + 8;
+                var jobLevel = CharacterInfo.JobLevel(job);
+                var filteredList = RecipeInformation.CompletedRecipes.Where(x => x.Key.Job == job).ToDictionary(x => x.Key.LevelBracket, x => x.Value);
+
+                uint visited = 0;
+                uint toVisit = (((uint)Math.Round(jobLevel / 5.0) * 5) / 5);
+
+                var maxLevel = Svc.Data.GetExcelSheet<RecipeLevelTable>().Max(x => x.ClassJobLevel);
+                if (jobLevel == maxLevel)
+                    toVisit -= 1;
+
+                foreach (var subNode in n->UldManager.Nodes)
+                {
+                    var sn = (AtkComponentNode*)subNode.Value;
+                    var info = sn->Component->UldManager;
+                    var oinfo = (AtkUldComponentInfo*)info.Objects;
+
+                    if (oinfo->ComponentType is ComponentType.ListItemRenderer)
+                    {
+                        var compNode = sn->Component;
+                        var textNode = compNode->GetNodeById(4);
+                        if (textNode == null || textNode->Type is not NodeType.Text)
+                            continue;
+
+                        uint bracket = toVisit - visited;
+                        if (bracket > toVisit)
+                            continue;
+
+                        if (filteredList.TryGetFirst(x => x.Key == bracket, out var entry))
+                        {
+                            var label = Svc.Data.GetExcelSheet<NotebookDivision>().GetRow(bracket).Name.ToString();
+
+                            if (entry.Value.Completed == entry.Value.Total)
+                            {
+                                textNode->GetAsAtkTextNode()->SetText($"{label} ✓");
+                            }
+                            else
+                            {
+                                textNode->GetAsAtkTextNode()->SetText($"{label} [{entry.Value.Completed}/{entry.Value.Total}]");
+                            }
+
+                        }
+                        visited++;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Log();
+            }
         }
 
         public static RecipeWindowUI Create()
@@ -596,7 +674,7 @@ namespace Artisan
 
 
 
-                void getNodes(out AtkTextNode* itemNameNode1, out AtkTextNode* itemNameNode2, out AtkTextNode*  phaseProgress, out AtkTextNode* currentPartNode)
+                void getNodes(out AtkTextNode* itemNameNode1, out AtkTextNode* itemNameNode2, out AtkTextNode* phaseProgress, out AtkTextNode* currentPartNode)
                 {
                     itemNameNode1 = addonPtr->GetTextNodeById(4);//UldManager.NodeList[37]->GetAsAtkTextNode();
                     itemNameNode2 = addonPtr->GetTextNodeById(6);//UldManager.NodeList[37]->GetAsAtkTextNode();
@@ -707,7 +785,7 @@ namespace Artisan
             base.OnClose();
         }
 
-       
+
 
 
         public static unsafe void DrawOptions()
@@ -903,10 +981,10 @@ namespace Artisan
 
         private static void ShowCraftMenuWindow(string windowName)
         {
-           
+
             _craftMenuWindowUi.Flags = GetWindowFlags();
             _craftMenuWindowUi.IsOpen = true;
-            
+
         }
 
         public static CraftMenuWindowUI AddCraftMenuWindow()
@@ -921,7 +999,7 @@ namespace Artisan
             {
                 return;
             }
-            
+
             _craftMenuWindowUi.IsOpen = false;
 
             if (!reset)

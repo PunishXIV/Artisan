@@ -8,6 +8,7 @@ using ECommons.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static Artisan.CraftingLogic.Solvers.ExpertSolverProfiles;
 
 namespace Artisan.CraftingLogic;
 
@@ -70,7 +71,6 @@ public static class CraftingProcessor
                     yield return f;
                 }
             }
-            yield return default;
         }
     }
 
@@ -93,9 +93,18 @@ public static class CraftingProcessor
 
         var s2 = GetAvailableSolversForRecipe(craft, false);
         if (s2.Count() > 0)
-            return s2.MaxBy(x => x.Priority);
+                return s2.MinBy(x => x.Priority);
 
         return default;
+    }
+
+    public static ExpertProfile GetExpertProfileForRecipe(RecipeConfig? recipeConfig)
+    {
+        var profileID = recipeConfig?.ExpertProfileID ?? 0;
+        foreach (var c in P.Config.ExpertSolverProfiles.GetExpertProfilesWithDefault().Where(c => c.ID == profileID))
+            return c;
+
+        return P.Config.ExpertSolverProfiles.GetDefaultProfile();
     }
 
     public static IEnumerable<ISolverDefinition.Desc> GetSolverDefinitions()
@@ -131,7 +140,8 @@ public static class CraftingProcessor
         if (_activeSolver == null)
         {
             // if we didn't provide an explicit solver, create one - but make sure if we have manually assigned one, it is actually supported
-            var autoSolver = GetSolverForRecipe(P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId), craft);
+            var recipeConfig = P.Config.RecipeConfigs.GetValueOrDefault(recipe.RowId);
+            var autoSolver = GetSolverForRecipe(recipeConfig, craft);
             if (autoSolver.UnsupportedReason.Length > 0)
             {
                 SolverFailed?.Invoke(recipe, autoSolver.UnsupportedReason);
@@ -142,6 +152,12 @@ public static class CraftingProcessor
             {
                 SolverFailed?.Invoke(recipe, "No active solver selected.");
                 return;
+            }
+            if (_activeSolver.GetType().FullName.Contains("Expert"))
+            {
+                var expertProfile = P.Config.ExpertSolverProfiles.FindExpertProfile(recipeConfig.ExpertProfileID) ?? P.Config.ExpertSolverProfiles.GetDefaultProfile();
+                expertProfile.SetPerRecipeSettings(recipeConfig);
+                _activeSolver.SetActiveProfile(expertProfile);
             }
             ActiveSolver = new(autoSolver.Name, _activeSolver);
         }

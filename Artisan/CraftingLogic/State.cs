@@ -84,8 +84,10 @@ public record class StepState
     public uint MaterialMiracleCharges;
     public bool MaterialMiracleActive;
     public int ObserveCounter;
+    public bool ExpertEmergency;
     public int SteadyHandCharges;
     public int SteadyHandLeft;
+    public int SteadyHandsUsed;
 
     public override string ToString() => $"#{Index} {Condition}: {Progress}/{Quality}/{Durability}/{RemainingCP}; {BuffsString()}; Prev={PrevComboAction}{(PrevActionFailed ? " (failed)" : "")}";
 
