@@ -3,12 +3,10 @@ using Artisan.CraftingLists;
 using Artisan.CraftingLogic;
 using Artisan.GameInterop;
 using Artisan.RawInformation;
-using Dalamud.Game.ClientState.Conditions;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.Logging;
-using OtterGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -68,6 +66,9 @@ namespace Artisan.IPC
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeSquadronManual").RegisterAction(ChangeSquadronManual);
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempSquadronManualBackToNormal").RegisterAction(SetTempSquadronManualBackToNormal);
 
+            Svc.PluginInterface.GetIpcProvider<Dictionary<int, string>>("Artisan.GetLists").RegisterFunc(GetLists);
+            Svc.PluginInterface.GetIpcProvider<int, object>("Artisan.StartListById").RegisterAction(StartListById);
+
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertProfileID").RegisterAction(ChangeExpertProfileID);
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertProfileIDBackToNormal").RegisterAction(SetTempExpertProfileIDBackToNormal);
 
@@ -111,6 +112,9 @@ namespace Artisan.IPC
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeSquadronManual").UnregisterAction();
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempSquadronManualBackToNormal").UnregisterAction();
 
+            Svc.PluginInterface.GetIpcProvider<Dictionary<int, string>>("Artisan.GetLists").UnregisterFunc();
+            Svc.PluginInterface.GetIpcProvider<int, object>("Artisan.StartListById").UnregisterAction();
+          
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertProfileID").UnregisterAction();
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertProfileIDBackToNormal").UnregisterAction();
 
@@ -444,6 +448,27 @@ namespace Artisan.IPC
             }
         }
 
+        /// <summary>
+        /// Returns a dictionary mapping each crafting list ID to its name.
+        /// </summary>
+        public static Dictionary<int, string> GetLists()
+        {
+            return P.Config.NewCraftingLists.ToDictionary(x => x.ID, x => x.Name ?? string.Empty);
+        }
+
+        public static void StartListById(int listId)
+        {
+            var list = P.Config.NewCraftingLists.FirstOrDefault(x => x.ID == listId);
+            if (list == null)
+                throw new Exception($"Crafting list with ID {listId} not found.");
+
+            if (P.ws.Windows.TryGetFirst(x => x.WindowName.Contains(listId.ToString(), StringComparison.CurrentCultureIgnoreCase), out var window))
+                window.IsOpen = false;
+
+            CraftingListUI.selectedList = list;
+            CraftingListUI.StartList();
+        }
+      
         public static void SetTempExpertProfileIDBackToNormal(uint recipeId)
         {
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipeId) ?? new();
