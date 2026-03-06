@@ -16,14 +16,14 @@ public class ExpertSolverDefinition : ISolverDefinition
     public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
     {
         if (craft.CraftExpert)
-            yield return new(this, 0, 2, "Expert Recipe Solver", craft.StatLevel < 90 ? "Requires Level 90" : !craft.UnlockedManipulation ? "You need to unlock Manipulation" : "");
+            yield return new(this, 0, 0, "Expert Recipe Solver", craft.StatLevel < 90 ? "Requires Level 90" : !craft.UnlockedManipulation ? "You need to unlock Manipulation" : "");
     }
 
     public Solver Create(CraftState craft, int flavour) => new ExpertSolver();
 
     public IEnumerable<ISolverDefinition.Desc> Flavours()
     {
-        yield return new(this, 0, 2, "Expert Recipe Solver");
+        yield return new(this, 0, 0, "Expert Recipe Solver");
     }
 }
 

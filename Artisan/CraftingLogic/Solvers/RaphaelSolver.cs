@@ -40,12 +40,12 @@ namespace Artisan.CraftingLogic.Solvers
 
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
-            yield return new(this, 3, 0, $"Raphael Recipe Solver", craft.StatLevel <= 7 ? $"Does not work before unlocking {Skills.MastersMend.NameOfAction()}. Please use Standard Recipe Solver" : "");
+            yield return new(this, 3, 1, $"Raphael Recipe Solver", craft.StatLevel <= 7 ? $"Does not work before unlocking {Skills.MastersMend.NameOfAction()}. Please use Standard Recipe Solver" : "");
         }
 
         public IEnumerable<ISolverDefinition.Desc> Flavours()
         {
-            yield return new(this, 3, 0, $"Raphael Recipe Solver");
+            yield return new(this, 3, 1, $"Raphael Recipe Solver");
         }
     }
 
@@ -454,6 +454,7 @@ namespace Artisan.CraftingLogic.Solvers
         public bool GenerateOnExperts = false;
         public int TimeOutMins = 1;
         public int MaxStellarHand = 2;
+        public bool DefaultRaphSolver = false;
         public bool Draw()
         {
             bool changed = false;
@@ -501,6 +502,10 @@ namespace Artisan.CraftingLogic.Solvers
                 changed |= ImGui.SliderInt("Timeout solution generation", ref TimeOutMins, 1, 15);
 
                 ImGuiComponents.HelpMarker($"If a solution takes longer than this many minutes to generate, it will cancel the generation task.");
+
+                changed |= ImGui.Checkbox("Set Raphael as Default Solver For Recipes Without a Solver Set.", ref DefaultRaphSolver);
+
+                ImGuiComponents.HelpMarker("Once the solver is set with this setting, turning this setting off will still keep it saved as Raphael.");
 
                 if (ImGui.Button($"Clear raphael macro cache (Currently {P.Config.RaphaelSolverCacheV5.Count} stored)"))
                 {

@@ -71,7 +71,6 @@ public static class CraftingProcessor
                     yield return f;
                 }
             }
-            yield return default;
         }
     }
 
@@ -94,7 +93,7 @@ public static class CraftingProcessor
 
         var s2 = GetAvailableSolversForRecipe(craft, false);
         if (s2.Count() > 0)
-            return s2.MaxBy(x => x.Priority);
+                return s2.MinBy(x => x.Priority);
 
         return default;
     }
