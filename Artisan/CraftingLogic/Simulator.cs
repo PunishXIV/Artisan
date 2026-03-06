@@ -229,8 +229,10 @@ public static class Simulator
         next.MaterialMiracleCharges = action == Skills.MaterialMiracle ? step.MaterialMiracleCharges - 1 : step.MaterialMiracleCharges;
         next.MaterialMiracleActive = step.MaterialMiracleActive; //This is a timed buff, can't really use this in the simulator, just copy the real result
         next.ObserveCounter = action == Skills.Observe ? step.ObserveCounter + 1 : 0;
+        next.ExpertEmergency = step.ExpertEmergency; // set directly by the expert solver
         next.SteadyHandCharges = action == Skills.SteadyHand ? step.SteadyHandCharges - 1 : step.SteadyHandCharges;
         next.SteadyHandLeft = action == Skills.SteadyHand ? 3 : Math.Max(0, step.SteadyHandLeft - 1);
+        next.SteadyHandsUsed = action == Skills.SteadyHand ? step.SteadyHandsUsed + 1 : step.SteadyHandsUsed;
 
         if (step.FinalAppraisalLeft > 0 && next.Progress >= craft.CraftProgress)
             next.Progress = craft.CraftProgress - 1;

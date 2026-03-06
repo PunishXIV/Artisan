@@ -1366,6 +1366,27 @@ internal class ListEditor : Window, IDisposable
             P.Config.Save();
         }
 
+        if (config.DrawExpertProfiles(craft, true))
+        {
+            P.Config.RecipeConfigs[selectedListItem] = config;
+            P.Config.Save();
+        }
+
+        ImGui.SameLine();
+
+        if (ImGui.Button($"Apply to all###ExpertProfileOnAll"))
+        {
+            foreach (var r in SelectedList.Recipes.Distinct())
+            {
+                var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
+                o.expertProfileID = config.expertProfileID;
+                P.Config.RecipeConfigs[r.ID] = o;
+            }
+            P.Config.Save();
+        }
+
+        config.DrawWarnings(craft);
+
         RaphaelCache.DrawRaphaelDropdown(craft, false);
 
         ImGuiEx.TextV("Requirements:");

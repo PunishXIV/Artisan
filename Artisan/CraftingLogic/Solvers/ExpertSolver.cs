@@ -1,8 +1,10 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using ECommons.DalamudServices;
 using System.Collections.Generic;
 using TerraFX.Interop.Windows;
+using static Artisan.CraftingLogic.Solvers.ExpertSolverProfiles;
 using static Artisan.CraftingLogic.Solvers.ExpertSolverSettings;
 
 namespace Artisan.CraftingLogic.Solvers;
@@ -14,17 +16,18 @@ public class ExpertSolverDefinition : ISolverDefinition
     public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
     {
         if (craft.CraftExpert)
-            yield return new(this, 0, 2, "Expert Recipe Solver", craft.StatLevel < 90 ? "Requires Level 90" : !craft.UnlockedManipulation ? "You need to unlock Manipulation" : "");
+            yield return new(this, 0, 0, "Expert Recipe Solver", craft.StatLevel < 90 ? "Requires Level 90" : !craft.UnlockedManipulation ? "You need to unlock Manipulation" : "");
     }
 
     public Solver Create(CraftState craft, int flavour) => new ExpertSolver();
 
     public IEnumerable<ISolverDefinition.Desc> Flavours()
     {
-        yield return new(this, 0, 2, "Expert Recipe Solver");
+        yield return new(this, 0, 0, "Expert Recipe Solver");
     }
 }
 
+// todo, a big one: many experts don't use these odds, the solver should dynamically calculate various optimal logic based on actual odds
 // some thoughts:
 // - any time we want to regain some dura, we can bait pliant and use manip
 // - assuming 12% pliant, 3% good, 12% good omen, average cost to get pliant from random starting point is ~24cp
@@ -72,11 +75,23 @@ public class ExpertSolver : Solver
     const int mmDuraRestored = 30;
     // MM is 2.93 cp/dura, so immaculate is a better value at 40+ dura restored. it's still 24 more CP, though, so add a lil buffer
     const int immaculateDuraMinimum = 45;
+    const int maxIQStacksForWasteNot = 4;
 
-    public override Recommendation Solve(CraftState craft, StepState step) => SolveNextStep(P.Config.ExpertSolverConfig, craft, step);
+    public ExpertProfile ActiveProfile = new();
 
-    public static Recommendation SolveNextStep(ExpertSolverSettings cfg, CraftState craft, StepState step)
+    public override void SetActiveProfile(ExpertProfile activeProfile)
     {
+        Svc.Log.Information($"Setting expert profile ID {activeProfile.ID}");
+        ActiveProfile = activeProfile;
+    }
+
+    public override Recommendation Solve(CraftState craft, StepState step) => SolveNextStep(ActiveProfile, craft, step);
+    
+
+    public static Recommendation SolveNextStep(ExpertProfile profile, CraftState craft, StepState step)
+    {
+        ExpertSolverSettings cfg = profile.Settings;
+
         // see what we need to finish the craft
         var remainingProgress = craft.CraftProgress - step.Progress;
         var estBasicSynthProgress = Simulator.BaseProgress(craft) * 120 / 100;
@@ -97,13 +112,14 @@ public class ExpertSolver : Solver
         }
 
         if (step.MuscleMemoryLeft > 0) // mume still active - means we have very little progress and want more progress asap
-            return new(SafeCraftAction(craft, step, SolveOpenerMuMe(cfg, craft, step)), "mume");
+            return new(SafeCraftAction(craft, step, SolveOpenerMuMe(profile, craft, step)), "mume");
 
-        if (cfg.UseMaterialMiracle && step.Index >= cfg.MinimumStepsBeforeMiracle && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
+        // todo: don't override useful conditions with material miracle?
+        if (profile.GetUseMaterialMiracle() && step.Index >= profile.GetMinimumStepsBeforeMiracle() && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
             return new(Skills.MaterialMiracle);
 
         // see if we can do byregot right now and top up quality
-        var finishQualityAction = SolveFinishQuality(craft, step, cpAvailableForQuality, qualityTarget);
+        var finishQualityAction = SolveFinishQuality(cfg, craft, step, cpAvailableForQuality, qualityTarget);
         if (finishQualityAction.Action != Skills.None)
             return finishQualityAction;
 
@@ -111,25 +127,33 @@ public class ExpertSolver : Solver
         if (isMid)
         {
             // we still need quality and have cp available - we're mid craft
-            var midAction = SolveMid(cfg, craft, step, progressDeficit, cpAvailableForQuality);
+            var midAction = SolveMid(profile, craft, step, progressDeficit, cpAvailableForQuality);
             if (step.RemainingCP >= Simulator.GetCPCost(step, midAction.Action))
                 return midAction;
             // try restoring some cp...
-            var emergencyAction = EmergencyRestoreCP(cfg, craft, step);
+            var emergencyAction = EmergencyRestoreCP(cfg, craft, step, true);
             if (emergencyAction != Skills.None)
                 return new(emergencyAction, "mid: emergency cp");
             // oh well, bail...
         }
 
         // try to finish the craft
-        return new(SolveFinishProgress(craft, step), isMid ? "finish emergency" : "finish");
+        return new(SolveFinishProgress(cfg, craft, step, qualityTarget), isMid ? "finish emergency" : "finish");
     }
 
-    private static Skills SolveOpenerMuMe(ExpertSolverSettings cfg, CraftState craft, StepState step)
+    private static Skills SolveOpenerMuMe(ExpertProfile profile, CraftState craft, StepState step)
     {
-        bool lastChance = step.MuscleMemoryLeft == 1;
+        ExpertSolverSettings cfg = profile.Settings;
 
-        if (step.Condition == Condition.Pliant)
+        bool lastChance = step.MuscleMemoryLeft == 1;
+        int rapidDura = Simulator.GetDurabilityCost(step, Skills.RapidSynthesis);
+
+        if (step.SteadyHandLeft > 0 && step.Durability > rapidDura && CU(craft, step, Skills.RapidSynthesis))
+        {
+            // use steady hand while we have it
+            return Skills.RapidSynthesis;
+        }
+        if (step.Condition == Condition.Pliant && !lastChance)
         {
             // pliant is manip > vene > ignore
             if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForManip && step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation))
@@ -137,7 +161,7 @@ public class ExpertSolver : Solver
             if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForVene && step.VenerationLeft == 0 && CU(craft, step, Skills.Veneration))
                 return Skills.Veneration;
         }
-        else if (step.Condition == Condition.Primed)
+        if (step.Condition == Condition.Primed && !lastChance)
         {
             // primed is vene > manip > ignore
             if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForVene && step.VenerationLeft == 0 && CU(craft, step, Skills.Veneration))
@@ -145,41 +169,70 @@ public class ExpertSolver : Solver
             if (cfg.MuMePrimedManip && step.MuscleMemoryLeft > cfg.MuMeMinStepsForManip && step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation))
                 return Skills.Manipulation;
         }
-        else if (step.Durability <= 25)
+        // high-prio manip regardless of condition (will usually only happen on very low dura recipes)
+        if (step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation))
         {
-            if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForManip && step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation))
+            // respect the manip setting on low but usable dura
+            if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForManip && step.Durability <= rapidDura + 5 && !lastChance)
+                return Skills.Manipulation;
+            // force manip regardless of setting if we would fail otherwise
+            if (step.Durability <= rapidDura)
                 return Skills.Manipulation;
         }
-        else if (step.Condition == Condition.Centered && Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) < step.Durability)
+        // set up stellar steady hand to guarantee a rapid
+        if (CU(craft, step, Skills.SteadyHand) && step.SteadyHandsUsed < profile.GetMaxSteadyUses() && !lastChance)
+        { 
+            // make sure veneration is up first, if we have time
+            if (step.VenerationLeft == 0 && step.MuscleMemoryLeft > 2 && CU(craft, step, Skills.Veneration))
+                return Skills.Veneration;
+
+            return Skills.SteadyHand;
+        }
+        if (step.Condition == Condition.Centered && step.Durability > rapidDura)
         {
             // centered rapid is very good value, even disregarding last-chance or veneration concerns
             if (CU(craft, step, Skills.RapidSynthesis))
                 return Skills.RapidSynthesis;
         }
-        else if (step.Condition is Condition.Sturdy or Condition.Robust)
+        if (step.Condition is Condition.Sturdy or Condition.Robust && step.Durability > rapidDura && lastChance)
         {
-            // last-chance intensive or rapid, regardless of veneration
-            return SolveOpenerMuMeTouch(craft, step, cfg.MuMeIntensiveLastResort && lastChance);
+            // last-chance half-dura intensive/rapid, regardless of veneration
+            return SolveOpenerMuMeTouch(craft, step, cfg.MuMeIntensiveLastResort);
         }
-        else if (step.Condition == Condition.Malleable)
+        if (step.Condition == Condition.Malleable && step.Durability > rapidDura)
         {
-            // last-chance/preferred intensive or rapid, regardless of veneration
+            // last-chance OR preferred intensive/rapid, regardless of veneration
             return SolveOpenerMuMeTouch(craft, step, cfg.MuMeIntensiveMalleable || cfg.MuMeIntensiveLastResort && lastChance);
         }
-        else if (step.Condition == Condition.Good && cfg.MuMeIntensiveGood && Simulator.GetDurabilityCost(step, Skills.IntensiveSynthesis) < step.Durability)
+        if (step.Condition == Condition.Good && cfg.MuMeIntensiveGood && Simulator.GetDurabilityCost(step, Skills.IntensiveSynthesis) < step.Durability)
         {
             // good and we want to spend on intensive
             if (CU(craft, step, Skills.IntensiveSynthesis))
                 return Skills.IntensiveSynthesis;
         }
 
-        // ok we have a normal/ignored condition
-        if (Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) >= step.Durability && step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation))
+        // ok we have a condition that isn't as important as manip or veneration
+        // force manip, regardless of settings or condition, if we can't do anything else
+        if (step.Durability <= rapidDura && step.ManipulationLeft == 0 && CU(craft, step, Skills.Manipulation))
             return Skills.Manipulation;
         if (step.MuscleMemoryLeft > cfg.MuMeMinStepsForVene && step.VenerationLeft == 0 && CU(craft, step, Skills.Veneration))
             return Skills.Veneration;
-        if (cfg.MuMeAllowObserve && step.MuscleMemoryLeft > 1 && step.Durability < craft.CraftDurability && CU(craft, step, Skills.Observe))
-            return Skills.Observe; // conserve durability rather than gamble away
+
+        // half-dura conditions are a worthy usage of durability at this point (don't observe)
+        if (step.Condition is Condition.Sturdy or Condition.Robust && step.Durability > rapidDura && CU(craft, step, Skills.RapidSynthesis))
+            return SolveOpenerMuMeTouch(craft, step, cfg.MuMeIntensiveLastResort && lastChance);
+        if (cfg.MuMeAllowObserve && step.MuscleMemoryLeft > 1 && step.Durability < craft.CraftDurability)
+        {
+            // conserve durability rather than gamble away
+            if (step.Condition == Condition.Good && CU(craft, step, Skills.TricksOfTrade))
+                return Skills.TricksOfTrade; // a better observe than observe
+            if (CU(craft, step, Skills.Observe))
+                return Skills.Observe;
+        }
+
+        // make absolutely sure we're not about to break; maybe manip and mume are both still up
+        if (step.Durability <= rapidDura && CU(craft, step, Skills.Observe))
+            return Skills.Observe;
 
         return SolveOpenerMuMeTouch(craft, step, cfg.MuMeIntensiveLastResort && lastChance);
     }
@@ -187,43 +240,60 @@ public class ExpertSolver : Solver
     private static Skills SolveOpenerMuMeTouch(CraftState craft, StepState step, bool intensive)
         => !intensive ? Skills.RapidSynthesis : Simulator.CanUseAction(craft, step, Skills.IntensiveSynthesis) ? Skills.IntensiveSynthesis : step.HeartAndSoulAvailable && CU(craft, step, Skills.HeartAndSoul) ? Skills.HeartAndSoul : Skills.RapidSynthesis;
 
-    private static Recommendation SolveMid(ExpertSolverSettings cfg, CraftState craft, StepState step, int progressDeficit, int availableCP)
+    private static Recommendation SolveMid(ExpertProfile profile, CraftState craft, StepState step, int progressDeficit, int availableCP)
     {
         // we'll need to get gs up for byregot and maybe reapply inno if we do not go for the quality finisher now
         var reservedCPForFinisher = Skills.ByregotsBlessing.StandardCPCost() + 
                                     Skills.GreatStrides.StandardCPCost() + 
-                                    (step.InnovationLeft > 2 ? 0 : Skills.Innovation.StandardCPCost()); 
-        if (step.IQStacks < maxIQStacks || progressDeficit > 0 && cfg.MidFinishProgressBeforeQuality)
+                                    (step.InnovationLeft > 2 || step.QuickInnoLeft > 0 ? 0 : Skills.Innovation.StandardCPCost()); 
+        if (step.IQStacks < maxIQStacks || progressDeficit > 0 && profile.Settings.MidFinishProgressBeforeQuality)
         {
-            return SolveMidPreQuality(cfg, craft, step, progressDeficit, availableCP);
+            return SolveMidPreQuality(profile, craft, step, progressDeficit, availableCP);
         }
         else if (step.GreatStridesLeft == 0 && step.InnovationLeft == 0)
         {
-            return SolveMidStartQuality(cfg, craft, step, progressDeficit, availableCP, reservedCPForFinisher);
+            return SolveMidStartQuality(profile, craft, step, progressDeficit, availableCP, reservedCPForFinisher);
         }
         else
         {
-            return SolveMidQuality(cfg, craft, step, availableCP, reservedCPForFinisher);
+            return SolveMidQuality(profile, craft, step, availableCP, reservedCPForFinisher);
         }
     }
 
-    private static Recommendation SolveMidPreQuality(ExpertSolverSettings cfg, CraftState craft, StepState step, int progressDeficit, int availableCP)
+    private static Recommendation SolveMidPreQuality(ExpertProfile profile, CraftState craft, StepState step, int progressDeficit, int availableCP)
     {
+        ExpertSolverSettings cfg = profile.Settings;
+
+        // for some logic that cares about dura left, we need to be more flexible on low-dura crafts
+        var duraThreshold = craft.CraftDurability <= 35 ? 15 : 25;
+
         // build up iq, or finish up progress before moving to quality
         // see if there are nice conditions to exploit
         var venerationActive = progressDeficit > 0 && step.VenerationLeft > 0;
         var allowObserveOnLowDura = venerationActive ? cfg.MidKeepHighDura == ExpertSolverSettings.MidKeepHighDuraSetting.MidKeepHighDuraVeneration : cfg.MidKeepHighDura == ExpertSolverSettings.MidKeepHighDuraSetting.MidKeepHighDuraUnbuffed;
         var allowIntensive = venerationActive ? cfg.MidAllowIntensive == ExpertSolverSettings.MidAllowIntensiveSetting.MidAllowIntensiveVeneration : cfg.MidAllowIntensive == ExpertSolverSettings.MidAllowIntensiveSetting.MidAllowIntensiveUnbuffed;
-        var allowPrecise = cfg.MidAllowPrecise && (!allowObserveOnLowDura || step.ManipulationLeft > 0 || step.Durability > 25) /*&& !venerationActive*/;
+        var allowPrecise = cfg.MidAllowPrecise && (!allowObserveOnLowDura || step.ManipulationLeft > 0 || step.Durability > duraThreshold) /*&& !venerationActive*/;
 
-        // check durability first to make sure we don't waste pliant/etc.
+        // active steady+rapid is highest prio if we're not super low on dura (rapid + 5)
+        if (step.SteadyHandLeft > 0 && progressDeficit > 0 && step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) + 5 && CU(craft, step, Skills.RapidSynthesis))
+            return new(SafeCraftAction(craft, step, Skills.RapidSynthesis), "mid pre quality: steady hand");
+
+        // check durability to make sure we don't waste pliant/etc.
         var duraAction = SolveMidDurabilityPreQuality(cfg, craft, step, availableCP, allowObserveOnLowDura, progressDeficit > 0);
         if (duraAction != Skills.None)
             return new(duraAction, "mid pre quality: durability");
 
+        // continue prioritizing steady+rapid; we want to use our very few steps' worth of steady
+        if (step.SteadyHandLeft > 0 && progressDeficit > 0 && step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && CU(craft, step, Skills.RapidSynthesis))
+            return new(SafeCraftAction(craft, step, Skills.RapidSynthesis), "mid pre quality: steady hand");
+
+        bool shouldUseSteadyHand = CU(craft, step, Skills.SteadyHand) && step.SteadyHandsUsed < profile.GetMaxSteadyUses();
         // keep veneration running if we're forcing progress; otherwise don't because we're mixing quality and progress
-        if (cfg.MidFinishProgressBeforeQuality && progressDeficit > 0 && step.VenerationLeft == 0)
+        if ((cfg.MidFinishProgressBeforeQuality || shouldUseSteadyHand) && progressDeficit > 0 && step.VenerationLeft == 0 && step.WasteNotLeft == 0 && CU(craft, step, Skills.Veneration))
             return new(Skills.Veneration, "mid pre quality: progress finish vene");
+        // similarly, re-up steady hand if we have any allowed uses left
+        if (shouldUseSteadyHand && progressDeficit > 0 && step.SteadyHandLeft == 0 && step.WasteNotLeft == 0)
+            return new(Skills.SteadyHand, "mid pre quality: progress finish steady");
 
         // check for progress-friendly conditions, or force progress if specified
         if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, allowIntensive, progressDeficit, cfg) is var highPrioProgress && highPrioProgress != Skills.None)
@@ -235,11 +305,16 @@ public class ExpertSolver : Solver
         if (step.Condition == Condition.Good && CU(craft, step, Skills.TricksOfTrade))
             return new(Skills.TricksOfTrade, "mid pre quality: high-prio tricks"); // progress/iq below decided not to use good, so spend it on tricks
         // TODO: observe on good omen?..
-
-        // see what else can we do
-        if (step.Condition == Condition.GoodOmen && cfg.MidAllowVenerationGoodOmen && cfg.MidAllowIntensive != ExpertSolverSettings.MidAllowIntensiveSetting.MidNoIntensive && progressDeficit > Simulator.CalculateProgress(craft, step, Skills.IntensiveSynthesis) && CU(craft, step, Skills.Veneration))
+        if (step.Condition == Condition.GoodOmen && cfg.MidAllowVenerationGoodOmen && cfg.MidAllowIntensive != ExpertSolverSettings.MidAllowIntensiveSetting.MidNoIntensive && progressDeficit > Simulator.CalculateProgress(craft, step, Skills.IntensiveSynthesis) && step.WasteNotLeft == 0 && CU(craft, step, Skills.Veneration))
             return new(Skills.Veneration, "mid pre quality: good omen vene"); // next step would be intensive, vene is a good choice here
 
+        // on recipes without pliant, we really want to set up waste not (WN) as long as it will be profitable
+        var effectiveDura = step.Durability + (step.ManipulationLeft * 5);
+        var maxWasteNotDuraConsumed = (10 * 4) / 2;  // if we don't proc any sturdy/etc.
+        if (!craft.ConditionFlags.HasFlag(ConditionFlags.Pliant) && step.WasteNotLeft == 0 && step.IQStacks <= maxIQStacksForWasteNot && effectiveDura > maxWasteNotDuraConsumed && CU(craft, step, Skills.WasteNot))
+            return new(Skills.WasteNot, "mid pre quality: no-pliant waste not");
+
+        // see what else can we do
         if (step.IQStacks < maxIQStacks && !venerationActive)
         {
             // we want more iq:
@@ -276,9 +351,12 @@ public class ExpertSolver : Solver
         return new(Skills.Observe, "mid pre quality: no options");
     }
 
-    private static Recommendation SolveMidStartQuality(ExpertSolverSettings cfg, CraftState craft, StepState step, int progressDeficit, int availableCP, int reservedCP)
+    private static Recommendation SolveMidStartQuality(ExpertProfile profile, CraftState craft, StepState step, int progressDeficit, int availableCP, int reservedCP)
     {
+        ExpertSolverSettings cfg = profile.Settings;
+
         // no buffs up, this is a good chance to get some dura back if needed, and then get some iq/progress/quality, maybe start dedicated progress/quality phase
+        // todo: it's unlikely to still have waste not going here on a no-pliant craft, but should it force a non-buff action?
         // first see whether we have some nice conditions to exploit for progress
         if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, true, progressDeficit, cfg) is var highPrioProgress && highPrioProgress != Skills.None)
             return new(SafeCraftAction(craft, step, highPrioProgress), "mid start quality: high-prio progress");
@@ -309,20 +387,21 @@ public class ExpertSolver : Solver
         var cpToSpendOnQuality = availableCP - reservedCP;
 
         // now that most conditions are checked, handle active TP if applicable and we have enough CP
-        if (step.TrainedPerfectionActive && cfg.MidUseTP == MidUseTPSetting.MidUseTPPrepQuality)
+        if (step.TrainedPerfectionActive && cfg.MidUseTP == MidUseTPSetting.MidUseTPDuringQuality)
         {
             // set up gs+inno if we can
             if (cpToSpendOnQuality >= (Simulator.GetCPCost(step, Skills.GreatStrides) + Skills.Innovation.StandardCPCost() + Skills.PreparatoryTouch.StandardCPCost()) && CU(craft, step, Skills.GreatStrides))
-                return new(Skills.GreatStrides, "mid start quality: gs -> prep w/tp");
+                return new(Skills.GreatStrides, "mid start quality: gs -> tp touch");
 
             // or just use it right now if we're really low on cp
-            if (cpToSpendOnQuality >= Simulator.GetCPCost(step, Skills.PreparatoryTouch) && CU(craft, step, Skills.PreparatoryTouch))
-                return new(Skills.PreparatoryTouch, "mid start quality: emergency prep w/tp");
+            var emergencyTPSkill = step.Condition is Condition.Good ? Skills.PreciseTouch : Skills.PreparatoryTouch;
+            if (cpToSpendOnQuality >= Simulator.GetCPCost(step, emergencyTPSkill) && CU(craft, step, emergencyTPSkill))
+                return new(emergencyTPSkill, "mid start quality: emergency tp");
         }
 
-        // turn on TP if applicable, even if we don't have the CP for prep touch; might as well use it
-        if (step.TrainedPerfectionAvailable && cfg.MidUseTP == MidUseTPSetting.MidUseTPPrepQuality && CU(craft, step, Skills.TrainedPerfection))
-            return new(Skills.TrainedPerfection, "mid start quality: tp -> prep");
+        // turn on TP if applicable
+        if (step.TrainedPerfectionAvailable && cfg.MidUseTP == MidUseTPSetting.MidUseTPDuringQuality && CU(craft, step, Skills.TrainedPerfection))
+            return new(Skills.TrainedPerfection, "mid start quality: start tp");
 
         // we need around >20 effective durability to start a new combo
         var effectiveDura = step.Durability + step.ManipulationLeft * 5;
@@ -350,6 +429,10 @@ public class ExpertSolver : Solver
             return new(Skills.ByregotsBlessing, "mid start quality: critical dura & emergency cp"); // let the caller handle lack of cp
         }
 
+        // check for an emergency situation where we don't have enough CP for inno+gs but have quick inno
+        if (cfg.FinisherUseQuickInno && freeCP < Simulator.GetCPCost(step, Skills.Innovation) + Skills.GreatStrides.StandardCPCost() && CU(craft, step, Skills.GreatStrides))
+            return new(Skills.GreatStrides, "mid start emergency gs");
+
         // main choice here is whether to use gs before inno
         // - if we use gs+inno, we'll have 2 steps to use touch - enough for a full half-combo, and an opportunity to react to pliant
         // - gs is 32cp; using it on advanced/precise is extra 150p = 4.69p/cp, which is equal to extra finesse (but with opportunity to react to conditions)
@@ -364,8 +447,10 @@ public class ExpertSolver : Solver
         return new(Skills.Innovation, "mid start quality");
     }
 
-    private static Recommendation SolveMidQuality(ExpertSolverSettings cfg, CraftState craft, StepState step, int availableCP, int reservedCP)
+    private static Recommendation SolveMidQuality(ExpertProfile profile, CraftState craft, StepState step, int availableCP, int reservedCP)
     {
+        ExpertSolverSettings cfg = profile.Settings;
+
         // some rough estimations (potency numbers are pre-iq for simplicity, since it just effectively doubles the base quality rate at this point):
         // - typically after iq stacks we need ~2250p worth of quality
         // - byregot under inno+gs would give us 750p, plus extra 562.5p if good
@@ -420,36 +505,45 @@ public class ExpertSolver : Solver
                     return new(duraAction, "mid quality gs-only: durability");
             }
 
-            // TODO: consider good/sturdy prep (without TP) or good tricks - do we want that without inno? some quick simulation shows it to be a slight loss...
+            // TODO: consider good tricks and saving gs - some quick simulation shows it to be a slight loss...
             if (step.Condition == Condition.Good)
             {
-                // spend TP right now if we have it, don't worry about inno
-                if (step.TrainedPerfectionActive && CanUseActionSafelyInFinisher(step, Skills.PreparatoryTouch, freeCP) && CU(craft, step, Skills.PreparatoryTouch))
-                    return new(Skills.PreparatoryTouch, "mid quality gs-only: utilize good+tp");
+                // pop quick inno to take advantage of gs+good if settings allow
+                if (step.QuickInnoAvailable && CU(craft, step, Skills.QuickInnovation) && (cfg.MidAllowQuickInnoGood == MidAllowQuickInnoGoodSetting.MidAllowQuickInnoGoodAny || (cfg.MidAllowQuickInnoGood == MidAllowQuickInnoGoodSetting.MidAllowQuickInnoGoodPrepTP && step.TrainedPerfectionActive && CU(craft, step, Skills.PreparatoryTouch))))
+                    return new(Skills.QuickInnovation, "mid quality gs-only: quick inno -> good");
 
+                // precise is more efficient than prep here, even if TP is active (~25 p/CP vs ~15 p/CP)
                 if (CanUseActionSafelyInFinisher(step, Skills.PreciseTouch, freeCP) && CU(craft, step, Skills.PreciseTouch))
                     return new(Skills.PreciseTouch, "mid quality gs-only: utilize good");
             } 
             if (step.PrevComboAction == Skills.Observe && CanUseActionSafelyInFinisher(step, Skills.AdvancedTouch, freeCP) && CU(craft, step, Skills.AdvancedTouch))
                 return new(Skills.AdvancedTouch, "mid quality gs-only: after observe?"); // this is weird, why would we do gs->observe?.. maybe we're low on cp?
 
-            if (step.GreatStridesLeft == 1)
+            if (step.GreatStridesLeft == 1 && !step.ExpertEmergency)
             {
-                // we really want to use gs now on other touches (prudent/finesse), doing inno now would waste it
-                // TODO: hasty? basic combo? non-tp prep?
+                // we really want to use gs now on some kind of quality action, doing inno now would waste it
+                // TP+prep is the best use in any non-good condition
                 if (step.TrainedPerfectionActive && CanUseActionSafelyInFinisher(step, Skills.PreparatoryTouch, freeCP) && CU(craft, step, Skills.PreparatoryTouch))
                     return new(Skills.PreparatoryTouch, "mid quality gs-only last chance");
+                // GS + centered hasty is better than full cost prep or prudent
+                if (cfg.MidAllowCenteredHasty && step.Condition == Condition.Centered && CanUseActionSafelyInFinisher(step, Skills.HastyTouch, freeCP) && CU(craft, step, Skills.HastyTouch))
+                    return new(Skills.HastyTouch, "mid quality gs-only last chance");
+                // TF is the most efficient use of pliant, even more than prep or prudent
+                if (step.Condition == Condition.Pliant && CanUseActionSafelyInFinisher(step, Skills.TrainedFinesse, freeCP) && CU(craft, step, Skills.TrainedFinesse))
+                    return new(Skills.TrainedFinesse, "mid quality gs-only last chance");
+                // otherwise, prudent and TF are still better than prep, even on sturdy
                 if (CanUseActionSafelyInFinisher(step, Skills.PrudentTouch, freeCP) && CU(craft, step, Skills.PrudentTouch))
                     return new(Skills.PrudentTouch, "mid quality gs-only last chance");
                 if (freeCP >= Simulator.GetCPCost(step, Skills.TrainedFinesse) && CU(craft, step, Skills.TrainedFinesse))
                     return new(Skills.TrainedFinesse, "mid quality gs-only last chance");
             }
 
-            // inno up
-            return new(Skills.Innovation, "mid quality: gs->inno");
+            // inno up if it won't cost us the finisher
+            if (availableCP - Simulator.GetCPCost(step, Skills.Innovation) >= Skills.ByregotsBlessing.StandardCPCost() + Skills.GreatStrides.StandardCPCost())
+                return new(Skills.Innovation, "mid quality: gs->inno");
         }
 
-        // inno (or gs+inno) up - do some half-combos
+        // inno (or gs+inno) are up or we're right at the end with quick inno - do some half-combos or emergency steps
         // our options:
         // - gs + byregot - if we're low on cp or will finish the craft with current quality
         // - manip/mm on pliant if needed
@@ -463,26 +557,23 @@ public class ExpertSolver : Solver
         if (step.Condition == Condition.Good)
         {
             // good options are prep and precise (advanced after observe is the same as precise, so don't bother)
-            // prep is ~2x the cost, quality is 525 vs 393.75 (no gs) or 875 vs 656.25 (with gs), meaning it's worth an extra 131.25/218.75p
-            // we can compare good prep with good precise + advanced combo, which is an extra 225p
-            // all in all, it feels like prep is only worth it under gs?..
-            if ((cfg.MidAllowGoodPrep || step.TrainedPerfectionActive) && step.GreatStridesLeft > 0 && CanUseActionSafelyInFinisher(step, Skills.PreparatoryTouch, freeCP) && CU(craft, step, Skills.PreparatoryTouch))
+            // prep is significantly less quality than precise per CP, even with TP, but may be useful in some situations
+            if (cfg.MidAllowGoodPrep && step.GreatStridesLeft > 0 && CanUseActionSafelyInFinisher(step, Skills.PreparatoryTouch, freeCP) && CU(craft, step, Skills.PreparatoryTouch))
                 return new(Skills.PreparatoryTouch, "mid quality: gs+inno+good");
-            // otherwise use precise if possible
             if (CanUseActionSafelyInFinisher(step, Skills.PreciseTouch, freeCP) && CU(craft, step, Skills.PreciseTouch))
                 return new(Skills.PreciseTouch, "mid quality: good");
             // otherwise ignore good condition and see what else can we do
             // note: using tricks here seems to be a slight loss according to craft, which is expected
         }
 
-        if (step.Condition is Condition.Sturdy or Condition.Robust)
+        if (step.Condition == Condition.Sturdy || (step.Condition == Condition.Robust && step.InnovationLeft == 1))
         {
-            // during sturdy, prep becomes 300/500p for 40cp+10dura = 5.17/8.62 p/cp (depending on gs)
-            // in comparison, advanced (assuming we did observe before) is 225/375p for 18cp+5dura = 8.33/13.89p/cp - it is more efficient
-            // prudent (if we didn't observe) is 150/250p for 25cp+3dura = 4.93/8.22 p/cp
-            // so it doesn't really seem to be worth it?..
-            // still counts as a worthwhile condition for TP, which should be used under buffs
-            if ((cfg.MidAllowSturdyPrep || step.TrainedPerfectionActive) && step.PrevComboAction != Skills.Observe && CanUseActionSafelyInFinisher(step, Skills.PreparatoryTouch, freeCP) && CU(craft, step, Skills.PreparatoryTouch))
+            // what's the best thing to do on a single sturdy before the end of inno?
+            // on robust we'd prefer to set up observe for the next step's sturdy
+            // todo: sturdy hasty is technically the most CP-efficient option...
+
+            // prep is less efficient than advanced touch, if ready, but better than prudent
+            if (cfg.MidAllowSturdyPrep && step.PrevComboAction != Skills.Observe && CanUseActionSafelyInFinisher(step, Skills.PreparatoryTouch, freeCP) && CU(craft, step, Skills.PreparatoryTouch))
                 return new(Skills.PreparatoryTouch, "mid quality: sturdy");
         }
 
@@ -498,11 +589,12 @@ public class ExpertSolver : Solver
 
         if (step.Condition == Condition.GoodOmen)
         {
-            // it's worth wasting one turn of inno if we'll get a huge 0-dura prep touch next turn thanks to TP
-            if (step.TrainedPerfectionActive && step.GreatStridesLeft > 1 && step.InnovationLeft > 1 && freeCP >= Simulator.GetCPCost(step, Skills.Observe) + Skills.PreparatoryTouch.StandardCPCost() && CU(craft, step, Skills.Observe))
-                return new(Skills.Observe, "mid quality: good omen tp+prep");
+            // if we have TP up and inno/gs will both last, just wait
+            if (step.TrainedPerfectionActive && step.GreatStridesLeft > 1 && step.InnovationLeft > 1 && freeCP >= Simulator.GetCPCost(step, Skills.Observe) + Skills.PreciseTouch.StandardCPCost() && CU(craft, step, Skills.Observe))
+                return new(Skills.Observe, "mid quality: good omen tp");
 
-            if (step.GreatStridesLeft == 0 && step.InnovationLeft > 1)
+            var canQuickInno = cfg.MidAllowQuickInnoGood is MidAllowQuickInnoGoodSetting.MidAllowQuickInnoGoodAny or MidAllowQuickInnoGoodSetting.MidAllowQuickInnoGoodPrepTP && step.QuickInnoLeft > 0;
+            if (step.GreatStridesLeft == 0 && (step.InnovationLeft > 1 || canQuickInno))
             {
                 // get gs up for gs+inno+good (prep/precise)
                 // gs is 32p for at least 225/262.5p (depending on splendorous)
@@ -525,7 +617,7 @@ public class ExpertSolver : Solver
         // - pliant gs (+ prudent) is extra ~66p for 16cp, so it's an option i guess, especially considering we might get some better condition (TODO consider this)
         // - finesse is 100p for 32cp, which is even less efficient, but does not cost durability
         // - hasty is a fine way to spend excess durability if low on cp
-        if (step.InnovationLeft != 1 && step.GreatStridesLeft != 1)
+        if (step.InnovationLeft > 1 && step.GreatStridesLeft > 1)
         {
             // observe, if we can do advanced on next step, and if we're not going to waste it due to good omen
             // note that on good omen we still prefer using observe rather than waste gs on 100p touch (TODO: consider using something else if gs is not up on good omen)
@@ -541,7 +633,7 @@ public class ExpertSolver : Solver
             return new(Skills.TrainedFinesse, "mid quality: alt");
 
         // we're low on cp, see if we can regain some cp via tricks
-        var emergencyAction = EmergencyRestoreCP(cfg, craft, step);
+        var emergencyAction = EmergencyRestoreCP(cfg, craft, step, false);
         if (emergencyAction != Skills.None)
             return new(emergencyAction, "mid quality: emergency cp");
         if (CanUseActionSafelyInFinisher(step, Skills.DaringTouch, freeCP) && CU(craft, step, Skills.DaringTouch))
@@ -554,29 +646,45 @@ public class ExpertSolver : Solver
             return new(Skills.GreatStrides, "mid quality: emergency gs+byregot");
         if (step.Condition is not Condition.Good and not Condition.Excellent && step.Durability > 10)
         {
+            step.ExpertEmergency = true; // set here to avoid certain other logic going forward
             // try baiting good
-            if (step.GreatStridesLeft != 1 && step.InnovationLeft != 1 && availableCP >= Simulator.GetCPCost(step, Skills.Observe) + Skills.ByregotsBlessing.StandardCPCost() && CU(craft, step, Skills.Observe))
+            var canQuickInno = cfg.FinisherUseQuickInno && step.QuickInnoLeft > 0;
+            if (step.GreatStridesLeft != 1 && (step.InnovationLeft > 1 || canQuickInno) && availableCP >= Simulator.GetCPCost(step, Skills.Observe) + Skills.ByregotsBlessing.StandardCPCost() && CU(craft, step, Skills.Observe))
                 return new(Skills.Observe, "mid quality: emergency byregot bait good");
             if (cfg.FinisherBaitGoodByregot && step.CarefulObservationLeft > 0 && CU(craft, step, Skills.CarefulObservation))
                 return new(Skills.CarefulObservation, "mid quality: emergency byregot bait good");
         }
+
+        // well, gg. might as well use quick inno to get as much quality as we can (helps on stellar missions, for example)
+        if (cfg.FinisherUseQuickInno && step.QuickInnoAvailable)
+            return new(Skills.QuickInnovation, "mid quality: emergency quick inno->byregot");
+
         return new(Skills.ByregotsBlessing, "mid quality: emergency byregot");
     }
 
-    // TODO: consider waste-not...
     private static Skills SolveMidDurabilityPreQuality(ExpertSolverSettings cfg, CraftState craft, StepState step, int availableCP, bool allowObserveOnLowDura, bool wantProgress)
     {
         // during the mid phase, durability is a serious concern
         if (step.ManipulationLeft > 0 && step.Durability + 5 > craft.CraftDurability)
-            return Skills.None; // we're high on dura, doing anything here will waste manip durability
+            return Skills.None; // we're maxed out on dura, doing anything here will waste manip durability
 
-        // primed manipulation is a reasonable action (check this before pliant in case the craft can't proc pliant)
-        if (cfg.MidPrimedManipPreQuality && step.Condition == Condition.Primed && step.ManipulationLeft == 0 && availableCP >= Simulator.GetCPCost(step, Skills.Manipulation) && CU(craft, step, Skills.Manipulation))
-            return Skills.Manipulation;
+        var canBePliant = craft.ConditionFlags.HasFlag(ConditionFlags.Pliant);
 
-        if (step.Condition == Condition.Pliant || !craft.ConditionFlags.HasFlag(ConditionFlags.Pliant))
+        if (step.Condition == Condition.Primed)
         {
-            // see if we can utilize pliant for repairs, or force if pliant will never come up
+            // primed manipulation is a reasonable action (see math in other comments)
+            if (cfg.MidPrimedManipPreQuality && step.ManipulationLeft == 0 && step.WasteNotLeft == 0 && availableCP >= Simulator.GetCPCost(step, Skills.Manipulation) && CU(craft, step, Skills.Manipulation))
+                return Skills.Manipulation;
+
+            // if we're never gonna see pliant and we need enough IQ to not waste it, six steps of WN1 is worth it
+            // WN steps are also profitably used on progress, but that's harder to calculate. low IQ stacks are close enough
+            if (!canBePliant && step.WasteNotLeft == 0 && step.IQStacks <= maxIQStacksForWasteNot && CU(craft, step, Skills.WasteNot))
+                return Skills.WasteNot;
+        }
+
+        if (step.Condition == Condition.Pliant)
+        {
+            // see if we can utilize pliant for repairs
             if (step.Durability + immaculateDuraMinimum + (step.ManipulationLeft > 0 ? 5 : 0) <= craft.CraftDurability && CU(craft, step, Skills.ImmaculateMend))
                 return Skills.ImmaculateMend;
             if (step.ManipulationLeft <= 1 && availableCP >= Simulator.GetCPCost(step, Skills.Manipulation) && CU(craft, step, Skills.Manipulation))
@@ -587,7 +695,7 @@ public class ExpertSolver : Solver
         }
 
         var criticalDurabilityThreshold = (step.Condition is Condition.Sturdy or Condition.Robust) ? 5 : 10;
-        var wantObserveOnLowDura = allowObserveOnLowDura && step.Condition switch
+        var wantObserveOnLowDura = allowObserveOnLowDura && canBePliant && step.Condition switch
         {
             Condition.Normal or Condition.Good or Condition.GoodOmen or Condition.Primed => true, // these are all 'observable'
             Condition.Malleable => !wantProgress, // this is useless if we don't need more progress
@@ -600,20 +708,19 @@ public class ExpertSolver : Solver
             if (step.Condition == Condition.Good && CU(craft, step, Skills.TricksOfTrade))
                 return Skills.TricksOfTrade;
 
-            // trained perfection is a valid alternate observe here if we haven't used it yet
             if (step.ManipulationLeft > 0) 
             {
                 // just regen a bit...
-                if (step.TrainedPerfectionAvailable && cfg.MidUseTP != MidUseTPSetting.MidUseTPPrepQuality && CU(craft, step, Skills.TrainedPerfection))
+                if (step.TrainedPerfectionAvailable && cfg.MidUseTP != MidUseTPSetting.MidUseTPDuringQuality && CU(craft, step, Skills.TrainedPerfection))
                     return Skills.TrainedPerfection;
                 if (CU(craft, step, Skills.Observe))
                     return Skills.Observe; 
             }
-            if (cfg.MidBaitPliantWithObservePreQuality && craft.ConditionFlags.HasFlag(ConditionFlags.Pliant))
+            if (cfg.MidBaitPliantWithObservePreQuality && canBePliant)
             {
                 // try baiting pliant - this will save us 48cp at the cost of ~7+24cp
                 // TODO: consider careful observation to bait pliant - this sounds much worse than using them to try baiting good byregot
-                if (step.TrainedPerfectionAvailable && cfg.MidUseTP != MidUseTPSetting.MidUseTPPrepQuality && CU(craft, step, Skills.TrainedPerfection) && step.RemainingCP > (Skills.Manipulation.StandardCPCost() / 2))
+                if (step.TrainedPerfectionAvailable && cfg.MidUseTP != MidUseTPSetting.MidUseTPDuringQuality && CU(craft, step, Skills.TrainedPerfection) && step.RemainingCP > (Skills.Manipulation.StandardCPCost() / 2))
                     return Skills.TrainedPerfection;
                 if (CU(craft, step, Skills.Observe) && step.RemainingCP > Skills.Observe.StandardCPCost() + (Skills.Manipulation.StandardCPCost() / 2))
                     return Skills.Observe;
@@ -706,8 +813,8 @@ public class ExpertSolver : Solver
 
         if (step.TrainedPerfectionActive)
         {
-            // skip the rest of the progress logic entirely if forcing TP to be spent on prep
-            if (cfg.MidUseTP is MidUseTPSetting.MidUseTPPrepIQ or MidUseTPSetting.MidUseTPPrepQuality)
+            // skip the rest of the progress logic entirely if saving TP for the quality phase
+            if (cfg.MidUseTP is MidUseTPSetting.MidUseTPPrepIQ or MidUseTPSetting.MidUseTPDuringQuality)
                 return Skills.None;
 
             // *don't* spend TP on Good outside of intensive, it should prioritize prep or tricks; even if forcing progress we'd rather get the free CP
@@ -748,7 +855,7 @@ public class ExpertSolver : Solver
         {
             // similarly, if a non-malleable groundwork will get us there, set up TP for it instead of risking rapid...
             var willGWBeEnough = (Simulator.BaseProgress(craft) * 360 / 100) >= progressDeficit;
-            if (cfg.MidUseTP is MidUseTPSetting.MidUseTPGroundwork or MidUseTPSetting.MidUseTPEitherPreQuality && step.TrainedPerfectionAvailable && willGWBeEnough && CU(craft, step, Skills.TrainedPerfection))
+            if (cfg.MidUseTP is MidUseTPSetting.MidUseTPGroundwork or MidUseTPSetting.MidUseTPEitherPreQuality && step.TrainedPerfectionAvailable && willGWBeEnough && step.WasteNotLeft == 0 && CU(craft, step, Skills.TrainedPerfection))
                 return Skills.TrainedPerfection;
 
             // ...and while we favor rapid if it has a favorable condition...
@@ -756,7 +863,7 @@ public class ExpertSolver : Solver
                 return Skills.RapidSynthesis;
 
             // ...we should still set up TP->groundwork before rapid on any other condition
-            if (cfg.MidUseTP is MidUseTPSetting.MidUseTPGroundwork or MidUseTPSetting.MidUseTPEitherPreQuality && step.TrainedPerfectionAvailable && CU(craft, step, Skills.TrainedPerfection))
+            if (cfg.MidUseTP is MidUseTPSetting.MidUseTPGroundwork or MidUseTPSetting.MidUseTPEitherPreQuality && step.TrainedPerfectionAvailable && step.WasteNotLeft == 0 && CU(craft, step, Skills.TrainedPerfection))
                 return Skills.TrainedPerfection;
 
             // now it's time to risk it for the progress biscuit, even on bad conditions
@@ -768,8 +875,7 @@ public class ExpertSolver : Solver
         if (step.Condition is Condition.Centered or Condition.Sturdy or Condition.Robust or Condition.Malleable && step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && CU(craft, step, Skills.RapidSynthesis))
             return Skills.RapidSynthesis;
 
-;
-        if (step.TrainedPerfectionAvailable && cfg.MidUseTP is MidUseTPSetting.MidUseTPGroundwork or MidUseTPSetting.MidUseTPEitherPreQuality)
+        if (step.TrainedPerfectionAvailable && cfg.MidUseTP is MidUseTPSetting.MidUseTPGroundwork or MidUseTPSetting.MidUseTPEitherPreQuality && step.WasteNotLeft == 0)
         {
             // don't burn a Good on setting up TP; if we didn't already use it on intensive, let the IQ solver figure it out
             if (step.Condition == Condition.Good)
@@ -786,6 +892,8 @@ public class ExpertSolver : Solver
     private static Skills SolveMidHighPriorityIQ(ExpertSolverSettings cfg, CraftState craft, StepState step, bool allowPrecise)
     {
         // high-priority IQ-building actions (exploit conditions)
+        var hastyAction = CU(craft, step, Skills.DaringTouch) ? Skills.DaringTouch : Skills.HastyTouch;
+
         // precise is worth spending TP on if enabled by current settings
         if (step.Condition is Condition.Good or Condition.Excellent && allowPrecise && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreciseTouch) && CU(craft, step, Skills.PreciseTouch))
             return Skills.PreciseTouch;
@@ -804,21 +912,60 @@ public class ExpertSolver : Solver
                 return Skills.PreparatoryTouch;
         }
 
+        // waste not might have set up the refined touch combo
+        if (step.PrevComboAction == Skills.BasicTouch && step.WasteNotLeft > 0 && step.Durability > Simulator.GetDurabilityCost(step, Skills.RefinedTouch) && CU(craft, step, Skills.RefinedTouch))
+            return Skills.RefinedTouch;
+
         // use hasty/daring on favorable conditions, but only if the appropriate settings are enabled
-        var hastyAction = CU(craft, step, Skills.DaringTouch) ? Skills.DaringTouch : Skills.HastyTouch;
         if (step.Condition == Condition.Centered && cfg.MidAllowCenteredHasty && step.Durability > Simulator.GetDurabilityCost(step, hastyAction) && CU(craft, step, hastyAction))
             return hastyAction;
 
-        // if not using hasty on sturdy/robust, start or continue a touch combo - worst case it's a discounted prudent
-        // TODO: worth using prep here on high enough iq stacks?
-        if (step.Condition is Condition.Sturdy or Condition.Robust && step.Durability > Simulator.GetDurabilityCost(step, hastyAction) && CU(craft, step, hastyAction))
-            return cfg.MidAllowSturdyHasty ? hastyAction : Simulator.NextTouchCombo(step, craft);
+        if (step.Condition is Condition.Sturdy or Condition.Robust)
+        {
+            // if we have pre-max-iq inno for any reason, sturdy prep is great value
+            if (step.InnovationLeft > 0 && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreparatoryTouch) && CU(craft, step, Skills.PreparatoryTouch))
+                return Skills.PreparatoryTouch;
 
-        // force h&s->precise on sturdy/robust if enabled
-        if (step.Condition is Condition.Sturdy or Condition.Robust && cfg.MidAllowSturdyPreсise && (step.HeartAndSoulActive || step.HeartAndSoulAvailable) && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreciseTouch))
-            return step.HeartAndSoulActive && CU(craft, step, Skills.PreciseTouch) ? Skills.PreciseTouch : Skills.HeartAndSoul;
+            // hasty is the best (non-inno) value during sturdy, but it might be turned off by settings
+            if (cfg.MidAllowSturdyHasty && step.Durability > Simulator.GetDurabilityCost(step, hastyAction) && CU(craft, step, hastyAction))
+                return hastyAction;
 
-        if (step.TrainedPerfectionAvailable && cfg.MidUseTP is MidUseTPSetting.MidUseTPPrepIQ or MidUseTPSetting.MidUseTPEitherPreQuality)
+            // force h&s->precise on sturdy/robust if enabled
+            if (cfg.MidAllowSturdyPreсise && (step.HeartAndSoulActive || step.HeartAndSoulAvailable) && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreciseTouch))
+                return step.HeartAndSoulActive && CU(craft, step, Skills.PreciseTouch) ? Skills.PreciseTouch : Skills.HeartAndSoul;
+
+            // otherwise, start or continue a touch combo - worst case it's a discounted prudent
+            var touchComboAction = Simulator.NextTouchCombo(step, craft);
+            if (step.WasteNotLeft == 0 && step.Durability > Simulator.GetDurabilityCost(step, touchComboAction) && CU(craft, step, touchComboAction))
+                return touchComboAction;
+        }
+
+        if (step.WasteNotLeft > 0)
+        {
+            // iq stacks math under WN, assuming 10 dura is worth 24 cp (no pliant manip) or less if WN is saving >5 dura per action
+            //  - prudent: 25(+8) @ 1 iq, 100p                       = 32.2 cp/iq, 3.1 p/cp (baseline)
+            //  - full touch combo: 18+32+18(+12+12+12) @ 3 iq, 375p = 34.6 cp/iq, 3.6 p/cp (very inflexible)
+            //  - refined combo: 18+24(+12+12) @ 3 iq, 200p          = 22.0 cp/iq, 3.0 p/cp (slightly inflexible)
+            //  - prep: 40(+~20) @ 2 iq, 200p                        = 30.0 cp/iq, 3.3 p/cp (most flexible for 2 stacks)
+            //  - precise: 18(+12) @ 2 iq, 150p                      = 15.0 cp/iq, 5.0 p/cp (requires Good or H+S)
+            //  - hasty 60%: 0(+12)/0.6 @ 0.6 iq, ~60p               = 33.3 cp/iq, 3.0 p/cp (not worth)
+            //  - hasty 85%: 0(+12)/0.85 @ 0.85 iq, ~85p             = 15.7 cp/iq, 6.4 p/cp (very worth)
+            // tl;dr: under WN, centered/sturdy hasty > refined combo (w/2+ WNs left) > prep (w/1 WN left) 
+            //        precise and hasty are already addressed, so we can just figure out the rest of it
+
+            // we need at least two steps of WN and a deficit of 3+ IQ for the combo to be worth it
+            // the actual use of refined is checked earlier
+            if (step.WasteNotLeft > 1 && step.IQStacks <= (maxIQStacks - 3) && step.Durability > Simulator.GetDurabilityCost(step, Skills.BasicTouch) && CU(craft, step, Skills.BasicTouch))
+                return Skills.BasicTouch;
+
+            // a half-dura prep also sounds nice if we need at least 2 IQ stacks
+            if (step.IQStacks <= (maxIQStacks - 2) && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreparatoryTouch) && CU(craft, step, Skills.PreparatoryTouch))
+                return Skills.PreparatoryTouch;
+
+            // if we're at 1 WN step left or 9 stacks of IQ, just let the rest of the solver figure it out
+        }
+
+        if (step.TrainedPerfectionAvailable && cfg.MidUseTP is MidUseTPSetting.MidUseTPPrepIQ or MidUseTPSetting.MidUseTPEitherPreQuality && step.WasteNotLeft == 0)
         {
             // don't burn a Good on setting up TP, it's leaving free CP on the table
             if (step.Condition == Condition.Good)
@@ -833,7 +980,7 @@ public class ExpertSolver : Solver
     }
 
     // see if we can do gs+inno+byregot right now to get to the quality goal
-    private static Recommendation SolveFinishQuality(CraftState craft, StepState step, int availableCP, int qualityTarget)
+    private static Recommendation SolveFinishQuality(ExpertSolverSettings cfg, CraftState craft, StepState step, int availableCP, int qualityTarget)
     {
         if (step.IQStacks == 0)
             return new(Skills.None, "fq: no iq"); // we can't even byregot now...
@@ -854,48 +1001,59 @@ public class ExpertSolver : Solver
         if (step.GreatStridesLeft > 1 && step.InnovationLeft == 0 && availableCP >= Simulator.GetCPCost(step, Skills.Innovation) + Skills.ByregotsBlessing.StandardCPCost())
         {
             // try [gs]+inno+byregot
-            var adjBuffMod = (1 + 0.1f * step.IQStacks) * 2.5f;
-            float effPotency = (100 + 20 * step.IQStacks) * adjBuffMod;
-            float condMod = step.Condition != Condition.GoodOmen ? 1 : craft.SplendorCosmic ? 1.75f : 1.5f;
-            var adjQuality = (int)(Simulator.BaseQuality(craft) * condMod * effPotency / 100);
-            if (missingQuality <= adjQuality && CU(craft, step, Skills.Innovation))
+            var estByregotQuality = CalculateByregotQuality(craft, step, true, 1);
+            if (missingQuality <= estByregotQuality && CU(craft, step, Skills.Innovation))
                 return new(Skills.Innovation, "fq: inno->byregot");
+        }
+        else if (step.GreatStridesLeft >= 1 && step.InnovationLeft == 0 && cfg.FinisherUseQuickInno && step.QuickInnoLeft > 0 && availableCP >= Simulator.GetCPCost(step, Skills.ByregotsBlessing))
+        {
+            // [gs]+quick inno+byregot
+            var estByregotQuality = CalculateByregotQuality(craft, step, true, 0);
+            if (missingQuality <= estByregotQuality && CU(craft, step, Skills.QuickInnovation))
+                return new(Skills.QuickInnovation, "fq: quick inno->byregot");
         }
         else if (step.GreatStridesLeft == 0 && availableCP >= Simulator.GetCPCost(step, Skills.GreatStrides) + Skills.ByregotsBlessing.StandardCPCost())
         {
             // try gs+byregot
-            var adjBuffMod = (1 + 0.1f * step.IQStacks) * (step.InnovationLeft > 1 ? 2.5f : 2.0f);
-            float effPotency = (100 + 20 * step.IQStacks) * adjBuffMod;
-            float condMod = step.Condition != Condition.GoodOmen ? 1 : craft.SplendorCosmic ? 1.75f : 1.5f;
-            var adjQuality = (int)(Simulator.BaseQuality(craft) * condMod * effPotency / 100);
-            if (missingQuality <= adjQuality && CU(craft, step, Skills.GreatStrides))
+            var estByregotQuality = CalculateByregotQuality(craft, step, step.InnovationLeft > 1, 1);
+            if (missingQuality <= estByregotQuality && CU(craft, step, Skills.GreatStrides))
                 return new(Skills.GreatStrides, "fq: gs->byregot");
 
             if (step.InnovationLeft <= 1 && availableCP >= Simulator.GetCPCost(step, Skills.GreatStrides) + Skills.Innovation.StandardCPCost() + Skills.ByregotsBlessing.StandardCPCost())
             {
                 // try gs+inno+byregot
-                adjBuffMod = (1 + 0.1f * step.IQStacks) * 2.5f;
-                effPotency = (100 + 20 * step.IQStacks) * adjBuffMod;
-                // condmod is always 1
-                adjQuality = (int)(Simulator.BaseQuality(craft) * effPotency / 100);
-                if (missingQuality <= adjQuality && CU(craft, step, Skills.GreatStrides))
+                estByregotQuality = CalculateByregotQuality(craft, step, true, 2);
+                if (missingQuality <= estByregotQuality && CU(craft, step, Skills.GreatStrides))
                     return new(Skills.GreatStrides, "fq: gs->inno->byregot");
+            }
+
+            if (step.InnovationLeft == 0 && cfg.FinisherUseQuickInno && step.QuickInnoLeft > 0 && availableCP >= Simulator.GetCPCost(step, Skills.GreatStrides) + Skills.ByregotsBlessing.StandardCPCost())
+            {
+                // try gs+quick inno+byregot
+                estByregotQuality = CalculateByregotQuality(craft, step, true, 1);
+                if (missingQuality <= estByregotQuality && CU(craft, step, Skills.GreatStrides))
+                    return new(Skills.GreatStrides, "fq: gs->quick inno->byregot");
             }
         }
 
         return new(Skills.None, "fq: not enough"); // byregot is not enough
     }
 
-    private static Skills SolveFinishProgress(CraftState craft, StepState step)
+    private static Skills SolveFinishProgress(ExpertSolverSettings cfg, CraftState craft, StepState step, int qualityTarget)
     {
-        // can we just finish it with a single action and not worry about all of this?
         var remainingProgress = craft.CraftProgress - step.Progress;
-        if (Simulator.CalculateProgress(craft, step, Skills.BasicSynthesis) >= remainingProgress)
-            return Skills.BasicSynthesis;
-        if (Simulator.CalculateProgress(craft, step, Skills.CarefulSynthesis) >= remainingProgress && CU(craft, step, Skills.CarefulSynthesis))
-            return Skills.CarefulSynthesis;
+        var remainingQuality = qualityTarget - step.Quality;
 
-        // intensive is always the best bet if it's safe to do so; otherwise, use the condition on CP because we'll need it
+        // can we just finish it with a single action and not worry about all of this?
+        if (remainingQuality <= 0)
+        {
+            if (Simulator.CalculateProgress(craft, step, Skills.BasicSynthesis) >= remainingProgress)
+                return Skills.BasicSynthesis;
+            if (Simulator.CalculateProgress(craft, step, Skills.CarefulSynthesis) >= remainingProgress && CU(craft, step, Skills.CarefulSynthesis))
+                return Skills.CarefulSynthesis;
+        }
+        
+        // intensive is always the best bet if it's safe to do so; otherwise, use the condition on CP because we might need it
         if (step.Condition is Condition.Good or Condition.Excellent)
         {
             if (CanUseSynthForFinisher(craft, step, Skills.IntensiveSynthesis) && CU(craft, step, Skills.IntensiveSynthesis))
@@ -903,6 +1061,11 @@ public class ExpertSolver : Solver
             if (CU(craft, step, Skills.TricksOfTrade))
                 return Skills.TricksOfTrade;
         }
+
+        // sometimes we have a tiny sliver of quality left after byregot but still have enough CP for delicate, usually from tricks or pliant
+        // todo: is it worth adding logic for the situation where we need slightly more than one delicate's worth of quality? does existing logic handle that?
+        if (Simulator.CalculateProgress(craft, step, Skills.DelicateSynthesis) >= remainingProgress && CU(craft, step, Skills.DelicateSynthesis))
+            return Skills.DelicateSynthesis;
 
         // can't finish in one action, so we have some options:
         // - rapid spam is efficient, but can fail - we use it if we can't do a guaranteed finish
@@ -985,7 +1148,7 @@ public class ExpertSolver : Solver
             return Skills.RapidSynthesis;
         if (CU(craft, step, Skills.Observe))
             return Skills.Observe;
-        return P.Config.ExpertSolverConfig.RapidSynthYoloAllowed ? Skills.RapidSynthesis : Skills.None;
+        return cfg.RapidSynthYoloAllowed ? Skills.RapidSynthesis : Skills.None;
     }
 
     private static bool CanUseSynthForFinisher(CraftState craft, StepState step, Skills action)
@@ -994,21 +1157,32 @@ public class ExpertSolver : Solver
     private static bool CanUseActionSafelyInFinisher(StepState step, Skills action, int availableCP)
     {
         var duraCost = Simulator.GetDurabilityCost(step, action);
-        return step.Durability > duraCost && step.Durability + 5 * step.ManipulationLeft - duraCost > 10 && availableCP >= Simulator.GetCPCost(step, action);
+        return duraCost == 0 || (step.Durability > duraCost && step.Durability + 5 * step.ManipulationLeft - duraCost > 10 && availableCP >= Simulator.GetCPCost(step, action));
     }
 
     public static Skills SafeCraftAction(CraftState craft, StepState step, Skills action) => Simulator.WillFinishCraft(craft, step, action) ? Skills.FinalAppraisal : action;
 
     // try to use tricks, if needed use h&s
-    public static Skills EmergencyRestoreCP(ExpertSolverSettings cfg, CraftState craft, StepState step)
+    public static Skills EmergencyRestoreCP(ExpertSolverSettings cfg, CraftState craft, StepState step, bool forceTricks)
     {
-        if (Simulator.CanUseAction(craft, step, Skills.TricksOfTrade))
+        bool tricksAllowed = forceTricks || (!step.ExpertEmergency && step.PrevComboAction != Skills.QuickInnovation);
+        if (Simulator.CanUseAction(craft, step, Skills.TricksOfTrade) && tricksAllowed)
             return Skills.TricksOfTrade;
-        if (step.HeartAndSoulAvailable && CU(craft, step, Skills.HeartAndSoul))
+        if (step.HeartAndSoulAvailable && tricksAllowed && CU(craft, step, Skills.HeartAndSoul))
             return Skills.HeartAndSoul;
         if (cfg.EmergencyCPBaitGood && step.CarefulObservationLeft > 0 && CU(craft, step, Skills.CarefulObservation))
             return Skills.CarefulObservation; // try baiting good?..
         return Skills.None;
+    }
+
+    private static int CalculateByregotQuality(CraftState craft, StepState step, bool includeInno, int stepsAhead)
+    {
+        // stepsAhead is which step's condition we care about; 0 = current step
+        var adjBuffMod = (1 + 0.1f * step.IQStacks) * (includeInno ? 2.5f : 2.0f);
+        float effPotency = (100 + 20 * step.IQStacks) * adjBuffMod;
+        bool useGood = stepsAhead == 0 ? step.Condition == Condition.Good : stepsAhead == 1 && step.Condition == Condition.GoodOmen;
+        float condMod = useGood ? craft.SplendorCosmic ? 1.75f : 1.5f : 1;
+        return (int)(Simulator.BaseQuality(craft) * condMod * effPotency / 100);
     }
 
     private static bool CU(CraftState craft, StepState step, Skills skill) => Simulator.CanUseAction(craft, step, skill);
