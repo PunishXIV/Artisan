@@ -372,10 +372,6 @@ namespace Artisan.IPC
             return P.Config.NewCraftingLists.ToDictionary(x => x.ID, x => x.Name ?? string.Empty);
         }
 
-        /// <summary>
-        /// Starts a crafting list by its ID.
-        /// </summary>
-        /// <param name="listId">The ID of the crafting list to start.</param>
         public static void StartListById(int listId)
         {
             var list = P.Config.NewCraftingLists.FirstOrDefault(x => x.ID == listId);
