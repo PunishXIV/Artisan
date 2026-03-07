@@ -44,7 +44,7 @@ public class MacroSolver : Solver, ICraftValidator
     public MacroSolver(MacroSolverSettings.Macro m, CraftState craft)
     {
         _macro = m;
-        _fallback = CraftingProcessor.GetAvailableSolversForRecipe(craft, false, typeof(MacroSolverDefinition)).MaxBy(f => f.Priority).CreateSolver(craft);
+        _fallback = CraftingProcessor.GetAvailableSolversForRecipe(craft, false, typeof(MacroSolverDefinition)).MinBy(f => f.Priority).CreateSolver(craft);
     }
 
     public override Solver Clone()

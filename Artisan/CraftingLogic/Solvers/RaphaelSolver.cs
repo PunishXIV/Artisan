@@ -27,7 +27,7 @@ namespace Artisan.CraftingLogic.Solvers
     {
         public Solver Create(CraftState craft, int flavour)
         {
-            if (craft.StatLevel <= 7)
+            if (craft.StatLevel < 7)
                 return new StandardSolver();
 
             var key = RaphaelCache.GetKey(craft);
@@ -40,7 +40,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
-            yield return new(this, 3, 1, $"Raphael Recipe Solver", craft.StatLevel <= 7 ? $"Does not work before unlocking {Skills.MastersMend.NameOfAction()}. Please use Standard Recipe Solver" : "");
+            yield return new(this, 3, 1, $"Raphael Recipe Solver", craft.StatLevel < 7 ? $"Does not work before unlocking {Skills.MastersMend.NameOfAction()}. Please use Standard Recipe Solver" : "");
         }
 
         public IEnumerable<ISolverDefinition.Desc> Flavours()
@@ -73,7 +73,7 @@ namespace Artisan.CraftingLogic.Solvers
 
         public static void Build(CraftState craft, RaphaelSolutionConfig config, bool fromStartCraft = false)
         {
-            if (craft.StatLevel <= 7) return;
+            if (craft.StatLevel < 7) return;
 
             var key = GetKey(craft);
             if (!CLIExists() || Tasks.ContainsKey(key)) return;
@@ -296,7 +296,7 @@ namespace Artisan.CraftingLogic.Solvers
             foreach (var recipe in recipes)
             {
                 var state = Crafting.BuildCraftStateForRecipe(default, (Job)((uint)Job.CRP + recipe.CraftType.RowId), recipe);
-                if (state.StatLevel <= 7) continue;
+                if (state.StatLevel < 7) continue;
 
                 if (stats.Prog == state.CraftProgress &&
                     stats.Qual == state.CraftQualityMax &&
@@ -395,7 +395,7 @@ namespace Artisan.CraftingLogic.Solvers
                 if (inProgress)
                     ImGui.EndDisabled();
 
-                if (craft.StatLevel > 7)
+                if (craft.StatLevel >= 7)
                 {
                     if (!inProgress)
                     {

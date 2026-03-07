@@ -33,19 +33,6 @@ public class RecipeConfig
     public string CurrentSolverType => TempSolverType != "" ? TempSolverType : SolverType;
     public int CurrentSolverFlavour => TempSolverFlavour != -1 ? TempSolverFlavour : SolverFlavour;
 
-    public string CurrentSolverName
-    {
-        get
-        {
-            foreach (var def in CraftingProcessor.GetSolverDefinitions())
-            {
-                if (def.Def.GetType().FullName == CurrentSolverType && def.Flavour == CurrentSolverFlavour)
-                    return def.Name;
-            }
-            return "";
-        }
-    }
-
     [NonSerialized]
     public uint TempRequiredFood = 0;
     [NonSerialized]
@@ -112,7 +99,8 @@ public class RecipeConfig
     {
         try
         {
-            return Math.Max(Math.Max(Math.Max(Math.Max(ImGui.CalcTextSize(FoodName).X, ImGui.CalcTextSize(PotionName).X), ImGui.CalcTextSize(ManualName).X), ImGui.CalcTextSize(SquadronManualName).X), ImGui.CalcTextSize(CurrentSolverName).X) + 32f;
+            var ret = Math.Max(Math.Max(Math.Max(ImGui.CalcTextSize(FoodName).X, ImGui.CalcTextSize(PotionName).X), ImGui.CalcTextSize(ManualName).X), ImGui.CalcTextSize(SquadronManualName).X) + 32f;
+            return ret;
         }
         catch (Exception ex)
         {
