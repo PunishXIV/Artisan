@@ -12,5 +12,5 @@
   "RepoUrl": "https://github.com/PunishXIV/Artisan",
   "DalamudApiLevel": 14,
   "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
-  "ChangeLog": "- IPC for setting Cosmic Exploration skill usage in expert recipes added."
+  "ChangeLog": "- Fix potential recursion issue when expert solver is not available."
 }

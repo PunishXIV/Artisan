@@ -40,12 +40,12 @@ namespace Artisan.CraftingLogic.Solvers
 
         public IEnumerable<ISolverDefinition.Desc> Flavours(CraftState craft)
         {
-            yield return new(this, 3, 1, $"Raphael Recipe Solver", craft.StatLevel < 7 ? $"Does not work before unlocking {Skills.MastersMend.NameOfAction()}. Please use Standard Recipe Solver" : "");
+            yield return new(this, 3, 2, $"Raphael Recipe Solver", craft.StatLevel < 7 ? $"Does not work before unlocking {Skills.MastersMend.NameOfAction()}. Please use Standard Recipe Solver" : "");
         }
 
         public IEnumerable<ISolverDefinition.Desc> Flavours()
         {
-            yield return new(this, 3, 1, $"Raphael Recipe Solver");
+            yield return new(this, 3, 2, $"Raphael Recipe Solver");
         }
     }
 
