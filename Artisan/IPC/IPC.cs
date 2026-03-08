@@ -67,7 +67,7 @@ namespace Artisan.IPC
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempSquadronManualBackToNormal").RegisterAction(SetTempSquadronManualBackToNormal);
 
             Svc.PluginInterface.GetIpcProvider<Dictionary<int, string>>("Artisan.GetLists").RegisterFunc(GetLists);
-            Svc.PluginInterface.GetIpcProvider<int, bool>("Artisan.StartListById").RegisterFunc(StartListById);
+            Svc.PluginInterface.GetIpcProvider<int, object>("Artisan.StartListById").RegisterAction(StartListById);
 
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertProfileID").RegisterAction(ChangeExpertProfileID);
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertProfileIDBackToNormal").RegisterAction(SetTempExpertProfileIDBackToNormal);
@@ -113,7 +113,7 @@ namespace Artisan.IPC
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempSquadronManualBackToNormal").UnregisterAction();
 
             Svc.PluginInterface.GetIpcProvider<Dictionary<int, string>>("Artisan.GetLists").UnregisterFunc();
-            Svc.PluginInterface.GetIpcProvider<int, bool>("Artisan.StartListById").UnregisterFunc();
+            Svc.PluginInterface.GetIpcProvider<int, object>("Artisan.StartListById").UnregisterAction();
 
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertProfileID").UnregisterAction();
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertProfileIDBackToNormal").UnregisterAction();
@@ -456,35 +456,19 @@ namespace Artisan.IPC
             return P.Config.NewCraftingLists.ToDictionary(x => x.ID, x => x.Name ?? string.Empty);
         }
 
-        public static bool StartListById(int listId)
+        public static void StartListById(int listId)
         {
-            if (!CraftingListUI.Processing)
-            {
-                if (P.Config.NewCraftingLists.Any(x => x.ID == listId))
-                {
-                    if (!Endurance.Enable)
-                    {
-                        CraftingListUI.selectedList = P.Config.NewCraftingLists.First(x => x.ID == listId);
-                        CraftingListUI.StartList();
-                        return true;
-                    }
-                    else
-                    {
-                        DuoLog.Error("Cannot start list while Endurance is active. Please disable Endurance and try again.");
-                        return false;
-                    }
-                }
-                else
-                {
-                    DuoLog.Error("List ID does not exist.");
-                    return false;
-                }
-            }
-            else
-            {
-                DuoLog.Error("Unable to process list while already processing.");
-                return false;
-            }
+            if (CraftingListUI.Processing)
+                throw new Exception("Unable to process list while already processing.");
+
+            if (P.Config.NewCraftingLists.Any(x => x.ID == listId))
+                throw new Exception("List ID does not exist.");
+
+            if (!Endurance.Enable)
+                throw new Exception("Cannot start list while Endurance is active. Please disable Endurance and try again.");
+
+            CraftingListUI.selectedList = P.Config.NewCraftingLists.First(x => x.ID == listId);
+            CraftingListUI.StartList();
         }
 
         public static void SetTempExpertProfileIDBackToNormal(uint recipeId)

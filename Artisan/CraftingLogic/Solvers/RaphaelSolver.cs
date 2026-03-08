@@ -227,7 +227,7 @@ namespace Artisan.CraftingLogic.Solvers
                     Svc.Log.Debug("Switching to Raphael solver - Single");
                     if (craft.StatLevel < 7)
                     {
-                        Svc.Log.Warning($"Skipping auto-switch for recipe {craft.Recipe.RowId} - Raphael solver not unlocked");
+                        Svc.Log.Debug($"Skipping auto-switch for recipe {craft.Recipe.RowId} - Raphael solver not unlocked");
                         return;
                     }
                     var nopt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).FirstOrNull(x => x.Name == $"Raphael Recipe Solver");
@@ -259,7 +259,7 @@ namespace Artisan.CraftingLogic.Solvers
                         {
                             if (c.StatLevel < 7)
                             {
-                                Svc.Log.Warning($"Skipping {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) - Raphael solver not unlocked");
+                                Svc.Log.Debug($"Skipping {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) - Raphael solver not unlocked");
                                 continue;
                             }
                             if (autoSwitchOk(c.Recipe.RowId))
