@@ -225,7 +225,7 @@ namespace Artisan.CraftingLogic.Solvers
                 if (!P.Config.RaphaelSolverConfig.AutoSwitchOnAll)
                 {
                     Svc.Log.Debug("Switching to Raphael solver - Single");
-                    if (craft.StatLevel < 7) // NEW
+                    if (craft.StatLevel < 7)
                     {
                         Svc.Log.Warning($"Skipping auto-switch for recipe {craft.Recipe.RowId} - Raphael solver not unlocked");
                         return;
@@ -257,7 +257,7 @@ namespace Artisan.CraftingLogic.Solvers
                         config.SolverFlavour = opt.Flavour;
                         foreach (var c in crafts)
                         {
-                            if (c.StatLevel < 7) // NEW
+                            if (c.StatLevel < 7)
                             {
                                 Svc.Log.Warning($"Skipping {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) - Raphael solver not unlocked");
                                 continue;
