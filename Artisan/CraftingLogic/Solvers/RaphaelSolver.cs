@@ -19,7 +19,6 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
-using TerraFX.Interop.Windows;
 
 namespace Artisan.CraftingLogic.Solvers
 {
@@ -196,7 +195,7 @@ namespace Artisan.CraftingLogic.Solvers
                 {
                     if (info.Succeeded)
                     {
-                        AuotSwitch(craft, key);
+                        AutoSwitch(craft, key);
                         P.Config.Save();
                     }
                     Tasks.TryRemove(key, out _);
@@ -206,7 +205,7 @@ namespace Artisan.CraftingLogic.Solvers
             Tasks.TryAdd(key, info);
         }
 
-        private static void AuotSwitch(CraftState craft, string key)
+        private static void AutoSwitch(CraftState craft, string key)
         {
             static bool autoSwitchOk(uint recipeId)
             {
@@ -226,6 +225,11 @@ namespace Artisan.CraftingLogic.Solvers
                 if (!P.Config.RaphaelSolverConfig.AutoSwitchOnAll)
                 {
                     Svc.Log.Debug("Switching to Raphael solver - Single");
+                    if (craft.StatLevel < 7)
+                    {
+                        Svc.Log.Debug($"Skipping auto-switch for recipe {craft.Recipe.RowId} - Raphael solver not unlocked");
+                        return;
+                    }
                     var nopt = CraftingProcessor.GetAvailableSolversForRecipe(craft, true).FirstOrNull(x => x.Name == $"Raphael Recipe Solver");
                     if (nopt is { } opt)
                     {
@@ -253,6 +257,11 @@ namespace Artisan.CraftingLogic.Solvers
                         config.SolverFlavour = opt.Flavour;
                         foreach (var c in crafts)
                         {
+                            if (c.StatLevel < 7)
+                            {
+                                Svc.Log.Debug($"Skipping {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) - Raphael solver not unlocked");
+                                continue;
+                            }
                             if (autoSwitchOk(c.Recipe.RowId))
                             {
                                 Svc.Log.Information($"Switching {c.Recipe.RowId} ({c.Recipe.ItemResult.Value.Name}) to Raphael solver");
@@ -455,12 +464,14 @@ namespace Artisan.CraftingLogic.Solvers
         public int TimeOutMins = 1;
         public int MaxStellarHand = 2;
         public bool DefaultRaphSolver = false;
+        public bool FallbackToSolverIfRaphaelLocked = true;
+        public string FallbackSolverType = typeof(StandardSolverDefinition).FullName!;
+        public int FallbackSolverFlavour = 0;
         public bool Draw()
         {
             bool changed = false;
             try
             {
-
                 ImGui.Indent();
                 ImGui.TextWrapped($"Raphael settings can change the performance and system memory consumption. If you have low amounts of RAM try not to change settings, recommended minimum amount of RAM free is 2GB");
 
@@ -506,6 +517,45 @@ namespace Artisan.CraftingLogic.Solvers
                 changed |= ImGui.Checkbox("Set Raphael as Default Solver For Recipes Without a Solver Set.", ref DefaultRaphSolver);
 
                 ImGuiComponents.HelpMarker("Once the solver is set with this setting, turning this setting off will still keep it saved as Raphael.");
+
+                changed |= ImGui.Checkbox("Fallback to another solver if Raphael is locked.", ref FallbackToSolverIfRaphaelLocked);
+
+                ImGuiComponents.HelpMarker("This will prevent Raphael from being used if it is currently locked, meaning another solver will automatically be set instead.");
+
+                if (FallbackToSolverIfRaphaelLocked)
+                {
+                    ImGui.Indent();
+
+                    var currentFallbackName = CraftingProcessor.GetSolverDefinitions().FirstOrDefault(x => x.Def.GetType().FullName == FallbackSolverType && x.Flavour == FallbackSolverFlavour).Name ?? "Unknown";
+
+                    if (ImGui.BeginCombo("##fallbackSolver", currentFallbackName))
+                    {
+                        foreach (var opt in CraftingProcessor.GetSolverDefinitions().OrderBy(x => x.Priority))
+                        {
+                            if (opt == default) continue;
+                            if (opt.Def.GetType() == typeof(RaphaelSolverDefintion)) continue;
+                            if (opt.Def.GetType() == typeof(ExpertSolverDefinition)) continue;
+                            if (opt.UnsupportedReason.Length > 0)
+                            {
+                                ImGui.Text($"{opt.Name} is unsupported - {opt.UnsupportedReason}");
+                            }
+                            else
+                            {
+                                bool selected = opt.Def.GetType().FullName == FallbackSolverType;
+                                if (ImGui.Selectable(opt.Name, selected))
+                                {
+                                    FallbackSolverType = opt.Def.GetType().FullName!;
+                                    FallbackSolverFlavour = opt.Flavour;
+                                    changed = true;
+                                }
+                            }
+                        }
+
+                        ImGui.EndCombo();
+                    }
+
+                    ImGui.Unindent();
+                }
 
                 if (ImGui.Button($"Clear raphael macro cache (Currently {P.Config.RaphaelSolverCacheV5.Count} stored)"))
                 {
