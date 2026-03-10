@@ -228,6 +228,7 @@ public static class Simulator
         next.TrainedPerfectionAvailable = step.TrainedPerfectionAvailable && action != Skills.TrainedPerfection;
         next.MaterialMiracleCharges = action == Skills.MaterialMiracle ? step.MaterialMiracleCharges - 1 : step.MaterialMiracleCharges;
         next.MaterialMiracleActive = step.MaterialMiracleActive; //This is a timed buff, can't really use this in the simulator, just copy the real result
+        next.PrevMaterialMiracleActive = step.MaterialMiracleActive;
         next.ObserveCounter = action == Skills.Observe ? step.ObserveCounter + 1 : 0;
         next.ExpertEmergency = step.ExpertEmergency; // set directly by the expert solver
         next.SteadyHandCharges = action == Skills.SteadyHand ? step.SteadyHandCharges - 1 : step.SteadyHandCharges;
@@ -256,6 +257,7 @@ public static class Simulator
         }
 
         next.Condition = action is Skills.FinalAppraisal or Skills.HeartAndSoul ? step.Condition : GetNextCondition(craft, step, nextStateRoll);
+        next.PrevCondition = step.Condition;
 
         return (success ? ExecuteResult.Succeeded : ExecuteResult.Failed, next);
     }

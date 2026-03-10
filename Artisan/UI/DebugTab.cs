@@ -7,6 +7,7 @@ using Artisan.GameInterop.CSExt;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using ECommons;
 using ECommons.DalamudServices;
@@ -21,12 +22,15 @@ using FFXIVClientStructs.FFXIV.Client.Game.WKS;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using Dalamud.Bindings.ImGui;
 using Lumina;
 using Lumina.Excel.Sheets;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
+using TerraFX.Interop.Windows;
+using TerraFX.Interop.WinRT;
 using static ECommons.GenericHelpers;
 using RepairManager = Artisan.Autocraft.RepairManager;
 
@@ -45,6 +49,7 @@ namespace Artisan.UI
             try
             {
                 ImGui.Checkbox("Debug logging", ref Debug);
+                ImGui.Checkbox("Track expert conditions", ref P.Config.DebugTrackConditionData);
                 if (ImGui.CollapsingHeader("Crafter's food"))
                 {
                     foreach (var x in ConsumableChecker.GetFood())
@@ -403,8 +408,208 @@ namespace Artisan.UI
                     }
                     ImGui.Columns(1);
                 }
+                if (ImGui.CollapsingHeader("Expert Condition Data"))
+                {
+                    Dictionary<string, string> recipeNames = new Dictionary<string, string>()
+                    {
+                        { "60/3856/12323",  "Artisanal 2" },
+                        { "50/4672/15656",  "Artisanal 3" },
+                        { "55/5059/15474",  "Artisanal 4" },
+                        { "60/4220/14618",  "Oddly Delicate Skysung" },
+                        { "55/5077/14321",  "Resplendent A" },
+                        { "55/5095/14854",  "Resplendent B" },
+                        { "60/5470/16156",  "Resplendent C" },
+                        { "60/7480/13620",  "Otter Fountain" },
+                        { "60/7920/17240",  "Smaller Otter Fountain" },
+                        { "60/6600/15368",  "Connoisseur's Brilliant" },
+                        { "60/7040/16308",  "Connoisseur's Vrandtic" },
+                        { "60/8800/18040",  "Uncharted Course" },
+                        { "70/9240/20066",  "Aetherial Arbor" },
+                        { "80/23400/700",   "Moon A (high prog)" },
+                        { "80/9900/20300",  "Moon A (mixed 1 craft)" },
+                        { "60/400/21000",   "Moon A (low prog)" },
+                        { "70/7500/15000",  "Moon A (mixed 3 craft)" },
+                        { "80/9000/23000",  "Moon EX (80 dura)" },
+                        { "70/8700/22000",  "Moon EX (70 dura)" },
+                        { "30/7300/18900",  "Moon EX+ I Pre" },
+                        { "55/10000/27400", "Moon EX+ I Main" },
+                        { "35/6500/18000",  "Moon EX+ II Pre" },
+                        { "60/9500/26800",  "Moon EX+ II Main" },
+                        { "40/8500/19500",  "Moon EX+ III Pre" },
+                        { "70/11400/29800", "Moon EX+ III Main" },
+                        { "55/10000/12000", "Moon EX Weather" },
+                        { "20/4700/14900",  "Moon EX+ Weather Pre" },
+                        { "60/9500/24000",  "Moon EX+ Weather Main" },
+                        { "60/9300/22500",  "Moon EX+ Weather" },
+                        { "80/5200/13700",  "Phaenna A (1 craft)" },
+                        { "70/4000/11200",  "Phaenna A (3 crafts)" },
+                        { "60/500/15100",   "Phaenna A Miracle" },
+                        { "55/9700/11600",  "Phaenna EX-A" },
+                        { "60/600/21100",   "Phaenna EX-A III" },
+                        { "65/4200/14600",  "Phaenna EX-A Timed II" },
+                        { "30/7000/19500",  "Phaenna EX+ I Pre" },
+                        { "55/10200/27900", "Phaenna EX+ I Main" },
+                        { "35/6500/19200",  "Phaenna EX+ II Pre" },
+                        { "60/9500/27600",  "Phaenna EX+ II Main" },
+                        { "40/8900/23000",  "Phaenna EX+ III Pre" },
+                        { "65/12000/32300", "Phaenna EX+ III Main" },
+                        { "60/1700/29700",  "Phaenna EX+ Timed Pre" },
+                        { "70/2300/24700",  "Oizys EX-A Miracle" },
+                        { "70/9700/17300",  "Oizys EX-A Steady" },
+                        { "60/8500/19500",  "Oizys EX-A No Action" },
+                        { "70/8200/28300",  "Oizys EX+ Timed" },
+                        { "35/7500/21000",  "Oizys EX+ I Pre" },
+                        { "50/9800/27900",  "Oizys EX+ I Main" },
+                        { "35/8000/22000",  "Oizys EX+ II Pre" },
+                        { "60/11000/29100", "Oizys EX+ II Main" },
+                        { "50/9000/23000",  "Oizys EX+ III Pre" },
+                        { "70/12500/33500", "Oizys EX+ III Main" },
+                    };
+                    List<CraftingLogic.CraftData.Condition> tableConditions = new List<CraftingLogic.CraftData.Condition>()
+                    {
+                        CraftingLogic.CraftData.Condition.Normal,
+                        CraftingLogic.CraftData.Condition.Good,
+                        CraftingLogic.CraftData.Condition.Centered,
+                        CraftingLogic.CraftData.Condition.Sturdy,
+                        CraftingLogic.CraftData.Condition.Pliant,
+                        CraftingLogic.CraftData.Condition.Malleable,
+                        CraftingLogic.CraftData.Condition.Primed,
+                        CraftingLogic.CraftData.Condition.GoodOmen,
+                        CraftingLogic.CraftData.Condition.Robust
+                    };
 
+                    if (ImGui.Button("Load File"))
+                    {
+                        if (!P.Config.DebugTrackConditions.IsLoaded)
+                            P.Config.DebugTrackConditions.LoadFile();
+                    }
+                    ImGui.SameLine();
+                    if (ImGui.Button("Refresh"))
+                    {
+                        P.Config.DebugTrackConditions.TableLoaded = false;
+                    }
+                    ImGui.SameLine();
+                    if (ImGui.Button("Copy Combined"))
+                    {
+                        if (P.Config.DebugTrackConditions.IsLoaded && P.Config.DebugTrackConditions.combinedConditionData != null)
+                        {
+                            string copyStr = "";
+                            copyStr += "Conditions\t" + "Flags\t" + "Recipe Stats\t" + "Note\t" + "Total\t";
+                            foreach (var cond in tableConditions)
+                                copyStr += cond.ToString() + "\t";
+                            copyStr += "\r\n";
+
+                            var sortedData = P.Config.DebugTrackConditions.combinedConditionData.OrderBy(x => x.Value.RecipeConditionIDs).ThenBy(x => recipeNames.TryGetValue(x.Value.StatsString(), out var note) ? note : "");
+                            foreach (var (rowId, rc) in sortedData)
+                            {
+                                copyStr += rc.RecipeConditionFlags + "\t";
+                                copyStr += rc.RecipeConditionIDs.ToString() + "\t";
+                                copyStr += rc.StatsString() + "\t";
+                                copyStr += (recipeNames.TryGetValue(rc.StatsString(), out var note) ? note : "") + "\t";
+                                copyStr += (P.Config.DebugTrackConditions.combinedTotals.TryGetValue(rowId, out int value) ? value : 1) + "\t";
+                                foreach (var cond in tableConditions)
+                                    copyStr += (rc.Counts.TryGetValue(cond, out int c) ? c : 0) + "\t";
+                                copyStr += "\r\n";
+                            }
+                            ImGui.SetClipboardText(copyStr);
+                            Notify.Success("Combined condition data copied to clipboard");
+                        }
+                    }
+
+                    if (!P.Config.DebugTrackConditions.TableLoaded)
+                    {
+                        P.Config.DebugTrackConditions.combinedConditionData = new();
+                        P.Config.DebugTrackConditions.combinedTotals = new();
+
+                        foreach (var rec in P.Config.DebugTrackConditions.Records)
+                        {
+                            string combinedId = rec.StatsString() + "-" + rec.RecipeConditionFlags;
+                            if (!P.Config.DebugTrackConditions.combinedConditionData.ContainsKey(combinedId))
+                            {
+                                P.Config.DebugTrackConditions.combinedConditionData[combinedId] = new RecipeConditions() { 
+                                    RecipeDurability = rec.RecipeDurability,
+                                    RecipeProgress = rec.RecipeProgress,
+                                    RecipeQuality = rec.RecipeQuality,
+                                    RecipeConditionFlags = rec.RecipeConditionFlags,
+                                    RecipeConditionIDs = rec.RecipeConditionIDs
+                                };
+                            }
+
+                            foreach (var (c, n) in rec.Counts)
+                            {
+                                if (!P.Config.DebugTrackConditions.combinedConditionData[combinedId].Counts.ContainsKey(c))
+                                    P.Config.DebugTrackConditions.combinedConditionData[combinedId].Counts[c] = 0;
+
+                                P.Config.DebugTrackConditions.combinedConditionData[combinedId].Counts[c] += n;
+
+                                if (!P.Config.DebugTrackConditions.combinedTotals.ContainsKey(combinedId))
+                                    P.Config.DebugTrackConditions.combinedTotals[combinedId] = 0;
+                                P.Config.DebugTrackConditions.combinedTotals[combinedId] += n;
+                            }
+                        }
+
+                        P.Config.DebugTrackConditions.TableLoaded = true;
+                    }
+
+                    if (P.Config.DebugTrackConditions.IsLoaded && P.Config.DebugTrackConditions.combinedConditionData != null)
+                    {
+                        try
+                        {
+                            ImGui.Text("Combined:");
+                            ImGui.BeginTable("ExpertConditionData", 14);
+
+                            ImGui.TableSetupColumn("Conditions", ImGuiTableColumnFlags.WidthFixed, 120.0f);
+                            ImGui.TableSetupColumn("Flags", ImGuiTableColumnFlags.WidthFixed, 50.0f);
+                            ImGui.TableSetupColumn("Dura/Prog/Qual", ImGuiTableColumnFlags.WidthFixed, 100.0f);
+                            ImGui.TableSetupColumn("Note", ImGuiTableColumnFlags.WidthFixed, 150.0f);
+                            ImGui.TableSetupColumn("Total", ImGuiTableColumnFlags.WidthFixed, 50.0f);
+                            ImGui.TableSetupColumn("Normal", ImGuiTableColumnFlags.WidthStretch, 0.0f);
+                            ImGui.TableSetupColumn("Good", ImGuiTableColumnFlags.WidthStretch, 0.0f);
+                            ImGui.TableSetupColumn("Centered", ImGuiTableColumnFlags.WidthStretch, 0.0f);
+                            ImGui.TableSetupColumn("Sturdy", ImGuiTableColumnFlags.WidthStretch, 0.0f);
+                            ImGui.TableSetupColumn("Pliant", ImGuiTableColumnFlags.WidthStretch, 0.0f);
+                            ImGui.TableSetupColumn("Malleable", ImGuiTableColumnFlags.WidthStretch, 0.0f);
+                            ImGui.TableSetupColumn("Primed", ImGuiTableColumnFlags.WidthStretch, 0.0f);
+                            ImGui.TableSetupColumn("Good Omen", ImGuiTableColumnFlags.WidthStretch, 0.0f);
+                            ImGui.TableSetupColumn("Robust", ImGuiTableColumnFlags.WidthStretch, 0.0f);
+                            ImGui.TableHeadersRow();
+
+                            var sortedData = P.Config.DebugTrackConditions.combinedConditionData.OrderBy(x => recipeNames.TryGetValue(x.Value.StatsString(), out var note) ? note : "");
+                            foreach (var (rowId, rc) in sortedData)
+                            {
+                                int rowTotal = P.Config.DebugTrackConditions.combinedTotals.TryGetValue(rowId, out int value) ? value : 1;
+
+                                ImGui.TableNextRow();
+                                ImGui.TableNextColumn();
+                                ImGui.Text(rc.RecipeConditionFlags);
+                                ImGui.TableNextColumn();
+                                ImGui.Text(rc.RecipeConditionIDs.ToString());
+                                ImGui.TableNextColumn();
+                                ImGui.Text(rc.StatsString());
+                                ImGui.TableNextColumn();
+                                ImGui.Text(recipeNames.TryGetValue(rc.StatsString(), out var note) ? note : "");
+                                ImGui.TableNextColumn();
+                                ImGui.Text($"{rowTotal}");
+
+                                foreach (var cond in tableConditions)
+                                {
+                                    ImGui.TableNextColumn();
+                                    int count = rc.Counts.TryGetValue(cond, out int c) ? c : 0;
+                                    ImGui.Text($"{Math.Round(((double)count / (double)rowTotal) * 100, 0)}% ({count})");
+                                }
+                            }
+                            ImGui.EndTable();
+                        }
+                        catch (Exception ex)
+                        {
+                            Svc.Log.Error($"Error rendering condition table\n{ex}");
+                        }
+                    }
+                }
+
+                ImGui.Dummy(new Vector2(0, 5f));
                 ImGui.Separator();
+                ImGui.Dummy(new Vector2(0, 5f));
 
                 ImGui.Text($"Endurance Item: {Endurance.RecipeID} {Endurance.RecipeName}");
                 if (ImGui.Button($"Open Endurance Item"))

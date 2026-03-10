@@ -16,6 +16,7 @@ namespace Artisan.CraftingLogic.Solvers;
 public class ExpertSolverSettings
 {
     public bool MaxIshgardRecipes;
+    public bool DebugObserveOnly = false; // special debug flag for collecting condition data
     public bool UseReflectOpener;
     public bool MuMeIntensiveGood = true; // if true, we allow spending mume on intensive (400p) rather than rapid (500p) if good condition procs
     public bool MuMeIntensiveMalleable = false; // if true and we have malleable during mume, use intensive rather than hoping for rapid

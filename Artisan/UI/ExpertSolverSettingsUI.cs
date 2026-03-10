@@ -363,6 +363,11 @@ internal class ExpertSolverSettingsUI
             HelpMarkerWithIcons(["[s!SteadyHand] will be used ASAP to guarantee [s!RapidSynthesis].", "Set to 0 to disable."]);
             if (!s.OverrideCosmicRecipeSettings) ImGui.EndDisabled();
             ImGui.Unindent();
+
+#if DEBUG
+            changed |= ImGui.Checkbox("DEBUG: Observe only###debugObserve", ref s.DebugObserveOnly);
+            HelpMarkerWithIcons("CAUTION: Will only spam [s!Observe] and [s!TricksOfTrade] to collect condition data.");
+#endif
         }
         catch (Exception ex)
         {

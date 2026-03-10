@@ -92,6 +92,17 @@ public class ExpertSolver : Solver
     {
         ExpertSolverSettings cfg = profile.Settings;
 
+#if DEBUG
+        if (cfg.DebugObserveOnly)
+        {
+            if (step.Condition == Condition.Good)
+                return new(Skills.TricksOfTrade, "debug: observe");
+            if (step.RemainingCP < Skills.Observe.StandardCPCost())
+                return new(Skills.BasicSynthesis, "debug: restart");
+            return new(Skills.Observe, "debug: observe");
+        }
+#endif
+
         // see what we need to finish the craft
         var remainingProgress = craft.CraftProgress - step.Progress;
         var estBasicSynthProgress = Simulator.BaseProgress(craft) * 120 / 100;

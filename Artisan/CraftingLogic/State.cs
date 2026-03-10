@@ -63,6 +63,7 @@ public record class StepState
     public int Durability;
     public int RemainingCP;
     public Condition Condition;
+    public Condition PrevCondition;
     public int IQStacks;
     public int WasteNotLeft;
     public int ManipulationLeft;
@@ -83,6 +84,7 @@ public record class StepState
     public Skills PrevComboAction;
     public uint MaterialMiracleCharges;
     public bool MaterialMiracleActive;
+    public bool PrevMaterialMiracleActive;
     public int ObserveCounter;
     public bool ExpertEmergency;
     public int SteadyHandCharges;

@@ -172,6 +172,10 @@ namespace Artisan
         public ConcurrentDictionary<string, MacroSolverSettings.Macro> RaphaelSolverCacheV5 = [];
         public bool ShowLevelingRecipeProgress = true;
 
+        [NonSerialized]
+        public TrackConditions DebugTrackConditions = new TrackConditions();
+        public bool DebugTrackConditionData = false;
+
         public void Save()
         {
             Svc.PluginInterface.SavePluginConfig(this);

@@ -192,6 +192,11 @@ public static class CraftingProcessor
         if (_nextRec.Action != Skills.None && _nextRec.Action != step.PrevComboAction)
             Svc.Log.Warning($"Previous action was different from recommendation: recommended {_nextRec.Action}, used {step.PrevComboAction}");
 
+        if (P.Config.DebugTrackConditionData && craft.CraftExpert && !step.MaterialMiracleActive && !step.PrevMaterialMiracleActive && step.PrevComboAction != Skills.FinalAppraisal && step.PrevComboAction != Skills.HeartAndSoul && step.PrevCondition != CraftData.Condition.Robust && step.PrevCondition != CraftData.Condition.GoodOmen)
+        {
+            P.Config.DebugTrackConditions.AddRecipeCondition(craft, step.Condition);
+        }
+
         _nextRec = _activeSolver.Solve(craft, step);
         Svc.Log.Debug($"Next rec is: {_nextRec.Action} on {_nextRec.Comment}");
         if (Simulator.CannotUseAction(craft, step, _nextRec.Action, out string reason))
