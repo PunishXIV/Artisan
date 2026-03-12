@@ -169,8 +169,31 @@ internal class ExpertSolverSettingsUI
             ImGui.Dummy(new Vector2(0, 5f));
             ImGui.TextWrapped($"{ProgressString}");
             ImGui.Indent();
-            changed |= CheckboxWithIcons("MidFinishProgressBeforeQuality", ref s.MidFinishProgressBeforeQuality, "Prioritize {0} over {1} and {2}", [ProgressString.ToLower(), Buffs.InnerQuiet.NameOfBuff(), QualityString.ToLower()]);
-            HelpMarkerWithIcons(["This setting will use [s!Veneration] and [s!RapidSynthesis] to max out progress ASAP, regardless of {0} stacks or the current step's {1}.", "This is less flexible, but tries to ensure that {2} will always finish.", "If disabled, the solver won't prioritize {2} actions or force [s!Veneration] until reaching max {0} stacks.", "This is more flexible, but might fail to finish the craft in a worst-case scenario."], [Buffs.InnerQuiet.NameOfBuff(), ConditionString.ToLower(), ProgressString.ToLower()]);
+            DrawIconText("Ensure {0} is finished:", [ProgressString.ToLower()]);
+            HelpMarkerWithIcons(["Normally, the solver will use each {0} to advance either {1} or {2} as appropriate.", "Under [s!Innovation] at max {3} stacks, however, there are fewer opportunities for {1}.", "Use this setting to ensure {1} finishes when desired."], [ConditionString.ToLower(), ProgressString.ToLower(), QualityString.ToLower(), Buffs.InnerQuiet.NameOfBuff()]);
+            ImGui.PushItemWidth(400);
+            if (ImGui.BeginCombo("##whenToForceProgressSetting", s.GetWhenToForceProgressSettingName(s.WhenToForceProgress)))
+            {
+                foreach (WhenToForceProgressSetting x in Enum.GetValues<WhenToForceProgressSetting>())
+                {
+                    if (ImGui.Selectable(s.GetWhenToForceProgressSettingName(x)))
+                    {
+                        s.WhenToForceProgress = x;
+                        changed = true;
+                    }
+                }
+                ImGui.EndCombo();
+            }
+            if (s.WhenToForceProgress != WhenToForceProgressSetting.WhenToForceProgressNever)
+            {
+                ImGui.Dummy(new Vector2(0, 3f));
+                ImGui.Indent();
+                DrawIconText("When forcing {1}, [s!Observe] this many times for better [s!RapidSynthesis] {0}:", [ConditionString.ToLower(), ProgressString.ToLower()]);
+                HelpMarkerWithIcons("Looks for [c!Centered], [c!Sturdy]/[c!Robust], or [c!Malleable].");
+                ImGui.PushItemWidth(250);
+                changed |= ImGui.SliderInt("(-1 for no limit, 0 to disable)##ForceProgressMaxBait", ref s.ForceProgressMaxBait, -1, 10);
+                ImGui.Unindent();
+            }
 
             ImGui.Dummy(new Vector2(0, 5f));
             DrawIconText("When {0} starts to run low and we need to use [s!RapidSynthesis]:", [DurabilityString.ToLower()]);
