@@ -1372,17 +1372,19 @@ internal class ListEditor : Window, IDisposable
             P.Config.Save();
         }
 
-        ImGui.SameLine();
-
-        if (ImGui.Button($"Apply to all###ExpertProfileOnAll"))
+        if (config.CurrentSolverType.Contains("Expert") || config.CurrentSolverType == "" && craft.CraftExpert)
         {
-            foreach (var r in SelectedList.Recipes.Distinct())
+            ImGui.SameLine();
+            if (ImGui.Button($"Apply to all###ExpertProfileOnAll"))
             {
-                var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
-                o.expertProfileID = config.expertProfileID;
-                P.Config.RecipeConfigs[r.ID] = o;
+                foreach (var r in SelectedList.Recipes.Distinct())
+                {
+                    var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
+                    o.expertProfileID = config.expertProfileID;
+                    P.Config.RecipeConfigs[r.ID] = o;
+                }
+                P.Config.Save();
             }
-            P.Config.Save();
         }
 
         config.DrawWarnings(craft);
