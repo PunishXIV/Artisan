@@ -412,7 +412,7 @@ public unsafe class Artisan : IDalamudPlugin
             "builder" => OpenWindow.SpecialList,
             "workshop" => OpenWindow.FCWorkshop,
             "sim" => OpenWindow.Simulator,
-            _ => OpenWindow.Overview
+            _ => PluginUi.OpenWindow
         };
     }
 
