@@ -15,6 +15,7 @@ namespace Artisan.CraftingLogic.Solvers;
 
 public class ExpertSolverSettings
 {
+    public bool EnableExpertProfiles = false;
     public bool MaxIshgardRecipes;
     public bool UseReflectOpener;
     public bool MuMeIntensiveGood = true; // if true, we allow spending mume on intensive (400p) rather than rapid (500p) if good condition procs

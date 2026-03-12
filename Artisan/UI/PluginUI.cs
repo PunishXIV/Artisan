@@ -162,6 +162,7 @@ namespace Artisan.UI
                             {
                                 OpenWindow = OpenWindow.Overview;
                             }
+                            ImGui.Spacing();
                             if (ImGui.Selectable("Settings", OpenWindow == OpenWindow.Main))
                             {
                                 OpenWindow = OpenWindow.Main;
@@ -176,10 +177,13 @@ namespace Artisan.UI
                             {
                                 OpenWindow = OpenWindow.Macro;
                             }
-                            ImGui.Spacing();
-                            if (ImGui.Selectable("Expert Profiles", OpenWindow == OpenWindow.ExpertProfiles))
-                            {
-                                OpenWindow = OpenWindow.ExpertProfiles;
+                            if (P.Config.ExpertSolverConfig.EnableExpertProfiles)
+                            { 
+                                ImGui.Spacing();
+                                if (ImGui.Selectable("Expert Profiles", OpenWindow == OpenWindow.ExpertProfiles))
+                                {
+                                    OpenWindow = OpenWindow.ExpertProfiles;
+                                }
                             }
                             ImGui.Spacing();
                             if (ImGui.Selectable("Raphael Cache", OpenWindow == OpenWindow.RaphaelCache))

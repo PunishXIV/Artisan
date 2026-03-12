@@ -370,8 +370,9 @@ internal class ExpertSolverSettingsUI
             ImGui.Unindent();
 
             ImGui.TextWrapped($"Cosmic Exploration");
+            ImGui.Indent();
             changed |= ImGui.Checkbox("Override per-recipe Cosmic Exploration settings###overrideCosmic", ref s.OverrideCosmicRecipeSettings);
-            ImGuiComponents.HelpMarker("By default, Cosmic Exploration settings are tracked for each recipe and ignore the selected expert profile. Enable this option to instead use the settings below.");
+            ImGuiComponents.HelpMarker("By default, Cosmic Exploration settings are tracked for each recipe and ignore the expert solver options. Enable this option to instead use the settings below.");
 
             ImGui.Indent();
             if (!s.OverrideCosmicRecipeSettings) ImGui.BeginDisabled();
@@ -386,6 +387,12 @@ internal class ExpertSolverSettingsUI
             HelpMarkerWithIcons(["[s!SteadyHand] will be used ASAP to guarantee [s!RapidSynthesis].", "Set to 0 to disable."]);
             if (!s.OverrideCosmicRecipeSettings) ImGui.EndDisabled();
             ImGui.Unindent();
+            ImGui.Unindent();
+
+#if DEBUG
+            changed |= ImGui.Checkbox("DEBUG: Observe only###debugObserve", ref s.DebugObserveOnly);
+            HelpMarkerWithIcons("CAUTION: Will only spam [s!Observe] and [s!TricksOfTrade] to collect condition data.");
+#endif
         }
         catch (Exception ex)
         {
@@ -397,9 +404,6 @@ internal class ExpertSolverSettingsUI
     public bool DrawAllSettings(ExpertSolverSettings s, bool startOpen)
     {
         bool changed = false;
-
-        changed |= DrawMiscSettings(s);
-        ImGui.Dummy(new Vector2(0, 5f));
 
         ImGuiTreeNodeFlags flags = startOpen ? ImGuiTreeNodeFlags.DefaultOpen : ImGuiTreeNodeFlags.None;
         if (ImGui.CollapsingHeader("Opener", flags))
@@ -429,6 +433,9 @@ internal class ExpertSolverSettingsUI
             changed |= DrawFinisherSettings(s);
         }
 
+        ImGui.Dummy(new Vector2(0, 5f));
+        changed |= DrawMiscSettings(s);
+
         return changed;
     }
 
@@ -447,15 +454,24 @@ internal class ExpertSolverSettingsUI
                 ImGui.TextWrapped($"icon in the crafting log.");
             }
 
-            ImGui.Dummy(new Vector2(0, 5f));
-            if (IconButtons.IconTextButton(Dalamud.Interface.FontAwesomeIcon.ExternalLinkAlt, "Create/Edit Expert Solver Profiles"))
-            {
-                P.PluginUi.OpenWindow = OpenWindow.ExpertProfiles;
-            }
-
             ImGui.Indent();
             ImGui.Dummy(new Vector2(0, 5f));
             changed |= DrawAllSettings(s, false);
+            ImGui.Unindent();
+
+            ImGui.Indent();
+            ImGui.TextWrapped($"Expert Profiles");
+            ImGui.Indent();
+            changed |= ImGui.Checkbox("Use expert solver profiles", ref s.EnableExpertProfiles);
+            ImGuiComponents.HelpMarker("Profiles let you set different expert solver settings for different recipes. This is for advanced users - the expert solver should \"just work\" for almost everything.");
+
+            if (s.EnableExpertProfiles)
+            {
+                if (IconButtons.IconTextButton(Dalamud.Interface.FontAwesomeIcon.ExternalLinkAlt, "Create/Edit Expert Solver Profiles"))
+                {
+                    P.PluginUi.OpenWindow = OpenWindow.ExpertProfiles;
+                }
+            }
             ImGui.Unindent();
 
             ImGui.Dummy(new Vector2(0, 5f));
@@ -465,6 +481,8 @@ internal class ExpertSolverSettingsUI
                 changed |= true;
             }
             ImGui.Dummy(new Vector2(0, 5f));
+
+            ImGui.Unindent();
 
             return changed;
         }
