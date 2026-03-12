@@ -34,7 +34,7 @@ public class ExpertSolverSettings
     {
         MidUseTPGroundwork,        // use TP on groundwork for high-prio progress
         MidUseTPPrepIQ,            // use TP on preparatory touch to build IQ stacks
-        MidUseTPEitherPreQuality,  // use TP on either of the options above, depending on which status comes up first (default groundwork)
+        MidUseTPEitherPreQuality,  // use TP on either of the options above, depending on which condition comes up first (default groundwork)
         MidUseTPDuringQuality      // use TP on prep or precise after 10 IQ, with GS+Inno
     }
     public string GetMidUseTPSettingName(MidUseTPSetting value)
@@ -98,7 +98,21 @@ public class ExpertSolverSettings
             MidAllowQuickInnoGoodSetting.MidAllowQuickInnoGoodDisable or _ => $"Don't use {Skills.QuickInnovation.NameOfAction()} (save for finisher)"
         };
     public MidAllowQuickInnoGoodSetting MidAllowQuickInnoGood = MidAllowQuickInnoGoodSetting.MidAllowQuickInnoGoodAny;
-    public bool MidFinishProgressBeforeQuality = false; // if true, at 10 iq we first finish progress before starting on quality
+    public enum WhenToForceProgressSetting  // when in the crafting logic should we ensure finishable progress?
+    {
+        WhenToForceProgressNever,           // never force progress, just hope for procs
+        WhenToForceProgressBeforeQuality,   // finish progress at 10 IQ stacks
+        WhenToForceProgressASAP             // finish progress immediately after opener
+    }
+    public string GetWhenToForceProgressSettingName(WhenToForceProgressSetting value)
+        => value switch
+        {
+            WhenToForceProgressSetting.WhenToForceProgressNever => $"Never force progress",
+            WhenToForceProgressSetting.WhenToForceProgressBeforeQuality => $"Force progress upon reaching 10 {Buffs.InnerQuiet.NameOfBuff()} stacks",
+            WhenToForceProgressSetting.WhenToForceProgressASAP or _ => $"Force progress ASAP after opener"
+        };
+    public WhenToForceProgressSetting WhenToForceProgress = WhenToForceProgressSetting.WhenToForceProgressBeforeQuality;
+    public int ForceProgressMaxBait = -1; // number of observes to use on better conditions when forcing progress; -1 for no limit, 0 to disable
     public bool MidObserveGoodOmenForTricks = false; // if true, we'll observe on good omen where otherwise we'd use tricks on good
     public bool FinisherBaitGoodByregot = true; // if true, use careful observations to try baiting good byregot
     public bool FinisherUseQuickInno = true; // if true, use quick innovation to finish in an emergency

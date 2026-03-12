@@ -257,7 +257,7 @@ public class ExpertSolver : Solver
         var reservedCPForFinisher = Skills.ByregotsBlessing.StandardCPCost() + 
                                     Skills.GreatStrides.StandardCPCost() + 
                                     (step.InnovationLeft > 2 || step.QuickInnoLeft > 0 ? 0 : Skills.Innovation.StandardCPCost()); 
-        if (step.IQStacks < maxIQStacks || progressDeficit > 0 && profile.Settings.MidFinishProgressBeforeQuality)
+        if (step.IQStacks < maxIQStacks || progressDeficit > 0 && profile.Settings.WhenToForceProgress == WhenToForceProgressSetting.WhenToForceProgressASAP)
         {
             return SolveMidPreQuality(profile, craft, step, progressDeficit, availableCP);
         }
@@ -300,7 +300,7 @@ public class ExpertSolver : Solver
 
         bool shouldUseSteadyHand = CU(craft, step, Skills.SteadyHand) && step.SteadyHandsUsed < profile.GetMaxSteadyUses();
         // keep veneration running if we're forcing progress; otherwise don't because we're mixing quality and progress
-        if ((cfg.MidFinishProgressBeforeQuality || shouldUseSteadyHand) && progressDeficit > 0 && step.VenerationLeft == 0 && step.WasteNotLeft == 0 && CU(craft, step, Skills.Veneration))
+        if ((cfg.WhenToForceProgress == WhenToForceProgressSetting.WhenToForceProgressASAP || shouldUseSteadyHand) && progressDeficit > 0 && step.VenerationLeft == 0 && step.WasteNotLeft == 0 && CU(craft, step, Skills.Veneration))
             return new(Skills.Veneration, "mid pre quality: progress finish vene");
         // similarly, re-up steady hand if we have any allowed uses left
         if (shouldUseSteadyHand && progressDeficit > 0 && step.SteadyHandLeft == 0 && step.WasteNotLeft == 0)
@@ -679,7 +679,7 @@ public class ExpertSolver : Solver
         if (step.ManipulationLeft > 0 && step.Durability + 5 > craft.CraftDurability)
             return Skills.None; // we're maxed out on dura, doing anything here will waste manip durability
 
-        var canBePliant = craft.ConditionFlags.HasFlag(ConditionFlags.Pliant);
+        var canBePliant = craft.ConditionFlags.HasFlag(ConditionFlags.Pliant) || step.MaterialMiracleActive;
 
         if (step.Condition == Condition.Primed)
         {
@@ -828,9 +828,15 @@ public class ExpertSolver : Solver
             if (cfg.MidUseTP is MidUseTPSetting.MidUseTPPrepIQ or MidUseTPSetting.MidUseTPDuringQuality)
                 return Skills.None;
 
-            // *don't* spend TP on Good outside of intensive, it should prioritize prep or tricks; even if forcing progress we'd rather get the free CP
+            // *don't* spend TP on Good outside of intensive (already checked above), it should prioritize prep or tricks
             if (step.Condition == Condition.Good && cfg.MidUseTP != MidUseTPSetting.MidUseTPEitherPreQuality)
-                return (cfg.MidFinishProgressBeforeQuality && CU(craft, step, Skills.TricksOfTrade)) ? Skills.TricksOfTrade : Skills.None;
+            {
+                // if forcing progress, use tricks for the CP instead of wasting Good on Groundwork
+                if (cfg.WhenToForceProgress != WhenToForceProgressSetting.WhenToForceProgressNever)
+                    return CU(craft, step, Skills.TricksOfTrade) ? Skills.TricksOfTrade : Skills.None;
+                // otherwise, bail on the progress logic so we can use Good on prep
+                return Skills.None;
+            }
 
             // do spend TP on a 0-dura groundwork for malleable, or if it will finish the deficit regardless
             var isGWEnough = Simulator.CalculateProgress(craft, step, Skills.Groundwork) >= progressDeficit;
@@ -862,24 +868,34 @@ public class ExpertSolver : Solver
         }
 
         // if we're forcing progress, the logic differs quite a bit
-        if (cfg.MidFinishProgressBeforeQuality)
+        if (cfg.WhenToForceProgress != WhenToForceProgressSetting.WhenToForceProgressNever)
         {
-            // similarly, if a non-malleable groundwork will get us there, set up TP for it instead of risking rapid...
-            var willGWBeEnough = (Simulator.BaseProgress(craft) * 360 / 100) >= progressDeficit;
-            if (cfg.MidUseTP is MidUseTPSetting.MidUseTPGroundwork or MidUseTPSetting.MidUseTPEitherPreQuality && step.TrainedPerfectionAvailable && willGWBeEnough && step.WasteNotLeft == 0 && CU(craft, step, Skills.TrainedPerfection))
-                return Skills.TrainedPerfection;
+            var itsProgressTime = (step.IQStacks < maxIQStacks && cfg.WhenToForceProgress == WhenToForceProgressSetting.WhenToForceProgressASAP) || (step.IQStacks >= maxIQStacks && cfg.WhenToForceProgress == WhenToForceProgressSetting.WhenToForceProgressBeforeQuality);
 
-            // ...and while we favor rapid if it has a favorable condition...
-            if (step.Condition is Condition.Centered or Condition.Sturdy or Condition.Robust or Condition.Malleable && step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && CU(craft, step, Skills.RapidSynthesis))
-                return Skills.RapidSynthesis;
+            if (itsProgressTime)
+            {
+                // if a non-malleable groundwork will get us there, set up TP for it instead of risking rapid...
+                var willGWBeEnough = (Simulator.BaseProgress(craft) * 360 / 100) >= progressDeficit;
+                if (cfg.MidUseTP is MidUseTPSetting.MidUseTPGroundwork or MidUseTPSetting.MidUseTPEitherPreQuality && step.TrainedPerfectionAvailable && willGWBeEnough && step.WasteNotLeft == 0 && CU(craft, step, Skills.TrainedPerfection))
+                    return Skills.TrainedPerfection;
 
-            // ...we should still set up TP->groundwork before rapid on any other condition
-            if (cfg.MidUseTP is MidUseTPSetting.MidUseTPGroundwork or MidUseTPSetting.MidUseTPEitherPreQuality && step.TrainedPerfectionAvailable && step.WasteNotLeft == 0 && CU(craft, step, Skills.TrainedPerfection))
-                return Skills.TrainedPerfection;
+                // ...and while we favor rapid if it has a favorable condition...
+                if (step.Condition is Condition.Centered or Condition.Sturdy or Condition.Robust or Condition.Malleable && step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && CU(craft, step, Skills.RapidSynthesis))
+                    return Skills.RapidSynthesis;
 
-            // now it's time to risk it for the progress biscuit, even on bad conditions
-            if (step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && CU(craft, step, Skills.RapidSynthesis))
-                return Skills.RapidSynthesis;
+                // ...we should still set up TP->groundwork before rapid on any other condition
+                if (cfg.MidUseTP is MidUseTPSetting.MidUseTPGroundwork or MidUseTPSetting.MidUseTPEitherPreQuality && step.TrainedPerfectionAvailable && step.WasteNotLeft == 0 && CU(craft, step, Skills.TrainedPerfection))
+                    return Skills.TrainedPerfection;
+
+                // ideally we'll wait for a better condition before spamming rapid, as long as we have the dura for the rapid
+                var effectiveDura = step.Durability + (step.ManipulationLeft * 5);
+                if ((cfg.ForceProgressMaxBait > step.ObserveCounter || cfg.ForceProgressMaxBait == -1) && CanProcRapidCondition(craft) && effectiveDura > Skills.RapidSynthesis.StandardCPCost() && CU(craft, step, Skills.Observe))
+                    return Skills.Observe;
+
+                // now it's time to risk it for the progress biscuit, even on bad conditions
+                if (step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) && CU(craft, step, Skills.RapidSynthesis))
+                    return Skills.RapidSynthesis;
+            }
         }
 
         // use rapid if there's a nice condition for it
@@ -897,6 +913,7 @@ public class ExpertSolver : Solver
                 return Skills.TrainedPerfection;
         }
 
+        // no high priority progress, bail and start thinking about quality
         return Skills.None;
     }
 
@@ -1197,4 +1214,9 @@ public class ExpertSolver : Solver
     }
 
     private static bool CU(CraftState craft, StepState step, Skills skill) => Simulator.CanUseAction(craft, step, skill);
+
+    private static bool CanProcRapidCondition(CraftState craft)
+    {
+        return craft.ConditionFlags.HasFlag(ConditionFlags.Centered) || craft.ConditionFlags.HasFlag(ConditionFlags.Sturdy) || craft.ConditionFlags.HasFlag(ConditionFlags.Robust) || craft.ConditionFlags.HasFlag(ConditionFlags.Malleable);
+    }
 }
