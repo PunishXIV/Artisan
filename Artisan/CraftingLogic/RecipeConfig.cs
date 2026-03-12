@@ -131,7 +131,8 @@ public class RecipeConfig
         changed |= DrawManual();
         changed |= DrawSquadronManual();
         changed |= DrawSolver(craft, liveStats: liveStats);
-        changed |= DrawExpertProfiles(craft);
+        if (P.Config.ExpertSolverConfig.EnableExpertProfiles)
+            changed |= DrawExpertProfiles(craft);
         DrawWarnings(craft);
         RaphaelCache.DrawRaphaelDropdown(craft, liveStats);
         DrawSimulator(craft);

@@ -15,6 +15,7 @@ namespace Artisan.CraftingLogic.Solvers;
 
 public class ExpertSolverSettings
 {
+    public bool EnableExpertProfiles = false;
     public bool MaxIshgardRecipes;
     public bool DebugObserveOnly = false; // special debug flag for collecting condition data
     public bool UseReflectOpener;

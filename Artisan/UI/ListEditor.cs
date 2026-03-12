@@ -1366,24 +1366,27 @@ internal class ListEditor : Window, IDisposable
             P.Config.Save();
         }
 
-        if (config.DrawExpertProfiles(craft, true))
+        if (P.Config.ExpertSolverConfig.EnableExpertProfiles)
         {
-            P.Config.RecipeConfigs[selectedListItem] = config;
-            P.Config.Save();
-        }
-
-        if (config.CurrentSolverType.Contains("Expert") || config.CurrentSolverType == "" && craft.CraftExpert)
-        {
-            ImGui.SameLine();
-            if (ImGui.Button($"Apply to all###ExpertProfileOnAll"))
+            if (config.DrawExpertProfiles(craft, true))
             {
-                foreach (var r in SelectedList.Recipes.Distinct())
-                {
-                    var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
-                    o.expertProfileID = config.expertProfileID;
-                    P.Config.RecipeConfigs[r.ID] = o;
-                }
+                P.Config.RecipeConfigs[selectedListItem] = config;
                 P.Config.Save();
+            }
+
+            if (config.CurrentSolverType.Contains("Expert") || config.CurrentSolverType == "" && craft.CraftExpert)
+            {
+                ImGui.SameLine();
+                if (ImGui.Button($"Apply to all###ExpertProfileOnAll"))
+                {
+                    foreach (var r in SelectedList.Recipes.Distinct())
+                    {
+                        var o = P.Config.RecipeConfigs.GetValueOrDefault(r.ID) ?? new();
+                        o.expertProfileID = config.expertProfileID;
+                        P.Config.RecipeConfigs[r.ID] = o;
+                    }
+                    P.Config.Save();
+                }
             }
         }
 
