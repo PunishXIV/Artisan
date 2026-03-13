@@ -184,9 +184,14 @@ public static unsafe class Crafting
                     }
                     break;
                 case 7:
-                    res.CraftQualityMin1 = res.CraftQualityMax;
-                    res.CraftQualityMin2 = res.CraftQualityMax;
-                    res.CraftQualityMin3 = res.CraftQualityMax;
+                    var wksRow = GenericHelpers.FindRow<WKSMissionToDoEvalutionRefin>(x => x.RowId == recipe.CollectableMetadata.RowId);
+                    if (wksRow != null)
+                    {
+                        var scale = res.LevelTable.Quality * ((double)res.Recipe.QualityFactor / 100) / 1000;
+                        res.CraftQualityMin1 = (int)Math.Floor(wksRow.Value.Unknown0 * scale) * 10;
+                        res.CraftQualityMin2 = (int)Math.Floor(wksRow.Value.Unknown1 * scale) * 10;
+                        res.CraftQualityMin3 = (int)Math.Floor(wksRow.Value.Unknown2 * scale) * 10;
+                    }
                     break;
                 // Check for any other Generic Collectable
                 default:
@@ -407,12 +412,12 @@ public static unsafe class Crafting
                 Svc.Log.Error($"Unexpected initial state: {CurStep}");
 
             IsTrial = synthWindow->AtkUnitBase.AtkValues[1] is { Type: FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool, Byte: 1 };
-            if (CurCraft.IsCosmic)
-            {
-                CurCraft.CraftQualityMin1 = (int)synthWindow->AtkValues[22].UInt * 10;
-                CurCraft.CraftQualityMin2 = (int)synthWindow->AtkValues[23].UInt * 10;
-                CurCraft.CraftQualityMin3 = CurCraft.CraftQualityMax;
-            }
+            //if (CurCraft.IsCosmic)
+            //{
+            //    CurCraft.CraftQualityMin1 = (int)synthWindow->AtkValues[22].UInt * 10;
+            //    CurCraft.CraftQualityMin2 = (int)synthWindow->AtkValues[23].UInt * 10;
+            //    CurCraft.CraftQualityMin3 = CurCraft.CraftQualityMax;
+            //}
             CraftStarted?.Invoke(CurRecipe.Value, CurCraft, CurStep, IsTrial);
             return State.InProgress;
         }
