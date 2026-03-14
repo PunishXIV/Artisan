@@ -81,6 +81,9 @@ public static class Simulator
 
         if (craft.CraftCollectible || craft.CraftExpert)
         {
+            if (craft.CraftRequiredQuality > 0 && step.Quality >= craft.CraftRequiredQuality)
+                return CraftStatus.SucceededMetQualityReq;
+
             if (step.Quality >= craft.CraftQualityMin3)
                 return CraftStatus.SucceededQ3;
 
