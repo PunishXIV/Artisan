@@ -347,7 +347,7 @@ internal class ExpertSolverSettingsUI
 
             ImGui.Dummy(new Vector2(0, 5f));
             changed |= CheckboxWithIcons("FinisherUseQuickInno", ref s.FinisherUseQuickInno, "Use [s!QuickInnovation] to finish when low on CP");
-            HelpMarkerWithIcons("When there's not enough CP to use [s!Innovation] and/or [s!GreatStrides], but [s!QuickInnovation] is enough to reach the {} goal.", [QualityString.ToLower()]);
+            HelpMarkerWithIcons("When there's not enough CP to use [s!Innovation] and/or [s!GreatStrides], but [s!QuickInnovation] is enough to reach the {0} goal.", [QualityString.ToLower()]);
             changed |= CheckboxWithIcons("RapidSynthYoloAllowed", ref s.RapidSynthYoloAllowed, "Allow finishing with [s!RapidSynthesis] when out of options");
             ImGuiComponents.HelpMarker($"If disabled, the solver will do nothing instead, which may interrupt AFK expert crafting. Usually safe to enable, as it will only be invoked with no CP or {DurabilityString.ToLower()} left.");
         }
