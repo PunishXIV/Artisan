@@ -81,7 +81,6 @@ public class ExpertSolver : Solver
 
     public override void SetActiveProfile(ExpertProfile activeProfile)
     {
-        Svc.Log.Information($"Setting expert profile ID {activeProfile.ID}");
         ActiveProfile = activeProfile;
     }
 
@@ -277,13 +276,12 @@ public class ExpertSolver : Solver
 
         // for some logic that cares about dura left, we need to be more flexible on low-dura crafts
         var duraThreshold = craft.CraftDurability <= 35 ? 15 : 25;
-
-        // build up iq, or finish up progress before moving to quality
-        // see if there are nice conditions to exploit
         var venerationActive = progressDeficit > 0 && step.VenerationLeft > 0;
-        var allowObserveOnLowDura = venerationActive ? cfg.MidKeepHighDura == ExpertSolverSettings.MidKeepHighDuraSetting.MidKeepHighDuraVeneration : cfg.MidKeepHighDura == ExpertSolverSettings.MidKeepHighDuraSetting.MidKeepHighDuraUnbuffed;
-        var allowIntensive = venerationActive ? cfg.MidAllowIntensive == ExpertSolverSettings.MidAllowIntensiveSetting.MidAllowIntensiveVeneration : cfg.MidAllowIntensive == ExpertSolverSettings.MidAllowIntensiveSetting.MidAllowIntensiveUnbuffed;
+        var allowObserveOnLowDura = venerationActive ? cfg.MidKeepHighDura == MidKeepHighDuraSetting.MidKeepHighDuraVeneration : cfg.MidKeepHighDura == MidKeepHighDuraSetting.MidKeepHighDuraUnbuffed;
+        var allowIntensive = venerationActive ? cfg.MidAllowIntensive == MidAllowIntensiveSetting.MidAllowIntensiveVeneration : cfg.MidAllowIntensive == MidAllowIntensiveSetting.MidAllowIntensiveUnbuffed;
         var allowPrecise = cfg.MidAllowPrecise && (!allowObserveOnLowDura || step.ManipulationLeft > 0 || step.Durability > duraThreshold) /*&& !venerationActive*/;
+
+        // our goals are to build up iq, or finish up progress before moving to quality
 
         // active steady+rapid is highest prio if we're not super low on dura (rapid + 5)
         if (step.SteadyHandLeft > 0 && progressDeficit > 0 && step.Durability > Simulator.GetDurabilityCost(step, Skills.RapidSynthesis) + 5 && CU(craft, step, Skills.RapidSynthesis))
@@ -316,7 +314,7 @@ public class ExpertSolver : Solver
         if (step.Condition == Condition.Good && CU(craft, step, Skills.TricksOfTrade))
             return new(Skills.TricksOfTrade, "mid pre quality: high-prio tricks"); // progress/iq below decided not to use good, so spend it on tricks
         // TODO: observe on good omen?..
-        if (step.Condition == Condition.GoodOmen && cfg.MidAllowVenerationGoodOmen && cfg.MidAllowIntensive != ExpertSolverSettings.MidAllowIntensiveSetting.MidNoIntensive && progressDeficit > Simulator.CalculateProgress(craft, step, Skills.IntensiveSynthesis) && step.WasteNotLeft == 0 && CU(craft, step, Skills.Veneration))
+        if (step.Condition == Condition.GoodOmen && cfg.MidAllowVenerationGoodOmen && cfg.MidAllowIntensive != MidAllowIntensiveSetting.MidNoIntensive && progressDeficit > Simulator.CalculateProgress(craft, step, Skills.IntensiveSynthesis) && step.WasteNotLeft == 0 && CU(craft, step, Skills.Veneration))
             return new(Skills.Veneration, "mid pre quality: good omen vene"); // next step would be intensive, vene is a good choice here
 
         // on recipes without pliant, we really want to set up waste not (WN) as long as it will be profitable
@@ -336,6 +334,8 @@ public class ExpertSolver : Solver
             // - prudent touch is 34cp/iq (22 on pliant)
             // this means sturdy hasty (unreliable) = precise > centered hasty (85%) = pliant prudent >> sturdy combo > hasty (unreliable) > prudent  > normal combo
             // note that most conditions are handled before calling this
+
+            // force precise via H&S if configured
             if (step.IQStacks >= cfg.MidMinIQForHSPrecise && step.IQStacks < (maxIQStacks - 1) && step.Durability > Simulator.GetDurabilityCost(step, Skills.PreciseTouch))
             {
                 if (Simulator.CanUseAction(craft, step, Skills.PreciseTouch))
@@ -887,7 +887,7 @@ public class ExpertSolver : Solver
                 if (cfg.MidUseTP is MidUseTPSetting.MidUseTPGroundwork or MidUseTPSetting.MidUseTPEitherPreQuality && step.TrainedPerfectionAvailable && step.WasteNotLeft == 0 && CU(craft, step, Skills.TrainedPerfection))
                     return Skills.TrainedPerfection;
 
-                // ideally we'll wait for a better condition before spamming rapid, as long as we have the dura for the rapid
+                // maybe we should wait for a better condition before spamming rapid, as long as we have the dura for the rapid
                 var effectiveDura = step.Durability + (step.ManipulationLeft * 5);
                 if ((cfg.ForceProgressMaxBait > step.ObserveCounter || cfg.ForceProgressMaxBait == -1) && CanProcRapidCondition(craft) && effectiveDura > Skills.RapidSynthesis.StandardCPCost() && CU(craft, step, Skills.Observe))
                     return Skills.Observe;
