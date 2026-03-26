@@ -90,18 +90,100 @@ internal class ExpertSolverSettingsUI
         expertIcon = tex?.LoadTexturePart("ui/uld/RecipeNoteBook_hr1.tex", 14);
     }
 
+    public bool DrawGeneralSettings(ExpertSolverSettings s)
+    {
+        bool changed = false;
+
+        ImGui.PushItemWidth(250);
+        changed |= SliderIntWithIcons("ImmacMissingDura", ref s.ImmacMissingDura, 30, 80, "Prioritize [s!ImmaculateMend] when missing this much {0}", [DurabilityString.ToLower()]);
+
+        ImGui.PushItemWidth(250);
+        changed |= SliderIntWithIcons("ManipClipTurns", ref s.ManipClipTurns, 0, 10, "Re-up [s!Manipulation] with this many turns left");
+
+        ImGui.Dummy(new Vector2(0, 5f));
+        DrawIconText("Use [s!TrainedPerfection] on:");
+        HelpMarkerWithIcons(["The \"(Late)\" option will try to use [s!PreparatoryTouch] under [s!Innovation] and [s!GreatStrides].", "\"Either action\" defaults to [s!Groundwork] on a neutral {0}."], [ConditionString.ToLower()]);
+        ImGui.PushItemWidth(400);
+        if (ImGui.BeginCombo("##midUseTPSetting", s.GetMidUseTPSettingName(s.MidUseTP)))
+        {
+            foreach (MidUseTPSetting x in Enum.GetValues<MidUseTPSetting>())
+            {
+                if (ImGui.Selectable(s.GetMidUseTPSettingName(x)))
+                {
+                    s.MidUseTP = x;
+                    changed = true;
+                }
+            }
+            ImGui.EndCombo();
+        }
+        if (s.MidUseTP != MidUseTPSetting.MidUseTPDuringQuality)
+        {
+            ImGui.PushItemWidth(150);
+            changed |= SliderIntWithIcons("MidMaxBaitStepsForTP", ref s.MidMaxBaitStepsForTP, 0, 5, "[s!Observe] this many times for better {0} during [s!TrainedPerfection] (0 to disable)", [ConditionString.ToLower()]);
+            HelpMarkerWithIcons(["Looks for [c!Malleable] for [s!Groundwork].", "Looks for [c!Good] or [c!Pliant] for [s!PreparatoryTouch]."]);
+        }
+
+        ImGui.Dummy(new Vector2(0, 5f));
+        ImGui.TextWrapped($"Ishgardian Restoration");
+        ImGui.Indent();
+        changed |= ImGui.Checkbox("Max out Ishgard Restoration recipes instead of just hitting max breakpoint", ref s.MaxIshgardRecipes);
+        ImGuiComponents.HelpMarker("This will try to maximise quality to earn more Skyward points.");
+        ImGui.Unindent();
+
+        ImGui.TextWrapped($"Cosmic Exploration");
+        ImGui.Indent();
+        changed |= ImGui.Checkbox("Max out Cosmic Exploration recipes instead of hitting third breakpoint", ref s.MaxCosmicRecipes);
+        changed |= ImGui.Checkbox("Override per-recipe Cosmic Exploration settings###overrideCosmic", ref s.OverrideCosmicRecipeSettings);
+        ImGuiComponents.HelpMarker("By default, Cosmic Exploration settings are tracked for each recipe and ignore the expert solver options. Enable this option to instead use the settings below.");
+        ImGui.Indent();
+        if (!s.OverrideCosmicRecipeSettings) ImGui.BeginDisabled();
+        changed |= CheckboxWithIcons("UseMaterialMiracle", ref s.UseMaterialMiracle, "Use [s!MaterialMiracle]");
+        ImGui.PushItemWidth(250);
+        if (s.UseMaterialMiracle)
+        {
+            changed |= SliderIntWithIcons("MinimumStepsBeforeMiracle", ref s.MinimumStepsBeforeMiracle, 0, 20, "Minimum steps to execute before trying [s!MaterialMiracle]");
+            ImGui.Dummy(new Vector2(0, 5f));
+        }
+        changed |= SliderIntWithIcons("MaxSteadyUses", ref s.MaxSteadyUses, 0, 2, "Max [s!SteadyHand] uses per craft");
+        HelpMarkerWithIcons(["[s!SteadyHand] will be used ASAP to guarantee [s!RapidSynthesis].", "Set to 0 to disable."]);
+        if (!s.OverrideCosmicRecipeSettings) ImGui.EndDisabled();
+        ImGui.Unindent();
+        ImGui.Unindent();
+
+        return changed;
+    }
+
     public bool DrawOpenerSettings(ExpertSolverSettings s)
     {
         bool changed = false;
         try
         {
-            changed |= CheckboxWithIcons("UseReflectOpener", ref s.UseReflectOpener, "Use [s!Reflect] instead of [s!MuscleMemory]");
-            ImGui.Dummy(new Vector2(0, 5f));
-            if (!s.UseReflectOpener)
+            ImGui.TextWrapped($"Opener action:");
+            ImGui.PushItemWidth(400);
+            if (ImGui.BeginCombo("##OpenerAction", s.GetOpenerSet(s.OpenerAction)))
             {
-                DrawIconText("These settings only apply while [s!MuscleMemory] is active at the start of a craft.", color: ImGuiColors.DalamudYellow);
-                ImGui.Dummy(new Vector2(0, 5f));
+                foreach (OpenerSet x in Enum.GetValues<OpenerSet>())
+                {
+                    if (ImGui.Selectable(s.GetOpenerSet(x)))
+                    {
+                        s.OpenerAction = x;
+                        changed = true;
+                    }
+                }
+                ImGui.EndCombo();
+            }
 
+            if (s.OpenerAction != OpenerSet.MuMe)
+            {
+                ImGui.Dummy(new Vector2(0, 5f));
+                changed |= CheckboxWithIcons("ReflectQuickInno", ref s.ReflectQuickInno, "Use [s!QuickInnovation] before [s!Reflect]");
+            }
+
+            if (s.OpenerAction != OpenerSet.Reflect)
+            {
+                ImGui.Dummy(new Vector2(0, 5f));
+                DrawIconText("While the [s!MuscleMemory] buff is active:");
+                ImGui.Indent();
                 changed |= CheckboxWithIcons("MuMeIntensiveGood", ref s.MuMeIntensiveGood, "When [c!Good], prioritize [s!IntensiveSynthesis] (400%) over [s!RapidSynthesis] (500%)");
                 changed |= CheckboxWithIcons("MuMeIntensiveMalleable", ref s.MuMeIntensiveMalleable, "When [c!Malleable], use [s!HeartAndSoul] → [s!IntensiveSynthesis] (if available)");
                 changed |= CheckboxWithIcons("MuMePrimedManip", ref s.MuMePrimedManip, "When [c!Primed] and [s!Veneration] is already active, use [s!Manipulation]");
@@ -119,6 +201,7 @@ internal class ExpertSolverSettingsUI
                 SliderIntWithIcons("MuMeMinStepsForManip", ref s.MuMeMinStepsForManip, 1, 5, "[s!Manipulation]");
                 ImGui.PushItemWidth(250);
                 SliderIntWithIcons("MuMeMinStepsForVene", ref s.MuMeMinStepsForVene, 1, 5, "[s!Veneration]");
+                ImGui.Unindent();
             }
         }
         catch (Exception ex)
@@ -139,16 +222,20 @@ internal class ExpertSolverSettingsUI
             ImGui.Dummy(new Vector2(0, 5f));
             ImGui.TextWrapped($"General");
             ImGui.Indent();
-            DrawIconText("Use [s!TrainedPerfection] on:");
-            HelpMarkerWithIcons(["The \"(Late)\" option will try to use [s!PreparatoryTouch] under [s!Innovation] and [s!GreatStrides].", "The \"Either action\" option is most effective when paired with the {0} setting below.", "\"Either action\" defaults to [s!Groundwork] on a neutral {1}."], [Skills.Observe.NameOfAction(), ConditionString.ToLower()]);
+
+            changed |= CheckboxWithIcons("MidBaitPliantWithObservePreQuality", ref s.MidBaitPliantWithObservePreQuality, "When {0} is critical, use [s!Observe] to try and proc a favorable {1} for [s!Manipulation]", [DurabilityString.ToLower(), ConditionString.ToLower()]);
+            HelpMarkerWithIcons(["Fishes for [c!Pliant] (and [c!Primed] if the appropriate option is enabled.)", "If disabled, [s!Manipulation] will be used immediately regardless of {0}."], [ConditionString.ToLower()]);
+
+            ImGui.Dummy(new Vector2(0, 5f));
+            DrawIconText("Use [s!Manipulation] during [c!Primed]:");
             ImGui.PushItemWidth(400);
-            if (ImGui.BeginCombo("##midUseTPSetting", s.GetMidUseTPSettingName(s.MidUseTP)))
+            if (ImGui.BeginCombo("##PQPrimedManip", s.GetPQPrimedManipSet(s.PQPrimedManip)))
             {
-                foreach (MidUseTPSetting x in Enum.GetValues<MidUseTPSetting>())
+                foreach (PQPrimedManipSet x in Enum.GetValues<PQPrimedManipSet>())
                 {
-                    if (ImGui.Selectable(s.GetMidUseTPSettingName(x)))
+                    if (ImGui.Selectable(s.GetPQPrimedManipSet(x)))
                     {
-                        s.MidUseTP = x;
+                        s.PQPrimedManip = x;
                         changed = true;
                     }
                 }
@@ -156,13 +243,28 @@ internal class ExpertSolverSettingsUI
             }
 
             ImGui.Dummy(new Vector2(0, 5f));
-            ImGui.PushItemWidth(150);
-            changed |= SliderIntWithIcons("MidMaxBaitStepsForTP", ref s.MidMaxBaitStepsForTP, 0, 5, "[s!Observe] this many times for better {0} during [s!TrainedPerfection] (0 to disable)", [ConditionString.ToLower()]);
-            HelpMarkerWithIcons(["Looks for [c!Malleable] for [s!Groundwork].", "Looks for [c!Good] or [c!Pliant] for [s!PreparatoryTouch]."]);
-            changed |= CheckboxWithIcons("MidBaitPliantWithObservePreQuality", ref s.MidBaitPliantWithObservePreQuality, "When {0} is critical, use [s!Observe] to try and proc a favorable {1} for [s!Manipulation]", [DurabilityString.ToLower(), ConditionString.ToLower()]);
-            HelpMarkerWithIcons(["Fishes for [c!Pliant] (and [c!Primed] if the appropriate option is enabled.)", "If disabled, [s!Manipulation] will be used immediately regardless of {0}."], [ConditionString.ToLower()]);
-            changed |= CheckboxWithIcons("MidPrimedManipPreQuality", ref s.MidPrimedManipPreQuality, "Use [s!Manipulation] during [c!Primed]");
-            HelpMarkerWithIcons("If disabled, [c!Primed] will generally be treated like [c!Normal] during this phase.");
+            DrawIconText("Use [s!WasteNot]:");
+            ImGui.PushItemWidth(300);
+            if (ImGui.BeginCombo("##PQWasteNot", s.GetPQWasteNotSet(s.PQWasteNot)))
+            {
+                foreach (PQWasteNotSet x in Enum.GetValues<PQWasteNotSet>())
+                {
+                    if (ImGui.Selectable(s.GetPQWasteNotSet(x)))
+                    {
+                        s.PQWasteNot = x;
+                        changed = true;
+                    }
+                }
+                ImGui.EndCombo();
+            }
+            if (s.PQWasteNot != PQWasteNotSet.Never)
+            {
+                ImGui.Indent();
+                ImGui.PushItemWidth(250);
+                changed |= SliderIntWithIcons("PQWasteNotMaxIQ", ref s.PQWasteNotMaxIQ, 0, 9, "Only at <= X {0} stacks", [Buffs.InnerQuiet.NameOfBuff()]);
+                ImGui.Unindent();
+            }
+
             ImGui.Unindent();
 
             // Pre-quality progress settings
@@ -188,6 +290,7 @@ internal class ExpertSolverSettingsUI
             {
                 ImGui.Dummy(new Vector2(0, 3f));
                 ImGui.Indent();
+                changed |= CheckboxWithIcons("ForceProgressVene", ref s.ForceProgressVene, "Use [s!Veneration] when forcing {0} with a large progress deficit", [ProgressString.ToLower()]);
                 DrawIconText("When forcing {1}, [s!Observe] this many times for better [s!RapidSynthesis] {0}:", [ConditionString.ToLower(), ProgressString.ToLower()]);
                 HelpMarkerWithIcons("Looks for [c!Centered], [c!Sturdy]/[c!Robust], or [c!Malleable].");
                 ImGui.PushItemWidth(250);
@@ -236,8 +339,20 @@ internal class ExpertSolverSettingsUI
             ImGui.Dummy(new Vector2(0, 5f));
             ImGui.TextWrapped($"{Buffs.InnerQuiet.NameOfBuff()}");
             ImGui.Indent();
-            changed |= CheckboxWithIcons("MidAllowPrecise", ref s.MidAllowPrecise, "When [c!Good], use [s!PreciseTouch]");
-            HelpMarkerWithIcons(["[s!IntensiveSynthesis] takes priority with {0} remaining, unless disabled by other settings.", "If both options are disabled, [c!Good] will be used on [s!TricksOfTrade]."], [ProgressString.ToLower()]);
+            DrawIconText("When [c!Good], use [s!PreciseTouch]:");
+            ImGui.PushItemWidth(300);
+            if (ImGui.BeginCombo("##PQGoodPrecise", s.GetPQGoodPreciseSet(s.PQGoodPrecise)))
+            {
+                foreach (PQGoodPreciseSet x in Enum.GetValues<PQGoodPreciseSet>())
+                {
+                    if (ImGui.Selectable(s.GetPQGoodPreciseSet(x)))
+                    {
+                        s.PQGoodPrecise = x;
+                        changed = true;
+                    }
+                }
+                ImGui.EndCombo();
+            }
 
             ImGui.Dummy(new Vector2(0, 5f));
             DrawIconText("Use [s!HeartAndSoul] to force [s!PreciseTouch]:");
@@ -248,11 +363,30 @@ internal class ExpertSolverSettingsUI
             ImGui.Unindent();
 
             ImGui.Dummy(new Vector2(0, 5f));
+            changed |= CheckboxWithIcons("PQAdvancedCombo", ref s.PQAdvancedCombo, "Prefer [s!Observe] → [s!AdvancedTouch] over [s!PrudentTouch]");
+
+            ImGui.Dummy(new Vector2(0, 5f));
             DrawIconText("Use [s!HastyTouch] and [s!DaringTouch]:");
             ImGui.Indent();
             changed |= CheckboxWithIcons("MidAllowCenteredHasty", ref s.MidAllowCenteredHasty, "When [c!Centered] (85% success, 10 {0})", [DurabilityString.ToLower()]);
             changed |= CheckboxWithIcons("MidAllowSturdyHasty", ref s.MidAllowSturdyHasty, "When [c!Sturdy]/[c!Robust] (60% success, 5 {0})", [DurabilityString.ToLower()]);
             ImGui.Unindent();
+
+            ImGui.Unindent();
+
+            // Pre-quality quality settings
+            ImGui.Dummy(new Vector2(0, 5f));
+            ImGui.TextWrapped($"{QualityString}");
+            ImGui.Indent();
+
+            DrawIconText("Use [s!Innovation] with >= X {0} stacks (10 to disable):", [Buffs.InnerQuiet.NameOfBuff()]);
+            ImGui.Indent();
+            ImGui.PushItemWidth(250);
+            changed |= SliderIntWithIcons("PQPrimedInnoIQ", ref s.PQPrimedInnoIQ, 0, 10, "On [c!Primed]");
+            ImGui.PushItemWidth(250);
+            changed |= SliderIntWithIcons("PQOtherInnoIQ", ref s.PQOtherInnoIQ, 0, 10, "On any other {0}", [ConditionString.ToLower()]);
+            ImGui.Unindent();
+
             ImGui.Unindent();
         }
         catch (Exception ex)
@@ -308,13 +442,13 @@ internal class ExpertSolverSettingsUI
             DrawIconText("When [c!Good] and only [s!GreatStrides] is up:");
             HelpMarkerWithIcons(["\"Free\" [s!PreparatoryTouch] refers to [s!TrainedPerfection], which can be enabled in the Pre-{0} settings.", "Saving [s!QuickInnovation] for an emergency [s!ByregotsBlessing] in the finisher is the most efficient, but might not be necessary."], [QualityString]);
             ImGui.PushItemWidth(350);
-            if (ImGui.BeginCombo("##midAllowQuickInnoGoodSetting", s.GetMidAllowQuickInnoGoodSettingName(s.MidAllowQuickInnoGood)))
+            if (ImGui.BeginCombo("##midAllowQuickInnoGoodSetting", s.GetQQuickInnoGoodSet(s.QQuickInnoGood)))
             {
-                foreach (MidAllowQuickInnoGoodSetting x in Enum.GetValues<MidAllowQuickInnoGoodSetting>())
+                foreach (QQuickInnoGoodSet x in Enum.GetValues<QQuickInnoGoodSet>())
                 {
-                    if (ImGui.Selectable(s.GetMidAllowQuickInnoGoodSettingName(x)))
+                    if (ImGui.Selectable(s.GetQQuickInnoGoodSet(x)))
                     {
-                        s.MidAllowQuickInnoGood = x;
+                        s.QQuickInnoGood = x;
                         changed = true;
                     }
                 }
@@ -358,54 +492,17 @@ internal class ExpertSolverSettingsUI
         return changed;
     }
 
-    public bool DrawMiscSettings(ExpertSolverSettings s)
-    {
-        bool changed = false;
-        try
-        {
-            ImGui.TextWrapped($"Ishgardian Restoration");
-            ImGui.Indent();
-            changed |= ImGui.Checkbox("Max out Ishgard Restoration recipes instead of just hitting max breakpoint", ref s.MaxIshgardRecipes);
-            ImGuiComponents.HelpMarker("This will try to maximise quality to earn more Skyward points.");
-            ImGui.Unindent();
-
-            ImGui.TextWrapped($"Cosmic Exploration");
-            ImGui.Indent();
-            changed |= ImGui.Checkbox("Override per-recipe Cosmic Exploration settings###overrideCosmic", ref s.OverrideCosmicRecipeSettings);
-            ImGuiComponents.HelpMarker("By default, Cosmic Exploration settings are tracked for each recipe and ignore the expert solver options. Enable this option to instead use the settings below.");
-
-            ImGui.Indent();
-            if (!s.OverrideCosmicRecipeSettings) ImGui.BeginDisabled();
-            changed |= CheckboxWithIcons("UseMaterialMiracle", ref s.UseMaterialMiracle, "Use [s!MaterialMiracle]");
-            ImGui.PushItemWidth(250);
-            if (s.UseMaterialMiracle)
-            {
-                changed |= SliderIntWithIcons("MinimumStepsBeforeMiracle", ref s.MinimumStepsBeforeMiracle, 0, 20, "Minimum steps to execute before trying [s!MaterialMiracle]");
-                ImGui.Dummy(new Vector2(0, 5f));
-            }
-            changed |= SliderIntWithIcons("MaxSteadyUses", ref s.MaxSteadyUses, 0, 2, "Max [s!SteadyHand] uses per craft");
-            HelpMarkerWithIcons(["[s!SteadyHand] will be used ASAP to guarantee [s!RapidSynthesis].", "Set to 0 to disable."]);
-            if (!s.OverrideCosmicRecipeSettings) ImGui.EndDisabled();
-            ImGui.Unindent();
-            ImGui.Unindent();
-
-#if DEBUG
-            changed |= ImGui.Checkbox("DEBUG: Observe only###debugObserve", ref s.DebugObserveOnly);
-            HelpMarkerWithIcons("CAUTION: Will only spam [s!Observe] and [s!TricksOfTrade] to collect condition data.");
-#endif
-        }
-        catch (Exception ex)
-        {
-            ex.Log();
-        }
-        return changed;
-    }
-
     public bool DrawAllSettings(ExpertSolverSettings s, bool startOpen)
     {
         bool changed = false;
 
         ImGuiTreeNodeFlags flags = startOpen ? ImGuiTreeNodeFlags.DefaultOpen : ImGuiTreeNodeFlags.None;
+        if (ImGui.CollapsingHeader("General", flags))
+        {
+            ImGui.Dummy(new Vector2(0, 5f));
+            changed |= DrawGeneralSettings(s);
+            ImGui.Dummy(new Vector2(0, 5f));
+        }
         if (ImGui.CollapsingHeader("Opener", flags))
         {
             ImGui.Dummy(new Vector2(0, 5f));
@@ -433,8 +530,13 @@ internal class ExpertSolverSettingsUI
             changed |= DrawFinisherSettings(s);
         }
 
+#if DEBUG
         ImGui.Dummy(new Vector2(0, 5f));
-        changed |= DrawMiscSettings(s);
+        changed |= ImGui.Checkbox("DEBUG: Observe only###debugObserve", ref s.DebugObserveOnly);
+        HelpMarkerWithIcons("CAUTION: Will only spam [s!Observe] and [s!TricksOfTrade] to collect condition data.");
+        changed |= ImGui.Checkbox("DEBUG: Innovation only###debugInnovate", ref s.DebugInnovateOnly);
+        HelpMarkerWithIcons("CAUTION: Will only spam [s!Innovation] to collect condition data. Faster than [s!Observe].");
+#endif
 
         return changed;
     }
@@ -477,7 +579,7 @@ internal class ExpertSolverSettingsUI
             ImGui.Dummy(new Vector2(0, 5f));
             if (ImGuiEx.ButtonCtrl("Reset Expert Solver Settings To Default"))
             {
-                s = new();
+                P.Config.ExpertSolverConfig = new();
                 changed |= true;
             }
             ImGui.Dummy(new Vector2(0, 5f));
