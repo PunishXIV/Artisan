@@ -112,6 +112,8 @@ public record class StepState
     public Skills PrevComboAction;
     public uint MaterialMiracleCharges;
     public bool MaterialMiracleActive;
+    public int MaterialMiraclesUsed;
+    public float MaterialMiracleSecondsLeft;
     public bool PrevMaterialMiracleActive;
     public int ObserveCounter;
     public bool ExpertEmergency;
@@ -140,7 +142,7 @@ public record class StepState
             sb.Append($", FA={FinalAppraisalLeft}");
         sb.Append($", CO={CarefulObservationLeft}, HS={(HeartAndSoulActive ? "active" : HeartAndSoulAvailable ? "avail" : "none")}");
         sb.Append($", QuickInno:{QuickInnoAvailable}/{QuickInnoLeft}/{InnovationLeft}");
-        sb.Append($", MaterialMiracleActive:{MaterialMiracleActive} / {MaterialMiracleCharges}");
+        sb.Append($", MaterialMiracleActive:{MaterialMiracleActive}{(MaterialMiracleActive ? " (" + (int)MaterialMiracleSecondsLeft + "s)" : "")} / {MaterialMiracleCharges}");
         sb.Append($", SteadyHandLeft:{SteadyHandLeft}");
         return sb.ToString();
     }

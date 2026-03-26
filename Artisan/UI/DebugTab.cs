@@ -412,58 +412,57 @@ namespace Artisan.UI
                 {
                     Dictionary<string, string> recipeNames = new Dictionary<string, string>()
                     {
-                        { "60/3856/12323",  "Artisanal 2" },
-                        { "50/4672/15656",  "Artisanal 3" },
-                        { "55/5059/15474",  "Artisanal 4" },
-                        { "60/4220/14618",  "Oddly Delicate Skysung" },
-                        { "55/5077/14321",  "Resplendent A" },
-                        { "55/5095/14854",  "Resplendent B" },
-                        { "60/5470/16156",  "Resplendent C" },
-                        { "60/7480/13620",  "Otter Fountain" },
-                        { "60/7920/17240",  "Smaller Otter Fountain" },
-                        { "60/6600/15368",  "Connoisseur's Brilliant" },
-                        { "60/7040/16308",  "Connoisseur's Vrandtic" },
-                        { "60/8800/18040",  "Uncharted Course" },
-                        { "70/9240/20066",  "Aetherial Arbor" },
-                        { "80/23400/700",   "Moon A (high prog)" },
-                        { "80/9900/20300",  "Moon A (mixed 1 craft)" },
-                        { "60/400/21000",   "Moon A (low prog)" },
-                        { "70/7500/15000",  "Moon A (mixed 3 craft)" },
-                        { "80/9000/23000",  "Moon EX (80 dura)" },
-                        { "70/8700/22000",  "Moon EX (70 dura)" },
-                        { "30/7300/18900",  "Moon EX+ I Pre" },
-                        { "55/10000/27400", "Moon EX+ I Main" },
-                        { "35/6500/18000",  "Moon EX+ II Pre" },
-                        { "60/9500/26800",  "Moon EX+ II Main" },
-                        { "40/8500/19500",  "Moon EX+ III Pre" },
-                        { "70/11400/29800", "Moon EX+ III Main" },
-                        { "55/10000/12000", "Moon EX Weather" },
-                        { "20/4700/14900",  "Moon EX+ Weather Pre" },
-                        { "60/9500/24000",  "Moon EX+ Weather Main" },
-                        { "60/9300/22500",  "Moon EX+ Weather" },
-                        { "80/5200/13700",  "Phaenna A (1 craft)" },
-                        { "70/4000/11200",  "Phaenna A (3 crafts)" },
-                        { "60/500/15100",   "Phaenna A Miracle" },
-                        { "55/9700/11600",  "Phaenna EX-A" },
-                        { "60/600/21100",   "Phaenna EX-A III" },
-                        { "65/4200/14600",  "Phaenna EX-A Timed II" },
-                        { "30/7000/19500",  "Phaenna EX+ I Pre" },
-                        { "55/10200/27900", "Phaenna EX+ I Main" },
-                        { "35/6500/19200",  "Phaenna EX+ II Pre" },
-                        { "60/9500/27600",  "Phaenna EX+ II Main" },
-                        { "40/8900/23000",  "Phaenna EX+ III Pre" },
-                        { "65/12000/32300", "Phaenna EX+ III Main" },
-                        { "60/1700/29700",  "Phaenna EX+ Timed Pre" },
-                        { "70/2300/24700",  "Oizys EX-A Miracle" },
-                        { "70/9700/17300",  "Oizys EX-A Steady" },
-                        { "60/8500/19500",  "Oizys EX-A No Action" },
-                        { "70/8200/28300",  "Oizys EX+ Timed" },
-                        { "35/7500/21000",  "Oizys EX+ I Pre" },
-                        { "50/9800/27900",  "Oizys EX+ I Main" },
-                        { "35/8000/22000",  "Oizys EX+ II Pre" },
-                        { "60/11000/29100", "Oizys EX+ II Main" },
-                        { "50/9000/23000",  "Oizys EX+ III Pre" },
-                        { "70/12500/33500", "Oizys EX+ III Main" },
+                        { "None-60/3856/12323",    "Artisanal 2" },
+                        { "None-50/4672/15656",    "Artisanal 3" },
+                        { "None-55/5059/15474",    "Artisanal 4" },
+                        { "None-60/4220/14618",    "Oddly Delicate Skysung" },  // todo
+                        { "None-55/5077/14321",    "Resplendent A" }, // todo
+                        { "None-55/5095/14854",    "Resplendent B" }, // todo
+                        { "None-60/5470/16156",    "Resplendent C" }, // todo
+                        { "None-60/7480/13620",    "Otter Fountain" },
+                        { "None-60/7920/17240",    "Smaller Otter Fountain" },
+                        { "None-60/6600/15368",    "Connoisseur's Brilliant" },
+                        { "None-60/7040/16308",    "Connoisseur's Vrandtic" },
+                        { "None-60/8800/18040",    "Uncharted Course" }, // todo
+                        { "None-70/9240/20066",    "Aetherial Arbor" },
+                        { "None-80/9900/20300",    "Moon A (mixed 1 craft)" },
+                        { "MM-60/400/21000",       "Moon A (low prog)" },
+                        { "None-70/7500/15000",    "Moon A (mixed 3 craft)" },
+                        { "MM-80/9000/23000",      "Moon EX (80 dura)" },
+                        { "MM-70/8700/22000",      "Moon EX (70 dura)" },
+                        { "MM-30/7300/18900",      "Moon EX+ I Pre" },
+                        { "MM-55/10000/27400",     "Moon EX+ I Main" },
+                        { "MM-35/6500/18000",      "Moon EX+ II Pre" },
+                        { "MM-60/9500/26800",      "Moon EX+ II Main" },
+                        { "MM-40/8500/19500",      "Moon EX+ III Pre" },
+                        { "MM-70/11400/29800",     "Moon EX+ III Main" },
+                        { "None-55/10000/12000",   "Moon EX Weather" },
+                        { "MM-20/4700/14900",      "Moon EX+ Weather Pre" },
+                        { "MM-60/9500/24000",      "Moon EX+ Weather Main" },
+                        { "None-60/9300/22500",    "Moon EX+ Weather (1 craft)" },
+                        { "None-80/5200/13700",    "Phaenna A (1 craft)" },
+                        { "None-70/4000/11200",    "Phaenna A (3 crafts)" },
+                        { "MM-60/500/15100",       "Phaenna A Miracle" },
+                        { "None-55/9700/11600",    "Phaenna EX-A" },
+                        { "None-60/600/21100",     "Phaenna EX-A III" },
+                        { "MM-65/4200/14600",      "Phaenna EX-A Timed II" },
+                        { "MM-30/7000/19500",      "Phaenna EX+ I Pre" },
+                        { "MM-55/10200/27900",     "Phaenna EX+ I Main" },
+                        { "MM-35/6500/19200",      "Phaenna EX+ II Pre" },
+                        { "MM-60/9500/27600",      "Phaenna EX+ II Main" },
+                        { "MM-40/8900/23000",      "Phaenna EX+ III Pre" },
+                        { "MM-65/12000/32300",     "Phaenna EX+ III Main" }, // todo?
+                        { "None-60/1700/29700",    "Phaenna EX+ Timed Pre" },
+                        { "MM-70/2300/24700",      "Oizys EX-A Miracle" },
+                        { "Steady-70/9700/17300",  "Oizys EX-A Steady" },
+                        { "None-60/8500/19500",    "Oizys EX-A No Action" },
+                        { "None-70/8200/28300",    "Oizys EX+ Timed" },
+                        { "Steady-35/7500/21000",  "Oizys EX+ I Pre" },
+                        { "Steady-50/9800/27900",  "Oizys EX+ I Main" },
+                        { "Steady-35/8000/22000",  "Oizys EX+ II Pre" },
+                        { "Steady-60/11000/29100", "Oizys EX+ II Main" },
+                        { "Steady-50/9000/23000",  "Oizys EX+ III Pre" },
+                        { "Steady-70/12500/33500", "Oizys EX+ III Main" },
                     };
                     List<CraftingLogic.CraftData.Condition> tableConditions = new List<CraftingLogic.CraftData.Condition>()
                     {
@@ -499,9 +498,12 @@ namespace Artisan.UI
                                 copyStr += cond.ToString() + "\t";
                             copyStr += "\r\n";
 
-                            var sortedData = P.Config.DebugTrackConditions.combinedConditionData.OrderBy(x => x.Value.RecipeConditionIDs).ThenBy(x => recipeNames.TryGetValue(x.Value.StatsString(), out var note) ? note : "");
+                            var sortedData = P.Config.DebugTrackConditions.combinedConditionData.OrderBy(x => x.Value.RecipeConditionIDs).ThenBy(x => x.Value.RecipeAction).ThenBy(x => recipeNames.TryGetValue(x.Value.StatsString(), out var note) ? note : "");
                             foreach (var (rowId, rc) in sortedData)
                             {
+                                if (rc.RecipeConditionFlags == "MM")
+                                    continue;
+
                                 copyStr += rc.RecipeConditionFlags + "\t";
                                 copyStr += rc.RecipeConditionIDs.ToString() + "\t";
                                 copyStr += rc.StatsString() + "\t";
@@ -524,14 +526,22 @@ namespace Artisan.UI
                         foreach (var rec in P.Config.DebugTrackConditions.Records)
                         {
                             string combinedId = rec.StatsString() + "-" + rec.RecipeConditionFlags;
+
+                            // combine the MM records
+                            if (rec.RecipeID > 1000000)
+                            {
+                                combinedId = "MM";
+                            }
+
                             if (!P.Config.DebugTrackConditions.combinedConditionData.ContainsKey(combinedId))
                             {
                                 P.Config.DebugTrackConditions.combinedConditionData[combinedId] = new RecipeConditions() { 
                                     RecipeDurability = rec.RecipeDurability,
                                     RecipeProgress = rec.RecipeProgress,
                                     RecipeQuality = rec.RecipeQuality,
-                                    RecipeConditionFlags = rec.RecipeConditionFlags,
-                                    RecipeConditionIDs = rec.RecipeConditionIDs
+                                    RecipeConditionFlags = combinedId == "MM" ? "MM" : rec.RecipeConditionFlags,
+                                    RecipeConditionIDs = rec.RecipeConditionIDs,
+                                    RecipeAction = rec.RecipeAction
                                 };
                             }
 
@@ -560,7 +570,7 @@ namespace Artisan.UI
 
                             ImGui.TableSetupColumn("Conditions", ImGuiTableColumnFlags.WidthFixed, 120.0f);
                             ImGui.TableSetupColumn("Flags", ImGuiTableColumnFlags.WidthFixed, 50.0f);
-                            ImGui.TableSetupColumn("Dura/Prog/Qual", ImGuiTableColumnFlags.WidthFixed, 100.0f);
+                            ImGui.TableSetupColumn("Dura/Prog/Qual", ImGuiTableColumnFlags.WidthFixed, 150.0f);
                             ImGui.TableSetupColumn("Note", ImGuiTableColumnFlags.WidthFixed, 150.0f);
                             ImGui.TableSetupColumn("Total", ImGuiTableColumnFlags.WidthFixed, 50.0f);
                             ImGui.TableSetupColumn("Normal", ImGuiTableColumnFlags.WidthStretch, 0.0f);

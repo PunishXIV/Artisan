@@ -691,6 +691,8 @@ public static unsafe class Crafting
         ret.PrevComboAction = predictedStep?.PrevComboAction ?? Skills.None;
         ret.MaterialMiracleCharges = MaterialMiracleCharges();
         ret.MaterialMiracleActive = GetStatus(Buffs.MaterialMiracle) != null;
+        ret.MaterialMiraclesUsed = predictedStep?.MaterialMiraclesUsed ?? 0;
+        ret.MaterialMiracleSecondsLeft = GetStatus(Buffs.MaterialMiracle) != null ? GetStatus(Buffs.MaterialMiracle).RemainingTime : 0;
         ret.PrevMaterialMiracleActive = predictedStep?.PrevMaterialMiracleActive ?? false;
         ret.SteadyHandCharges = SteadyHandCharges();
         ret.SteadyHandLeft = GetStatus(Buffs.SteadyHand)?.Param ?? 0;

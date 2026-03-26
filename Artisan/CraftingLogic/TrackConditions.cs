@@ -96,22 +96,24 @@ public class TrackConditions
         }
     }
 
-    public void AddRecipeCondition(CraftState craft, Condition condition)
+    public void AddRecipeCondition(CraftState craft, StepState step)
     {
         if (!IsLoaded)
             LoadFile();
 
-        RecipeConditions? rc = Records.Find(r => r.RecipeID == craft.RecipeId);
+        var recipeId = (step.MaterialMiracleActive || step.PrevMaterialMiracleActive) ? (int)craft.RecipeId + 1000000 : (int)craft.RecipeId;
+        RecipeConditions? rc = Records.Find(r => r.RecipeID == recipeId);
         if (rc == null)
         {
             rc = new RecipeConditions
             {
-                RecipeID = (int)craft.RecipeId,
+                RecipeID = recipeId,
                 RecipeDurability = craft.CraftDurability,
                 RecipeProgress = craft.CraftProgress,
                 RecipeQuality = Calculations.RecipeMaxQuality(craft.Recipe),
                 RecipeConditionFlags = GetConditionFlagString(craft),
-                RecipeConditionIDs = craft.Recipe.RecipeLevelTable.Value.ConditionsFlag
+                RecipeConditionIDs = craft.Recipe.RecipeLevelTable.Value.ConditionsFlag,
+                RecipeAction = craft.MissionHasMaterialMiracle ? "MM" : craft.MissionHasSteadyHand ? "Steady" : ""
             };
             Records.Add(rc);
         }
@@ -119,7 +121,8 @@ public class TrackConditions
             rc.RecipeConditionFlags = GetConditionFlagString(craft);
         if (rc.RecipeConditionIDs == 0)
             rc.RecipeConditionIDs = craft.Recipe.RecipeLevelTable.Value.ConditionsFlag;
-        rc.AddCondition(condition);
+        rc.AddCondition(step.Condition);
+
         WriteFile();
     }
 
@@ -159,6 +162,7 @@ public class RecipeConditions
     public int RecipeQuality;
     public string RecipeConditionFlags = "";
     public ushort RecipeConditionIDs = 0;
+    public string RecipeAction = "";
     public Dictionary<Condition, int> Counts = new();
 
     public void AddCondition(Condition condition)
@@ -171,6 +175,6 @@ public class RecipeConditions
 
     public string StatsString()
     {
-        return $"{this.RecipeDurability}/{this.RecipeProgress}/{this.RecipeQuality}";
+        return $"{(this.RecipeAction.Length == 0 ? "None-" : this.RecipeAction + "-")}{this.RecipeDurability}/{this.RecipeProgress}/{this.RecipeQuality}";
     }
 }

@@ -6,6 +6,7 @@ using Dalamud.Interface.Colors;
 using ECommons.DalamudServices;
 using Lumina.Excel.Sheets;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Numerics;
@@ -233,7 +234,10 @@ public static class Simulator
         next.TrainedPerfectionActive = action == Skills.TrainedPerfection || (step.TrainedPerfectionActive && !HasDurabilityCost(action));
         next.TrainedPerfectionAvailable = step.TrainedPerfectionAvailable && action != Skills.TrainedPerfection;
         next.MaterialMiracleCharges = action == Skills.MaterialMiracle ? step.MaterialMiracleCharges - 1 : step.MaterialMiracleCharges;
-        next.MaterialMiracleActive = step.MaterialMiracleActive; //This is a timed buff, can't really use this in the simulator, just copy the real result
+        next.MaterialMiracleActive = action == Skills.MaterialMiracle || step.MaterialMiracleSecondsLeft > 0;
+        next.MaterialMiraclesUsed = action == Skills.MaterialMiracle ? step.MaterialMiraclesUsed + 1 : step.MaterialMiraclesUsed;
+        float newMMLeft = step.MaterialMiracleSecondsLeft > 0 ? step.MaterialMiracleSecondsLeft - (action.ActionIsLengthyAnimation() ? 2.5f : 1.25f) : 0;
+        next.MaterialMiracleSecondsLeft = action == Skills.MaterialMiracle ? 45f : newMMLeft;
         next.PrevMaterialMiracleActive = step.MaterialMiracleActive;
         next.ObserveCounter = action == Skills.Observe ? step.ObserveCounter + 1 : 0;
         next.ExpertEmergency = step.ExpertEmergency; // set directly by the expert solver
@@ -519,6 +523,12 @@ public static class Simulator
 
     public static Condition GetTransitionByRoll(CraftState craft, StepState step, float roll)
     {
+        if (step.MaterialMiracleActive)
+        {
+            // initial testing suggests that all MM conditions have an equal chance
+            var MMConditions = new List<Condition> { Condition.Good, Condition.Centered, Condition.Sturdy, Condition.Pliant, Condition.Malleable, Condition.Primed };
+            return Random.Shared.GetItems(MMConditions.ToArray(), 1)[0];
+        }
         for (int i = 1; i < craft.CraftConditionProbabilities.Length; ++i)
         {
             roll -= craft.CraftConditionProbabilities[i];
