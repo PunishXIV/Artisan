@@ -84,6 +84,9 @@ public static class Simulator
             if (craft.CraftRequiredQuality > 0 && step.Quality >= craft.CraftRequiredQuality)
                 return CraftStatus.SucceededMetQualityReq;
 
+            if ((craft.IshgardExpert || craft.IsCosmic) && step.Quality >= craft.CraftQualityMax)
+                return CraftStatus.SucceededMaxQuality;
+
             if (step.Quality >= craft.CraftQualityMin3)
                 return CraftStatus.SucceededQ3;
 
