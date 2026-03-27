@@ -745,22 +745,13 @@ namespace Artisan.UI
                 if (ImGui.SliderInt($"###MaxIQStacksPrepTouch", ref P.Config.MaxIQPrepTouch, 0, 10))
                     P.Config.Save();
 
-                if (ImGui.Checkbox($"Use Material Miracle when available", ref P.Config.UseMaterialMiracle))
+                ImGui.PushItemWidth(250);
+                if (ImGui.SliderInt($"Maximum Material Miracle uses per craft###P.Config.MaxMaterialMiracles", ref P.Config.MaxMaterialMiracles, 0, 3))
                     P.Config.Save();
-                ImGuiComponents.HelpMarker($"This will switch the Standard Recipe Solver over to the Expert Solver for the duration of the buff. This will not give you proper simulator results as it's a timed buff, not a permanent one with stacks, so we can't really simulate it properly.");
+                ImGuiComponents.HelpMarker($"This will switch the Standard Recipe Solver over to the Expert Solver for the duration of the buff. Material Miracle is a timed buff, not a permanent one with stacks, so the simulator will estimate how long it lasts based on the length of each skill's animation.");
 				ImGui.PushItemWidth(250);
-				if (ImGui.SliderInt($"Minimum steps to execute before trying Material Miracle###P.Config.MinimumStepsBeforeMiracle", ref P.Config.MinimumStepsBeforeMiracle, 0, 20))
-					P.Config.Save();
-
-                if (P.Config.UseMaterialMiracle)
-                {
-                    ImGui.Indent();
-                    if (ImGui.Checkbox($"Use more than once per craft.", ref P.Config.MaterialMiracleMulti))
-                        P.Config.Save();
-
-                    ImGui.Unindent();
-                }
-
+                if (ImGui.SliderInt($"Minimum steps to execute before trying Material Miracle###P.Config.MinimumStepsBeforeMiracle", ref P.Config.MinimumStepsBeforeMiracle, 0, 20))
+                    P.Config.Save();
             }
             bool openExpert = false;
             if (ImGui.CollapsingHeader("Global Expert Recipe Solver Settings"))

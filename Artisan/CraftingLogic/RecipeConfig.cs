@@ -51,16 +51,22 @@ public class RecipeConfig
     [NonSerialized]
     public uint? TempExpertMaxSteadyUses = null;
     [NonSerialized]
-    public bool? TempExpertUseMaterialMiracle = null;
+    public bool? TempExpertUseMaterialMiracle = null; // deprecated
+    [NonSerialized]
+    public uint? TempExpertMaxMaterialMiracleUses = null;
     [NonSerialized]
     public uint? TempExpertMinimumStepsBeforeMiracle = null;
 
     public string SolverType = ""; // TODO: ideally it should be a Type?, but that causes problems for serialization
     public int SolverFlavour;
     public int expertProfileID = (int)Default;
+    [NonSerialized]
+    public string solverHint = "";
+    [NonSerialized]
+    public Vector4 hintColor;
 
     public uint expertMaxSteadyUses = Default;
-    public bool expertUseMaterialMiracle = false;
+    public uint expertMaxMaterialMiracleUses = Default;
     public uint expertMinimumStepsBeforeMiracle = Default;
 
     public uint requiredFood = Default;
@@ -92,7 +98,8 @@ public class RecipeConfig
 
     public int ExpertProfileID => TempExpertProfileID ?? expertProfileID;
     public uint ExpertMaxSteadyUses => TempExpertMaxSteadyUses ?? expertMaxSteadyUses;
-    public bool ExpertUseMaterialMiracle => TempExpertUseMaterialMiracle ?? expertUseMaterialMiracle;
+    public bool ExpertUseMaterialMiracle => TempExpertUseMaterialMiracle ?? (expertMaxMaterialMiracleUses > 0); // deprecated
+    public uint ExpertMaxMaterialMiracleUses => TempExpertUseMaterialMiracle != null ? TempExpertUseMaterialMiracle == true ? (uint)1 : (uint)0 : TempExpertMaxMaterialMiracleUses ?? expertMaxMaterialMiracleUses;
     public uint ExpertMinimumStepsBeforeMiracle => TempExpertMinimumStepsBeforeMiracle ?? expertMinimumStepsBeforeMiracle;
 
     public float GetLargestName()
@@ -416,13 +423,14 @@ public class RecipeConfig
         {
             var recipe = craft.Recipe;
             var config = this;
-            var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor);
+            if (solverHint == "")
+                solverHint = Simulator.SimulatorResult(recipe, config, craft, out hintColor);
             var solver = CraftingProcessor.GetSolverForRecipe(config, craft);
 
             if (solver.Name != "Expert Recipe Solver")
             {
-                if (craft.MissionHasMaterialMiracle && solver.Name == "Standard Recipe Solver" && P.Config.UseMaterialMiracle)
-                    ImGuiEx.TextCentered($"This would use Material Miracle, which is not compatible with the simulator.");
+                if (craft.MissionHasMaterialMiracle && solver.Name == "Standard Recipe Solver" && P.Config.MaxMaterialMiracles > 0)
+                    ImGuiEx.TextCentered($"Material Miracle will give inconsistent simulator results.");
                 else
                     if (solver.Name == "Raphael Recipe Solver" && !RaphaelCache.HasSolution(craft, out _))
                         ImGuiEx.TextCentered($"Unable to generate a simulator without a Raphael solution generated.");

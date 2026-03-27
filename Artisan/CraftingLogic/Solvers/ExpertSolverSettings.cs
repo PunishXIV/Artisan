@@ -40,7 +40,7 @@ public class ExpertSolverSettings
     public bool MaxIshgardRecipes;
     public bool MaxCosmicRecipes = true; // if true, goes for max quality on CE recipes with multiple quality thresholds instead of q3
     public bool OverrideCosmicRecipeSettings = false; // if true, use this profile's cosmic settings instead of the per-recipe settings
-    public bool UseMaterialMiracle = false;
+    public int MaxMaterialMiracleUses = 0; // how many charges of Material Miracle to use per craft, if available
     public enum MMSet  // when should we use material miracle?
     {
         Steps,         // after X steps, regardless of what else is happening

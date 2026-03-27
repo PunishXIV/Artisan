@@ -131,7 +131,7 @@ public class ExpertSolver : Solver
             return new(SafeCraftAction(craft, step, SolveOpenerMuMe(profile, craft, step)), "mume");
 
         // todo: don't override useful conditions with material miracle?
-        if (profile.GetUseMaterialMiracle() && cfg.UseMMWhen == MMSet.Steps && step.Index >= profile.GetMinimumStepsBeforeMiracle() && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
+        if (step.MaterialMiraclesUsed < profile.GetMaxMaterialMiracleUses() && cfg.UseMMWhen == MMSet.Steps && step.Index >= profile.GetMinimumStepsBeforeMiracle() && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
             return new(Skills.MaterialMiracle);
 
         // see if we can do byregot right now and top up quality

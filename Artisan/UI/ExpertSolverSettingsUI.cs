@@ -137,13 +137,12 @@ internal class ExpertSolverSettingsUI
         ImGuiComponents.HelpMarker("By default, Cosmic Exploration settings are tracked for each recipe and ignore the expert solver options. Enable this option to instead use the settings below.");
         ImGui.Indent();
         if (!s.OverrideCosmicRecipeSettings) ImGui.BeginDisabled();
-        changed |= CheckboxWithIcons("UseMaterialMiracle", ref s.UseMaterialMiracle, "Use [s!MaterialMiracle]");
         ImGui.PushItemWidth(250);
-        if (s.UseMaterialMiracle)
-        {
-            changed |= SliderIntWithIcons("MinimumStepsBeforeMiracle", ref s.MinimumStepsBeforeMiracle, 0, 20, "Minimum steps to execute before trying [s!MaterialMiracle]");
-            ImGui.Dummy(new Vector2(0, 5f));
-        }
+        changed |= SliderIntWithIcons("MaxMaterialMiracleUses", ref s.MaxMaterialMiracleUses, 0, 3, "Max [s!MaterialMiracle] uses per craft");
+        ImGui.PushItemWidth(250);
+        changed |= SliderIntWithIcons("MinimumStepsBeforeMiracle", ref s.MinimumStepsBeforeMiracle, 0, 20, "Minimum steps to execute before trying [s!MaterialMiracle]");
+        ImGui.Dummy(new Vector2(0, 5f));
+        ImGui.PushItemWidth(250);
         changed |= SliderIntWithIcons("MaxSteadyUses", ref s.MaxSteadyUses, 0, 2, "Max [s!SteadyHand] uses per craft");
         HelpMarkerWithIcons(["[s!SteadyHand] will be used ASAP to guarantee [s!RapidSynthesis].", "Set to 0 to disable."]);
         if (!s.OverrideCosmicRecipeSettings) ImGui.EndDisabled();

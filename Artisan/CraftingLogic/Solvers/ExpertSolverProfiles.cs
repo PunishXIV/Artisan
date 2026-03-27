@@ -20,20 +20,20 @@ public class ExpertSolverProfiles
         [NonSerialized]
         public int? PerRecipeMaxSteadyUses = null;
         [NonSerialized]
-        public bool? PerRecipeUseMaterialMiracle = null;
+        public int? PerRecipeMaxMaterialMiracleUses = null;
         [NonSerialized]
         public int? PerRecipeMinimumStepsBeforeMiracle = null;
 
         public void SetPerRecipeSettings(RecipeConfig recipeConfig)
         {
             this.PerRecipeMaxSteadyUses = (int)recipeConfig.ExpertMaxSteadyUses;
-            this.PerRecipeUseMaterialMiracle = recipeConfig.ExpertUseMaterialMiracle;
+            this.PerRecipeMaxMaterialMiracleUses = (int)recipeConfig.ExpertMaxMaterialMiracleUses;
             this.PerRecipeMinimumStepsBeforeMiracle = (int)recipeConfig.ExpertMinimumStepsBeforeMiracle;
         }
 
         public int GetMaxSteadyUses() => this.Settings.OverrideCosmicRecipeSettings ? this.Settings.MaxSteadyUses : (this.PerRecipeMaxSteadyUses ?? this.Settings.MaxSteadyUses);
 
-        public bool GetUseMaterialMiracle() => this.Settings.OverrideCosmicRecipeSettings ? this.Settings.UseMaterialMiracle : (this.PerRecipeUseMaterialMiracle ?? this.Settings.UseMaterialMiracle);
+        public int GetMaxMaterialMiracleUses() => this.Settings.OverrideCosmicRecipeSettings ? this.Settings.MaxMaterialMiracleUses : (this.PerRecipeMaxMaterialMiracleUses ?? this.Settings.MaxMaterialMiracleUses);
 
         public int GetMinimumStepsBeforeMiracle() => this.Settings.OverrideCosmicRecipeSettings ? this.Settings.MinimumStepsBeforeMiracle : (this.PerRecipeMinimumStepsBeforeMiracle ?? this.Settings.MinimumStepsBeforeMiracle);
     }
