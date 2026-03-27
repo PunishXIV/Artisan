@@ -467,7 +467,7 @@ public static unsafe class Crafting
                     return State.WaitAction; // wait for a bit...
                 }
                 // ok, we've been waiting too long - complain and consider current state to be correct
-                Svc.Log.Error($"Unexpected status update - probably a simulator bug:\n" +
+                Svc.Log.Warning($"Unexpected status update - probably a simulator bug:\n" +
                     $"     had {CurStep}\n" +
                     $"expected {_predictedNextStep}\n" +
                     $"     got {step}\n" +
