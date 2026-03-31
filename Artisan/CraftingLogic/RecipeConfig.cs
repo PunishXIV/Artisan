@@ -16,6 +16,7 @@ using Lumina.Excel.Sheets;
 using System;
 using System.Linq;
 using System.Numerics;
+using static Artisan.CraftingLogic.Solvers.ExpertSolverSettings;
 
 namespace Artisan.CraftingLogic;
 
@@ -68,6 +69,7 @@ public class RecipeConfig
     public uint expertMaxSteadyUses = Default;
     public uint expertMaxMaterialMiracleUses = Default;
     public uint expertMinimumStepsBeforeMiracle = Default;
+    public MMSet expertUseMMWhen = MMSet.Steps;
 
     public uint requiredFood = Default;
     public uint requiredPotion = Default;

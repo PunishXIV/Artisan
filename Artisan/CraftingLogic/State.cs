@@ -117,6 +117,7 @@ public record class StepState
     public bool PrevMaterialMiracleActive;
     public int ObserveCounter;
     public bool ExpertEmergency;
+    public bool ExpertMiracleTrigger;
     public int SteadyHandCharges;
     public int SteadyHandLeft;
     public int SteadyHandsUsed;

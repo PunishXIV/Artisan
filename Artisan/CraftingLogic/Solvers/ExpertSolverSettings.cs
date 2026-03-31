@@ -44,17 +44,17 @@ public class ExpertSolverSettings
     public enum MMSet  // when should we use material miracle?
     {
         Steps,         // after X steps, regardless of what else is happening
-        Opener,        // at the start of the opener
+        Opener,        // at the start of the opener, after the initial action
         AfterOpener,   // before building IQ
-        PreQuality     // at 10 IQ stacks
+        Quality        // at 10 IQ stacks
     }
     public string GetMMSet(MMSet value)
         => value switch
         {
             MMSet.Steps => $"After X steps",
-            MMSet.Opener => $"At the start of the opener",
+            MMSet.Opener => $"After the special opener action",
             MMSet.AfterOpener => $"At the start of the {Buffs.InnerQuiet.NameOfBuff()} phase",
-            MMSet.PreQuality => $"At the start of the {QualityString} phase",
+            MMSet.Quality => $"At the start of the {QualityString} phase",
             _ => throw new NotImplementedException()
         };
     public MMSet UseMMWhen = MMSet.Steps;

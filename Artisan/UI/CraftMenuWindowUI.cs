@@ -12,9 +12,11 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using ECommons.ImGuiMethods;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using static Artisan.CraftingLogic.Solvers.ExpertSolverProfiles;
+using static Artisan.CraftingLogic.Solvers.ExpertSolverSettings;
 
 namespace Artisan.UI
 {
@@ -72,11 +74,11 @@ namespace Artisan.UI
             bool solverLoaded = config.CurrentSolverType != "";
             switch (type)
             {
-                case "standard": 
+                case "standard":
                     return solverLoaded ? config.SolverIsStandard : !LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert;
-                case "expert": 
+                case "expert":
                     return solverLoaded ? config.SolverIsExpert : LuminaSheets.RecipeSheet[Endurance.RecipeID].IsExpert;
-                case "raph": 
+                case "raph":
                 case "raphael":
                     return solverLoaded ? config.SolverIsRaph : false;
                 default: return false;
@@ -130,8 +132,9 @@ namespace Artisan.UI
                 ExpertSolverSettings expCfg = profile.ID == 0 ? P.Config.ExpertSolverConfig : profile.Settings;
                 if (Crafting.MaterialMiracleCharges() > 0 && (SolverIs(config, "standard") || SolverIs(config, "expert")))
                 {
-                    int maxMiracles = expertRecipe ? expCfg.OverrideCosmicRecipeSettings ? expCfg.MaxMaterialMiracleUses : (int)config.ExpertMaxMaterialMiracleUses : P.Config.MaxMaterialMiracles;
-                    int delayMatMiracle = expertRecipe ? expCfg.OverrideCosmicRecipeSettings ? expCfg.MinimumStepsBeforeMiracle : (int)config.ExpertMinimumStepsBeforeMiracle : P.Config.MinimumStepsBeforeMiracle;
+                    int maxMiracles = SolverIs(config, "expert") ? expCfg.OverrideCosmicRecipeSettings ? expCfg.MaxMaterialMiracleUses : (int)config.ExpertMaxMaterialMiracleUses : P.Config.MaxMaterialMiracles;
+                    int delayMatMiracle = SolverIs(config, "expert") ? expCfg.OverrideCosmicRecipeSettings ? expCfg.MinimumStepsBeforeMiracle : (int)config.ExpertMinimumStepsBeforeMiracle : P.Config.MinimumStepsBeforeMiracle;
+                    MMSet useMMWhen = SolverIs(config, "expert") ? expCfg.OverrideCosmicRecipeSettings ? expCfg.UseMMWhen : config.expertUseMMWhen : MMSet.Steps;
 
                     if (expCfg.OverrideCosmicRecipeSettings && SolverIs(config, "expert"))
                     {
@@ -140,9 +143,9 @@ namespace Artisan.UI
                     }
 
                     ImGui.PushItemWidth(100);
-                    if (ExpertSettingsUI.SliderIntWithIcons("MaxMaterialMiracles", ref maxMiracles, 0, 3, $"{(expertRecipe ? "[ex] " : "")}Max [s!MaterialMiracle] uses"))
+                    if (ExpertSettingsUI.SliderIntWithIcons("MaxMaterialMiracles", ref maxMiracles, 0, 3, $"{(SolverIs(config, "expert") ? "[ex] " : "")}Max [s!MaterialMiracle] uses"))
                     {
-                        if (expertRecipe)
+                        if (SolverIs(config, "expert"))
                         {
                             if (expCfg.OverrideCosmicRecipeSettings)
                                 expCfg.MaxMaterialMiracleUses = maxMiracles;
@@ -155,26 +158,61 @@ namespace Artisan.UI
                     }
 
                     if (expCfg.OverrideCosmicRecipeSettings && SolverIs(config, "expert")) ImGui.EndDisabled();
-                    ImGuiComponents.HelpMarker($"This setting only applies to the {(expertRecipe ? "expert" : "standard")} solver.\r\nTo change Raphael solver usage, go to Settings > Raphael Solver Settings.");
+                    var mmNote = "To change Raphael solver usage, go to Settings > Raphael Solver Settings.";
+                    if (SolverIs(config, "expert"))
+                        ImGuiComponents.HelpMarker($"This setting only applies to the expert solver.\r\n{mmNote}");
+                    if (SolverIs(config, "standard"))
+                        ImGuiComponents.HelpMarker($"This will switch the Standard Recipe Solver over to the Expert Solver for the duration of the buff.\r\n{mmNote}");
 
                     if (expCfg.OverrideCosmicRecipeSettings && SolverIs(config, "expert")) ImGui.BeginDisabled();
 
                     if (maxMiracles > 0)
                     {
-                        ImGui.PushItemWidth(250);
-                        ImGui.Text("Use after this many steps:");
-                        if (ImGui.SliderInt("###MaterialMiracleSlider", ref delayMatMiracle, 0, 20))
+                        if (SolverIs(config, "expert"))
                         {
-                            if (expertRecipe)
+                            ImGui.PushItemWidth(250);
+                            if (ImGui.BeginCombo("##mmSet", expCfg.GetMMSet(useMMWhen)))
                             {
-                                if (expCfg.OverrideCosmicRecipeSettings)
-                                    expCfg.MinimumStepsBeforeMiracle = delayMatMiracle;
-                                else
-                                    config.expertMinimumStepsBeforeMiracle = (uint)delayMatMiracle;
+                                foreach (MMSet x in Enum.GetValues<MMSet>())
+                                {
+                                    if (ImGui.Selectable(expCfg.GetMMSet(x)))
+                                    {
+                                        if (expCfg.OverrideCosmicRecipeSettings)
+                                            expCfg.UseMMWhen = x;
+                                        else
+                                            config.expertUseMMWhen = x;
+                                        changed = true;
+                                    }
+                                }
+                                ImGui.EndCombo();
                             }
-                            else
-                                P.Config.MinimumStepsBeforeMiracle = delayMatMiracle;
-                            changed = true;
+                            ImGui.SameLine(0.0f, 4.0f);
+                            ExpertSettingsUI.DrawIconText("[ex] When to start");
+                        }
+                        else
+                            ImGui.Text("Use after this many steps:");
+
+                        if ((SolverIs(config, "expert") && useMMWhen == MMSet.Steps) || SolverIs(config, "standard"))
+                        {
+                            ImGui.PushItemWidth(250);
+                            if (ImGui.SliderInt($"###MaterialMiracleSlider", ref delayMatMiracle, 0, 20))
+                            {
+                                if (SolverIs(config, "expert"))
+                                {
+                                    if (expCfg.OverrideCosmicRecipeSettings)
+                                        expCfg.MinimumStepsBeforeMiracle = delayMatMiracle;
+                                    else
+                                        config.expertMinimumStepsBeforeMiracle = (uint)delayMatMiracle;
+                                }
+                                else
+                                    P.Config.MinimumStepsBeforeMiracle = delayMatMiracle;
+                                changed = true;
+                            }
+                            if (SolverIs(config, "expert"))
+                            {
+                                ImGui.SameLine(0.0f, 4.0f);
+                                ExpertSettingsUI.DrawIconText("[ex] Number of steps");
+                            }
                         }
                     }
                     if (expCfg.OverrideCosmicRecipeSettings && SolverIs(config, "expert")) ImGui.EndDisabled();

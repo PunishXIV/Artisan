@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using TerraFX.Interop.Windows;
 using static Artisan.CraftingLogic.Solvers.ExpertSolverProfiles;
+using static Artisan.CraftingLogic.Solvers.ExpertSolverSettings;
 
 namespace Artisan.CraftingLogic.Solvers;
 
@@ -23,12 +24,15 @@ public class ExpertSolverProfiles
         public int? PerRecipeMaxMaterialMiracleUses = null;
         [NonSerialized]
         public int? PerRecipeMinimumStepsBeforeMiracle = null;
+        [NonSerialized]
+        public MMSet? PerRecipeUseMMWhen = null;
 
         public void SetPerRecipeSettings(RecipeConfig recipeConfig)
         {
             this.PerRecipeMaxSteadyUses = (int)recipeConfig.ExpertMaxSteadyUses;
             this.PerRecipeMaxMaterialMiracleUses = (int)recipeConfig.ExpertMaxMaterialMiracleUses;
             this.PerRecipeMinimumStepsBeforeMiracle = (int)recipeConfig.ExpertMinimumStepsBeforeMiracle;
+            this.PerRecipeUseMMWhen = recipeConfig.expertUseMMWhen;
         }
 
         public int GetMaxSteadyUses() => this.Settings.OverrideCosmicRecipeSettings ? this.Settings.MaxSteadyUses : (this.PerRecipeMaxSteadyUses ?? this.Settings.MaxSteadyUses);
@@ -36,6 +40,8 @@ public class ExpertSolverProfiles
         public int GetMaxMaterialMiracleUses() => this.Settings.OverrideCosmicRecipeSettings ? this.Settings.MaxMaterialMiracleUses : (this.PerRecipeMaxMaterialMiracleUses ?? this.Settings.MaxMaterialMiracleUses);
 
         public int GetMinimumStepsBeforeMiracle() => this.Settings.OverrideCosmicRecipeSettings ? this.Settings.MinimumStepsBeforeMiracle : (this.PerRecipeMinimumStepsBeforeMiracle ?? this.Settings.MinimumStepsBeforeMiracle);
+
+        public MMSet GetUseMMWhen() => this.Settings.OverrideCosmicRecipeSettings ? this.Settings.UseMMWhen : (this.PerRecipeUseMMWhen ?? this.Settings.UseMMWhen);
     }
 
     public List<ExpertProfile> ExpertProfiles = new();

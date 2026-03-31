@@ -134,13 +134,38 @@ internal class ExpertSolverSettingsUI
         ImGui.Indent();
         changed |= ImGui.Checkbox("Max out Cosmic Exploration recipes instead of hitting third breakpoint", ref s.MaxCosmicRecipes);
         changed |= ImGui.Checkbox("Override per-recipe Cosmic Exploration settings###overrideCosmic", ref s.OverrideCosmicRecipeSettings);
-        ImGuiComponents.HelpMarker("By default, Cosmic Exploration settings are tracked for each recipe and ignore the expert solver options. Enable this option to instead use the settings below.");
+        ImGuiComponents.HelpMarker("By default, Cosmic Exploration settings are tracked for each recipe. Enable this option to instead use the settings below.");
         ImGui.Indent();
         if (!s.OverrideCosmicRecipeSettings) ImGui.BeginDisabled();
+        ImGui.Dummy(new Vector2(0, 2f));
+        DrawIconText("[s!MaterialMiracle] usage:");
+        ImGui.Indent();
         ImGui.PushItemWidth(250);
-        changed |= SliderIntWithIcons("MaxMaterialMiracleUses", ref s.MaxMaterialMiracleUses, 0, 3, "Max [s!MaterialMiracle] uses per craft");
-        ImGui.PushItemWidth(250);
-        changed |= SliderIntWithIcons("MinimumStepsBeforeMiracle", ref s.MinimumStepsBeforeMiracle, 0, 20, "Minimum steps to execute before trying [s!MaterialMiracle]");
+        changed |= SliderIntWithIcons("MaxMaterialMiracleUses", ref s.MaxMaterialMiracleUses, 0, 3, "Max uses per craft");
+        ImGuiComponents.HelpMarker("If being used more than once, the buff will be immediately re-applied when it runs out.");
+        if (s.MaxMaterialMiracleUses > 0)
+        {
+            ImGui.PushItemWidth(250);
+            if (ImGui.BeginCombo("When to start##mmSet", s.GetMMSet(s.UseMMWhen)))
+            {
+                foreach (MMSet x in Enum.GetValues<MMSet>())
+                {
+                    if (ImGui.Selectable(s.GetMMSet(x)))
+                    {
+                        s.UseMMWhen = x;
+                        changed = true;
+                    }
+                }
+                ImGui.EndCombo();
+            }
+            if (s.UseMMWhen == MMSet.Steps)
+            {
+                ImGui.PushItemWidth(250);
+                changed |= SliderIntWithIcons("MinimumStepsBeforeMiracle", ref s.MinimumStepsBeforeMiracle, 0, 20, "Number of steps");
+            }
+        }
+        ImGui.Unindent();
+
         ImGui.Dummy(new Vector2(0, 5f));
         ImGui.PushItemWidth(250);
         changed |= SliderIntWithIcons("MaxSteadyUses", ref s.MaxSteadyUses, 0, 2, "Max [s!SteadyHand] uses per craft");

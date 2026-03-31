@@ -241,6 +241,7 @@ public static class Simulator
         next.PrevMaterialMiracleActive = step.MaterialMiracleActive;
         next.ObserveCounter = action == Skills.Observe ? step.ObserveCounter + 1 : 0;
         next.ExpertEmergency = step.ExpertEmergency; // set directly by the expert solver
+        next.ExpertMiracleTrigger = step.ExpertMiracleTrigger; // set directly by the expert solver
         next.SteadyHandCharges = action == Skills.SteadyHand ? step.SteadyHandCharges - 1 : step.SteadyHandCharges;
         next.SteadyHandLeft = action == Skills.SteadyHand ? 3 : Math.Max(0, step.SteadyHandLeft - 1);
         next.SteadyHandsUsed = action == Skills.SteadyHand ? step.SteadyHandsUsed + 1 : step.SteadyHandsUsed;

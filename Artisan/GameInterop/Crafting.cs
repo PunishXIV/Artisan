@@ -699,6 +699,7 @@ public static unsafe class Crafting
         ret.SteadyHandsUsed = predictedStep?.SteadyHandsUsed ?? 0;
         ret.ObserveCounter = predictedStep?.ObserveCounter ?? 0;
         ret.ExpertEmergency = predictedStep?.ExpertEmergency ?? false;
+        ret.ExpertMiracleTrigger = predictedStep?.ExpertMiracleTrigger ?? false;
 
         return ret;
     }

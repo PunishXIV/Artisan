@@ -100,7 +100,7 @@ public class ExpertSolver : Solver
         if (cfg.DebugInnovateOnly)
         {
             if (step.RemainingCP < Skills.Innovation.StandardCPCost())
-                return new(Skills.BasicSynthesis, "debug: restart");
+                return new(Skills.BasicSynthesis, "restart");
             return new(Skills.Innovation, "debug: innovation");
         }
 #endif
@@ -124,15 +124,16 @@ public class ExpertSolver : Solver
             var useReflect = cfg.OpenerAction == OpenerSet.Reflect || Simulator.CalculateProgress(craft, step, Skills.MuscleMemory) >= craft.CraftProgress || craft.CraftDurability <= 20; // todo logic
             if (useReflect && cfg.ReflectQuickInno && CU(craft, step, Skills.QuickInnovation))
                 return new(Skills.QuickInnovation, "opener: reflect quick inno");
+            if (((profile.GetUseMMWhen() == MMSet.Steps && step.Index >= profile.GetMinimumStepsBeforeMiracle()) || profile.GetUseMMWhen() == MMSet.Opener) && CU(craft, step, Skills.MaterialMiracle))
+            {
+                // if we're using miracle in the opener, make sure it's the next action regardless of which opener we use
+                step.ExpertMiracleTrigger = true;
+            }
             return new(useReflect ? Skills.Reflect : Skills.MuscleMemory, "opener");
         }
 
         if (step.MuscleMemoryLeft > 0) // mume still active - means we have very little progress and want more progress asap
             return new(SafeCraftAction(craft, step, SolveOpenerMuMe(profile, craft, step)), "mume");
-
-        // todo: don't override useful conditions with material miracle?
-        if (step.MaterialMiraclesUsed < profile.GetMaxMaterialMiracleUses() && cfg.UseMMWhen == MMSet.Steps && step.Index >= profile.GetMinimumStepsBeforeMiracle() && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
-            return new(Skills.MaterialMiracle);
 
         // see if we can do byregot right now and top up quality
         var finishQualityAction = SolveFinishQuality(cfg, craft, step, cpAvailableForQuality, qualityTarget);
@@ -168,6 +169,11 @@ public class ExpertSolver : Solver
         {
             // use steady hand while we have it
             return Skills.RapidSynthesis;
+        }
+        if (!step.MaterialMiracleActive && step.ExpertMiracleTrigger && step.MaterialMiraclesUsed < profile.GetMaxMaterialMiracleUses() && CU(craft, step, Skills.MaterialMiracle))
+        {
+            // use miracle as early as possible in the opener if configured, can't afford to waste turns of MuMe
+            return Skills.MaterialMiracle;
         }
         if (step.Condition == Condition.Pliant && !lastChance)
         {
@@ -280,6 +286,10 @@ public class ExpertSolver : Solver
     {
         ExpertSolverSettings cfg = profile.Settings;
 
+        // is it time to allow miracle?
+        if (((profile.GetUseMMWhen() == MMSet.Steps && step.Index >= profile.GetMinimumStepsBeforeMiracle()) || (profile.GetUseMMWhen() == MMSet.AfterOpener)) && CU(craft, step, Skills.MaterialMiracle))
+            step.ExpertMiracleTrigger = true;
+
         // for some logic that cares about dura left, we need to be more flexible on low-dura crafts
         var duraThreshold = craft.CraftDurability <= 35 ? 15 : 25;
         var canBePliant = craft.ConditionFlags.HasFlag(ConditionFlags.Pliant) || step.MaterialMiracleActive;
@@ -295,7 +305,7 @@ public class ExpertSolver : Solver
             return new(SafeCraftAction(craft, step, Skills.RapidSynthesis), "mid pre quality: steady hand");
 
         // check durability to make sure we don't waste pliant/etc.
-        var duraAction = SolveMidDurabilityPreQuality(cfg, craft, step, availableCP, allowObserveOnLowDura, progressDeficit > 0);
+        var duraAction = SolveMidDurabilityPreQuality(profile, craft, step, availableCP, allowObserveOnLowDura, progressDeficit > 0);
         if (duraAction != Skills.None)
             return new(duraAction, "mid pre quality: durability");
 
@@ -312,7 +322,7 @@ public class ExpertSolver : Solver
             return new(Skills.SteadyHand, "mid pre quality: progress finish steady");
 
         // check for progress-friendly conditions, or force progress if specified
-        if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, allowIntensive, progressDeficit, cfg) is var highPrioProgress && highPrioProgress != Skills.None)
+        if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, allowIntensive, progressDeficit, profile) is var highPrioProgress && highPrioProgress != Skills.None)
             return new(SafeCraftAction(craft, step, highPrioProgress), "mid pre quality: high-prio progress");
 
         // check for IQ-friendly conditions
@@ -330,6 +340,10 @@ public class ExpertSolver : Solver
         var canUseWNAtAll = cfg.PQWasteNot == PQWasteNotSet.Always || (cfg.PQWasteNot == PQWasteNotSet.NoPliant && !craft.ConditionFlags.HasFlag(ConditionFlags.Pliant));
         if (canUseWNAtAll && step.WasteNotLeft == 0 && step.IQStacks <= cfg.PQWasteNotMaxIQ && effectiveDura > maxWasteNotDuraConsumed && CU(craft, step, Skills.WasteNot))
             return new(Skills.WasteNot, "mid pre quality: waste not");
+
+        // conditions have been checked, put up miracle if configured
+        if (!step.MaterialMiracleActive && step.ExpertMiracleTrigger && step.MaterialMiraclesUsed < profile.GetMaxMaterialMiracleUses() && CU(craft, step, Skills.MaterialMiracle))
+            return new(Skills.MaterialMiracle, "mid pre quality: miracle");
 
         // set up inno if configured to do so and we have enough IQ stacks
         if (step.InnovationLeft == 0 && step.IQStacks >= (step.Condition == Condition.Primed ? cfg.PQPrimedInnoIQ : cfg.PQOtherInnoIQ) && CU(craft, step, Skills.Innovation))
@@ -382,6 +396,10 @@ public class ExpertSolver : Solver
     {
         ExpertSolverSettings cfg = profile.Settings;
 
+        // is it time to allow miracle?
+        if (((profile.GetUseMMWhen() == MMSet.Steps && step.Index >= profile.GetMinimumStepsBeforeMiracle()) || (profile.GetUseMMWhen() == MMSet.Quality)) && CU(craft, step, Skills.MaterialMiracle))
+            step.ExpertMiracleTrigger = true;
+
         // no buffs up, this is a good chance to get some dura back if needed, and then get some iq/progress/quality, maybe start dedicated progress/quality phase
         // todo: it's unlikely to still have waste not going here on a no-pliant craft, but should it force a non-buff action?
 
@@ -401,19 +419,19 @@ public class ExpertSolver : Solver
         // so prefer observing on good omen
         if (cfg.MidObserveGoodOmenForTricks && step.Condition == Condition.GoodOmen)
         {
-            if (step.TrainedPerfectionAvailable && CU(craft, step, Skills.TrainedPerfection))
+            if (step.TrainedPerfectionAvailable && cfg.MidUseTP == MidUseTPSetting.MidUseTPDuringQuality && CU(craft, step, Skills.TrainedPerfection))
                 return new(Skills.TrainedPerfection, "mid start quality: good omen -> high-prio tricks");
             if (CU(craft, step, Skills.Observe))
                 return new(Skills.Observe, "mid start quality: good omen -> high-prio tricks");
         }
 
         // ok, durability management time
-        var duraAction = SolveMidDurabilityStartQuality(cfg, craft, step, availableCP);
+        var duraAction = SolveMidDurabilityStartQuality(profile, craft, step, availableCP);
         if (duraAction != Skills.None)
             return new(duraAction, "mid start quality: durability");
 
         // see whether we have some nice conditions to exploit for progress
-        if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, true, progressDeficit, cfg) is var highPrioProgress && highPrioProgress != Skills.None)
+        if (progressDeficit > 0 && SolveMidHighPriorityProgress(craft, step, true, progressDeficit, profile) is var highPrioProgress && highPrioProgress != Skills.None)
             return new(SafeCraftAction(craft, step, highPrioProgress), "mid start quality: high-prio progress");
 
         // see what else can we do
@@ -439,6 +457,10 @@ public class ExpertSolver : Solver
         // turn on TP if applicable
         if (step.TrainedPerfectionAvailable && cfg.MidUseTP == MidUseTPSetting.MidUseTPDuringQuality && CU(craft, step, Skills.TrainedPerfection))
             return new(Skills.TrainedPerfection, "mid start quality: start tp");
+
+        // turn on miracle if applicable
+        if (!step.MaterialMiracleActive && step.ExpertMiracleTrigger && step.MaterialMiraclesUsed < profile.GetMaxMaterialMiracleUses() && CU(craft, step, Skills.MaterialMiracle))
+            return new(Skills.MaterialMiracle, "mid start quality: miracle");
 
         // we need around >20 effective durability to start a new combo
         var effectiveDura = step.Durability + step.ManipulationLeft * 5;
@@ -701,8 +723,10 @@ public class ExpertSolver : Solver
         return new(Skills.ByregotsBlessing, "mid quality: emergency byregot");
     }
 
-    private static Skills SolveMidDurabilityPreQuality(ExpertSolverSettings cfg, CraftState craft, StepState step, int availableCP, bool allowObserveOnLowDura, bool wantProgress)
+    private static Skills SolveMidDurabilityPreQuality(ExpertProfile profile, CraftState craft, StepState step, int availableCP, bool allowObserveOnLowDura, bool wantProgress)
     {
+        ExpertSolverSettings cfg = profile.Settings;
+
         // during the mid phase, durability is a serious concern
         if (step.ManipulationLeft > 0 && step.Durability + 5 > craft.CraftDurability)
             return Skills.None; // we're maxed out on dura, doing anything here will waste manip durability
@@ -766,6 +790,9 @@ public class ExpertSolver : Solver
                 if (CU(craft, step, Skills.Observe) && step.RemainingCP > Skills.Observe.StandardCPCost() + (Skills.Manipulation.StandardCPCost() / 2))
                     return Skills.Observe;
             }
+            // turn on miracle so we CAN do things like bait pliant
+            if (!step.MaterialMiracleActive && step.ExpertMiracleTrigger && step.MaterialMiraclesUsed < profile.GetMaxMaterialMiracleUses() && CU(craft, step, Skills.MaterialMiracle))
+                return Skills.MaterialMiracle;
             if (step.Durability <= criticalDurabilityThreshold && CU(craft, step, Skills.Manipulation))
                 return Skills.Manipulation; // bait the bullet and manip on normal
         }
@@ -774,8 +801,10 @@ public class ExpertSolver : Solver
         return Skills.None;
     }
 
-    private static Skills SolveMidDurabilityStartQuality(ExpertSolverSettings cfg, CraftState craft, StepState step, int availableCP)
+    private static Skills SolveMidDurabilityStartQuality(ExpertProfile profile, CraftState craft, StepState step, int availableCP)
     {
+        ExpertSolverSettings cfg = profile.Settings;
+
         // when we start doing quality, we do a lot of observes/buffs, so effective dura matters more than actual
         var effectiveDura = step.Durability + step.ManipulationLeft * 5;
         if (effectiveDura > craft.CraftDurability)
@@ -817,6 +846,9 @@ public class ExpertSolver : Solver
             else
             {
                 // with no pliant, we have to do something to have enough dura for Byregot's
+                // maybe we can turn on miracle so we CAN bait pliant
+                if (!step.MaterialMiracleActive && step.ExpertMiracleTrigger && step.MaterialMiraclesUsed < profile.GetMaxMaterialMiracleUses() && CU(craft, step, Skills.MaterialMiracle))
+                    return Skills.MaterialMiracle;
                 if (availableCP >= Simulator.GetCPCost(step, Skills.Manipulation) + Skills.ByregotsBlessing.StandardCPCost() && CU(craft, step, Skills.Manipulation))
                     return Skills.Manipulation;
                 if (availableCP >= Simulator.GetCPCost(step, Skills.MastersMend) + Skills.ByregotsBlessing.StandardCPCost() && CU(craft, step, Skills.MastersMend))
@@ -826,6 +858,9 @@ public class ExpertSolver : Solver
             var zeroDuraComboCP = Skills.Innovation.StandardCPCost() + (Skills.TrainedFinesse.StandardCPCost() * 4);
             if (freeCP >= zeroDuraComboCP) // inno + 4xfinesse
                 return Skills.None;
+            // not sure why we'd hit this here if we didn't in the non-pliant block, but check miracle just in case
+            if (!step.MaterialMiracleActive && step.ExpertMiracleTrigger && step.MaterialMiraclesUsed < profile.GetMaxMaterialMiracleUses() && CU(craft, step, Skills.MaterialMiracle))
+                return Skills.MaterialMiracle;
             // just do a normal manip/mm
             if (step.ManipulationLeft <= cfg.ManipClipTurns && availableCP >= Simulator.GetCPCost(step, Skills.Manipulation) + Skills.ByregotsBlessing.StandardCPCost() && CU(craft, step, Skills.Manipulation))
                 return Skills.Manipulation;
@@ -857,8 +892,10 @@ public class ExpertSolver : Solver
         return effectiveDura <= 10 ? 0 : estCPNeededToUtilizeCurrentDura + extraHalfCombos * estHalfComboCost;
     }
 
-    private static Skills SolveMidHighPriorityProgress(CraftState craft, StepState step, bool allowIntensive, int progressDeficit, ExpertSolverSettings cfg)
+    private static Skills SolveMidHighPriorityProgress(CraftState craft, StepState step, bool allowIntensive, int progressDeficit, ExpertProfile profile)
     {
+        ExpertSolverSettings cfg = profile.Settings;
+
         // high-priority progress actions (exploit conditions)
         // intensive is worth spending TP on if enabled by current settings
         if (step.Condition == Condition.Good && allowIntensive && (!step.TrainedPerfectionActive || cfg.MidUseTP is MidUseTPSetting.MidUseTPGroundwork or MidUseTPSetting.MidUseTPEitherPreQuality) && step.Durability > Simulator.GetDurabilityCost(step, Skills.IntensiveSynthesis) && CU(craft, step, Skills.IntensiveSynthesis))
@@ -928,6 +965,10 @@ public class ExpertSolver : Solver
                 // ...we should still set up TP->groundwork before rapid on any other condition
                 if (cfg.MidUseTP is MidUseTPSetting.MidUseTPGroundwork or MidUseTPSetting.MidUseTPEitherPreQuality && step.TrainedPerfectionAvailable && step.WasteNotLeft == 0 && CU(craft, step, Skills.TrainedPerfection))
                     return Skills.TrainedPerfection;
+
+                // set up miracle if configured so that we CAN get a better condition
+                if (!step.MaterialMiracleActive && step.ExpertMiracleTrigger && step.MaterialMiraclesUsed < profile.GetMaxMaterialMiracleUses() && CU(craft, step, Skills.MaterialMiracle))
+                    return Skills.MaterialMiracle;
 
                 // maybe we should wait for a better condition before spamming rapid, as long as we have the dura for the rapid
                 var effectiveDura = step.Durability + (step.ManipulationLeft * 5);
