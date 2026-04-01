@@ -114,7 +114,7 @@ namespace Artisan.IPC
 
             Svc.PluginInterface.GetIpcProvider<Dictionary<int, string>>("Artisan.GetLists").UnregisterFunc();
             Svc.PluginInterface.GetIpcProvider<int, object>("Artisan.StartListById").UnregisterAction();
-          
+
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertProfileID").UnregisterAction();
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertProfileIDBackToNormal").UnregisterAction();
 
@@ -458,17 +458,19 @@ namespace Artisan.IPC
 
         public static void StartListById(int listId)
         {
-            var list = P.Config.NewCraftingLists.FirstOrDefault(x => x.ID == listId);
-            if (list == null)
-                throw new Exception($"Crafting list with ID {listId} not found.");
+            if (CraftingListUI.Processing)
+                throw new Exception("Unable to process list while already processing.");
 
-            if (P.ws.Windows.TryGetFirst(x => x.WindowName.Contains(listId.ToString(), StringComparison.CurrentCultureIgnoreCase), out var window))
-                window.IsOpen = false;
+            if (!P.Config.NewCraftingLists.Any(x => x.ID == listId))
+                throw new Exception("List ID does not exist.");
 
-            CraftingListUI.selectedList = list;
+            if (Endurance.Enable)
+                throw new Exception("Cannot start list while Endurance is active. Please disable Endurance and try again.");
+
+            CraftingListUI.selectedList = P.Config.NewCraftingLists.First(x => x.ID == listId);
             CraftingListUI.StartList();
         }
-      
+
         public static void SetTempExpertProfileIDBackToNormal(uint recipeId)
         {
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipeId) ?? new();
