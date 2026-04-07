@@ -580,35 +580,46 @@ internal class ExpertSolverSettingsUI
                 ImGui.TextWrapped($"icon in the crafting log.");
             }
 
-            ImGui.Indent();
             ImGui.Dummy(new Vector2(0, 5f));
-            changed |= DrawAllSettings(s, false);
-            ImGui.Unindent();
-
-            ImGui.Indent();
-            ImGui.TextWrapped($"Expert Profiles");
-            ImGui.Indent();
-            changed |= ImGui.Checkbox("Use expert solver profiles", ref s.EnableExpertProfiles);
-            ImGuiComponents.HelpMarker("Profiles let you set different expert solver settings for different recipes. This is for advanced users - the expert solver should \"just work\" for almost everything.");
-
-            if (s.EnableExpertProfiles)
+            ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, $"IMPORTANT: These settings have been selected for optimal performance. Changing them may make the solver significantly worse. Use at your own risk.");
+            if (ImGui.Checkbox("I understand, let me in", ref P.Config.AcknowledgeExpertSettings))
             {
-                if (IconButtons.IconTextButton(Dalamud.Interface.FontAwesomeIcon.ExternalLinkAlt, "Create/Edit Expert Solver Profiles"))
+                P.Config.Save();
+            }
+
+            ImGui.Dummy(new Vector2(0, 5f));
+
+            if (P.Config.AcknowledgeExpertSettings)
+            {
+                ImGui.Indent();
+                changed |= DrawAllSettings(s, false);
+                ImGui.Unindent();
+
+                ImGui.Indent();
+                ImGui.TextWrapped($"Expert Profiles");
+                ImGui.Indent();
+                changed |= ImGui.Checkbox("Use expert solver profiles", ref s.EnableExpertProfiles);
+                ImGuiComponents.HelpMarker("Profiles let you set different expert solver settings for different recipes. This is for advanced users - the expert solver should \"just work\" for almost everything.");
+
+                if (s.EnableExpertProfiles)
                 {
-                    P.PluginUi.OpenWindow = OpenWindow.ExpertProfiles;
+                    if (IconButtons.IconTextButton(Dalamud.Interface.FontAwesomeIcon.ExternalLinkAlt, "Create/Edit Expert Solver Profiles"))
+                    {
+                        P.PluginUi.OpenWindow = OpenWindow.ExpertProfiles;
+                    }
                 }
-            }
-            ImGui.Unindent();
+                ImGui.Unindent();
 
-            ImGui.Dummy(new Vector2(0, 5f));
-            if (ImGuiEx.ButtonCtrl("Reset Expert Solver Settings To Default"))
-            {
-                P.Config.ExpertSolverConfig = new();
-                changed |= true;
-            }
-            ImGui.Dummy(new Vector2(0, 5f));
+                ImGui.Dummy(new Vector2(0, 5f));
+                if (ImGuiEx.ButtonCtrl("Reset Expert Solver Settings To Default"))
+                {
+                    P.Config.ExpertSolverConfig = new();
+                    changed |= true;
+                }
+                ImGui.Dummy(new Vector2(0, 5f));
 
-            ImGui.Unindent();
+                ImGui.Unindent();
+            }
 
             return changed;
         }

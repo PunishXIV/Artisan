@@ -57,7 +57,7 @@ public class ExpertSolverSettings
             MMSet.Quality => $"At the start of the {QualityString} phase",
             _ => throw new NotImplementedException()
         };
-    public MMSet UseMMWhen = MMSet.Steps;
+    public MMSet UseMMWhen = MMSet.AfterOpener;
     public int MinimumStepsBeforeMiracle = 10;
     public int MaxSteadyUses = 1; // how many charges of Stellar Steady Hand to use per craft, if available
     public bool DebugObserveOnly = false; // special debug flag for collecting condition data
@@ -67,20 +67,18 @@ public class ExpertSolverSettings
     // Opener settings
     public enum OpenerSet  // what should we open with?
     {
-        Best,              // let artisan decide based on ???
         Reflect,
         MuMe
     }
     public string GetOpenerSet(OpenerSet value)
         => value switch
         {
-            OpenerSet.Best => $"Automatically decide",
             OpenerSet.Reflect => $"Always use {Skills.Reflect.NameOfAction()}",
             OpenerSet.MuMe => $"Always use {Skills.MuscleMemory.NameOfAction()}",
             _ => throw new NotImplementedException()
         };
-    public OpenerSet OpenerAction = OpenerSet.MuMe;
-    public bool ReflectQuickInno = false; // if true, use quick innovation before reflect
+    public OpenerSet OpenerAction = OpenerSet.Reflect;
+    public bool ReflectQuickInno = true; // if true, use quick innovation before reflect
     public bool MuMeIntensiveGood = true; // if true, we allow spending mume on intensive (400p) rather than rapid (500p) if good condition procs
     public bool MuMeIntensiveMalleable = false; // if true and we have malleable during mume, use intensive rather than hoping for rapid
     public bool MuMePrimedManip = false; // if true, allow using primed manipulation after veneration is up on mume
@@ -194,14 +192,14 @@ public class ExpertSolverSettings
     public PQGoodPreciseSet PQGoodPrecise = PQGoodPreciseSet.Always;
     public bool MidAllowSturdyPreсise = false; // if true,we consider sturdy+h&s+precise touch a good move for building iq
     public int MidMinIQForHSPrecise = 10; // min iq stacks where we use h&s+precise; 10 to disable
-    public bool PQAdvancedCombo = false; // if true, prefer observe + advanced combo over prudent to build IQ
+    public bool PQAdvancedCombo = true; // if true, prefer observe + advanced combo over prudent to build IQ
     public bool MidAllowCenteredHasty = true; // if true, we consider centered hasty touch a good move for building iq (85% reliability)
     public bool MidAllowSturdyHasty = true; // if true, we consider sturdy hasty touch a good move for building iq (60% reliability), otherwise we use combo
 
 
     // Pre-quality settings - Quality
-    public int PQPrimedInnoIQ = 10; // (pre-quality) use inno under primed at this many IQ stacks (10 to disable)
-    public int PQOtherInnoIQ = 10;  // (pre-quality) use inno otherwise at this many IQ stacks (10 to disable)
+    public int PQPrimedInnoIQ = 0; // (pre-quality) use inno under primed at this many IQ stacks (10 to disable)
+    public int PQOtherInnoIQ = 0;  // (pre-quality) use inno otherwise at this many IQ stacks (10 to disable)
 
 
     // Quality settings - General
