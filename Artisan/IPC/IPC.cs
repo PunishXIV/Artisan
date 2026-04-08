@@ -78,6 +78,9 @@ namespace Artisan.IPC
             Svc.PluginInterface.GetIpcProvider<uint, bool, bool, object>("Artisan.ChangeExpertUseMaterialMiracle").RegisterAction(ChangeExpertUseMaterialMiracle);
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertUseMaterialMiracleBackToNormal").RegisterAction(SetTempExpertUseMaterialMiracleBackToNormal);
 
+            Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertMaxMaterialMiracleUses").RegisterAction(ChangeExpertMaxMaterialMiracleUses);
+            Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertMaxMaterialMiracleUsesBackToNormal").RegisterAction(SetTempExpertMaxMaterialMiracleUsesBackToNormal);
+
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertMinimumStepsBeforeMiracle").RegisterAction(ChangeExpertMinimumStepsBeforeMiracle);
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertMinimumStepsBeforeMiracleBackToNormal").RegisterAction(SetTempExpertMinimumStepsBeforeMiracleBackToNormal);
         }
@@ -334,7 +337,7 @@ namespace Artisan.IPC
             }
             else
             {
-                config.TempRequiredSquadronManual = SquadronManualId;
+                config.requiredSquadronManual = SquadronManualId;
                 P.Config.RecipeConfigs[recipeId] = config;
                 P.Config.Save();
             }
@@ -349,10 +352,17 @@ namespace Artisan.IPC
         public static void ChangeExpertProfileID(uint recipeId, uint expertProfileId, bool temporary)
         {
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipeId) ?? new();
-            config.TempExpertProfileID = (int)expertProfileId;
-            P.Config.RecipeConfigs[recipeId] = config;
-            if (!temporary)
+            if (temporary)
+            {
+                config.TempExpertProfileID = (int)expertProfileId;
+                P.Config.RecipeConfigs[recipeId] = config;
+            }
+            else
+            {
+                config.expertProfileID = (int)expertProfileId;
+                P.Config.RecipeConfigs[recipeId] = config;
                 P.Config.Save();
+            }
         }
 
         /// <summary>
@@ -364,18 +374,26 @@ namespace Artisan.IPC
         public static void ChangeExpertMaxSteadyUses(uint recipeId, uint maxSteadyUses, bool temporary)
         {
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipeId) ?? new();
-            config.TempExpertMaxSteadyUses = maxSteadyUses;
-            P.Config.RecipeConfigs[recipeId] = config;
-            if (!temporary)
+            if (temporary)
+            {
+                config.TempExpertMaxSteadyUses = maxSteadyUses;
+                P.Config.RecipeConfigs[recipeId] = config;
+            }
+            else
+            {
+                config.expertMaxSteadyUses = maxSteadyUses;
+                P.Config.RecipeConfigs[recipeId] = config;
                 P.Config.Save();
+            }
         }
 
         /// <summary>
-        /// Change whether the expert solver should use Material Miracle on a given recipe
+        /// DEPRECATED: Please use ChangeExpertMaxMaterialMiracleUses
         /// </summary>
         /// <param name="recipeId">The ID of the recipe to be changed</param>
         /// <param name="useMiracle">Whether to use Material Miracle</param>
         /// <param name="temporary">Whether to save this change to the config file</param>
+        [Obsolete("Deprecated; please use ChangeExpertMaxMaterialMiracleUses")]
         public static void ChangeExpertUseMaterialMiracle(uint recipeId, bool useMiracle, bool temporary)
         {
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipeId) ?? new();
@@ -383,6 +401,28 @@ namespace Artisan.IPC
             P.Config.RecipeConfigs[recipeId] = config;
             if (!temporary)
                 P.Config.Save();
+        }
+
+        /// <summary>
+        /// Change the expert solver's maximum Material Miracle uses for a given recipe
+        /// </summary>
+        /// <param name="recipeId">The ID of the recipe to be changed</param>
+        /// <param name="maxMMUses">Number of Material Miracle uses (0 to disable)</param>
+        /// <param name="temporary">Whether to save this change to the config file</param>
+        public static void ChangeExpertMaxMaterialMiracleUses(uint recipeId, uint maxMMUses, bool temporary)
+        {
+            var config = P.Config.RecipeConfigs.GetValueOrDefault(recipeId) ?? new();
+            if (temporary)
+            {
+                config.TempExpertMaxMaterialMiracleUses = maxMMUses;
+                P.Config.RecipeConfigs[recipeId] = config;
+            }
+            else
+            {
+                config.expertMaxMaterialMiracleUses = maxMMUses;
+                P.Config.RecipeConfigs[recipeId] = config;
+                P.Config.Save();
+            }
         }
 
         /// <summary>
@@ -394,10 +434,17 @@ namespace Artisan.IPC
         public static void ChangeExpertMinimumStepsBeforeMiracle(uint recipeId, uint minMiracleSteps, bool temporary)
         {
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipeId) ?? new();
-            config.TempExpertMinimumStepsBeforeMiracle = minMiracleSteps;
-            P.Config.RecipeConfigs[recipeId] = config;
-            if (!temporary)
+            if (temporary)
+            {
+                config.TempExpertMinimumStepsBeforeMiracle = minMiracleSteps;
+                P.Config.RecipeConfigs[recipeId] = config;
+            }
+            else
+            {
+                config.expertMinimumStepsBeforeMiracle = minMiracleSteps;
+                P.Config.RecipeConfigs[recipeId] = config;
                 P.Config.Save();
+            }
         }
 
         public static void SetTempSolverBackToNormal(uint recipeId)
@@ -483,11 +530,19 @@ namespace Artisan.IPC
                 config.TempExpertMaxSteadyUses = null;
         }
 
+        [Obsolete("Deprecated; please use SetTempExpertMaxMaterialMiracleUsesBackToNormal")]
         public static void SetTempExpertUseMaterialMiracleBackToNormal(uint recipeId)
         {
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipeId) ?? new();
             if (config.TempExpertUseMaterialMiracle != null)
                 config.TempExpertUseMaterialMiracle = null;
+        }
+
+        public static void SetTempExpertMaxMaterialMiracleUsesBackToNormal(uint recipeId)
+        {
+            var config = P.Config.RecipeConfigs.GetValueOrDefault(recipeId) ?? new();
+            if (config.TempExpertMaxMaterialMiracleUses != null)
+                config.TempExpertMaxMaterialMiracleUses = null;
         }
 
         public static void SetTempExpertMinimumStepsBeforeMiracleBackToNormal(uint recipeId)
