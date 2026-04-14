@@ -32,7 +32,7 @@ namespace Artisan.CraftingLogic.Solvers
         private bool _qualityStarted;
         private bool _venereationUsed;
         private bool _trainedEyeUsed;
-        private bool _materialMiracleUsed;
+        private int _materialMiracleUses;
 
         private Solver? _fallback; //For Material Miracle
 
@@ -159,12 +159,12 @@ namespace Artisan.CraftingLogic.Solvers
             _qualityStarted |= step.PrevComboAction is Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.ByregotsBlessing or Skills.PrudentTouch
                 or Skills.PreciseTouch or Skills.TrainedEye or Skills.PreparatoryTouch or Skills.TrainedFinesse or Skills.Innovation;
             _venereationUsed |= step.PrevComboAction == Skills.Veneration;
-            _materialMiracleUsed |= step.PrevComboAction == Skills.MaterialMiracle && !P.Config.MaterialMiracleMulti;
+            _materialMiracleUses = step.PrevComboAction == Skills.MaterialMiracle ? _materialMiracleUses + 1 : _materialMiracleUses;
 
             if (step.MaterialMiracleActive)
                 return fallbackRec;
 
-            if (P.Config.UseMaterialMiracle && step.Index >= P.Config.MinimumStepsBeforeMiracle && !_materialMiracleUsed && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
+            if (_materialMiracleUses < P.Config.MaxMaterialMiracles && step.Index > P.Config.MinimumStepsBeforeMiracle && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
                 return new(Skills.MaterialMiracle);
 
             bool inCombo = (step.PrevComboAction == Skills.BasicTouch && Simulator.CanUseAction(craft, step, Skills.StandardTouch)) || (step.PrevComboAction == Skills.StandardTouch && Simulator.CanUseAction(craft, step, Skills.AdvancedTouch));

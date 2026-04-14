@@ -467,7 +467,7 @@ public static unsafe class Crafting
                     return State.WaitAction; // wait for a bit...
                 }
                 // ok, we've been waiting too long - complain and consider current state to be correct
-                Svc.Log.Error($"Unexpected status update - probably a simulator bug:\n" +
+                Svc.Log.Warning($"Unexpected status update - probably a simulator bug:\n" +
                     $"     had {CurStep}\n" +
                     $"expected {_predictedNextStep}\n" +
                     $"     got {step}\n" +
@@ -670,6 +670,7 @@ public static unsafe class Crafting
         ret.Durability = GetStepDurability(synthWindow);
         ret.RemainingCP = (int)CharacterInfo.CurrentCP;
         ret.Condition = GetStepCondition(synthWindow);
+        ret.PrevCondition = predictedStep?.PrevCondition ?? Condition.Normal;
         ret.IQStacks = GetStatus(Buffs.InnerQuiet)?.Param ?? 0;
         ret.WasteNotLeft = GetStatus(Buffs.WasteNot2)?.Param ?? GetStatus(Buffs.WasteNot)?.Param ?? 0;
         ret.ManipulationLeft = GetStatus(Buffs.Manipulation)?.Param ?? 0;
@@ -690,11 +691,15 @@ public static unsafe class Crafting
         ret.PrevComboAction = predictedStep?.PrevComboAction ?? Skills.None;
         ret.MaterialMiracleCharges = MaterialMiracleCharges();
         ret.MaterialMiracleActive = GetStatus(Buffs.MaterialMiracle) != null;
+        ret.MaterialMiraclesUsed = predictedStep?.MaterialMiraclesUsed ?? 0;
+        ret.MaterialMiracleSecondsLeft = GetStatus(Buffs.MaterialMiracle) != null ? GetStatus(Buffs.MaterialMiracle).RemainingTime : 0;
+        ret.PrevMaterialMiracleActive = predictedStep?.PrevMaterialMiracleActive ?? false;
         ret.SteadyHandCharges = SteadyHandCharges();
         ret.SteadyHandLeft = GetStatus(Buffs.SteadyHand)?.Param ?? 0;
         ret.SteadyHandsUsed = predictedStep?.SteadyHandsUsed ?? 0;
         ret.ObserveCounter = predictedStep?.ObserveCounter ?? 0;
         ret.ExpertEmergency = predictedStep?.ExpertEmergency ?? false;
+        ret.ExpertMiracleTrigger = predictedStep?.ExpertMiracleTrigger ?? false;
 
         return ret;
     }

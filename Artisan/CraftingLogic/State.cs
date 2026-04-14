@@ -1,5 +1,6 @@
 ﻿using Artisan.CraftingLogic.CraftData;
 using Artisan.RawInformation.Character;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Artisan.CraftingLogic;
@@ -53,6 +54,34 @@ public record class CraftState
     public static float[] EWRelicT1CraftConditionProbabilities() => [1, 0.03f, 0, 0, 0.12f, 0.12f, 0.12f, 0, 0, 0.12f];
     public static float[] EWRelicT2CraftConditionProbabilities() => [1, 0.04f, 0, 0, 0, 0.15f, 0.12f, 0.12f, 0.15f, 0.12f];
     public static float[] EW5StarCraftConditionProbabilities() => [1, 0.04f, 0, 0, 0.12f, 0.12f, 0.10f, 0.10f, 0.12f, 0.12f];
+
+    // these probabilities were gathered with at least 10,000 steps collected per condition set
+    // todo handle the few recipes whose odds differ from the rest of the condition set
+    //@formatter:off
+    public static Dictionary<ushort, float[]> ExpertConditionOdds = new Dictionary<ushort, float[]>()
+    {
+        //       Normal, Good,    Excell, Poor,   Center, Sturdy, Pliant, Mallea, Primed, GoodOm, Robust
+        { 0,    [1f,     0,       0,      0,      0,      0,      0,      0,      0,      0,      0     ] },
+        { 115,  [0.46f,  0.12f,   0,      0,      0.15f,  0.15f,  0.12f,  0,      0,      0,      0     ] },
+        { 483,  [0.37f,  0.12f,   0,      0,      0,      0.15f,  0.12f,  0.12f,  0.12f,  0,      0     ] },
+        { 499,  [0.30f,  0.12f,   0,      0,      0.13f,  0.10f,  0.10f,  0.10f,  0.15f,  0,      0     ] },
+        { 435,  [0.40f,  0.12f,   0,      0,      0.12f,  0.12f,  0,      0.12f,  0.12f,  0,      0     ] },
+        { 995,  [0.32f,  0.04f,   0,      0,      0,      0.15f,  0.10f,  0.12f,  0.15f,  0.12f,  0     ] },
+        { 627,  [0.42f,  0.04f,   0,      0,      0.15f,  0.15f,  0.12f,  0,      0,      0.12f,  0     ] },
+        { 1011, [0.22f,  0.12f,   0,      0,      0.12f,  0.12f,  0.10f,  0.10f,  0.12f,  0.10f,  0     ] },
+        { 19,   [0.48f,  0.12f,   0,      0,      0.40f,  0,      0,      0,      0,      0,      0     ] },
+        { 67,   [0.48f,  0.12f,   0,      0,      0,      0,      0.40f,  0,      0,      0,      0     ] },
+        { 35,   [0.48f,  0.12f,   0,      0,      0,      0.40f,  0,      0,      0,      0,      0     ] },
+        { 515,  [0.68f,  0.02f,   0,      0,      0,      0,      0,      0,      0,      0.30f,  0     ] },
+        { 259,  [0.48f,  0.12f,   0,      0,      0,      0,      0,      0,      0.40f,  0,      0     ] },
+        { 131,  [0.48f,  0.12f,   0,      0,      0,      0,      0,      0.40f,  0,      0,      0     ] },
+        { 1363, [0.45f,  0.12f,   0,      0,      0.13f,  0,      0.10f,  0,      0.12f,  0,      0.08f ] },
+        { 1491, [0.25f,  0.17f,   0,      0,      0.12f,  0,      0.11f,  0.15f,  0.10f,  0,      0.10f ] },
+        { 243,  [0.30f,  0.12f,   0,      0,      0.19f,  0.12f,  0.15f,  0.12f,  0,      0,      0     ] },
+        { 1459, [0.32f,  0.12f,   0,      0,      0.15f,  0.10f,  0,      0.12f,  0.14f,  0,      0.05f ] },
+        { 1523, [0.20f,  0.12f,   0,      0,      0.15f,  0.08f,  0.15f,  0.10f,  0.10f,  0,      0.10f ] },
+    };
+    //@formatter:on
 }
 
 public record class StepState
@@ -63,6 +92,7 @@ public record class StepState
     public int Durability;
     public int RemainingCP;
     public Condition Condition;
+    public Condition PrevCondition;
     public int IQStacks;
     public int WasteNotLeft;
     public int ManipulationLeft;
@@ -83,8 +113,12 @@ public record class StepState
     public Skills PrevComboAction;
     public uint MaterialMiracleCharges;
     public bool MaterialMiracleActive;
+    public int MaterialMiraclesUsed;
+    public float MaterialMiracleSecondsLeft;
+    public bool PrevMaterialMiracleActive;
     public int ObserveCounter;
     public bool ExpertEmergency;
+    public bool ExpertMiracleTrigger;
     public int SteadyHandCharges;
     public int SteadyHandLeft;
     public int SteadyHandsUsed;
@@ -110,7 +144,7 @@ public record class StepState
             sb.Append($", FA={FinalAppraisalLeft}");
         sb.Append($", CO={CarefulObservationLeft}, HS={(HeartAndSoulActive ? "active" : HeartAndSoulAvailable ? "avail" : "none")}");
         sb.Append($", QuickInno:{QuickInnoAvailable}/{QuickInnoLeft}/{InnovationLeft}");
-        sb.Append($", MaterialMiracleActive:{MaterialMiracleActive} / {MaterialMiracleCharges}");
+        sb.Append($", MaterialMiracleActive:{MaterialMiracleActive}{(MaterialMiracleActive ? " (" + (int)MaterialMiracleSecondsLeft + "s)" : "")} / {MaterialMiracleCharges}");
         sb.Append($", SteadyHandLeft:{SteadyHandLeft}");
         return sb.ToString();
     }
