@@ -61,10 +61,6 @@ public class RecipeConfig
     public string SolverType = ""; // TODO: ideally it should be a Type?, but that causes problems for serialization
     public int SolverFlavour;
     public int expertProfileID = (int)Default;
-    [NonSerialized]
-    public string solverHint = "";
-    [NonSerialized]
-    public Vector4 hintColor;
 
     public uint expertMaxSteadyUses = Default;
     public uint expertMaxMaterialMiracleUses = Default;
@@ -425,8 +421,7 @@ public class RecipeConfig
         {
             var recipe = craft.Recipe;
             var config = this;
-            if (solverHint == "")
-                solverHint = Simulator.SimulatorResult(recipe, config, craft, out hintColor);
+            var solverHint = Simulator.SimulatorResult(recipe, config, craft, out var hintColor);
             var solver = CraftingProcessor.GetSolverForRecipe(config, craft);
 
             if (solver.Name != "Expert Recipe Solver")
