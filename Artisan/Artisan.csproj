@@ -67,6 +67,9 @@
     <None Update="Images\AutoMode.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+	<None Update="Images\CollectableThresholds.png">
+	  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</None>
     <None Update="Images\EnduranceNewSetting.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
