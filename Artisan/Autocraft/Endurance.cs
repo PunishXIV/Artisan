@@ -305,8 +305,9 @@ namespace Artisan.Autocraft
                     return;
                 }
 
-                if (P.Config.CraftingX && P.Config.CraftX == 0 || PreCrafting.GetNumberCraftable(recipe) == 0)
+                if ((P.Config.CraftingX && P.Config.CraftX == 0) || PreCrafting.GetNumberCraftable(recipe) == 0)
                 {
+                    Svc.Log.Debug($"Run out items to craft {P.Config.CraftingX} {P.Config.CraftX} {PreCrafting.GetNumberCraftable(recipe)}");
                     ToggleEndurance(false);
                     P.Config.CraftingX = false;
                     if (P.Config.PlaySoundFinishEndurance)

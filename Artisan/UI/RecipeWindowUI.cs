@@ -83,7 +83,7 @@ namespace Artisan
                 DrawSearchReplace();
 
                 //DrawEnduranceCounter();
-                DrawCosmicEnduranceCounter();
+                //DrawCosmicEnduranceCounter();
 
                 DrawWorkshopOverlay();
 

@@ -3,10 +3,13 @@ using Artisan.RawInformation;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Controllers;
+using KamiToolKit.Extensions;
 using KamiToolKit.Nodes;
 using KamiToolKit.Premade.Node;
+using KamiToolKit.Premade.Node.Simple;
 using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
@@ -18,22 +21,80 @@ namespace Artisan.UI.KTK
 {
     internal unsafe class NativeCraftAll
     {
-        AddonController? controller;
+        AddonController? regularRecipeNoteController;
+        AddonController? moonRecipeNoteController;
         TextButtonNode? craftAll;
+        NineGridNode? bgNode;
         NumericInputNode? craftXCounter;
         int val = 0;
         int craftableCount = 0;
 
         public NativeCraftAll()
         {
-            controller = new()
+            regularRecipeNoteController = new()
             {
                 AddonName = "RecipeNote",
-                OnSetup = OnSetup,
+                OnSetup = RegularOnSetup,
                 OnRefresh = OnRefresh,
                 OnFinalize = OnFinalize,
             };
-            controller?.Enable();
+            regularRecipeNoteController?.Enable();
+
+            regularRecipeNoteController = new()
+            {
+                AddonName = "WKSRecipeNotebook",
+                OnSetup = MoonOnSetup,
+                OnRefresh = OnRefresh,
+                OnFinalize = OnFinalize,
+            };
+            regularRecipeNoteController?.Enable();
+        }
+
+        private void MoonOnSetup(AtkUnitBase* addon)
+        {
+            if (addon->RootNode is null) return;
+
+            var synthButton = addon->GetNodeById(50);
+            if (synthButton is null) return;
+
+            var synthBg = synthButton->GetAsAtkComponentButton()->ButtonBGNode->GetAsAtkNineGridNode();
+
+            var buttonY = synthButton->Y + 2;
+            var buttonX = synthButton->X - synthButton->Width;
+
+            craftAll = new TextButtonNode
+            {
+                Position = new Vector2(buttonX, buttonY),
+                Size = new Vector2(synthButton->Width, synthButton->Height),
+                String = $"Craft All",
+                OnClick = () => CraftX(),
+                IsEnabled = true,
+                NodeFlags = synthButton->NodeFlags,
+                DrawFlags = (KamiToolKit.Enums.DrawFlags)synthButton->DrawFlags,
+            };
+
+            craftAll.BackgroundNode.Height = synthBg->Height;
+            craftAll.BackgroundNode.Width = synthBg->Width;
+
+            craftAll.AttachNode(synthButton, KamiToolKit.Classes.NodePosition.BeforeTarget);
+
+            var text = addon->GetTextNodeById(34)->NodeText.ToString();
+            craftableCount = text == "" ? 0 : Convert.ToInt32(text.GetNumbers());
+
+            craftXCounter = new()
+            {
+                Position = new Vector2(craftAll.X - 90, buttonY + 3),
+                Size = new Vector2(90, 28),
+                OnValueUpdate = (t) =>
+                {
+                    val = t;
+                    craftAll?.String = val == 0 ? "Craft All" : $"Craft {t}";
+                },
+                NodeFlags = synthButton->NodeFlags,
+                Max = craftableCount
+            };
+
+            craftXCounter.AttachNode(craftAll, KamiToolKit.Classes.NodePosition.AfterTarget);
         }
 
         private void OnFinalize(AtkUnitBase* addon)
@@ -51,7 +112,7 @@ namespace Artisan.UI.KTK
 
         private void OnRefresh(AtkUnitBase* addon)
         {
-            var text = addon->GetTextNodeById(78)->NodeText.ToString();
+            var text = addon->NameString == "WKSRecipeNotebook" ? addon->GetTextNodeById(34)->NodeText.ToString() : addon->GetTextNodeById(78)->NodeText.ToString();
             craftableCount = text == "" ? 0 : Convert.ToInt32(text.GetNumbers());
 
             craftXCounter.Max = craftableCount;
@@ -70,7 +131,7 @@ namespace Artisan.UI.KTK
             craftXCounter.Value = val;
         }
 
-        private void OnSetup(AtkUnitBase* addon)
+        private void RegularOnSetup(AtkUnitBase* addon)
         {
             if (addon->RootNode is null) return;
 
@@ -80,6 +141,9 @@ namespace Artisan.UI.KTK
 
             var buttonY = synthButton->Y - 30;
             var buttonX = synthButton->X;
+
+            var text = addon->GetTextNodeById(78)->NodeText.ToString();
+            craftableCount = text == "" ? 0 : Convert.ToInt32(text.GetNumbers());
 
             craftXCounter = new()
             {
@@ -91,6 +155,7 @@ namespace Artisan.UI.KTK
                     val = t;
                     craftAll?.String = val == 0 ? "Craft All" : $"Craft {t}";
                 },
+                Max = craftableCount
             };
 
             craftXCounter.AttachNode(quickSynthBtn, KamiToolKit.Classes.NodePosition.AfterTarget);
@@ -120,8 +185,11 @@ namespace Artisan.UI.KTK
 
         public void Dispose()
         {
-            controller?.Dispose();
-            controller = null;
+            regularRecipeNoteController?.Dispose();
+            regularRecipeNoteController = null;
+
+            moonRecipeNoteController?.Dispose();
+            moonRecipeNoteController = null;
         }
     }
 }
