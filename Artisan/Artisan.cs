@@ -9,6 +9,7 @@ using Artisan.IPC;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Artisan.UI;
+using Artisan.UI.KTK;
 using Artisan.Universalis;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
@@ -19,6 +20,7 @@ using ECommons;
 using ECommons.Automation.LegacyTaskManager;
 using ECommons.DalamudServices;
 using ECommons.Logging;
+using KamiToolKit;
 using OtterGui.Classes;
 using PunishLib;
 using System;
@@ -40,6 +42,7 @@ public unsafe class Artisan : IDalamudPlugin
     internal TaskManager CTM;
     internal TextureCache Icons;
     internal UniversalisClient UniversalsisClient;
+    internal NativeCraftAll NCA;
 
     internal StyleModel Style;
     internal bool StylePushed = false;
@@ -48,6 +51,7 @@ public unsafe class Artisan : IDalamudPlugin
     {
         ECommonsMain.Init(pluginInterface, this, Module.All);
         PunishLibMain.Init(pluginInterface, "Artisan", new AboutPlugin() { Sponsor = "https://ko-fi.com/taurenkey" });
+        KamiToolKitLibrary.Initialize(pluginInterface);
         P = this;
 
         LuminaSheets.Init();
@@ -112,7 +116,7 @@ public unsafe class Artisan : IDalamudPlugin
         Svc.Condition.ConditionChange += Condition_ConditionChange;
 
         PluginUi.OpenWindow = OpenWindow.Main;
-
+        NCA = new();
         ConvertCraftingLists();
     }
 
@@ -263,6 +267,7 @@ public unsafe class Artisan : IDalamudPlugin
             IPC.IPC.Dispose();
         }
         ECommonsMain.Dispose();
+        NCA.Dispose();
         P = null!;
     }
 

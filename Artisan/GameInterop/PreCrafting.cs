@@ -300,9 +300,9 @@ public unsafe static class PreCrafting
             if (int.TryParse(addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory->NodeText.ToString(), out int output))
                 return output;
         }
-        if (TryGetAddonByName<AtkUnitBase>("WKSRecipeNotebook", out var cosmic) && cosmic->UldManager.NodeList[24] != null)
+        if (TryGetAddonByName<AtkUnitBase>("WKSRecipeNotebook", out var cosmic) && addon->GetTextNodeById(78) != null)
         {
-            if (int.TryParse(cosmic->UldManager.NodeList[24]->GetAsAtkTextNode()->NodeText.ToString(), out int output))
+            if (int.TryParse(cosmic->GetNodeById(34)->GetAsAtkTextNode()->NodeText.ToString(), out int output))
                 return output;
         }
         return -1;

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.1.32421.90
+# Visual Studio Version 18
+VisualStudioVersion = 18.6.11709.129 insiders
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Artisan", "Artisan\Artisan.csproj", "{13C812E9-0D42-4B95-8646-40EEBF30636F}"
 EndProject
@@ -16,6 +16,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OtterGui", "OtterGui\OtterGui.csproj", "{589C6804-D586-479F-85E8-42BD952DC588}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoScripts", "DemoScripts\DemoScripts.csproj", "{8DB66EBD-4D73-4991-9D2F-DA57C7D2BCE4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KamiToolKit", "KamiToolKit\KamiToolKit.csproj", "{0FC77B1B-A7E0-0E25-A2BF-1211E39B36BB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,6 +59,14 @@ Global
 		{8DB66EBD-4D73-4991-9D2F-DA57C7D2BCE4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8DB66EBD-4D73-4991-9D2F-DA57C7D2BCE4}.Release|x64.ActiveCfg = Release|Any CPU
 		{8DB66EBD-4D73-4991-9D2F-DA57C7D2BCE4}.Release|x64.Build.0 = Release|Any CPU
+		{0FC77B1B-A7E0-0E25-A2BF-1211E39B36BB}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{0FC77B1B-A7E0-0E25-A2BF-1211E39B36BB}.Debug|Any CPU.Build.0 = Debug|x64
+		{0FC77B1B-A7E0-0E25-A2BF-1211E39B36BB}.Debug|x64.ActiveCfg = Debug|x64
+		{0FC77B1B-A7E0-0E25-A2BF-1211E39B36BB}.Debug|x64.Build.0 = Debug|x64
+		{0FC77B1B-A7E0-0E25-A2BF-1211E39B36BB}.Release|Any CPU.ActiveCfg = Release|x64
+		{0FC77B1B-A7E0-0E25-A2BF-1211E39B36BB}.Release|Any CPU.Build.0 = Release|x64
+		{0FC77B1B-A7E0-0E25-A2BF-1211E39B36BB}.Release|x64.ActiveCfg = Release|x64
+		{0FC77B1B-A7E0-0E25-A2BF-1211E39B36BB}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
