@@ -27,48 +27,48 @@ internal class ExpertSolverSettingsUI
 
     public enum SkillIconID
     {
-        BasicSynthesis = 1501, 
-        CarefulSynthesis = 1986, 
-        RapidSynthesis = 1988, 
-        Groundwork = 1518, 
-        IntensiveSynthesis = 1514, 
-        PrudentSynthesis = 1520, 
-        MuscleMemory = 1994, 
+        BasicSynthesis = 1501,
+        CarefulSynthesis = 1986,
+        RapidSynthesis = 1988,
+        Groundwork = 1518,
+        IntensiveSynthesis = 1514,
+        PrudentSynthesis = 1520,
+        MuscleMemory = 1994,
 
-        BasicTouch = 1502, 
-        StandardTouch = 1516, 
-        AdvancedTouch = 1519, 
-        HastyTouch = 1989, 
-        PreparatoryTouch = 1507, 
-        PreciseTouch = 1524, 
-        PrudentTouch = 1535, 
-        TrainedFinesse = 1997, 
-        Reflect = 1982, 
-        RefinedTouch = 1522, 
-        DaringTouch = 1998, 
+        BasicTouch = 1502,
+        StandardTouch = 1516,
+        AdvancedTouch = 1519,
+        HastyTouch = 1989,
+        PreparatoryTouch = 1507,
+        PreciseTouch = 1524,
+        PrudentTouch = 1535,
+        TrainedFinesse = 1997,
+        Reflect = 1982,
+        RefinedTouch = 1522,
+        DaringTouch = 1998,
 
-        ByregotsBlessing = 1975, 
-        TrainedEye = 1981, 
-        DelicateSynthesis = 1503, 
+        ByregotsBlessing = 1975,
+        TrainedEye = 1981,
+        DelicateSynthesis = 1503,
 
-        Veneration = 1995, 
-        Innovation = 1987, 
-        GreatStrides = 1955, 
-        TricksOfTrade = 1990, 
-        MastersMend = 1952, 
-        Manipulation = 1985, 
-        WasteNot = 1992, 
-        WasteNot2 = 1993, 
-        Observe = 1954, 
-        CarefulObservation = 1984, 
-        FinalAppraisal = 1983, 
-        HeartAndSoul = 1996, 
-        QuickInnovation = 1999, 
-        ImmaculateMend = 1950, 
-        TrainedPerfection = 1926, 
+        Veneration = 1995,
+        Innovation = 1987,
+        GreatStrides = 1955,
+        TricksOfTrade = 1990,
+        MastersMend = 1952,
+        Manipulation = 1985,
+        WasteNot = 1992,
+        WasteNot2 = 1993,
+        Observe = 1954,
+        CarefulObservation = 1984,
+        FinalAppraisal = 1983,
+        HeartAndSoul = 1996,
+        QuickInnovation = 1999,
+        ImmaculateMend = 1950,
+        TrainedPerfection = 1926,
 
-        MaterialMiracle = 61277, 
-        SteadyHand = 1953, 
+        MaterialMiracle = 61277,
+        SteadyHand = 1953,
     }
 
     public Dictionary<string, Vector4> ConditionColors = new()
@@ -82,6 +82,7 @@ internal class ExpertSolverSettingsUI
         { "Good",      new(1.000f, 0.353f, 0.408f, 1f) },
         { "Good Omen", new(1.000f, 0.843f, 0.722f, 1f) },
         { "Robust",    new(0.373f, 0.773f, 1.000f, 1f) },
+        { "Excellent", new(0.992f, 0.820f, 1.000f, 1f) },
     };
 
     public ExpertSolverSettingsUI()
@@ -616,8 +617,8 @@ internal class ExpertSolverSettingsUI
                     P.Config.ExpertSolverConfig = new();
                     changed |= true;
                 }
-                ImGui.Dummy(new Vector2(0, 5f));
 
+                ImGui.Dummy(new Vector2(0, 10f));
                 ImGui.Unindent();
             }
 

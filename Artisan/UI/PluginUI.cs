@@ -4,26 +4,27 @@ using Artisan.CraftingLogic;
 using Artisan.FCWorkshops;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ECommons;
+using ECommons.Automation;
 using ECommons.DalamudServices;
+using ECommons.ExcelServices;
 using ECommons.ImGuiMethods;
-using Dalamud.Bindings.ImGui;
+using ECommons.WindowsFormsReflector;
 using Lumina.Excel.Sheets;
 using PunishLib.ImGuiMethods;
 using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using ThreadLoadImageHandler = ECommons.ImGuiMethods.ThreadLoadImageHandler;
-using ECommons.Automation;
-using ECommons.WindowsFormsReflector;
 using System.Text;
-using ECommons.ExcelServices;
+using TerraFX.Interop.Windows;
+using ThreadLoadImageHandler = ECommons.ImGuiMethods.ThreadLoadImageHandler;
 
 namespace Artisan.UI
 {
@@ -178,7 +179,7 @@ namespace Artisan.UI
                                 OpenWindow = OpenWindow.Macro;
                             }
                             if (P.Config.ExpertSolverConfig.EnableExpertProfiles)
-                            { 
+                            {
                                 ImGui.Spacing();
                                 if (ImGui.Selectable("Expert Profiles", OpenWindow == OpenWindow.ExpertProfiles))
                                 {
@@ -501,41 +502,46 @@ namespace Artisan.UI
         public static void DrawMainWindow()
         {
             ImGui.TextWrapped($"Here you can change some settings Artisan will use. Some of these can also be toggled during a craft.");
-            ImGui.TextWrapped($"In order to use Artisan's manual highlight, please slot every crafting action you have unlocked to a visible hotbar.");
+            ImGui.TextWrapped($"In order to use Artisan's manual recommendation highlights, please slot every crafting action you have unlocked to a visible hotbar.");
             bool autoEnabled = P.Config.AutoMode;
-            bool delayRec = P.Config.DelayRecommendation;
-            bool failureCheck = P.Config.DisableFailurePrediction;
             int maxQuality = P.Config.MaxPercentage;
-            bool useTricksGood = P.Config.UseTricksGood;
-            bool useTricksExcellent = P.Config.UseTricksExcellent;
             bool useSpecialist = P.Config.UseSpecialist;
             //bool showEHQ = P.Config.ShowEHQ;
             //bool useSimulated = P.Config.UseSimulatedStartingQuality;
-            bool disableGlow = P.Config.DisableHighlightedAction;
-            bool disableToasts = P.Config.DisableToasts;
 
+            bool changed = false;
+
+            ImGui.Dummy(new Vector2(0, 5f));
             ImGui.Separator();
+            ImGui.Dummy(new Vector2(0, 5f));
 
             if (ImGui.CollapsingHeader("General Settings"))
             {
-                if (ImGui.Checkbox("Automatic Action Execution Mode", ref autoEnabled))
+                ImGui.Indent();
+
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Auto Action Mode");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
+
+                if (ImGui.Checkbox("Automatic action execution mode", ref autoEnabled))
                 {
                     P.Config.AutoMode = autoEnabled;
                     P.Config.Save();
                 }
-                ImGuiComponents.HelpMarker($"Automatically use each recommended action.");
+                ImGuiComponents.HelpMarker($"Automatically use each recommended action instead of highlighting them.");
+
                 if (autoEnabled)
                 {
-                    if (ImGui.Checkbox($"Replicate Macro Delay", ref P.Config.ReplicateMacroDelay))
-                    {
-                        P.Config.Save();
-                    }
+                    ImGui.Indent();
+                    changed |= ImGui.Checkbox($"Replicate macro delay", ref P.Config.ReplicateMacroDelay);
+                    ImGuiComponents.HelpMarker("This setting will delay each automatic action as if you're using an in-game macro with <wait.2> or <wait.3>. While disabled, you can manually set how long Artisan should wait after each action.");
 
                     if (!P.Config.ReplicateMacroDelay)
                     {
                         var delay = P.Config.AutoDelay;
-                        ImGui.PushItemWidth(200);
-                        if (ImGui.SliderInt("Execution Delay (ms)###ActionDelay", ref delay, 0, 1000))
+                        ImGui.PushItemWidth(250);
+                        if (ImGui.SliderInt("Execution delay (ms)###ActionDelay", ref delay, 0, 1000))
                         {
                             if (delay < 0) delay = 0;
                             if (delay > 1000) delay = 1000;
@@ -544,25 +550,20 @@ namespace Artisan.UI
                             P.Config.Save();
                         }
                     }
+                    ImGui.Unindent();
                 }
 
-                bool requireFoodPot = P.Config.AbortIfNoFoodPot;
-                if (ImGui.Checkbox("Enforce Consumables", ref requireFoodPot))
-                {
-                    P.Config.AbortIfNoFoodPot = requireFoodPot;
-                    P.Config.Save();
-                }
-                ImGuiComponents.HelpMarker("Artisan will require the configured food, manuals or medicine and refuse to craft if it cannot be found.");
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Consumables");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
 
-                if (ImGui.Checkbox("Use Consumables for Trial Crafts", ref P.Config.UseConsumablesTrial))
-                {
-                    P.Config.Save();
-                }
+                changed |= ImGui.Checkbox("Enforce consumables", ref P.Config.AbortIfNoFoodPot);
+                ImGuiComponents.HelpMarker("Artisan will require the configured food, manual, and medicine and refuse to craft if they cannot be found.");
 
-                if (ImGui.Checkbox("Use Consumables for Quick Synth Crafts", ref P.Config.UseConsumablesQuickSynth))
-                {
-                    P.Config.Save();
-                }
+                changed |= ImGui.Checkbox("Use consumables for trial crafts", ref P.Config.UseConsumablesTrial);
+                changed |= ImGui.Checkbox("Use consumables for Quick Synth crafts", ref P.Config.UseConsumablesQuickSynth);
 
                 ImGui.SetNextItemWidth(32f.Scale());
                 if (ImGui.InputInt("Don't use consumables when level difference with craft is greater than", ref P.Config.ConsumableLevelGapDifference))
@@ -584,85 +585,70 @@ namespace Artisan.UI
                 var maxLevel = Svc.Data.GetExcelSheet<RecipeLevelTable>().Max(x => x.ClassJobLevel);
                 ImGuiComponents.HelpMarker($"Set this to {maxLevel} to disable.\r\n{helper}");
 
-                ImGui.Indent();
                 if (ImGui.CollapsingHeader("Default Consumables"))
                 {
-                    bool changed = false;
+                    ImGui.Indent();
                     changed |= P.Config.DefaultConsumables.DrawFood();
                     changed |= P.Config.DefaultConsumables.DrawPotion();
                     changed |= P.Config.DefaultConsumables.DrawManual();
                     changed |= P.Config.DefaultConsumables.DrawSquadronManual();
-
-                    if (changed)
-                    {
-                        P.Config.Save();
-                    }
+                    ImGui.Unindent();
                 }
+
                 ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Repairs");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
 
-                if (ImGui.Checkbox($"Prioritize NPC repairs above self-repairs", ref P.Config.PrioritizeRepairNPC))
-                {
-                    P.Config.Save();
-                }
-
+                changed |= ImGui.Checkbox($"Prioritize NPC repairs over self-repairs", ref P.Config.PrioritizeRepairNPC);
                 ImGuiComponents.HelpMarker("When repairing, if a repair NPC is nearby it will try to repair with them instead of self-repairs. Will still try to use self-repairs if no NPC is found and you have the required levels to repair.");
 
-                if (ImGui.Checkbox($"Disable Endurance if unable to repair", ref P.Config.DisableEnduranceNoRepair))
-                    P.Config.Save();
+                changed |= ImGui.Checkbox($"Disable Endurance if unable to repair", ref P.Config.DisableEnduranceNoRepair);
+                ImGuiComponents.HelpMarker($"Endurance is what continues crafting the same item after finishing it once, i.e. \"Craft X\".");
 
-                ImGuiComponents.HelpMarker($"Once you hit the repair threshold, if you're unable to repair either yourself or through an NPC, disable Endurance.");
+                changed |= ImGui.Checkbox($"Pause lists if unable to repair", ref P.Config.DisableListsNoRepair);
 
-                if (ImGui.Checkbox($"Pause lists if unable to repair", ref P.Config.DisableListsNoRepair))
-                    P.Config.Save();
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Sounds");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
 
-                ImGuiComponents.HelpMarker($"Once you hit the repair threshold, if you're unable to repair either yourself or through an NPC, pause the current list.");
-
-                bool requestStop = P.Config.RequestToStopDuty;
-                bool requestResume = P.Config.RequestToResumeDuty;
-                int resumeDelay = P.Config.RequestToResumeDelay;
-
-                if (ImGui.Checkbox("Have Artisan turn off Endurance / pause lists when Duty Finder is ready", ref requestStop))
-                {
-                    P.Config.RequestToStopDuty = requestStop;
-                    P.Config.Save();
-                }
-
-                if (requestStop)
-                {
-                    if (ImGui.Checkbox("Have Artisan resume Endurance / unpause lists after leaving Duty", ref requestResume))
-                    {
-                        P.Config.RequestToResumeDuty = requestResume;
-                        P.Config.Save();
-                    }
-
-                    if (requestResume)
-                    {
-                        if (ImGui.SliderInt("Delay to resume (seconds)", ref resumeDelay, 5, 60))
-                        {
-                            P.Config.RequestToResumeDelay = resumeDelay;
-                        }
-                    }
-                }
-
-                if (ImGui.Checkbox("Disable Automatically Equipping Required Items for Crafts", ref P.Config.DontEquipItems))
-                    P.Config.Save();
-
-                if (ImGui.Checkbox("Play Sound After Endurance Is Complete", ref P.Config.PlaySoundFinishEndurance))
-                    P.Config.Save();
-                
-                if (ImGui.Checkbox("Play Sound After Crafting Has Errored", ref P.Config.PlaySoundError))
-                    P.Config.Save();
-
-                if (ImGui.Checkbox($"Play Sound After List Is Complete", ref P.Config.PlaySoundFinishList))
-                    P.Config.Save();
+                changed |= ImGui.Checkbox("Play sound after finishing Endurance", ref P.Config.PlaySoundFinishEndurance);
+                changed |= ImGui.Checkbox("Play sound after finishing a list", ref P.Config.PlaySoundFinishList);
+                changed |= ImGui.Checkbox("Play sound on errors", ref P.Config.PlaySoundError);
 
                 if (P.Config.PlaySoundFinishEndurance || P.Config.PlaySoundFinishList || P.Config.PlaySoundError)
                 {
-                    if (ImGui.SliderFloat("Sound Volume", ref P.Config.SoundVolume, 0f, 1f, "%.2f"))
-                        P.Config.Save();
+                    ImGui.PushItemWidth(250);
+                    changed |= ImGui.SliderFloat("Volume", ref P.Config.SoundVolume, 0f, 1f, "%.2f");
                 }
 
-                if (ImGuiEx.ButtonCtrl("Reset Cosmic Exploration Crafting Configs"))
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Misc.");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
+
+                changed |= ImGui.Checkbox("Disable Endurance and pause lists when Duty Finder is ready", ref P.Config.RequestToStopDuty);
+
+                if (P.Config.RequestToStopDuty)
+                {
+                    changed |= ImGui.Checkbox("Resume Endurance and unpause lists when done", ref P.Config.RequestToResumeDuty);
+
+                    if (P.Config.RequestToResumeDuty)
+                    {
+                        ImGui.PushItemWidth(250);
+                        changed |= ImGui.SliderInt("Delay before resuming (seconds)", ref P.Config.RequestToResumeDelay, 5, 60);
+                    }
+                }
+
+                changed |= ImGui.Checkbox("Disable auto-equipping required items for special recipes", ref P.Config.DontEquipItems);
+                ImGuiComponents.HelpMarker("Examples include the Ixal society quest and Endwalker relic tool recipes.");
+
+                ImGui.Dummy(new Vector2(0, 5f));
+                if (ImGuiEx.ButtonCtrl("Reset All Cosmic Exploration Recipe Configs"))
                 {
                     var copy = P.Config.RecipeConfigs;
                     foreach (var c in copy)
@@ -672,89 +658,131 @@ namespace Artisan.UI
                     }
                     P.Config.Save();
                 }
+
+                ImGui.Unindent();
+
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 10f));
             }
+
             if (ImGui.CollapsingHeader("Macro Settings"))
             {
-                if (ImGui.Checkbox("Skip Macro Steps if Unable To Use Action", ref P.Config.SkipMacroStepIfUnable))
-                    P.Config.Save();
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
 
-                if (ImGui.Checkbox($"Prevent Artisan from Continuing After Macro Finishes", ref P.Config.DisableMacroArtisanRecommendation))
-                    P.Config.Save();
+                changed |= ImGui.Checkbox("Skip macro step if unable to use action", ref P.Config.SkipMacroStepIfUnable);
+                changed |= ImGui.Checkbox($"Prevent Artisan from auto-solving after macro", ref P.Config.DisableMacroArtisanRecommendation);
+                ImGuiComponents.HelpMarker($"Only applies if the macro doesn't finish the recipe. Artisan will use the Standard or Expert Solver based on the recipe.");
+
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 10f));
             }
+
             if (ImGui.CollapsingHeader("Standard Recipe Solver Settings"))
             {
-                if (ImGui.Checkbox($"Use {Skills.TricksOfTrade.NameOfAction()} - {LuminaSheets.AddonSheet[227].Text.ToString()}", ref useTricksGood))
-                {
-                    P.Config.UseTricksGood = useTricksGood;
-                    P.Config.Save();
-                }
-                ImGui.SameLine();
-                if (ImGui.Checkbox($"Use {Skills.TricksOfTrade.NameOfAction()} - {LuminaSheets.AddonSheet[228].Text.ToString()}", ref useTricksExcellent))
-                {
-                    P.Config.UseTricksExcellent = useTricksExcellent;
-                    P.Config.Save();
-                }
-                ImGuiComponents.HelpMarker($"These 2 options allow you to make {Skills.TricksOfTrade.NameOfAction()} a priority when condition is {LuminaSheets.AddonSheet[227].Text.ToString()} or {LuminaSheets.AddonSheet[228].Text.ToString()}.\n\nThis will replace {Skills.PreciseTouch.NameOfAction()} & {Skills.IntensiveSynthesis.NameOfAction()} usage.\n\n{Skills.TricksOfTrade.NameOfAction()} will still be used before learning these or under certain circumstances regardless of settings.");
-                if (ImGui.Checkbox("Use Specialist Actions", ref useSpecialist))
-                {
-                    P.Config.UseSpecialist = useSpecialist;
-                    P.Config.Save();
-                }
-                ImGuiComponents.HelpMarker("If the current job is a specialist, spends any Crafter's Delineation you may have.\nCareful Observation replaces Observe.\nHeart and Soul will be used for an early Precise Touch.");
-                ImGui.TextWrapped("Max Quality%%");
-                ImGuiComponents.HelpMarker($"Once quality has reached the below percentage, Artisan will focus on progress only.");
-                if (ImGui.SliderInt("###SliderMaxQuality", ref maxQuality, 0, 100, $"%d%%"))
-                {
-                    P.Config.MaxPercentage = maxQuality;
-                    P.Config.Save();
-                }
+                string ProgressString = LuminaSheets.AddonSheet[213].Text.ToString();
+                string QualityString = LuminaSheets.AddonSheet[216].Text.ToString();
+                string ConditionString = LuminaSheets.AddonSheet[215].Text.ToString();
 
-                ImGui.Text($"Collectible Threshold Breakpoint");
-                ImGuiComponents.HelpMarker("The solver will stop going for quality once a collectible has hit a certain breakpoint.");
+                ImGui.Indent();
 
-                if (ImGui.RadioButton($"Minimum", P.Config.SolverCollectibleMode == 1))
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Action Usage");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
+
+                P.PluginUi.ExpertSettingsUI.DrawIconText("Force [s!TricksOfTrade] when {0} is:", [ConditionString.ToLower()]);
+                P.PluginUi.ExpertSettingsUI.HelpMarkerWithIcons(["These options make the solver prioritize [s!TricksOfTrade] on the appropriate {0}.", "This is only invoked when [s!PreciseTouch] or [s!IntensiveSynthesis] would be used.", "[s!TricksOfTrade] will be used regardless when it's optimal to do so."], [ConditionString.ToLower()]);
+                ImGui.Indent();
+                changed |= P.PluginUi.ExpertSettingsUI.CheckboxWithIcons("useTricksGood", ref P.Config.UseTricksGood, "[c!Good]");
+                changed |= P.PluginUi.ExpertSettingsUI.CheckboxWithIcons("useTricksExcellent", ref P.Config.UseTricksExcellent, "[c!Excellent]");
+                ImGui.Unindent();
+
+                changed |= ImGui.Checkbox("Use specialist actions", ref P.Config.UseSpecialist);
+                P.PluginUi.ExpertSettingsUI.HelpMarkerWithIcons(["If the current job is a specialist, this will spend crafter's delineations.", "[s!CarefulObservation] will be used whenever the solver would [s!Observe].", "[s!HeartAndSoul] will be used for an early [s!PreciseTouch]."]);
+
+                changed |= P.PluginUi.ExpertSettingsUI.CheckboxWithIcons("useQualityStarter", ref P.Config.UseQualityStarter, "Start crafts with [s!Reflect]");
+                P.PluginUi.ExpertSettingsUI.HelpMarkerWithIcons(["This tends to be more favourable for recipes with lower durability.", "If disabled, each craft will start with [s!MuscleMemory]."]);
+
+                //if (ImGui.Checkbox("Low Stat Mode", ref P.Config.LowStatsMode))
+                //    P.Config.Save();
+                //ImGuiComponents.HelpMarker("This swaps out Waste Not II & Groundwork for Prudent Synthesis");
+
+                ImGui.Dummy(new Vector2(0, 2f));
+                P.PluginUi.ExpertSettingsUI.DrawIconText("Use [s!PreparatoryTouch] at or below this many {0} stacks:", [Buffs.InnerQuiet.NameOfBuff()]);
+                ImGuiComponents.HelpMarker($"Reducing this can help save CP.");
+                ImGui.PushItemWidth(250);
+                changed |= ImGui.SliderInt($"###MaxIQStacksPrepTouch", ref P.Config.MaxIQPrepTouch, 0, 10);
+
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"{QualityString}");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
+
+                ImGui.TextWrapped($"Max {QualityString.ToLower()} for non-collectable recipes:");
+                ImGuiComponents.HelpMarker($"Once quality has reached this percentage, the Standard Solver will focus on progress.");
+                ImGui.PushItemWidth(250);
+                changed |= ImGui.SliderInt("###SliderMaxQuality", ref P.Config.MaxPercentage, 0, 100, $"%d%%");
+
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"{QualityString} breakpoint for collectables:");
+                ImGuiComponents.HelpMarker($"The solver will stop going for {QualityString.ToLower()} once a collectable has hit this breakpoint. The specific breakpoints vary per recipe.");
+
+                if (ImGui.RadioButton($"1st", P.Config.SolverCollectibleMode == 1))
                 {
                     P.Config.SolverCollectibleMode = 1;
                     P.Config.Save();
                 }
                 ImGui.SameLine();
-                if (ImGui.RadioButton($"Middle", P.Config.SolverCollectibleMode == 2))
+                if (ImGui.RadioButton($"2nd", P.Config.SolverCollectibleMode == 2))
                 {
                     P.Config.SolverCollectibleMode = 2;
                     P.Config.Save();
                 }
                 ImGui.SameLine();
-                if (ImGui.RadioButton($"Maximum", P.Config.SolverCollectibleMode == 3))
+                if (ImGui.RadioButton($"3rd", P.Config.SolverCollectibleMode == 3))
                 {
                     P.Config.SolverCollectibleMode = 3;
                     P.Config.Save();
                 }
-
-                if (ImGui.Checkbox($"Use Quality Starter ({Skills.Reflect.NameOfAction()})", ref P.Config.UseQualityStarter))
-                    P.Config.Save();
-                ImGuiComponents.HelpMarker($"This tends to be more favourable at lower durability crafts.");
-
-                //if (ImGui.Checkbox("Low Stat Mode", ref P.Config.LowStatsMode))
-                //    P.Config.Save();
-
-                //ImGuiComponents.HelpMarker("This swaps out Waste Not II & Groundwork for Prudent Synthesis");
-
-                ImGui.TextWrapped($"{Skills.PreparatoryTouch.NameOfAction()} - Max {Buffs.InnerQuiet.NameOfBuff()} stacks");
                 ImGui.SameLine();
-                ImGuiComponents.HelpMarker($"Will only use {Skills.PreparatoryTouch.NameOfAction()} up to the number of {Buffs.InnerQuiet.NameOfBuff()} stacks. This is useful to tweak conservation of CP.");
-                if (ImGui.SliderInt($"###MaxIQStacksPrepTouch", ref P.Config.MaxIQPrepTouch, 0, 10))
+                if (ImGui.RadioButton($"Max", P.Config.SolverCollectibleMode == 4))
+                {
+                    P.Config.SolverCollectibleMode = 4;
                     P.Config.Save();
+                }
+
+                ImGui.Dummy(new Vector2(0, 2f));
+                var thresholdImg = Path.Combine(Svc.PluginInterface.AssemblyLocation.DirectoryName!, "Images/CollectableThresholds.png");
+                if (ThreadLoadImageHandler.TryGetTextureWrap(thresholdImg, out var img))
+                {
+                    ImGui.Image(img.Handle, new Vector2(img.Width, img.Height));
+                }
+
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Cosmic Exploration");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
 
                 ImGui.PushItemWidth(250);
-                if (ImGui.SliderInt($"Maximum Material Miracle uses per craft###P.Config.MaxMaterialMiracles", ref P.Config.MaxMaterialMiracles, 0, 3))
-                    P.Config.Save();
-                ImGuiComponents.HelpMarker($"This will switch the Standard Recipe Solver over to the Expert Solver for the duration of the buff. Material Miracle is a timed buff, not a permanent one with stacks, so the simulator will estimate how long it lasts based on the length of each skill's animation.");
-				ImGui.PushItemWidth(250);
-                if (ImGui.SliderInt($"Minimum steps to execute before trying Material Miracle###P.Config.MinimumStepsBeforeMiracle", ref P.Config.MinimumStepsBeforeMiracle, 0, 20))
-                    P.Config.Save();
+                changed |= P.PluginUi.ExpertSettingsUI.SliderIntWithIcons("MaxMaterialMiracles", ref P.Config.MaxMaterialMiracles, 0, 3, "Max [s!MaterialMiracle] uses per craft");
+                ImGuiComponents.HelpMarker($"This will switch the Standard Solver over to the Expert Solver for the duration of the buff. Material Miracle is a timed buff, not a permanent one with stacks; when simulating recipes with the Standard Solver, it will estimate how long the buff lasts based on the length of each skill's animation.");
+                if (P.Config.MaxMaterialMiracles > 0)
+                {
+                    ImGui.PushItemWidth(250);
+                    changed |= ImGui.SliderInt($"Use after this many steps###MinimumStepsBeforeMiracle", ref P.Config.MinimumStepsBeforeMiracle, 0, 20);
+                }
+
+                ImGui.Unindent();
+
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 10f));
             }
+
             bool openExpert = false;
-            if (ImGui.CollapsingHeader("Global Expert Recipe Solver Settings"))
+            if (ImGui.CollapsingHeader("Expert Recipe Solver Settings"))
             {
                 openExpert = true;
                 if (P.PluginUi.ExpertSettingsUI.expertIcon is not null)
@@ -790,154 +818,145 @@ namespace Artisan.UI
             }
             if (ImGui.CollapsingHeader("UI Settings"))
             {
-                if (ImGui.Checkbox("Disable highlighting box", ref disableGlow))
-                {
-                    P.Config.DisableHighlightedAction = disableGlow;
-                    P.Config.Save();
-                }
+                ImGui.Indent();
+
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"General");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
+
+                changed |= ImGui.Checkbox("Disable highlighting box", ref P.Config.DisableHighlightedAction);
                 ImGuiComponents.HelpMarker("This is the box that highlights the actions on your hotbars for manual play.");
 
-                if (ImGui.Checkbox($"Disable recommendation toasts", ref disableToasts))
-                {
-                    P.Config.DisableToasts = disableToasts;
-                    P.Config.Save();
-                }
-
+                changed |= ImGui.Checkbox($"Disable recommendation toasts", ref P.Config.DisableToasts);
                 ImGuiComponents.HelpMarker("These are the pop-ups whenever a new action is recommended.");
 
-                bool lockMini = P.Config.LockMiniMenuR;
-                if (ImGui.Checkbox("Keep Recipe List mini-menu position attached to Recipe List.", ref lockMini))
-                {
-                    P.Config.LockMiniMenuR = lockMini;
-                    P.Config.Save();
-                }
-
-                if (!P.Config.LockMiniMenuR)
-                {
-                    if (ImGui.Checkbox($"Pin mini-menu position", ref P.Config.PinMiniMenu))
-                    {
-                        P.Config.Save();
-                    }
-                }
-
-                if (ImGui.Button("Reset Recipe List mini-menu position"))
-                {
-                    AtkResNodeFunctions.ResetPosition = true;
-                }
-
-                if (ImGui.Checkbox($"Expanded Search Bar Functionality", ref P.Config.ReplaceSearch))
-                {
-                    P.Config.Save();
-                }
-                ImGuiComponents.HelpMarker($"Expands the search bar in the recipe menu with instant results and functionality to click to open recipes.");
-
-                if (ImGui.Checkbox("Show Completed Recipes Progress in Recipe Window", ref P.Config.ShowLevelingRecipeProgress))
-                    P.Config.Save();
-
-                ImGuiComponents.HelpMarker("Shows a total of completed recipes in each leveling category, or a tick if all are completed.");
-
-                bool hideQuestHelper = P.Config.HideQuestHelper;
-                if (ImGui.Checkbox($"Hide Quest Helper", ref hideQuestHelper))
-                {
-                    P.Config.HideQuestHelper = hideQuestHelper;
-                    P.Config.Save();
-                }
-
-                bool hideTheme = P.Config.DisableTheme;
-                if (ImGui.Checkbox("Disable Custom Theme", ref hideTheme))
-                {
-                    P.Config.DisableTheme = hideTheme;
-                    P.Config.Save();
-                }
+                changed |= ImGui.Checkbox("Disable Custom Theme", ref P.Config.DisableTheme);
                 ImGui.SameLine();
-
                 if (IconButtons.IconTextButton(FontAwesomeIcon.Clipboard, "Copy Theme"))
                 {
                     ImGui.SetClipboardText("DS1H4sIAAAAAAAACq1YS3PbNhD+Kx2ePR6AeJG+xXYbH+KOJ3bHbW60REusaFGlKOXhyX/v4rEACEqumlY+ECD32/cuFn7NquyCnpOz7Cm7eM1+zy5yvfnDPL+fZTP4at7MHVntyMi5MGTwBLJn+HqWLZB46Ygbx64C5kQv/nRo8xXQ3AhZZRdCv2jdhxdHxUeqrJO3Ftslb5l5u/Fa2rfEvP0LWBkBPQiSerF1Cg7wApBn2c5wOMv2juNn9/zieH09aP63g+Kqyr1mI91mHdj5mj3UX4bEG+b5yT0fzRPoNeF1s62e2np+EuCxWc+7z5cLr1SuuCBlkTvdqBCEKmaQxCHJeZmXnFKlgMHVsmnnEZ5IyXMiFUfjwt6yCHvDSitx1212m4gHV0QURY4saMEYl6Q4rsRl18/rPuCZQ+rFJxeARwyAJb5fVmD4NBaJEK3eL331UscuAgflOcY0J5zLUioHpHmhCC0lCuSBwU23r3sfF/0N0wKdoxcGFqHezYZmHypJIkgiSCJIalc8NEM7Utb6ErWlwngt9aUoFRWSB3wilRUl5SRwISUFvhJt9lvDrMgLIjgLzK66tq0228j0H+R3W693l1UfmUd9kqA79MKn9/2sB9lPI8hbofb073vdh1BbQYRgqKzfGbTfTWVqHmnMOcXUpI6BXhzGJjEQCNULmy4x9GpZz1a3Vb8KqaIDz4RPVGZin6dlZPKDSS29baAyRqYfzVGnr0ekaaowTbEw9MLjLnfD0GGT1unHSSlKr2lRyqLA2qU5ESovi6m+lkvqYiZ1/ygxyqrgjDKF8Yr2lp1pd4R7dokhvOBUQk37TCVKQbX4TMVtyuymruKWJCURVEofClYWbNpWCQfFifDwsWnYyXXS8ZxDOI+H0uLToPzrhKg3VV8N3amt1dP/t5goW/E85pg2pB8N8sd623yr3/dNOPYVstELg9cLA8zFCJKapQpEYkPVi9CMA/L/Uv8hrk1hmg9WKKMQXyIxnGFrm6i06MkhBHlIiQ8rI0xx4k/rsLWBsWpbTmmhqFIypcvUHTRgQ859V/bbKaPf1s/dbBcfD0R6NnCWwg/dS3lB4MfQMSrnCY9EK8qEw9uUl4YdHjRQRVFTuu5mq2a9uOvrfVOH0SDHqtXxMjDfi1RA/fyyGb7G5y5KdJg8EnTXdsOHZl1vQyJJQrlCQTDsEBi80HdhO+VwrEP48hwdTRp202yHbgGzhRfu03/UCA4gjglDd44mUT2D2i4UH9coSy8mfjEYN54NfbcOOIZnn15M7YqAH5rFEmdl3eJ8r0N5E9zH0fz71nQQyN+1/zSP6yR2A/l93dazoY6n5DdyiumWc91Xi+u+2zxU/aI+Jipq2QD5tdrfgO3t2P5jcqz9gLEXAEjgFHzcMJUgr5uXyDQsNSxZtCvX81s3r1qLOw0EztC3ORiEs4vssu9W9fqn2263HqpmncFF016PqklGjh1kjQ2NUyUJH08mcIk9gSrqn+jg0XFoqeqTrmDPwQv+PDEr6wl3oljaxcRSRTCyMc/lJJ/lAcnNhMr3WWZ+ES3exrXE+HJ2yNOrowkb97A2cExdXcrYjaFToVDfGSMqnCaDa0pi/vzNMyLG/wQEyzmzfhx7KAwJUn93Fz6v5shD8B+DRAG4Oh+QHYapovAd3/OEQzuiDSdE4c8wjJHh7iiBFFozvP3+NxT8RWGlEQAA");
                     Notify.Success("Theme copied to clipboard");
                 }
 
-                if (ImGui.Checkbox("Disable Allagan Tools Integration With Lists", ref P.Config.DisableAllaganTools))
-                    P.Config.Save();
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Artisan Windows");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
 
-                if (ImGui.Checkbox("Disable Artisan Context Menu Options", ref P.Config.HideContextMenus))
-                    P.Config.Save();
-
-                ImGuiComponents.HelpMarker("These are the new options when you right click or press square on a recipe in the recipe list.");
+                changed |= ImGui.Checkbox("Dock mini-menu position to Crafting Log", ref P.Config.LockMiniMenuR);
 
                 ImGui.Indent();
-                if (ImGui.CollapsingHeader("Simulator Settings"))
+                if (!P.Config.LockMiniMenuR)
                 {
-                    if (ImGui.Checkbox("Hide Recipe Window Simulator Result", ref P.Config.HideRecipeWindowSimulator))
-                        P.Config.Save();
-
-                    if (ImGui.SliderFloat("Simulator Action Image Size", ref P.Config.SimulatorActionSize, 5f, 70f))
-                    {
-                        P.Config.Save();
-                    }
-                    ImGuiComponents.HelpMarker("Sets the scale of the action images that appear in the simulator tab.");
-
-                    if (ImGui.Checkbox("Enable Manual Mode Hover Preview", ref P.Config.SimulatorHoverMode))
-                        P.Config.Save();
-
-                    if (ImGui.Checkbox($"Hide Action Tooltips", ref P.Config.DisableSimulatorActionTooltips))
-                        P.Config.Save();
-
-                    ImGuiComponents.HelpMarker("When hovering over actions in manual mode, the description tooltip will not show.");
+                    changed |= ImGui.Checkbox($"Lock current mini-menu position", ref P.Config.PinMiniMenu);
+                }
+                if (ImGui.Button("Reset Mini-Menu Position"))
+                {
+                    AtkResNodeFunctions.ResetPosition = true;
                 }
                 ImGui.Unindent();
+
+                changed |= ImGui.Checkbox("Hide mini-menu simulator results", ref P.Config.HideRecipeWindowSimulator);
+
+                changed |= ImGui.Checkbox($"Hide Quest Helper", ref P.Config.HideQuestHelper);
+                ImGuiComponents.HelpMarker("If not disabled, the Quest Helper is a small window that can open the Crafting Log to a specific recipe, /say a specific phrase, or execute a specific emote for quests that require them. It will only appear while on those quests.");
+
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Native UI Replacements");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
+
+                changed |= ImGui.Checkbox($"Expanded Crafting Log search bar", ref P.Config.ReplaceSearch);
+                ImGuiComponents.HelpMarker($"Expands the search bar in the Crafting Log with instant results. Click on any result to open it in the Crafting Log.");
+
+                changed |= ImGui.Checkbox("Show leveling category completion in Crafting Log", ref P.Config.ShowLevelingRecipeProgress);
+                ImGuiComponents.HelpMarker("Shows a total of completed recipes in each leveling category, or a tick if all are completed.");
+
+                changed |= ImGui.Checkbox("Disable context menu options", ref P.Config.HideContextMenus);
+                ImGuiComponents.HelpMarker("These are the Artisan-added options when you right click or press square on a recipe or item.");
+
+                if (!P.Config.HideContextMenus)
+                {
+                    ImGui.Indent();
+                    ImGui.PushItemWidth(50);
+                    if (ImGui.InputInt("Add new items to lists this many times from context menu", ref P.Config.ContextMenuLoops))
+                    {
+                        if (P.Config.ContextMenuLoops <= 0)
+                            P.Config.ContextMenuLoops = 1;
+
+                        P.Config.Save();
+                    }
+                    ImGui.Unindent();
+                }
+
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Other Plugins");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
+
+                changed |= ImGui.Checkbox("Disable Allagan Tools integration with crafting lists", ref P.Config.DisableAllaganTools);
+
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Simulator UI");
+                ImGuiComponents.HelpMarker("These settings apply to Artisan's \"Simulator\" tab.");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
+
+                ImGui.PushItemWidth(250);
+                changed |= ImGui.SliderFloat("Simulator action image size", ref P.Config.SimulatorActionSize, 5f, 70f);
+                ImGuiComponents.HelpMarker("Sets the scale of the action images in the simulator.");
+
+                changed |= ImGui.Checkbox("Enable hover preview in manual mode", ref P.Config.SimulatorHoverMode);
+                changed |= ImGui.Checkbox($"Hide action tooltips in manual mode", ref P.Config.DisableSimulatorActionTooltips);
+
+                ImGui.Unindent();
+
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 10f));
             }
+
             if (ImGui.CollapsingHeader("List Settings"))
             {
+                ImGui.Dummy(new Vector2(0, 2f));
                 ImGui.TextWrapped($"These settings will automatically be applied when creating a crafting list.");
 
-                if (ImGui.Checkbox("Skip items you already have enough of", ref P.Config.DefaultListSkip))
-                {
-                    P.Config.Save();
-                }
+                ImGui.Indent();
 
-                if (ImGui.Checkbox("Automatically Extract Materia", ref P.Config.DefaultListMateria))
-                {
-                    P.Config.Save();
-                }
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"General");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
 
-                if (ImGui.Checkbox("Automatic Repairs", ref P.Config.DefaultListRepair))
-                {
-                    P.Config.Save();
-                }
+                changed |= ImGui.Checkbox("Skip crafting items you already have enough of", ref P.Config.DefaultListSkip);
+                changed |= ImGui.Checkbox("Set new items added to list as Quick Synth", ref P.Config.DefaultListQuickSynth);
+                changed |= ImGui.Checkbox("Automatically adjust all sub-crafts after changing quantities", ref P.Config.DefaultAdjustQuantities);
+                changed |= ImGui.Checkbox("Reset \"Number of Times to Add\" after adding to list", ref P.Config.ResetTimesToAdd);
+
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Automation");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
+
+                changed |= ImGui.Checkbox("Automatically extract materia from spiritbonded gear", ref P.Config.DefaultListMateria);
+
+                changed |= ImGui.Checkbox("Automatically repair gear", ref P.Config.DefaultListRepair);
 
                 if (P.Config.DefaultListRepair)
                 {
-                    ImGui.TextWrapped($"Repair at");
+                    ImGui.TextWrapped($"Repair at:");
                     ImGui.SameLine();
-                    if (ImGui.SliderInt("###SliderRepairDefault", ref P.Config.DefaultListRepairPercent, 0, 100, $"%d%%"))
-                    {
-                        P.Config.Save();
-                    }
+                    ImGui.PushItemWidth(250);
+                    changed |= ImGui.SliderInt("durability###SliderRepairDefault", ref P.Config.DefaultListRepairPercent, 0, 100, $"%d%%");
                 }
 
-                if (ImGui.Checkbox("Set new items added to list as quick synth", ref P.Config.DefaultListQuickSynth))
-                {
-                    P.Config.Save();
-                }
-
-                if (ImGui.Checkbox("Adjust all sub-crafts after changing quantities", ref P.Config.DefaultAdjustQuantities))
-                    P.Config.Save();
-
-                if (ImGui.Checkbox($@"Reset ""Number of Times to Add"" after adding to list.", ref P.Config.ResetTimesToAdd))
-                    P.Config.Save();
-
-                ImGui.PushItemWidth(100);
-                if (ImGui.InputInt("Times to Add with Context Menu", ref P.Config.ContextMenuLoops))
-                {
-                    if (P.Config.ContextMenuLoops <= 0)
-                        P.Config.ContextMenuLoops = 1;
-
-                    P.Config.Save();
-                }
-
-                ImGui.PushItemWidth(400);
-                if (ImGui.SliderFloat("Delay Between Crafts", ref P.Config.ListCraftThrottle2, 0f, 2f, "%.1f"))
+                ImGui.PushItemWidth(250);
+                if (ImGui.SliderFloat("Delay between list crafts (seconds)", ref P.Config.ListCraftThrottle2, 0f, 2f, "%.1f"))
                 {
                     if (P.Config.ListCraftThrottle2 < 0f)
                         P.Config.ListCraftThrottle2 = 0f;
@@ -948,60 +967,42 @@ namespace Artisan.UI
                     P.Config.Save();
                 }
 
-                ImGui.Indent();
+                ImGui.Unindent();
+
+                ImGui.Dummy(new Vector2(0, 5f));
                 if (ImGui.CollapsingHeader("Ingredient Table Settings"))
                 {
-                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, $"All Column Settings do not have an effect if you have already viewed the ingredients table for a list.");
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, "Column settings will only take effect if you have already viewed a list's ingredients table.");
 
-                    if (ImGui.Checkbox($@"Default Hide ""Inventory"" Column", ref P.Config.DefaultHideInventoryColumn))
-                        P.Config.Save();
+                    changed |= ImGui.Checkbox($"Default: Hide \"Inventory\" column", ref P.Config.DefaultHideInventoryColumn);
+                    changed |= ImGui.Checkbox($"Default: Hide \"Retainers\" column", ref P.Config.DefaultHideRetainerColumn);
+                    changed |= ImGui.Checkbox($"Default: Hide \"Remaining Needed\" column", ref P.Config.DefaultHideRemainingColumn);
+                    changed |= ImGui.Checkbox($"Default: Hide \"Sources\" column", ref P.Config.DefaultHideCraftableColumn);
+                    changed |= ImGui.Checkbox($"Default: Hide \"Number Craftable\" column", ref P.Config.DefaultHideCraftableCountColumn);
+                    changed |= ImGui.Checkbox($"Default: Hide \"Used to Craft\" column", ref P.Config.DefaultHideCraftItemsColumn);
+                    changed |= ImGui.Checkbox($"Default: Hide \"Category\" column", ref P.Config.DefaultHideCategoryColumn);
+                    changed |= ImGui.Checkbox($"Default: Hide \"Gathered Zone\" column", ref P.Config.DefaultHideGatherLocationColumn);
+                    changed |= ImGui.Checkbox($"Default: Hide \"ID\" column", ref P.Config.DefaultHideIdColumn);
+                    changed |= ImGui.Checkbox($"Default: Enable \"Only Show HQ Crafts\"", ref P.Config.DefaultHQCrafts);
+                    changed |= ImGui.Checkbox($"Default: Enable \"Colour Validation\"", ref P.Config.DefaultColourValidation);
 
-                    if (ImGui.Checkbox($"Default Hide \"Retainers\" Column", ref P.Config.DefaultHideRetainerColumn))
-                        P.Config.Save();
-
-                    if (ImGui.Checkbox($"Default Hide \"Remaining Needed\" Column", ref P.Config.DefaultHideRemainingColumn))
-                        P.Config.Save();
-
-                    if (ImGui.Checkbox($"Default Hide \"Sources\" Column", ref P.Config.DefaultHideCraftableColumn))
-                        P.Config.Save();
-
-                    if (ImGui.Checkbox($"Default Hide \"Number Craftable\" Column", ref P.Config.DefaultHideCraftableCountColumn))
-                        P.Config.Save();
-
-                    if (ImGui.Checkbox($"Default Hide \"Used to Craft\" Column", ref P.Config.DefaultHideCraftItemsColumn))
-                        P.Config.Save();
-
-                    if (ImGui.Checkbox($"Default Hide \"Category\" Column", ref P.Config.DefaultHideCategoryColumn))
-                        P.Config.Save();
-
-                    if (ImGui.Checkbox($"Default Hide \"Gathered Zone\" Column", ref P.Config.DefaultHideGatherLocationColumn))
-                        P.Config.Save();
-
-                    if (ImGui.Checkbox($"Default Hide \"ID\" Column", ref P.Config.DefaultHideIdColumn))
-                        P.Config.Save();
-
-                    if (ImGui.Checkbox($"Default \"Only show HQ Crafts\" Enabled", ref P.Config.DefaultHQCrafts))
-                        P.Config.Save();
-
-                    if (ImGui.Checkbox($"Default \"Colour Validation\" Enabled", ref P.Config.DefaultColourValidation))
-                        P.Config.Save();
-
-                    if (ImGui.Checkbox($"Fetch Prices from Universalis", ref P.Config.UseUniversalis))
-                        P.Config.Save();
-
+                    ImGui.Dummy(new Vector2(0, 5f));
+                    changed |= ImGui.Checkbox($"Fetch prices from Universalis", ref P.Config.UseUniversalis);
                     if (P.Config.UseUniversalis)
                     {
-                        if (ImGui.Checkbox($"Limit Universalis to current DC", ref P.Config.LimitUnversalisToDC))
-                            P.Config.Save();
-
-                        if (ImGui.Checkbox($"Only Fetch Prices on Demand", ref P.Config.UniversalisOnDemand))
-                            P.Config.Save();
-
-                        ImGuiComponents.HelpMarker("You will have to click a button to fetch the price per item.");
+                        changed |= ImGui.Checkbox($"Limit Universalis to current data center", ref P.Config.LimitUnversalisToDC);
+                        changed |= ImGui.Checkbox($"Only fetch prices when requested", ref P.Config.UniversalisOnDemand);
+                        ImGuiComponents.HelpMarker("If enabled, you will have to click a button for each item to fetch its price.");
                     }
                 }
 
                 ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 10f));
+            }
+
+            if (changed)
+            {
+                P.Config.Save();
             }
         }
 

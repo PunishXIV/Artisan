@@ -989,7 +989,7 @@ namespace Artisan
 
         public static CraftMenuWindowUI AddCraftMenuWindow()
         {
-            _craftMenuWindowUi = new CraftMenuWindowUI("CraftMenuWindow", GetWindowFlags());
+            _craftMenuWindowUi = new CraftMenuWindowUI("Artisan Crafting Window###CraftMenuWindow", GetWindowFlags());
             return _craftMenuWindowUi;
         }
 
@@ -1018,7 +1018,7 @@ namespace Artisan
 
         public static CraftMenuWindowUI AddCosmicCraftMenuWindow()
         {
-            _cosmicCraftMenuWindowUi = new CraftMenuWindowUI("CosmicCraftMenuWindow", GetWindowFlags());
+            _cosmicCraftMenuWindowUi = new CraftMenuWindowUI("Artisan Crafting Window###CosmicCraftMenuWindow", GetWindowFlags());
             return _cosmicCraftMenuWindowUi;
         }
 
