@@ -13,7 +13,7 @@ namespace Artisan.UI.KTK
     {
         AddonController? regularRecipeNoteController;
         AddonController? moonRecipeNoteController;
-        TextButtonNode? craftAll;
+        TextButtonNodeSynth? craftAll;
         NineGridNode? bgNode;
         NumericInputNode? craftXCounter;
         int val = 0;
@@ -71,13 +71,16 @@ namespace Artisan.UI.KTK
             var buttonY = synthButton->Y + 2;
             var buttonX = synthButton->X - synthButton->Width;
 
-            craftAll = new TextButtonNode
+            var text = addon->GetTextNodeById(34)->NodeText.ToString();
+            craftableCount = text == "" ? 0 : Convert.ToInt32(text.GetNumbers());
+
+            craftAll = new()
             {
                 Position = new Vector2(buttonX, buttonY),
                 Size = new Vector2(synthButton->Width, synthButton->Height),
                 String = $"Craft All",
                 OnClick = () => CraftX(),
-                IsEnabled = true,
+                IsEnabled = craftableCount > 0,
                 NodeFlags = synthButton->NodeFlags,
                 DrawFlags = (KamiToolKit.Enums.DrawFlags)synthButton->DrawFlags,
             };
@@ -86,9 +89,6 @@ namespace Artisan.UI.KTK
             craftAll.BackgroundNode.Width = synthBg->Width;
 
             craftAll.AttachNode(synthButton, KamiToolKit.Classes.NodePosition.BeforeTarget);
-
-            var text = addon->GetTextNodeById(34)->NodeText.ToString();
-            craftableCount = text == "" ? 0 : Convert.ToInt32(text.GetNumbers());
 
             craftXCounter = new()
             {
@@ -100,7 +100,8 @@ namespace Artisan.UI.KTK
                     craftAll?.String = val == 0 ? "Craft All" : $"Craft {t}";
                 },
                 NodeFlags = synthButton->NodeFlags,
-                Max = craftableCount
+                Max = craftableCount,
+                IsEnabled = craftableCount > 0,
             };
 
             craftXCounter.AttachNode(craftAll, KamiToolKit.Classes.NodePosition.AfterTarget);
@@ -149,43 +150,41 @@ namespace Artisan.UI.KTK
             if (addon->RootNode is null) return;
 
             var synthButton = addon->GetNodeById(104);
-            var quickSynthBtn = addon->GetNodeById(103);
-            if (synthButton is null || quickSynthBtn is null) return;
+            var synthBg = synthButton->GetAsAtkComponentButton()->ButtonBGNode->GetAsAtkNineGridNode();
+            if (synthButton is null || synthBg is null) return;
 
-            var buttonY = synthButton->Y - 30;
+            var buttonY = synthButton->Y - 32;
             var buttonX = synthButton->X;
 
             var text = addon->GetTextNodeById(78)->NodeText.ToString();
             craftableCount = text == "" ? 0 : Convert.ToInt32(text.GetNumbers());
 
-            craftXCounter = new()
+            craftAll = new()
             {
                 Position = new Vector2(buttonX, buttonY),
-                Size = new Vector2(quickSynthBtn->Width, quickSynthBtn->Height),
+                Size = new Vector2(synthBg->Width, synthBg->Height),
+                String = $"Craft All",
+                OnClick = () => CraftX(),
+                IsEnabled = craftableCount > 0,
+            };
+
+            craftAll.AttachNode(synthButton, KamiToolKit.Classes.NodePosition.AfterTarget);
+
+            craftXCounter = new()
+            {
+                Position = new Vector2(craftAll.X - craftAll.Width, buttonY + 5),
+                Size = new Vector2(140, 28),
                 Step = 1,
                 OnValueUpdate = (t) =>
                 {
                     val = t;
                     craftAll?.String = val == 0 ? "Craft All" : $"Craft {t}";
                 },
-                Max = craftableCount
+                Max = craftableCount,
+                IsEnabled = craftableCount > 0,
             };
 
-            craftXCounter.AttachNode(quickSynthBtn, KamiToolKit.Classes.NodePosition.AfterTarget);
-
-            buttonY = quickSynthBtn->Y - 30f.Scale();
-            buttonX = quickSynthBtn->X;
-
-            craftAll = new TextButtonNode
-            {
-                Position = new Vector2(buttonX, buttonY),
-                Size = new Vector2(synthButton->Width, synthButton->Height),
-                String = $"Craft All",
-                OnClick = () => CraftX(),
-                IsEnabled = true,
-            };
-
-            craftAll.AttachNode(synthButton, KamiToolKit.Classes.NodePosition.AfterTarget);
+            craftXCounter.AttachNode(craftAll, KamiToolKit.Classes.NodePosition.AfterTarget);
             setup = true;
         }
 
