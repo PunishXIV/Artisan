@@ -660,6 +660,8 @@ namespace Artisan.UI
                 }
 
                 ImGui.Unindent();
+
+                ImGui.Unindent();
                 ImGui.Dummy(new Vector2(0, 10f));
             }
 
