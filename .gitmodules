@@ -7,3 +7,6 @@
 [submodule "raphael-rs"]
 	path = raphael-rs
 	url = https://github.com/KonaeAkira/raphael-rs
+[submodule "KamiToolKit"]
+	path = KamiToolKit
+	url = https://github.com/MidoriKami/KamiToolKit
