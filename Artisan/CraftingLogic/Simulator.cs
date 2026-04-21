@@ -6,6 +6,7 @@ using Dalamud.Interface.Colors;
 using ECommons.DalamudServices;
 using Lumina.Excel.Sheets;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Numerics;
@@ -81,6 +82,12 @@ public static class Simulator
 
         if (craft.CraftCollectible || craft.CraftExpert)
         {
+            if (craft.CraftRequiredQuality > 0 && step.Quality >= craft.CraftRequiredQuality)
+                return CraftStatus.SucceededMetQualityReq;
+
+            if ((craft.IshgardExpert || craft.IsCosmic) && step.Quality >= craft.CraftQualityMax)
+                return CraftStatus.SucceededMaxQuality;
+
             if (step.Quality >= craft.CraftQualityMin3)
                 return CraftStatus.SucceededQ3;
 
@@ -227,9 +234,14 @@ public static class Simulator
         next.TrainedPerfectionActive = action == Skills.TrainedPerfection || (step.TrainedPerfectionActive && !HasDurabilityCost(action));
         next.TrainedPerfectionAvailable = step.TrainedPerfectionAvailable && action != Skills.TrainedPerfection;
         next.MaterialMiracleCharges = action == Skills.MaterialMiracle ? step.MaterialMiracleCharges - 1 : step.MaterialMiracleCharges;
-        next.MaterialMiracleActive = step.MaterialMiracleActive; //This is a timed buff, can't really use this in the simulator, just copy the real result
+        next.MaterialMiracleActive = action == Skills.MaterialMiracle || step.MaterialMiracleSecondsLeft > 0;
+        next.MaterialMiraclesUsed = action == Skills.MaterialMiracle ? step.MaterialMiraclesUsed + 1 : step.MaterialMiraclesUsed;
+        float newMMLeft = step.MaterialMiracleSecondsLeft > 0 ? step.MaterialMiracleSecondsLeft - (action.ActionIsLengthyAnimation() ? 2.5f : 1.25f) : 0;
+        next.MaterialMiracleSecondsLeft = action == Skills.MaterialMiracle ? 45f : newMMLeft;
+        next.PrevMaterialMiracleActive = step.MaterialMiracleActive;
         next.ObserveCounter = action == Skills.Observe ? step.ObserveCounter + 1 : 0;
         next.ExpertEmergency = step.ExpertEmergency; // set directly by the expert solver
+        next.ExpertMiracleTrigger = step.ExpertMiracleTrigger; // set directly by the expert solver
         next.SteadyHandCharges = action == Skills.SteadyHand ? step.SteadyHandCharges - 1 : step.SteadyHandCharges;
         next.SteadyHandLeft = action == Skills.SteadyHand ? 3 : Math.Max(0, step.SteadyHandLeft - 1);
         next.SteadyHandsUsed = action == Skills.SteadyHand ? step.SteadyHandsUsed + 1 : step.SteadyHandsUsed;
@@ -256,6 +268,7 @@ public static class Simulator
         }
 
         next.Condition = action is Skills.FinalAppraisal or Skills.HeartAndSoul ? step.Condition : GetNextCondition(craft, step, nextStateRoll);
+        next.PrevCondition = step.Condition;
 
         return (success ? ExecuteResult.Succeeded : ExecuteResult.Failed, next);
     }
@@ -511,6 +524,12 @@ public static class Simulator
 
     public static Condition GetTransitionByRoll(CraftState craft, StepState step, float roll)
     {
+        if (step.MaterialMiracleActive)
+        {
+            // initial testing suggests that all MM conditions have an equal chance
+            var MMConditions = new List<Condition> { Condition.Good, Condition.Centered, Condition.Sturdy, Condition.Pliant, Condition.Malleable, Condition.Primed };
+            return Random.Shared.GetItems(MMConditions.ToArray(), 1)[0];
+        }
         for (int i = 1; i < craft.CraftConditionProbabilities.Length; ++i)
         {
             roll -= craft.CraftConditionProbabilities[i];

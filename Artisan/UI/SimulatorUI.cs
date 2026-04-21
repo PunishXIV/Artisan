@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using static FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule;
-using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.UI
 {
@@ -732,24 +731,14 @@ namespace Artisan.UI
             if (assumeNormalStatus)
                 return;
 
-            if (recipe.IsExpert) //Todo update with Lumina fix
+            if (recipe.IsExpert)
             {
-                // TODO: this is all very unconfirmed, we really need a process to gather this data
-                var potentialConditions = recipe.RecipeLevelTable.Value.ConditionsFlag;
-                var manyConditions = (potentialConditions & 0x1F0) == 0x1F0; // it seems that when all conditions are available, each one has slightly lower probability?
-                var haveGoodOmen = (potentialConditions & (1 << (int)Condition.GoodOmen)) != 0; // it seems that when good omen is possible, straight good is quite a bit rarer
-                craft.CraftConditionProbabilities = new float[(int)Condition.Unknown];
-                craft.CraftConditionProbabilities[(int)Condition.Good] = haveGoodOmen ? 0.04f : 0.12f;
-                craft.CraftConditionProbabilities[(int)Condition.Centered] = manyConditions ? 0.12f : 0.15f;
-                craft.CraftConditionProbabilities[(int)Condition.Sturdy] = manyConditions ? 0.12f : 0.15f;
-                craft.CraftConditionProbabilities[(int)Condition.Pliant] = manyConditions ? 0.10f : 0.12f;
-                craft.CraftConditionProbabilities[(int)Condition.Malleable] = manyConditions ? 0.10f : 0.12f;
-                craft.CraftConditionProbabilities[(int)Condition.Primed] = manyConditions ? 0.12f : 0.15f;
-                craft.CraftConditionProbabilities[(int)Condition.GoodOmen] = 0.12f;
-                craft.CraftConditionProbabilities[(int)Condition.Robust] = 0.12f;
-                for (Condition i = Condition.Good; i < Condition.Unknown; ++i)
-                    if ((potentialConditions & (1 << (int)i)) == 0)
-                        craft.CraftConditionProbabilities[(int)i] = 0;
+                // all sets of potential conditions (unique ConditionsFlag values) have their own probabilities
+                var recipeConditionsFlag = recipe.RecipeLevelTable.Value.ConditionsFlag;
+                if (CraftState.ExpertConditionOdds.ContainsKey(recipeConditionsFlag))
+                    craft.CraftConditionProbabilities = CraftState.ExpertConditionOdds[recipeConditionsFlag];
+                else
+                    craft.CraftConditionProbabilities = CraftState.ExpertConditionOdds[0];
             }
             else
             {

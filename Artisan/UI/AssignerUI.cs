@@ -70,7 +70,8 @@ namespace Artisan.UI
             DummyConfig.DrawManual();
             DummyConfig.DrawSquadronManual();
             DummyConfig.DrawSolver(c, false, false);
-            DummyConfig.DrawExpertProfiles(c);
+            if (P.Config.ExpertSolverConfig.EnableExpertProfiles)
+                DummyConfig.DrawExpertProfiles(c);
             DummyConfig.DrawWarnings(c);
             RaphaelCache.DrawRaphaelDropdown(c, false);
 

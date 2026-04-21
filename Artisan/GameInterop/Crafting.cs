@@ -184,9 +184,14 @@ public static unsafe class Crafting
                     }
                     break;
                 case 7:
-                    res.CraftQualityMin1 = res.CraftQualityMax;
-                    res.CraftQualityMin2 = res.CraftQualityMax;
-                    res.CraftQualityMin3 = res.CraftQualityMax;
+                    var wksRow = GenericHelpers.FindRow<WKSMissionToDoEvalutionRefin>(x => x.RowId == recipe.CollectableMetadata.RowId);
+                    if (wksRow != null)
+                    {
+                        var scale = res.LevelTable.Quality * ((double)res.Recipe.QualityFactor / 100) / 1000;
+                        res.CraftQualityMin1 = (int)Math.Floor(wksRow.Value.Unknown0 * scale) * 10;
+                        res.CraftQualityMin2 = (int)Math.Floor(wksRow.Value.Unknown1 * scale) * 10;
+                        res.CraftQualityMin3 = (int)Math.Floor(wksRow.Value.Unknown2 * scale) * 10;
+                    }
                     break;
                 // Check for any other Generic Collectable
                 default:
@@ -407,12 +412,12 @@ public static unsafe class Crafting
                 Svc.Log.Error($"Unexpected initial state: {CurStep}");
 
             IsTrial = synthWindow->AtkUnitBase.AtkValues[1] is { Type: FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool, Byte: 1 };
-            if (CurCraft.IsCosmic)
-            {
-                CurCraft.CraftQualityMin1 = (int)synthWindow->AtkValues[22].UInt * 10;
-                CurCraft.CraftQualityMin2 = (int)synthWindow->AtkValues[23].UInt * 10;
-                CurCraft.CraftQualityMin3 = CurCraft.CraftQualityMax;
-            }
+            //if (CurCraft.IsCosmic)
+            //{
+            //    CurCraft.CraftQualityMin1 = (int)synthWindow->AtkValues[22].UInt * 10;
+            //    CurCraft.CraftQualityMin2 = (int)synthWindow->AtkValues[23].UInt * 10;
+            //    CurCraft.CraftQualityMin3 = CurCraft.CraftQualityMax;
+            //}
             CraftStarted?.Invoke(CurRecipe.Value, CurCraft, CurStep, IsTrial);
             return State.InProgress;
         }
@@ -462,7 +467,7 @@ public static unsafe class Crafting
                     return State.WaitAction; // wait for a bit...
                 }
                 // ok, we've been waiting too long - complain and consider current state to be correct
-                Svc.Log.Error($"Unexpected status update - probably a simulator bug:\n" +
+                Svc.Log.Warning($"Unexpected status update - probably a simulator bug:\n" +
                     $"     had {CurStep}\n" +
                     $"expected {_predictedNextStep}\n" +
                     $"     got {step}\n" +
@@ -665,6 +670,7 @@ public static unsafe class Crafting
         ret.Durability = GetStepDurability(synthWindow);
         ret.RemainingCP = (int)CharacterInfo.CurrentCP;
         ret.Condition = GetStepCondition(synthWindow);
+        ret.PrevCondition = predictedStep?.PrevCondition ?? Condition.Normal;
         ret.IQStacks = GetStatus(Buffs.InnerQuiet)?.Param ?? 0;
         ret.WasteNotLeft = GetStatus(Buffs.WasteNot2)?.Param ?? GetStatus(Buffs.WasteNot)?.Param ?? 0;
         ret.ManipulationLeft = GetStatus(Buffs.Manipulation)?.Param ?? 0;
@@ -685,11 +691,15 @@ public static unsafe class Crafting
         ret.PrevComboAction = predictedStep?.PrevComboAction ?? Skills.None;
         ret.MaterialMiracleCharges = MaterialMiracleCharges();
         ret.MaterialMiracleActive = GetStatus(Buffs.MaterialMiracle) != null;
+        ret.MaterialMiraclesUsed = predictedStep?.MaterialMiraclesUsed ?? 0;
+        ret.MaterialMiracleSecondsLeft = GetStatus(Buffs.MaterialMiracle) != null ? GetStatus(Buffs.MaterialMiracle).RemainingTime : 0;
+        ret.PrevMaterialMiracleActive = predictedStep?.PrevMaterialMiracleActive ?? false;
         ret.SteadyHandCharges = SteadyHandCharges();
         ret.SteadyHandLeft = GetStatus(Buffs.SteadyHand)?.Param ?? 0;
         ret.SteadyHandsUsed = predictedStep?.SteadyHandsUsed ?? 0;
         ret.ObserveCounter = predictedStep?.ObserveCounter ?? 0;
         ret.ExpertEmergency = predictedStep?.ExpertEmergency ?? false;
+        ret.ExpertMiracleTrigger = predictedStep?.ExpertMiracleTrigger ?? false;
 
         return ret;
     }

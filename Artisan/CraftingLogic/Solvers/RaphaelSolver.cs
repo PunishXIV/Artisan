@@ -80,7 +80,7 @@ namespace Artisan.CraftingLogic.Solvers
             P.Config.RaphaelSolverCacheV5.TryRemove(key, out _);
 
             var manipulation = craft.UnlockedManipulation ? "--manipulation" : "";
-            var itemText = $"--custom-recipe {craft.LevelTable.RowId} {craft.CraftProgress} {(craft.CraftCollectible ? craft.CraftQualityMin3 : craft.CraftQualityMax)} {craft.CraftDurability} {(craft.CraftExpert ? "1" : "0")} --stellar-steady-hand {Math.Min(craft.CurrentSteadyHandCharges, P.Config.RaphaelSolverConfig.MaxStellarHand)}";
+            var itemText = $"--custom-recipe {craft.LevelTable.RowId} {craft.CraftProgress} {(craft.CraftCollectible && !craft.IsCosmic ? craft.CraftQualityMin3 : craft.CraftQualityMax)} {craft.CraftDurability} {(craft.CraftExpert ? "1" : "0")} --stellar-steady-hand {Math.Min(craft.CurrentSteadyHandCharges, P.Config.RaphaelSolverConfig.MaxStellarHand)}";
 
             var argsList = new List<string>
             {
@@ -472,51 +472,75 @@ namespace Artisan.CraftingLogic.Solvers
             bool changed = false;
             try
             {
-                ImGui.Indent();
-                ImGui.TextWrapped($"Raphael settings can change the performance and system memory consumption. If you have low amounts of RAM try not to change settings, recommended minimum amount of RAM free is 2GB");
+                string ProgressString = LuminaSheets.AddonSheet[213].Text.ToString();
+                string QualityString = LuminaSheets.AddonSheet[216].Text.ToString();
+                string ConditionString = LuminaSheets.AddonSheet[215].Text.ToString();
 
-                if (ImGui.SliderInt("Maximum Threads", ref MaximumThreads, 0, Environment.ProcessorCount))
-                {
-                    P.Config.Save();
-                }
-                ImGuiEx.TextWrapped("By default uses all it can, but on lower end machines you might need to use less cpu at the cost of speed. (0 = everything)");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGuiEx.TextWrapped(ImGuiColors.DalamudYellow, $"Raphael settings can affect your performance and system memory consumption while generating a macro.\r\nIf you have low amounts of RAM, try not to change these settings. At least 2GB of free RAM is recommended.");
+
+                ImGui.Indent();
+
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Performance");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
+
+                ImGui.PushItemWidth(250);
+                changed |= ImGui.SliderInt("Maximum threads (0 for all)", ref MaximumThreads, 0, Environment.ProcessorCount);
+                ImGuiComponents.HelpMarker("By default the Raphael generator uses everything it can (setting = 0), but on lower-end machines you might need to use less CPU at the cost of speed.");
 
                 changed |= ImGui.Checkbox("Ensure 100% reliability in macro generation", ref AllowEnsureReliability);
-                ImGui.PushTextWrapPos(0);
-                ImGui.TextColored(new System.Numerics.Vector4(255, 0, 0, 1), "Ensuring reliability may not always work and is very CPU and RAM intensive, suggested RAM at least 16GB+ spare. NO SUPPORT SHALL BE GIVEN IF YOU HAVE THIS ON");
-                ImGui.PopTextWrapPos();
-                changed |= ImGui.Checkbox("Allow backloading of progress in macro generation", ref AllowBackloadProgress);
-                changed |= ImGui.Checkbox("Show specialist options when available", ref ShowSpecialistSettings);
-                changed |= ImGui.Checkbox($"Automatically generate a solution if a valid one hasn't been created.", ref AutoGenerate);
+                //ImGui.PushTextWrapPos(0);
+                ImGui.TextColored(new System.Numerics.Vector4(255, 0, 0, 1), "Ensuring reliability may not always work and is very CPU and RAM intensive. 16GB+ of spare RAM is recommended. NO SUPPORT SHALL BE GIVEN IF YOU HAVE THIS ON");
+                //ImGui.PopTextWrapPos();
 
+                ImGui.Dummy(new Vector2(0, 2f));
+                changed |= ImGui.SliderInt("Macro generation timeout (minutes)", ref TimeOutMins, 1, 15);
+                ImGuiComponents.HelpMarker($"If a solution takes longer than this many minutes to generate, macro generation will be canceled.");
+
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Automatic Usage");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
+
+                changed |= ImGui.Checkbox($"Automatically generate a Raphael macro if a valid one hasn't been created", ref AutoGenerate);
                 if (AutoGenerate)
                 {
                     ImGui.Indent();
-                    changed |= ImGui.Checkbox($"Generate on Expert Recipes", ref GenerateOnExperts);
+                    changed |= ImGui.Checkbox($"Automatically generate on expert recipes", ref GenerateOnExperts);
                     ImGui.Unindent();
                 }
 
-                changed |= ImGui.Checkbox($"Automatically switch to the Raphael Solver once a solution has been created.", ref AutoSwitch);
-
+                changed |= ImGui.Checkbox("Automatically switch to the Raphael macro once one has been created", ref AutoSwitch);
                 if (AutoSwitch)
                 {
                     ImGui.Indent();
-                    changed |= ImGui.Checkbox($"Apply to all valid crafts", ref AutoSwitchOnAll);
-                    changed |= ImGui.Checkbox("Apply over crafts that already have a macro assigned to them", ref AutoSwitchOverManual);
+                    changed |= ImGui.Checkbox("Apply to all valid crafts", ref AutoSwitchOnAll);
+                    changed |= ImGui.Checkbox("Overwrite crafts that already have a macro assigned to them", ref AutoSwitchOverManual);
                     ImGui.Unindent();
                 }
 
-                changed |= ImGui.SliderInt("Max Stellar Steady Hand usage", ref MaxStellarHand, 0, 2);
+                changed |= ImGui.Checkbox("Use Raphael as default solver", ref DefaultRaphSolver);
+                ImGuiComponents.HelpMarker("Important notes:\r\n\r\n• Any recipes opened with Artisan before changing this setting will still use their current solvers.\r\n• If you disable this setting, any recipes that were set to Raphael will stay that way until changed.\r\n• The Standard Solver is used as the default solver if this setting is disabled.");
 
-                ImGuiComponents.HelpMarker("This is only for missions that have Stellar Steady Hand, will limit how many are allowed per macro (Raphael may still use less in its solutions).");
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.TextWrapped($"Macro Generation");
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
 
-                changed |= ImGui.SliderInt("Timeout solution generation", ref TimeOutMins, 1, 15);
+                ImGui.TextWrapped($"These settings will display new macro generation options for each recipe.");
 
-                ImGuiComponents.HelpMarker($"If a solution takes longer than this many minutes to generate, it will cancel the generation task.");
+                ImGui.Dummy(new Vector2(0, 2f));
+                changed |= ImGui.Checkbox($"Allow backloading of {ProgressString.ToLower()}", ref AllowBackloadProgress);
+                ImGuiComponents.HelpMarker($"When enabled, this will ensure {QualityString.ToLower()} is finished before starting on {ProgressString.ToLower()}. Useful for simple expert recipes where the Malleable condition might otherwise cause an early finish.");
 
-                changed |= ImGui.Checkbox("Set Raphael as Default Solver For Recipes Without a Solver Set.", ref DefaultRaphSolver);
+                changed |= ImGui.Checkbox("Allow specialist actions when available", ref ShowSpecialistSettings);
 
-                ImGuiComponents.HelpMarker("Once the solver is set with this setting, turning this setting off will still keep it saved as Raphael.");
+                changed |= P.PluginUi.ExpertSettingsUI.SliderIntWithIcons("MaxStellarHand", ref MaxStellarHand, 0, 2, "Max [s!SteadyHand] uses per craft");
+                P.PluginUi.ExpertSettingsUI.HelpMarkerWithIcons(["This setting only applies to Cosmic Exploration recipes on missions with [s!SteadyHand].", "The Raphael solver will use UP TO this many charges depending on the recipe's difficulty."]);
 
                 changed |= ImGui.Checkbox("Fallback to another solver if Raphael is locked.", ref FallbackToSolverIfRaphaelLocked);
 
@@ -564,6 +588,8 @@ namespace Artisan.CraftingLogic.Solvers
                 }
 
                 ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 10f));
+
                 return changed;
             }
             catch { }

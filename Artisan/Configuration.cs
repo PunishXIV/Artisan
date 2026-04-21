@@ -34,8 +34,7 @@ namespace Artisan
         public int MaxPercentage = 100;
         public bool UseTricksGood = false;
         public int MaxIQPrepTouch = 10;
-        public bool UseMaterialMiracle = false;
-        public bool MaterialMiracleMulti;
+        public int MaxMaterialMiracles = 0;
 		public int MinimumStepsBeforeMiracle = 10;
 		public bool LowStatsMode = false;
         public bool UseTricksExcellent = false;
@@ -44,6 +43,8 @@ namespace Artisan
         public int CurrentSimulated = 0;
         public bool UseSimulatedStartingQuality = false;
         public bool DisableHighlightedAction = false;
+        public bool AcknowledgeExpertSettings = false;
+        public bool UseNativeButtons = true;
 
         public ExpertSolverSettings ExpertSolverConfig = new(); // the global expert profile/settings
         public ExpertSolverProfiles ExpertSolverProfiles = new(); // handles all expert profiles, including the global one
@@ -171,6 +172,11 @@ namespace Artisan
         public ConcurrentDictionary<string, MacroSolverSettings.Macro> RaphaelSolverCacheV4 = [];
         public ConcurrentDictionary<string, MacroSolverSettings.Macro> RaphaelSolverCacheV5 = [];
         public bool ShowLevelingRecipeProgress = true;
+        public bool ExitCraftStanceEndurance = true;
+
+        [NonSerialized]
+        public TrackConditions DebugTrackConditions = new TrackConditions();
+        public bool DebugTrackConditionData = false;
 
         public void Save()
         {

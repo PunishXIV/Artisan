@@ -21,6 +21,7 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using TerraFX.Interop.Windows;
 using static ECommons.GenericHelpers;
 
 namespace Artisan
@@ -82,8 +83,11 @@ namespace Artisan
 
                 DrawSearchReplace();
 
-                DrawEnduranceCounter();
-                DrawCosmicEnduranceCounter();
+                if (!P.Config.UseNativeButtons)
+                {
+                    DrawEnduranceCounter();
+                    DrawCosmicEnduranceCounter();
+                }
 
                 DrawWorkshopOverlay();
 
@@ -989,7 +993,7 @@ namespace Artisan
 
         public static CraftMenuWindowUI AddCraftMenuWindow()
         {
-            _craftMenuWindowUi = new CraftMenuWindowUI("CraftMenuWindow", GetWindowFlags());
+            _craftMenuWindowUi = new CraftMenuWindowUI("Artisan Crafting Window###CraftMenuWindow", GetWindowFlags());
             return _craftMenuWindowUi;
         }
 
@@ -1018,7 +1022,7 @@ namespace Artisan
 
         public static CraftMenuWindowUI AddCosmicCraftMenuWindow()
         {
-            _cosmicCraftMenuWindowUi = new CraftMenuWindowUI("CosmicCraftMenuWindow", GetWindowFlags());
+            _cosmicCraftMenuWindowUi = new CraftMenuWindowUI("Artisan Crafting Window###CosmicCraftMenuWindow", GetWindowFlags());
             return _cosmicCraftMenuWindowUi;
         }
 
