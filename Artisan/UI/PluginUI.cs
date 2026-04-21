@@ -877,6 +877,8 @@ namespace Artisan.UI
 
                 changed |= ImGui.Checkbox("Show leveling category completion in Crafting Log", ref P.Config.ShowLevelingRecipeProgress);
                 ImGuiComponents.HelpMarker("Shows a total of completed recipes in each leveling category, or a tick if all are completed.");
+                changed |= ImGui.Checkbox("Show other categories' completion in Crafting Log", ref P.Config.ShowOtherRecipeProgress);
+                ImGuiComponents.HelpMarker("Shows a total of completed recipes (or a tick, if finished) for Housing categories and Ornaments. These categories have native UI checkmarks for completion, but are not directly tied to achievements.");
 
                 changed |= ImGui.Checkbox("Disable context menu options", ref P.Config.HideContextMenus);
                 ImGuiComponents.HelpMarker("These are the Artisan-added options when you right click or press square on a recipe or item.");

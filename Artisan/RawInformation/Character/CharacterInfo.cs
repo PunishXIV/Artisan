@@ -9,6 +9,7 @@ using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TerraFX.Interop.Windows;
 
 namespace Artisan.RawInformation.Character
 {
@@ -144,7 +145,8 @@ namespace Artisan.RawInformation.Character
             return GetIsGatheringItemGathered(recipe) != 0;
         }
 
-        public static Dictionary<(Job Job, uint LevelBracket), (int Completed, int Total)> CompletedRecipes = new();
+        public static Dictionary<(Job Job, uint DivisionID), (int Completed, int Total)> CompletedRecipes = new();
+        public static Lumina.Excel.ExcelSheet<RecipeNotebookList> logSheet = Svc.Data.GetExcelSheet<RecipeNotebookList>();
 
         public static void UpdateCompletedRecipes()
         {
@@ -152,31 +154,66 @@ namespace Artisan.RawInformation.Character
                 return;
 
             CompletedRecipes.Clear();
+            if (P.Config.ShowLevelingRecipeProgress)
+                UpdateCompletedLevelingRecipes();
+            if (P.Config.ShowOtherRecipeProgress)
+                UpdateCompletedOtherRecipes();
+        }
+
+        public static void UpdateCompletedLevelingRecipes()
+        {
             for (int i = (int)Job.CRP; i <= (int)Job.CUL; i++)
             {
                 var j = (Job)i;
                 for (uint l = 0; l <= 39; l++)
                 {
-                    var sheet = Svc.Data.GetExcelSheet<RecipeNotebookList>();
-                    uint row = (uint)(((i - 8) * 40) + l);
-                    if (sheet.TryGetRow(row, out var d))
-                    {
-                        var division = Svc.Data.GetExcelSheet<NotebookDivision>().GetRow(l);
-                        int count = d.Count;
-                        if (count == 0)
-                            continue;
-
-                        int completed = 0;
-                        for (int r = 0; r < count; r++)
-                        {
-                            var recipe = d.Recipe[r];
-                            if (P.ri.HasRecipeCrafted(recipe.RowId))
-                                completed++;
-                        }
-
-                        CompletedRecipes[(j, l)] = (completed, count);
-                    }
+                    uint rowId = (uint)(((i - 8) * 40) + l);
+                    UpdateCompletedRecipesForRowId(rowId, (Job)i, l);
                 }
+            }
+        }
+
+        public static void UpdateCompletedOtherRecipes()
+        {
+            // RecipeNotebookList 1344-1399: Housing categories (7), one per job
+            for (uint cat = 0; cat <= 6; cat++)
+            {
+                uint divisionId = 1043 + cat;  // 1043-1049 = NotebookDivision row ids
+                for (int i = (int)Job.CRP; i <= (int)Job.CUL; i++)
+                {
+                    uint rowId = (uint)(1344 + (cat * 8) + (i - 8));
+                    UpdateCompletedRecipesForRowId(rowId, (Job)i, divisionId);
+                }
+            }
+
+            // RecipeNotebookList 1280-1287: Ornaments (1)
+            // RecipeNotebookList 1416-1423: Ornaments (2)
+            for (int i = (int)Job.CRP; i <= (int)Job.CUL; i++)
+            {
+                uint rowIdOne = (uint)(1280 + (i - 8));
+                uint rowIdTwo = (uint)(1416 + (i - 8));
+                UpdateCompletedRecipesForRowId(rowIdOne, (Job)i, 1035); // 1035 = NotebookDivision id (Ornaments 1)
+                UpdateCompletedRecipesForRowId(rowIdTwo, (Job)i, 1052); // 1052 = NotebookDivision id (Ornaments 2)
+            }
+        }
+
+        public static void UpdateCompletedRecipesForRowId(uint rowId, Job j, uint divisionId)
+        {
+            if (logSheet.TryGetRow(rowId, out var d))
+            {
+                int count = d.Count;
+                if (count == 0)
+                    return;
+
+                int completed = 0;
+                for (int r = 0; r < count; r++)
+                {
+                    var recipe = d.Recipe[r];
+                    if (P.ri.HasRecipeCrafted(recipe.RowId))
+                        completed++;
+                }
+
+                CompletedRecipes[(j, divisionId)] = (completed, count);
             }
         }
 
