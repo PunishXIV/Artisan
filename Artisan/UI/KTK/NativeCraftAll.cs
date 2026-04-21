@@ -1,21 +1,11 @@
 ﻿using Artisan.Autocraft;
 using Artisan.RawInformation;
-using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
-using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Controllers;
-using KamiToolKit.Extensions;
 using KamiToolKit.Nodes;
-using KamiToolKit.Premade.Node;
-using KamiToolKit.Premade.Node.Simple;
-using Microsoft.VisualBasic;
 using System;
-using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
-using TerraFX.Interop.Windows;
 
 namespace Artisan.UI.KTK
 {
@@ -28,6 +18,7 @@ namespace Artisan.UI.KTK
         NumericInputNode? craftXCounter;
         int val = 0;
         int craftableCount = 0;
+        bool setup = false;
 
         public NativeCraftAll()
         {
@@ -37,6 +28,7 @@ namespace Artisan.UI.KTK
                 OnSetup = RegularOnSetup,
                 OnRefresh = OnRefresh,
                 OnFinalize = OnFinalize,
+                OnUpdate = OnUpdate
             };
             regularRecipeNoteController?.Enable();
 
@@ -46,12 +38,29 @@ namespace Artisan.UI.KTK
                 OnSetup = MoonOnSetup,
                 OnRefresh = OnRefresh,
                 OnFinalize = OnFinalize,
+                OnUpdate = OnUpdate
             };
             regularRecipeNoteController?.Enable();
         }
 
+        private void OnUpdate(AtkUnitBase* addon)
+        {
+            if (!P.Config.UseNativeButtons)
+            {
+                OnFinalize(addon);
+            }
+            else if (!setup)
+            {
+                if (addon->NameString == "RecipeNote")
+                    RegularOnSetup(addon);
+                else
+                    MoonOnSetup(addon);
+            }
+        }
+
         private void MoonOnSetup(AtkUnitBase* addon)
         {
+            if (!P.Config.UseNativeButtons) return;
             if (addon->RootNode is null) return;
 
             var synthButton = addon->GetNodeById(50);
@@ -95,6 +104,7 @@ namespace Artisan.UI.KTK
             };
 
             craftXCounter.AttachNode(craftAll, KamiToolKit.Classes.NodePosition.AfterTarget);
+            setup = true;
         }
 
         private void OnFinalize(AtkUnitBase* addon)
@@ -108,6 +118,8 @@ namespace Artisan.UI.KTK
 
             craftXCounter?.Dispose();
             craftXCounter = null;
+
+            setup = false;
         }
 
         private void OnRefresh(AtkUnitBase* addon)
@@ -133,6 +145,7 @@ namespace Artisan.UI.KTK
 
         private void RegularOnSetup(AtkUnitBase* addon)
         {
+            if (!P.Config.UseNativeButtons) return;
             if (addon->RootNode is null) return;
 
             var synthButton = addon->GetNodeById(104);
@@ -171,9 +184,9 @@ namespace Artisan.UI.KTK
                 OnClick = () => CraftX(),
                 IsEnabled = true,
             };
-            
-            craftAll.AttachNode(synthButton, KamiToolKit.Classes.NodePosition.AfterTarget);
 
+            craftAll.AttachNode(synthButton, KamiToolKit.Classes.NodePosition.AfterTarget);
+            setup = true;
         }
 
         private void CraftX()

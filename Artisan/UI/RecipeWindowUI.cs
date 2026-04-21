@@ -21,6 +21,7 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using TerraFX.Interop.Windows;
 using static ECommons.GenericHelpers;
 
 namespace Artisan
@@ -82,8 +83,11 @@ namespace Artisan
 
                 DrawSearchReplace();
 
-                //DrawEnduranceCounter();
-                //DrawCosmicEnduranceCounter();
+                if (!P.Config.UseNativeButtons)
+                {
+                    DrawEnduranceCounter();
+                    DrawCosmicEnduranceCounter();
+                }
 
                 DrawWorkshopOverlay();
 

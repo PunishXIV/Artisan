@@ -24,6 +24,7 @@ using ECommons.Automation;
 using ECommons.WindowsFormsReflector;
 using System.Text;
 using ECommons.ExcelServices;
+using TerraFX.Interop.Windows;
 
 namespace Artisan.UI
 {
@@ -835,6 +836,9 @@ namespace Artisan.UI
                     P.Config.Save();
 
                 ImGuiComponents.HelpMarker("Shows a total of completed recipes in each leveling category, or a tick if all are completed.");
+
+                if (ImGui.Checkbox("Use Native Craft-X Buttons in Recipe Log", ref P.Config.UseNativeButtons))
+                    P.Config.Save();
 
                 bool hideQuestHelper = P.Config.HideQuestHelper;
                 if (ImGui.Checkbox($"Hide Quest Helper", ref hideQuestHelper))
