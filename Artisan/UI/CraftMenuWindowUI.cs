@@ -132,8 +132,8 @@ namespace Artisan.UI
                 ExpertSolverSettings expCfg = profile.ID == 0 ? P.Config.ExpertSolverConfig : profile.Settings;
                 if (Crafting.MaterialMiracleCharges() > 0 && (SolverIs(config, "standard") || SolverIs(config, "expert")))
                 {
-                    int maxMiracles = SolverIs(config, "expert") ? expCfg.OverrideCosmicRecipeSettings ? expCfg.MaxMaterialMiracleUses : (int)config.ExpertMaxMaterialMiracleUses : P.Config.MaxMaterialMiracles;
-                    int delayMatMiracle = SolverIs(config, "expert") ? expCfg.OverrideCosmicRecipeSettings ? expCfg.MinimumStepsBeforeMiracle : (int)config.ExpertMinimumStepsBeforeMiracle : P.Config.MinimumStepsBeforeMiracle;
+                    int maxMiracles = SolverIs(config, "expert") ? expCfg.OverrideCosmicRecipeSettings ? expCfg.MaxMaterialMiracleUses : (int)config.ExpertMaxMaterialMiracleUses : P.Config.StandardMMUses;
+                    int delayMatMiracle = SolverIs(config, "expert") ? expCfg.OverrideCosmicRecipeSettings ? expCfg.MinimumStepsBeforeMiracle : (int)config.ExpertMinimumStepsBeforeMiracle : P.Config.StandardMMSteps;
                     MMSet useMMWhen = SolverIs(config, "expert") ? expCfg.OverrideCosmicRecipeSettings ? expCfg.UseMMWhen : config.expertUseMMWhen : MMSet.Steps;
 
                     if (expCfg.OverrideCosmicRecipeSettings && SolverIs(config, "expert"))
