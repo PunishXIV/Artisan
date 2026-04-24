@@ -217,14 +217,14 @@ namespace Artisan
             if (addonPtr->UldManager.NodeListCount >= 5)
             {
                 //var node = addonPtr->UldManager.NodeList[1]->GetAsAtkComponentNode()->Component->UldManager.NodeList[4];
-                var node = addonPtr->UldManager.NodeList[6];
+                var node = addonPtr->GetNodeById(50);
 
                 var position = AtkResNodeFunctions.GetNodePosition(node);
                 var scale = AtkResNodeFunctions.GetNodeScale(node);
                 var size = new Vector2(node->Width, node->Height) * scale;
                 //position += ImGuiHelpers.MainViewport.Pos;
                 ImGui.CalcTextSize("Craft X Times:");
-                var craftableCount = addonPtr->UldManager.NodeList[24]->GetAsAtkTextNode()->NodeText.ToString() == "" ? 0 : Convert.ToInt32(addonPtr->UldManager.NodeList[24]->GetAsAtkTextNode()->NodeText.ToString().GetNumbers());
+                var craftableCount = addonPtr->GetNodeById(34)->GetAsAtkTextNode()->NodeText.ToString() == "" ? 0 : Convert.ToInt32(addonPtr->GetNodeById(34)->GetAsAtkTextNode()->NodeText.ToString().GetNumbers());
 
                 if (craftableCount == 0) return;
 
@@ -251,9 +251,9 @@ namespace Artisan
             if (addonPtr == null)
                 return;
 
-            if (addonPtr->UldManager.NodeListCount >= 2 && addonPtr->UldManager.NodeList[1]->IsVisible())
+            if (addonPtr->UldManager.NodeListCount >= 2 && addonPtr->GetNodeById(54)->IsVisible())
             {
-                var node = addonPtr->UldManager.NodeList[1];
+                var node = addonPtr->GetNodeById(54);
 
                 if (!node->IsVisible())
                     return;

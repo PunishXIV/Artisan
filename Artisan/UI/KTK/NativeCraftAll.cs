@@ -28,7 +28,7 @@ namespace Artisan.UI.KTK
                 OnSetup = RegularOnSetup,
                 OnRefresh = OnRefresh,
                 OnFinalize = OnFinalize,
-                OnUpdate = OnUpdate
+                OnUpdate = OnUpdate,
             };
             regularRecipeNoteController?.Enable();
 
@@ -78,9 +78,11 @@ namespace Artisan.UI.KTK
             {
                 Position = new Vector2(buttonX, buttonY),
                 Size = new Vector2(synthButton->Width, 36),
-                String = $"Synthesize All",
+                String = $"Craft All ({SynthesizeableCount})",
                 OnClick = () => SynthesizeX(),
                 IsEnabled = SynthesizeableCount > 0,
+                TextTooltip = "Button added by Artisan.",
+                NodeId = 100000
             };
 
             SynthesizeAll.AttachNode(synthButton, KamiToolKit.Classes.NodePosition.AfterTarget);
@@ -92,11 +94,12 @@ namespace Artisan.UI.KTK
                 OnValueUpdate = (t) =>
                 {
                     val = t;
-                    SynthesizeAll?.String = val == 0 ? "Craft All" : $"Craft {t}";
+                    SynthesizeAll?.String = val == 0 ? $"Craft All ({SynthesizeableCount})" : $"Craft {t}";
                 },
                 NodeFlags = synthButton->NodeFlags,
                 Max = SynthesizeableCount,
                 IsEnabled = SynthesizeableCount > 0,
+                NodeId = 100001
             };
 
             SynthesizeXCounter.AttachNode(SynthesizeAll, KamiToolKit.Classes.NodePosition.AfterTarget);
@@ -137,6 +140,8 @@ namespace Artisan.UI.KTK
 
             val = Math.Min(SynthesizeableCount, val);
             SynthesizeXCounter.Value = val;
+            if (val == 0)
+                SynthesizeAll.String = $"Craft All ({SynthesizeableCount})";
         }
 
         private void RegularOnSetup(AtkUnitBase* addon)
@@ -158,9 +163,11 @@ namespace Artisan.UI.KTK
             {
                 Position = new Vector2(buttonX, buttonY),
                 Size = new Vector2(synthBg->Width, synthBg->Height),
-                String = $"Synthesize All",
+                String = $"Craft All ({SynthesizeableCount})",
                 OnClick = () => SynthesizeX(),
                 IsEnabled = SynthesizeableCount > 0,
+                TextTooltip = "Button added by Artisan.",
+                NodeId = 100000
             };
 
             SynthesizeAll.AttachNode(synthButton, KamiToolKit.Classes.NodePosition.AfterTarget);
@@ -173,10 +180,11 @@ namespace Artisan.UI.KTK
                 OnValueUpdate = (t) =>
                 {
                     val = t;
-                    SynthesizeAll?.String = val == 0 ? "Craft All" : $"Craft {t}";
+                    SynthesizeAll?.String = val == 0 ? $"Craft All ({SynthesizeableCount})" : $"Craft {t}";
                 },
                 Max = SynthesizeableCount,
                 IsEnabled = SynthesizeableCount > 0,
+                NodeId = 100001
             };
 
             SynthesizeXCounter.AttachNode(SynthesizeAll, KamiToolKit.Classes.NodePosition.AfterTarget);

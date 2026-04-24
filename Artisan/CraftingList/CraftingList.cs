@@ -491,8 +491,8 @@ namespace Artisan.CraftingLists
             if (TryGetAddonByName<AtkUnitBase>("WKSRecipeNotebook", out var cosmicAddon) &&
                 cosmicAddon->IsVisible)
             {
-                var hqBtn = cosmicAddon->UldManager.NodeList[17]->GetAsAtkComponentButton();
-                var nqBtn = cosmicAddon->UldManager.NodeList[18]->GetAsAtkComponentButton();
+                var hqBtn = cosmicAddon->GetNodeById(40)->GetAsAtkComponentButton();
+                var nqBtn = cosmicAddon->GetNodeById(39)->GetAsAtkComponentButton();
 
                 nqBtn->ClickAddonButton(cosmicAddon);
                 hqBtn->ClickAddonButton(cosmicAddon);
