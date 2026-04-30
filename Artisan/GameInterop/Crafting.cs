@@ -154,7 +154,7 @@ public static unsafe class Crafting
 
                 // Satisfaction Supply Recipes
                 case 3:
-                    var satisfactionRow = ECommons.GenericHelpers.FindRow<SatisfactionSupply>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
+                    var satisfactionRow = ECommons.GenericHelpers.FindSubrow<SatisfactionSupply>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
                     if (satisfactionRow.HasValue)
                     {
                         res.CraftQualityMin1 = satisfactionRow.Value.CollectabilityLow * 10;
@@ -195,7 +195,7 @@ public static unsafe class Crafting
                     break;
                 // Check for any other Generic Collectable
                 default:
-                    var genericRow = ECommons.GenericHelpers.FindRow<CollectablesShopItem>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
+                    var genericRow = ECommons.GenericHelpers.FindSubrow<CollectablesShopItem>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
                     if (genericRow is { CollectablesShopRefine: { } breakpoints })
                     {
                         res.CraftQualityMin1 = breakpoints.Value.LowCollectability * 10;
@@ -411,7 +411,7 @@ public static unsafe class Crafting
             if (CurStep.Index != 1 || CurStep.Condition != Condition.Normal || CurStep.PrevComboAction != Skills.None)
                 Svc.Log.Error($"Unexpected initial state: {CurStep}");
 
-            IsTrial = synthWindow->AtkUnitBase.AtkValues[1] is { Type: FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool, Byte: 1 };
+            IsTrial = synthWindow->AtkUnitBase.AtkValues[1] is { Type: AtkValueType.Bool, Byte: 1 };
             //if (CurCraft.IsCosmic)
             //{
             //    CurCraft.CraftQualityMin1 = (int)synthWindow->AtkValues[22].UInt * 10;

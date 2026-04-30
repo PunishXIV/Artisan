@@ -265,7 +265,7 @@ namespace Artisan.RawInformation
                 return string.Empty;
 
             var ptr = utf8String->StringPtr;
-            if (ptr == null)
+            if (!ptr.HasValue)
                 return string.Empty;
 
             var len = Math.Max(utf8String->BufUsed, utf8String->StringLength);

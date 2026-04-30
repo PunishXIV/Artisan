@@ -90,7 +90,7 @@ internal unsafe static class RetainerListHandlers
                 {
                     new()
                     {
-                        Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int,
+                        Type = AtkValueType.Int,
                         Int = -1
                     }
                 };
@@ -266,7 +266,7 @@ internal unsafe static class RetainerHandlers
                     int looper = 0;
                     foreach (var contextObj in contextAgent->EventParams)
                     {
-                        if (contextObj.Type == FFXIVClientStructs.FFXIV.Component.GUI.ValueType.String)
+                        if (contextObj.Type == AtkValueType.String)
                         {
                             var label = MemoryHelper.ReadSeStringNullTerminated(new IntPtr(contextObj.String));
 

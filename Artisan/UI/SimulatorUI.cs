@@ -1028,7 +1028,7 @@ namespace Artisan.UI
                     hasHQ = true;
             }
             using var group = ImRaii.Group();
-            if (!group)
+            if (!group.Alive)
                 return;
 
             ImGuiEx.LineCentered("###LayoutIngredients", () => ImGuiEx.TextUnderlined("Ingredient Layouts"));

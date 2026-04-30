@@ -65,17 +65,17 @@ public static unsafe class Operations
                 var values = stackalloc AtkValue[3];
                 values[0] = new()
                 {
-                    Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int,
+                    Type = AtkValueType.Int,
                     Int = Math.Min(trueNumberCraftable, Math.Min(crafts, 99)),
                 };
                 values[1] = new()
                 {
-                    Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool,
+                    Type = AtkValueType.Bool,
                     Byte = 1,
                 };
                 values[2] = new()
                 {
-                    Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Bool,
+                    Type = AtkValueType.Bool,
                     Byte = 1
                 };
                 Callback.Fire(quickSynthWindow, true, values[0], values[1], values[2]);

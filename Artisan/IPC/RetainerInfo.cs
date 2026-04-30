@@ -551,7 +551,7 @@ namespace Artisan.IPC
         {
             foreach (var x in Svc.Objects)
             {
-                if ((x.ObjectKind == ObjectKind.Housing || x.ObjectKind == ObjectKind.EventObj) && x.Name.ToString().EqualsIgnoreCaseAny(BellName, "リテイナーベル"))
+                if ((x.ObjectKind == ObjectKind.HousingEventObject || x.ObjectKind == ObjectKind.EventObj) && x.Name.ToString().EqualsIgnoreCaseAny(BellName, "リテイナーベル"))
                 {
                     if (Vector3.Distance(x.Position, Svc.Objects.LocalPlayer.Position) < GetValidInteractionDistance(x) && x.IsTargetable())
                     {
@@ -564,11 +564,11 @@ namespace Artisan.IPC
 
         internal static float GetValidInteractionDistance(IGameObject bell)
         {
-            if (bell.ObjectKind == ObjectKind.Housing)
+            if (bell.ObjectKind == ObjectKind.HousingEventObject)
             {
                 return 6.5f;
             }
-            else if (Inns.List.Contains(Svc.ClientState.TerritoryType))
+            else if (Inns.List.Contains((ushort)Svc.ClientState.TerritoryType))
             {
                 return 4.75f;
             }

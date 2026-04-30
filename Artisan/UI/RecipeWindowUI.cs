@@ -474,7 +474,7 @@ namespace Artisan
 
                     var atkUnitBase = (AtkUnitBase*)timerWindow.Address;
 
-                    if (atkUnitBase->AtkValues[233].Type != FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int)
+                    if (atkUnitBase->AtkValues[233].Type != AtkValueType.Int)
                         return;
 
                     var node = atkUnitBase->GetNodeById(15);//->UldManager.NodeList[97];
