@@ -389,10 +389,10 @@ namespace Artisan
                         return;
 
                     var atkUnitBase = (AtkUnitBase*)timerWindow.Address;
-                    var node = atkUnitBase->UldManager.NodeList[19];
+                    var node = atkUnitBase->GetNodeById(27);
 
-                    if (!node->IsVisible())
-                        return;
+                    if (node->IsVisible())
+                        node->ToggleVisibility(false);
 
                     var position = AtkResNodeFunctions.GetNodePosition(node);
                     var scale = AtkResNodeFunctions.GetNodeScale(node);
@@ -400,7 +400,7 @@ namespace Artisan
                     var textSize = ImGui.CalcTextSize("Create Crafting List");
 
                     ImGuiHelpers.ForceNextWindowMainViewport();
-                    ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y + (textSize.Y * scale.Y) + (14f * scale.Y)));
+                    ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y - 6f.Scale()));
 
                     ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
                     ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);

@@ -393,7 +393,6 @@ namespace Artisan.CraftingLists
                 {
                     if (!CLTM.IsBusy && !PreCrafting.Occupied())
                     {
-                        CLTM.Enqueue(() => PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200))));
                         CLTM.Enqueue(() => PreCrafting.Tasks.Add((() => PreCrafting.TaskUseConsumables(config, type), TimeSpan.FromMilliseconds(200))));
                         CLTM.DelayNext(100);
                     }

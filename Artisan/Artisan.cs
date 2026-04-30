@@ -253,19 +253,17 @@ public unsafe class Artisan : IDalamudPlugin
 
         LuminaSheets.Dispose();
 
-        if (!DalamudInfo.IsOnStaging())
-        {
-            CraftingListContextMenu.Dispose();
-            UniversalsisClient.Dispose();
+        CraftingListContextMenu.Dispose();
+        UniversalsisClient.Dispose();
 
-            Svc.Condition.ConditionChange -= Condition_ConditionChange;
-            Svc.Framework.Update -= OnFrameworkUpdate;
-            Svc.ClientState.Logout -= DisableEndurance;
-            Svc.ClientState.Login -= DisableEndurance;
-            Endurance.Dispose();
-            RetainerInfo.Dispose();
-            IPC.IPC.Dispose();
-        }
+        Svc.Condition.ConditionChange -= Condition_ConditionChange;
+        Svc.Framework.Update -= OnFrameworkUpdate;
+        Svc.ClientState.Logout -= DisableEndurance;
+        Svc.ClientState.Login -= DisableEndurance;
+        Endurance.Dispose();
+        RetainerInfo.Dispose();
+        IPC.IPC.Dispose();
+
         ECommonsMain.Dispose();
         NCA.Dispose();
         P = null!;
