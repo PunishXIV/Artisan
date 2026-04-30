@@ -83,7 +83,7 @@ public static unsafe class Crafting
 
     public static void Dispose()
     {
-        _craftingEventHandlerUpdateHook.Dispose();
+        _craftingEventHandlerUpdateHook?.Dispose();
     }
 
     // note: this uses current character stats & equipped gear

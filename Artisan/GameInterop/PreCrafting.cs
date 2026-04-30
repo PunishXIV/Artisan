@@ -36,13 +36,13 @@ public unsafe static class PreCrafting
     private static long NextTaskAt = 0;
 
     private delegate void ClickSynthesisButton(void* thisPtr, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* atkEventData);
-    private static Hook<ClickSynthesisButton> _clickButton;
+    private static Hook<ClickSynthesisButton>? _clickButton;
 
-    private delegate void* FireCallbackDelegate(AtkUnitBase* atkUnitBase, int valueCount, AtkValue* atkValues, byte updateVisibility);
-    private static Hook<FireCallbackDelegate> _gearsetCallback;
+    private delegate Boolean FireCallbackDelegate(AtkUnitBase* atkUnitBase, uint valueCount, AtkValue* atkValues, Boolean updateVisibility);
+    private static Hook<FireCallbackDelegate>? _gearsetCallback;
 
     delegate nint AddonWKSRecipeNote_ReceiveEventDelegate(nint a1, ushort a2, uint a3, nint a4, nint a5);
-    private static Hook<AddonWKSRecipeNote_ReceiveEventDelegate> _cosmicCallback;
+    private static Hook<AddonWKSRecipeNote_ReceiveEventDelegate>? _cosmicCallback;
 
     public enum TaskResult { Done, Retry, Abort }
     public static List<(Func<TaskResult> task, TimeSpan retryDelay)> Tasks = new();
@@ -76,7 +76,7 @@ public unsafe static class PreCrafting
         return _cosmicCallback.Original(a1, a2, a3, a4, a5);
     }
 
-    private static void* CallbackDetour(AtkUnitBase* atkUnitBase, int valueCount, AtkValue* atkValues, byte updateVisibility)
+    private static bool CallbackDetour(AtkUnitBase* atkUnitBase, uint valueCount, AtkValue* atkValues, bool updateVisibility)
     {
         var name = atkUnitBase->NameString.TrimEnd();
         if (name.Length >= 11 && name.Substring(0, 11) == "SelectYesno")

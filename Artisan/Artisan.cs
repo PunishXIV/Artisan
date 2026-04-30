@@ -42,14 +42,14 @@ public unsafe class Artisan : IDalamudPlugin
     internal TaskManager CTM;
     internal TextureCache Icons;
     internal UniversalisClient UniversalsisClient;
-    internal NativeCraftAll NCA;
+    internal NativeCraftAll? NCA;
 
     internal StyleModel Style;
     internal bool StylePushed = false;
 
     public Artisan(IDalamudPluginInterface pluginInterface)
     {
-        ECommonsMain.Init(pluginInterface, this, Module.All);
+        ECommonsMain.Init(pluginInterface, this);
         PunishLibMain.Init(pluginInterface, "Artisan", new AboutPlugin() { Sponsor = "https://ko-fi.com/taurenkey" });
         KamiToolKitLibrary.Initialize(pluginInterface);
         P = this;
@@ -265,7 +265,8 @@ public unsafe class Artisan : IDalamudPlugin
         IPC.IPC.Dispose();
 
         ECommonsMain.Dispose();
-        NCA.Dispose();
+        NCA?.Dispose();
+        KamiToolKitLibrary.Dispose();
         P = null!;
     }
 
