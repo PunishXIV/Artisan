@@ -1,5 +1,6 @@
 ﻿using Artisan.Autocraft;
 using Artisan.RawInformation;
+using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Controllers;
@@ -122,6 +123,8 @@ namespace Artisan.UI.KTK
 
         private void OnRefresh(AtkUnitBase* addon)
         {
+            if (!P.Config.UseNativeButtons) return;
+
             var text = addon->NameString == "WKSRecipeNotebook" ? addon->GetTextNodeById(34)->NodeText.ToString() : addon->GetTextNodeById(78)->NodeText.ToString();
             SynthesizeableCount = text == "" ? 0 : Convert.ToInt32(text.GetNumbers());
 
