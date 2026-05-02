@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ECommons" Version="3.2.0.11" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Artisan\Artisan.csproj" />
     <KnownFrameworkReference Condition="$([MSBuild]::IsOSPlatform('Linux'))" Update="Microsoft.WindowsDesktop.App" IsWindowsOnly="false" />
     <KnownFrameworkReference Condition="$([MSBuild]::IsOSPlatform('Linux'))" Update="Microsoft.WindowsDesktop.App.WPF" IsWindowsOnly="false" />

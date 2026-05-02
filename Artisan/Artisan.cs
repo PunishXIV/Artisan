@@ -49,7 +49,7 @@ public unsafe class Artisan : IDalamudPlugin
 
     public Artisan(IDalamudPluginInterface pluginInterface)
     {
-        ECommonsMain.Init(pluginInterface, this);
+        ECommonsMain.Init(pluginInterface, this, Module.DalamudReflector);
         PunishLibMain.Init(pluginInterface, "Artisan", new AboutPlugin() { Sponsor = "https://ko-fi.com/taurenkey" });
         KamiToolKitLibrary.Initialize(pluginInterface);
         P = this;
@@ -203,7 +203,7 @@ public unsafe class Artisan : IDalamudPlugin
 
         CharacterInfo.UpdateCharaStats();
         Crafting.Update();
-        SimpleTweaks.DisableImprovedLogTweak();
+        //SimpleTweaks.DisableImprovedLogTweak();
         PreCrafting.Update();
         Endurance.Update();
 
