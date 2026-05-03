@@ -36,6 +36,25 @@ public static class CraftingProcessor
     private static uint? _expectedRecipe; // non-null and equal to recipe id if we've requested start of a specific craft (with a specific solver) and are waiting for it to start
     private static Solver.Recommendation _nextRec;
 
+    /// <summary>
+    /// Registers an external plugin as a named solver. The callback receives craft state as JSON
+    /// and must return a JSON object with the chosen skill name: { "action": "BasicTouch" }
+    /// If a solver with the same name is already registered, it is replaced.
+    /// </summary>
+    public static void RegisterExternalSolver(string name, Func<string, string> callback, IReadOnlySet<string>? requestedFields = null, CraftSupport support = CraftSupport.All)
+    {
+        if (requestedFields != null)
+            ExternalSolver.ValidateFields(requestedFields);
+
+        var existing = SolverDefinitions.FindIndex(s => s is ExternalSolverDefinition ext && ext.Name == name);
+        if (existing >= 0)
+            SolverDefinitions[existing] = new ExternalSolverDefinition(name, callback, requestedFields, support);
+        else
+            SolverDefinitions.Add(new ExternalSolverDefinition(name, callback, requestedFields, support));
+
+        Svc.Log.Information($"[CraftingProcessor] External solver registered: '{name}'");
+    }
+
     public static void Setup()
     {
         SolverDefinitions.Add(new StandardSolverDefinition());

@@ -38,6 +38,10 @@ namespace Artisan.IPC
         public static ArtisanMode CurrentMode;
         internal static void Init()
         {
+            Svc.PluginInterface.GetIpcProvider<string, Func<string, string>, List<string>, int, object>("Artisan.RegisterExternalSolver").RegisterAction(RegisterExternalSolver);
+
+            Svc.PluginInterface.GetIpcProvider<bool>("Artisan.GetSplendorCosmic").RegisterFunc(GetSplendorCosmic);
+
             Svc.PluginInterface.GetIpcProvider<bool>("Artisan.GetEnduranceStatus").RegisterFunc(GetEnduranceStatus);
             Svc.PluginInterface.GetIpcProvider<bool, object>("Artisan.SetEnduranceStatus").RegisterAction(SetEnduranceStatus);
 
@@ -87,6 +91,10 @@ namespace Artisan.IPC
 
         internal static void Dispose()
         {
+            Svc.PluginInterface.GetIpcProvider<string, Func<string, string>, List<string>, int, object>("Artisan.RegisterExternalSolver").UnregisterAction();
+
+            Svc.PluginInterface.GetIpcProvider<bool>("Artisan.GetSplendorCosmic").UnregisterFunc();
+
             Svc.PluginInterface.GetIpcProvider<bool>("Artisan.GetEnduranceStatus").UnregisterFunc();
             Svc.PluginInterface.GetIpcProvider<bool, object>("Artisan.SetEnduranceStatus").UnregisterAction();
 
@@ -552,6 +560,29 @@ namespace Artisan.IPC
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipeId) ?? new();
             if (config.TempExpertMinimumStepsBeforeMiracle != null)
                 config.TempExpertMinimumStepsBeforeMiracle = null;
+        }
+
+        /// <summary>
+        /// Returns true if the player currently has a Splendorous or Cosmic tool equipped
+        /// (LevelEquip 90 or 100, Rarity >= 4). These tools change the Good condition quality
+        /// bonus from 1.5× to 1.75×.
+        /// </summary>
+        public static bool GetSplendorCosmic()
+        {
+            return CharacterStats.GetCurrentStats().SplendorCosmic;
+        }
+
+        /// <summary>
+        /// Registers an external plugin as a named solver in Artisan.
+        /// The callback receives craft+step state as JSON and must return { "action": "SkillName" }.
+        /// <paramref name="requestedFields"/> declares which optional fields to include in the "craft" object;
+        /// see <see cref="Solvers.CraftFieldNames"/> for available names. Pass an empty list for no extras.
+        /// Unknown names are silently ignored, so solvers are safe to request fields added in future Artisan versions.
+        /// Registering the same name again replaces the previous registration.
+        /// </summary>
+        public static void RegisterExternalSolver(string name, Func<string, string> callback, List<string> requestedFields, int craftSupport)
+        {
+            CraftingProcessor.RegisterExternalSolver(name, callback, requestedFields.ToHashSet(), (CraftSupport)craftSupport);
         }
 
         public enum ArtisanMode
