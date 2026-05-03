@@ -176,7 +176,7 @@ namespace Artisan.Autocraft
                     Callback.Fire(&addonSelectIconString->AtkUnitBase, true, index);
                 }
 
-                if (TryGetAddonByName<AddonRepair>("AddonRepair", out var addonRepair))
+                if (TryGetAddonByName<AddonRepair>("Repair", out var addonRepair))
                 {
                     return true;
                 }
