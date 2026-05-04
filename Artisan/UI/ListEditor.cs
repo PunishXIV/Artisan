@@ -532,6 +532,10 @@ internal class ListEditor : Window, IDisposable
         {
             ToggleList();
         }
+        if (ImGui.IsItemHovered())
+        {
+            ImGuiEx.Tooltip("This will toggle all items in this list between being skipped and being enabled.");
+        }
 
         Task.Run(() =>
         {
