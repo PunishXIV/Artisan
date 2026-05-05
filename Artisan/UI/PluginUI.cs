@@ -4,6 +4,7 @@ using Artisan.CraftingLogic;
 using Artisan.FCWorkshops;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Artisan.UI.Tables;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
@@ -32,7 +33,7 @@ namespace Artisan.UI
     {
         public event EventHandler<bool>? CraftingWindowStateChanged;
         public ExpertSolverSettingsUI ExpertSettingsUI = new();
-
+        public RaphaelCacheUI RaphaelCacheUI = new();
 
         private bool visible = false;
         public OpenWindow OpenWindow { get; set; }

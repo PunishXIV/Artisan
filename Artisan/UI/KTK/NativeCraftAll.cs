@@ -1,7 +1,5 @@
 ﻿using Artisan.Autocraft;
 using Artisan.RawInformation;
-using ECommons.DalamudServices;
-using ECommons.ImGuiMethods;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Controllers;
 using KamiToolKit.Nodes;

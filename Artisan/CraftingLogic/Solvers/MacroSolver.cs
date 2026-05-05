@@ -137,8 +137,10 @@ public class MacroSolver : Solver, ICraftValidator
         return new(Skills.None, "Macro has completed. Please continue to manually craft.");
     }
 
-    private static bool ActionIsQuality(Skills skill) => skill is Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.PreparatoryTouch
+    public static bool ActionIsQuality(Skills skill) => skill is Skills.BasicTouch or Skills.StandardTouch or Skills.AdvancedTouch or Skills.HastyTouch or Skills.PreparatoryTouch
         or Skills.PreciseTouch or Skills.PrudentTouch or Skills.TrainedFinesse or Skills.ByregotsBlessing or Skills.GreatStrides or Skills.Innovation or Skills.TouchCombo or Skills.TouchComboRefined;
+
+    public static bool ActionIsProgress(Skills skill) => skill is Skills.BasicSynthesis or Skills.CarefulSynthesis or Skills.RapidSynthesis or Skills.Groundwork or Skills.IntensiveSynthesis or Skills.PrudentSynthesis or Skills.MuscleMemory or Skills.DelicateSynthesis;
 
     private static bool ActionIsUpgradeableQuality(Skills skill) => skill is Skills.HastyTouch or Skills.PreparatoryTouch or Skills.AdvancedTouch or Skills.StandardTouch or Skills.BasicTouch;
     private static bool ActionIsUpgradeableProgress(Skills skill) => skill is Skills.Groundwork or Skills.PrudentSynthesis or Skills.CarefulSynthesis or Skills.BasicSynthesis;

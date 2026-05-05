@@ -377,24 +377,23 @@ public static unsafe class Crafting
             if (P.Config.RecipeConfigs.TryGetValue(CurRecipe.Value.RowId, out var rc))
             {
                 Svc.Log.Debug($"Checking for delins");
-                if (CurCraft.Specialist && !EnoughDelinsForCraft(rc, CurCraft, out _))
+                if (CurCraft.Specialist && !EnoughDelinsForCraft(rc, CurCraft, out _) && !rc.CurrentSolverType.Contains("Raphael"))
                     CurCraft.Specialist = false;
 
                 Svc.Log.Debug("Updating Steady Hand Charges");
                 if (CurCraft.MissionHasSteadyHand)
                     CurCraft.CurrentSteadyHandCharges = SteadyHandCharges();
 
-                if (rc.CurrentSolverType.Contains("Raphael") && !RaphaelCache.HasSolution(CurCraft, out _))
+                var raphConfig = RaphaelCache.GetRaphConfig(CurCraft, true);
+                if (rc.CurrentSolverType.Contains("Raphael") && !RaphaelCache.HasSolution(CurCraft, raphConfig, out _))
                 {
                     if (RaphaelCache.CLIExists())
                     {
-                        var key = RaphaelCache.GetKey(CurCraft);
+                        var key = RaphaelCache.GetOptions(CurCraft, raphConfig);
                         if (RaphaelCache.Tasks.ContainsKey(key))
                             return State.WaitStart;
 
                         Svc.Log.Debug("Raphael set as config but has no solution, generating now...");
-                        var raphConfig = RaphaelCache.GetConfigFromTempOrDefault(CurCraft);
-
                         RaphaelCache.Build(CurCraft, raphConfig, true);
                         return State.WaitStart; // wait for solution to be ready
                     }
@@ -594,8 +593,7 @@ public static unsafe class Crafting
         }
         else if (config.CurrentSolverType.Contains("Raphael"))
         {
-            var key = RaphaelCache.GetKey(craft);
-            if (RaphaelCache.HasSolution(craft, out var macro))
+            if (RaphaelCache.HasSolution(craft, RaphaelCache.GetRaphConfig(craft, true), out var macro))
             {
                 numReq = macro.Steps.Count(x => x.Action is Skills.CarefulObservation or Skills.HeartAndSoul or Skills.QuickInnovation);
                 if (numReq > Crafting.DelineationCount())

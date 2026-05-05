@@ -568,11 +568,12 @@ namespace Artisan.UI
 
         private static void DrawSolverActions()
         {
-            if (_selectedSolver != null && (SimGS != null || CustomStatMode))
+            if (_selectedCraft != null && _selectedSolver != null && (SimGS != null || CustomStatMode))
             {
-                if (solverIsRaph && !RaphaelCache.HasSolution(_selectedCraft, out var _))
+                var raphConfig = RaphaelCache.GetRaphConfig(_selectedCraft, true);
+                if (solverIsRaph && !RaphaelCache.HasSolution(_selectedCraft, raphConfig, out var _))
                 {
-                    var key = RaphaelCache.GetKey(_selectedCraft);
+                    var key = RaphaelCache.GetOptions(_selectedCraft, raphConfig);
                     if (!RaphaelCache.Tasks.ContainsKey(key))
                     {
                         if (ImGui.Button("Generate Solution"))
@@ -580,8 +581,6 @@ namespace Artisan.UI
                             if (RaphaelCache.CLIExists())
                             {
                                 Svc.Log.Debug("Raphael set as config but has no solution, generating now...");
-                                var raphConfig = RaphaelCache.GetConfigFromTempOrDefault(_selectedCraft);
-
                                 RaphaelCache.Build(_selectedCraft, raphConfig);
                                 return; // wait for solution to be ready
                             }

@@ -140,6 +140,7 @@ public class RecipeConfig
             changed |= DrawExpertProfiles(craft);
         DrawWarnings(craft);
         RaphaelCache.DrawRaphaelDropdown(craft, liveStats);
+        ImGui.Separator();
         DrawSimulator(craft);
         return changed;
     }
@@ -446,10 +447,10 @@ public class RecipeConfig
                     if (solver.Name == "Raphael Recipe Solver" && !RaphaelCache.HasSolution(craft, out _))
                         ImGuiEx.TextCentered($"Unable to generate a simulator without a Raphael solution generated.");
                     else
-                        ImGuiEx.TextCentered(hintColor, solverHint);
+                        ImGuiEx.TextCentered(hintColor, $"[{solver.Name.Split(' ')[0].Trim(":")}] {solverHint}");
             }
             else
-                ImGuiEx.TextCentered($"Please run this recipe in the simulator for results.");
+                ImGuiEx.TextCentered($"[Expert] Please run this recipe in the simulator for results.");
 
             if (ImGui.IsItemClicked())
             {
