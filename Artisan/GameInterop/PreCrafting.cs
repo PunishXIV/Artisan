@@ -141,6 +141,7 @@ public unsafe static class PreCrafting
             bool needClassChange = requiredClass != CharacterInfo.JobID;
             bool needEquipItem = recipe.ItemRequired.RowId > 0 && (needClassChange || !IsItemEquipped(recipe.ItemRequired.RowId));
             bool needConsumables = NeedsConsumablesCheck(type, config, recipe);
+            bool needsManuals = NeedsManualsCheck(type, config, recipe);
             bool hasConsumables = HasConsumablesCheck(config);
 
             // handle errors when we're forbidden from rectifying them automatically
@@ -163,7 +164,7 @@ public unsafe static class PreCrafting
                 return;
             }
 
-            bool needExitCraft = Crafting.CurState == Crafting.State.IdleBetween && needEquipItem;
+            bool needExitCraft = Crafting.CurState == Crafting.State.IdleBetween && (needEquipItem || needsManuals);
 
             // TODO: pre-setup solver for incoming craft
             Tasks.Clear();
@@ -200,7 +201,9 @@ public unsafe static class PreCrafting
                 bool needSquadronManual = config != default && ConsumableChecker.HasItem(config.RequiredSquadronManual, false) && !ConsumableChecker.IsSquadronManualled(config);
 
                 if (needFood || needPot || needManual || needSquadronManual)
+                {
                     Tasks.Add((() => TaskUseConsumables(config, type), default));
+                }
             }
             Tasks.Add((() => TaskSelectRecipe(recipe), TimeSpan.FromMilliseconds(500)));
             timeWasteLoops = 1;
@@ -237,6 +240,14 @@ public unsafe static class PreCrafting
             return false;
 
         return (type == CraftType.Normal || (type == CraftType.Trial && P.Config.UseConsumablesTrial) || (type == CraftType.Quick && P.Config.UseConsumablesQuickSynth)) && (!ConsumableChecker.IsFooded(config) || !ConsumableChecker.IsPotted(config) || !ConsumableChecker.IsManualled(config) || !ConsumableChecker.IsSquadronManualled(config));
+    }
+
+    internal static bool NeedsManualsCheck(CraftType type, RecipeConfig? config, Recipe recipe)
+    {
+        if (ConsumableChecker.SkippingConsumablesByConfig(recipe))
+            return false;
+
+        return (type == CraftType.Normal || (type == CraftType.Trial && P.Config.UseConsumablesTrial) || (type == CraftType.Quick && P.Config.UseConsumablesQuickSynth)) && (!ConsumableChecker.IsManualled(config) || !ConsumableChecker.IsSquadronManualled(config));
     }
 
     internal static bool HasConsumablesCheck(RecipeConfig? config)
