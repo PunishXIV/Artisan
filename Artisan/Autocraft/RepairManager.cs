@@ -26,6 +26,9 @@ namespace Artisan.Autocraft
     {
         internal static void Repair()
         {
+            if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var yesNo) && yesNo->IsVisible)
+                return;
+
             if (TryGetAddonByName<AddonRepair>("Repair", out var addon) && addon->AtkUnitBase.IsVisible && addon->RepairAllButton->IsEnabled && Throttler.Throttle(500))
             {
                 new AddonMaster.Repair((IntPtr)addon).RepairAll();
