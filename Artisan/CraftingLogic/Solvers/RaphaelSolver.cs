@@ -295,6 +295,9 @@ namespace Artisan.CraftingLogic.Solvers
 
             return new RaphaelOptions()
             { 
+                MinCraftsmanship = craft.StatCraftsmanship,
+                MinControl = craft.StatControl,
+                MinCP = craft.StatCP,
                 Level = craft.CraftLevel,
                 Progress = craft.CraftProgress,
                 QualityMax = craft.CraftQualityMax,

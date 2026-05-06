@@ -46,7 +46,7 @@ namespace Artisan.UI
                 var filterCount = filterActive ? $"{Table.FilteredItems.Count} " : "";
 
                 if (!filterActive) ImGui.BeginDisabled();
-                if (ImGuiEx.ButtonCtrl($"Delete {filterCount}Filtered Macros", new Vector2(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y)))
+                if (ImGuiEx.ButtonCtrl($"Delete {filterCount}Filtered Macro{(Table.FilteredItems.Count == 1 ? "" : "s")}", new Vector2(ImGui.GetContentRegionAvail().X / 2, ImGui.GetContentRegionAvail().Y)))
                 {
                     var toDelete = Table.FilteredItems.JSONClone();
                     foreach ((RaphaelOptions key, int _) in toDelete)
