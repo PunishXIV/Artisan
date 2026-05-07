@@ -414,6 +414,10 @@ namespace Artisan.CraftingLogic.Solvers
                 {
                     ImGuiEx.Text(ImGuiColors.DalamudGrey, "Raphael Solver Settings");
                 }
+                else
+                {
+                    ImGui.Dummy(new Vector2(0, 2f));
+                }
 
                 if (showReliability)
                 {
