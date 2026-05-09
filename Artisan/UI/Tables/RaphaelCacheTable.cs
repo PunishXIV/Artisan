@@ -47,24 +47,26 @@ namespace Artisan.UI.Tables
         private static float _colWidthHasManipulation;
         private static float _colWidthEnsureReliability;
         private static float _colWidthBackloadProgress;
+        private static float _colWidthMacroSteps;
         private static float _scale;
 
         public readonly LevelColumn _colLevel = new() { Label = "Level" };
         public readonly ProgressColumn _colProgress = new() { Label = "Progress" };
         public readonly QualityColumn _colQuality = new() { Label = "Quality" };
-        public readonly DurabilityColumn _colDurability = new() { Label = "Dura" };
+        public readonly DurabilityColumn _colDurability = new() { Label = "Durability" };
         public readonly CraftsmanshipColumn _colCraftsmanship = new() { Label = "Craftsmanship" };
         public readonly ControlColumn _colControl = new() { Label = "Control" };
         public readonly CPColumn _colCP = new() { Label = "CP" };
         public readonly IsExpertColumn _colIsExpert = new() { Label = "Expert" };
-        public readonly InitialQualityColumn _colInitialQuality = new() { Label = "Init. Q" };
+        public readonly InitialQualityColumn _colInitialQuality = new() { Label = "Initial Quality" };
         public readonly SpecialistColumn _colSpecialist = new() { Label = "Specialist" };
-        public readonly SteadyHandsColumn _colSteadyHands = new() { Label = "Steady" };
-        public readonly UseHeartAndSoulColumn _colUseHeartAndSoul = new() { Label = "H&S" };
-        public readonly UseQuickInnoColumn _colUseQuickInno = new() { Label = "QI" };
-        public readonly HasManipulationColumn _colHasManipulation = new() { Label = "Manip" };
-        public readonly EnsureReliabilityColumn _colEnsureReliability = new() { Label = "Ensure" };
-        public readonly BackloadProgressColumn _colBackloadProgress = new() { Label = "Backload" };
+        public readonly SteadyHandsColumn _colSteadyHands = new() { Label = "Steady Hand" };
+        public readonly UseHeartAndSoulColumn _colUseHeartAndSoul = new() { Label = "Heart & Soul" };
+        public readonly UseQuickInnoColumn _colUseQuickInno = new() { Label = "Quick Innovation" };
+        public readonly HasManipulationColumn _colHasManipulation = new() { Label = "Manipulation" };
+        public readonly EnsureReliabilityColumn _colEnsureReliability = new() { Label = "Ensure Reliability" };
+        public readonly BackloadProgressColumn _colBackloadProgress = new() { Label = "Backload Progress" };
+        public readonly MacroStepColumn _colMacroStep = new() { Label = "Macro Step Count" };
 
         private static float TextWidth(string text) => ImGui.CalcTextSize(text).X + ImGui.GetStyle().ItemSpacing.X;
 
@@ -89,12 +91,13 @@ namespace Artisan.UI.Tables
                 _colWidthHasManipulation = TextWidth("Yes") / _scale + Table.ArrowWidth;
                 _colWidthEnsureReliability = TextWidth("Yes") / _scale + Table.ArrowWidth;
                 _colWidthBackloadProgress = TextWidth("Yes") / _scale + Table.ArrowWidth;
+                _colWidthMacroSteps = TextWidth(_colMacroStep.Label) / _scale + Table.ArrowWidth;
             }
         }
 
         public RaphaelCacheTable(List<RaphaelOptions> cacheList) : base("RaphaelCacheTable", cacheList)
         {
-            List<Column<RaphaelOptions>> headers = [_colLevel, _colProgress, _colQuality, _colDurability, _colCraftsmanship, _colControl, _colCP, _colIsExpert, _colInitialQuality, _colSpecialist, _colSteadyHands, _colUseHeartAndSoul, _colUseQuickInno, _colHasManipulation, _colEnsureReliability, _colBackloadProgress];
+            List<Column<RaphaelOptions>> headers = [_colLevel, _colProgress, _colQuality, _colDurability, _colCraftsmanship, _colControl, _colCP, _colIsExpert, _colInitialQuality, _colSpecialist, _colSteadyHands, _colUseHeartAndSoul, _colUseQuickInno, _colHasManipulation, _colEnsureReliability, _colBackloadProgress, _colMacroStep];
             this.Headers = [.. headers];
 
             Sortable = true;
@@ -186,7 +189,7 @@ namespace Artisan.UI.Tables
 
         public sealed class IsExpertColumn : ClickableColumn
         {
-            public override string ToName(RaphaelOptions m) => m.IsExpert ? "Expert" : "";
+            public override string ToName(RaphaelOptions m) => m.IsExpert ? "Yes" : "No";
             public override float Width => _colWidthIsExpert * ImGuiHelpers.GlobalScale;
             public override int Compare(RaphaelOptions lhs, RaphaelOptions rhs)
             {
@@ -271,6 +274,18 @@ namespace Artisan.UI.Tables
             public override int Compare(RaphaelOptions lhs, RaphaelOptions rhs)
             {
                 return lhs.SolutionConfig.BackloadProgress && !rhs.SolutionConfig.BackloadProgress ? -1 : !lhs.SolutionConfig.BackloadProgress && rhs.SolutionConfig.BackloadProgress ? 1 : 0;
+            }
+        }
+
+        public sealed class MacroStepColumn : ClickableColumn
+        {
+            public override string ToName(RaphaelOptions m) => P.Config.RaphaelSolverCacheV6[m].Steps.Count().ToString();
+
+            public override float Width => _colWidthMacroSteps * ImGuiHelpers.GlobalScale;
+
+            public override int Compare(RaphaelOptions lhs, RaphaelOptions rhs)
+            {
+                return P.Config.RaphaelSolverCacheV6[lhs].Steps.Count() - P.Config.RaphaelSolverCacheV6[rhs].Steps.Count();
             }
         }
     }
