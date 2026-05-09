@@ -163,7 +163,7 @@ public unsafe static class PreCrafting
                 return;
             }
 
-            bool needExitCraft = Crafting.CurState == Crafting.State.IdleBetween && (needEquipItem || needsManuals);
+            bool needExitCraft = Crafting.CurState == Crafting.State.IdleBetween && (needClassChange || needEquipItem || needsManuals);
 
             // TODO: pre-setup solver for incoming craft
             Tasks.Clear();
