@@ -80,6 +80,12 @@ namespace Artisan.IPC
 
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertMinimumStepsBeforeMiracle").RegisterAction(ChangeExpertMinimumStepsBeforeMiracle);
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertMinimumStepsBeforeMiracleBackToNormal").RegisterAction(SetTempExpertMinimumStepsBeforeMiracleBackToNormal);
+
+            Svc.PluginInterface.GetIpcProvider<uint, bool, object>("Artisan.ChangeStandardMaxMaterialMiracleUses").RegisterAction(ChangeStandardMaxMaterialMiracleUses);
+            Svc.PluginInterface.GetIpcProvider<object>("Artisan.SetTempStandardMaxMaterialMiracleUsesBackToNormal").RegisterAction(SetTempStandardMaxMaterialMiracleUsesBackToNormal);
+
+            Svc.PluginInterface.GetIpcProvider<uint, bool, object>("Artisan.ChangeStandardMinimumStepsBeforeMiracle").RegisterAction(ChangeStandardMinimumStepsBeforeMiracle);
+            Svc.PluginInterface.GetIpcProvider<object>("Artisan.SetTempStandardMinimumStepsBeforeMiracleBackToNormal").RegisterAction(SetTempStandardMinimumStepsBeforeMiracleBackToNormal);
         }
 
         internal static void Dispose()
@@ -124,8 +130,17 @@ namespace Artisan.IPC
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertMaxMaterialMiracleUses").UnregisterAction();
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertMaxMaterialMiracleUsesBackToNormal").UnregisterAction();
 
+            Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertMaxMaterialMiracleUses").UnregisterAction();
+            Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertMaxMaterialMiracleUsesBackToNormal").UnregisterAction();
+
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertMinimumStepsBeforeMiracle").UnregisterAction();
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertMinimumStepsBeforeMiracleBackToNormal").UnregisterAction();
+
+            Svc.PluginInterface.GetIpcProvider<uint, bool, object>("Artisan.ChangeStandardMaxMaterialMiracleUses").UnregisterAction();
+            Svc.PluginInterface.GetIpcProvider<object>("Artisan.SetTempStandardMaxMaterialMiracleUsesBackToNormal").UnregisterAction();
+
+            Svc.PluginInterface.GetIpcProvider<uint, bool, object>("Artisan.ChangeStandardMinimumStepsBeforeMiracle").UnregisterAction();
+            Svc.PluginInterface.GetIpcProvider<object>("Artisan.SetTempStandardMinimumStepsBeforeMiracleBackToNormal").UnregisterAction();
         }
 
         static bool GetEnduranceStatus()
@@ -444,6 +459,38 @@ namespace Artisan.IPC
             }
         }
 
+        /// <summary>
+        /// Change the standard solver's maximum Material Miracle uses (applies to all recipes)
+        /// </summary>
+        /// <param name="maxMMUses">Number of Material Miracle uses (0 to disable)</param>
+        /// <param name="temporary">Whether to save this change to the config file</param>
+        public static void ChangeStandardMaxMaterialMiracleUses(uint maxMMUses, bool temporary)
+        {
+            if (temporary)
+                P.Config.TempMaxMaterialMiracles = (int)maxMMUses;
+            else
+            {
+                P.Config.MaxMaterialMiracles = (int)maxMMUses;
+                P.Config.Save();
+            }
+        }
+
+        /// <summary>
+        /// Change how many steps the standard solver should wait before using Material Miracle (applies to all recipes)
+        /// </summary>
+        /// <param name="minMiracleSteps">How many steps the standard solver should wait before using Material Miracle</param>
+        /// <param name="temporary">Whether to save this change to the config file</param>
+        public static void ChangeStandardMinimumStepsBeforeMiracle(uint minMiracleSteps, bool temporary)
+        {
+            if (temporary)
+                P.Config.TempMinimumStepsBeforeMiracle = (int)minMiracleSteps;
+            else
+            {
+                P.Config.MinimumStepsBeforeMiracle = (int)minMiracleSteps;
+                P.Config.Save();
+            }
+        }
+
         public static void SetTempSolverBackToNormal(uint recipeId)
         {
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipeId) ?? new();
@@ -549,6 +596,18 @@ namespace Artisan.IPC
             var config = P.Config.RecipeConfigs.GetValueOrDefault(recipeId) ?? new();
             if (config.TempExpertMinimumStepsBeforeMiracle != null)
                 config.TempExpertMinimumStepsBeforeMiracle = null;
+        }
+
+        public static void SetTempStandardMaxMaterialMiracleUsesBackToNormal()
+        {
+            if (P.Config.TempMaxMaterialMiracles != null)
+                P.Config.TempMaxMaterialMiracles = null;
+        }
+
+        public static void SetTempStandardMinimumStepsBeforeMiracleBackToNormal()
+        {
+            if (P.Config.TempMinimumStepsBeforeMiracle != null)
+                P.Config.TempMinimumStepsBeforeMiracle = null;
         }
 
         public enum ArtisanMode

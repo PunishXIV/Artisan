@@ -30,13 +30,21 @@ namespace Artisan
                 autoMode = value;
             }
         }
+
+        public int MaxMaterialMiracles = 0;
+        public int MinimumStepsBeforeMiracle = 10;
+        [NonSerialized]
+        public int? TempMaxMaterialMiracles = null;
+        [NonSerialized]
+        public int? TempMinimumStepsBeforeMiracle = null;
+        public int StandardMMUses => TempMaxMaterialMiracles ?? MaxMaterialMiracles;
+        public int StandardMMSteps => TempMinimumStepsBeforeMiracle ?? MinimumStepsBeforeMiracle;
+
         public bool DisableFailurePrediction = false;
         public int MaxPercentage = 100;
         public bool UseTricksGood = false;
         public int MaxIQPrepTouch = 10;
-        public int MaxMaterialMiracles = 0;
-		public int MinimumStepsBeforeMiracle = 10;
-		public bool LowStatsMode = false;
+        public bool LowStatsMode = false;
         public bool UseTricksExcellent = false;
         public bool UseSpecialist = false;
         public bool ShowEHQ = true;

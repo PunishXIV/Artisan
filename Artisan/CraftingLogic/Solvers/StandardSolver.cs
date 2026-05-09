@@ -164,7 +164,7 @@ namespace Artisan.CraftingLogic.Solvers
             if (step.MaterialMiracleActive)
                 return fallbackRec;
 
-            if (_materialMiracleUses < P.Config.MaxMaterialMiracles && step.Index > P.Config.MinimumStepsBeforeMiracle && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
+            if (_materialMiracleUses < P.Config.StandardMMUses && step.Index > P.Config.StandardMMSteps && Simulator.CanUseAction(craft, step, Skills.MaterialMiracle))
                 return new(Skills.MaterialMiracle);
 
             bool inCombo = (step.PrevComboAction == Skills.BasicTouch && Simulator.CanUseAction(craft, step, Skills.StandardTouch)) || (step.PrevComboAction == Skills.StandardTouch && Simulator.CanUseAction(craft, step, Skills.AdvancedTouch));

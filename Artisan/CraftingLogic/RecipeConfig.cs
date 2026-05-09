@@ -439,7 +439,7 @@ public class RecipeConfig
 
             if (solver.Name != "Expert Recipe Solver")
             {
-                if (craft.MissionHasMaterialMiracle && solver.Name == "Standard Recipe Solver" && P.Config.MaxMaterialMiracles > 0)
+                if (craft.MissionHasMaterialMiracle && solver.Name == "Standard Recipe Solver" && P.Config.StandardMMUses > 0)
                     ImGuiEx.TextCentered($"Material Miracle will give inconsistent simulator results.");
                 else
                     if (solver.Name == "Raphael Recipe Solver" && !RaphaelCache.HasSolution(craft, out _))
