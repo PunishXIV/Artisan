@@ -75,9 +75,6 @@ namespace Artisan.IPC
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertMaxSteadyUses").RegisterAction(ChangeExpertMaxSteadyUses);
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertMaxSteadyUsesBackToNormal").RegisterAction(SetTempExpertMaxSteadyUsesBackToNormal);
 
-            Svc.PluginInterface.GetIpcProvider<uint, bool, bool, object>("Artisan.ChangeExpertUseMaterialMiracle").RegisterAction(ChangeExpertUseMaterialMiracle);
-            Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertUseMaterialMiracleBackToNormal").RegisterAction(SetTempExpertUseMaterialMiracleBackToNormal);
-
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertMaxMaterialMiracleUses").RegisterAction(ChangeExpertMaxMaterialMiracleUses);
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertMaxMaterialMiracleUsesBackToNormal").RegisterAction(SetTempExpertMaxMaterialMiracleUsesBackToNormal);
 
@@ -124,8 +121,8 @@ namespace Artisan.IPC
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertMaxSteadyUses").UnregisterAction();
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertMaxSteadyUsesBackToNormal").UnregisterAction();
 
-            Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertUseMaterialMiracle").UnregisterAction();
-            Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertUseMaterialMiracleBackToNormal").UnregisterAction();
+            Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertMaxMaterialMiracleUses").UnregisterAction();
+            Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertMaxMaterialMiracleUsesBackToNormal").UnregisterAction();
 
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertMinimumStepsBeforeMiracle").UnregisterAction();
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertMinimumStepsBeforeMiracleBackToNormal").UnregisterAction();

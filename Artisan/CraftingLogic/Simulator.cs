@@ -345,6 +345,7 @@ public static class Simulator
                 Skills.QuickInnovation => !craft.Specialist ? "You are not a specialist" : Crafting.DelineationCount() == 0 ? "You have run out of Delineations." : step.QuickInnoLeft == 0 ? "You don't have Quick Innovation available anymore for this craft" : step.InnovationLeft > 0 ? "You have an Innovation buff" : "",
                 Skills.MaterialMiracle => !craft.MissionHasMaterialMiracle ? "This craft cannot use Material Miracle" : step.MaterialMiracleActive ? "You already have Material Miracle active" : step.MaterialMiracleCharges == 0 ? "You have no more Material Miracle charges" : "",
                 Skills.SteadyHand => !craft.MissionHasSteadyHand ? "This craft cannot use Steady Hand" : step.SteadyHandCharges == 0 ? "You have no more Steady Hand charges" : "",
+                _ => throw new NotImplementedException(),
             };
 
             return true;
@@ -555,6 +556,7 @@ public static class Simulator
             Condition.GoodOmen => ConditionFlags.GoodOmen,
             Condition.Robust => ConditionFlags.Robust,
             Condition.Unknown => throw new NotImplementedException(),
+            _ => throw new NotImplementedException(),
         };
     }
 

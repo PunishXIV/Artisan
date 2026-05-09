@@ -253,7 +253,7 @@ public unsafe struct CharacterStats
         Craftsmanship += item.Stats[(int)CharacterStatsUtils.Stat.Craftsmanship].Effective;
         Control += item.Stats[(int)CharacterStatsUtils.Stat.Control].Effective;
         CP += item.Stats[(int)CharacterStatsUtils.Stat.CP].Effective;
-        SplendorCosmic |= slot == 0 && item.Data.Value.LevelEquip is 90 or 100 && item.Data.Value.Rarity >= 4;
+        SplendorCosmic |= slot == 0 && item.Data!.Value.LevelEquip is 90 or 100 && item.Data.Value.Rarity >= 4;
         Specialist |= slot == 13; // specialist == job crystal equipped
     }
 

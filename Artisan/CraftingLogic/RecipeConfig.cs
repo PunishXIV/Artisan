@@ -105,8 +105,6 @@ public class RecipeConfig
         try
         {
             return 32f + 350f; //Bandaid fix for the time being as below might crash
-            var ret = Math.Max(Math.Max(Math.Max(ImGui.CalcTextSize(FoodName).X, ImGui.CalcTextSize(PotionName).X), ImGui.CalcTextSize(ManualName).X), ImGui.CalcTextSize(SquadronManualName).X) + 32f;
-            return ret;
         }
         catch (Exception ex)
         {

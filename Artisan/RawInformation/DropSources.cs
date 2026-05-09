@@ -52,7 +52,7 @@ namespace Artisan.RawInformation
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
             }
 

@@ -767,7 +767,7 @@ public static unsafe class Crafting
                     // transition (ExecutingCraftingAction) will be cleared in a few frames, if this action did not complete the craft
                     // if there are any status changes (e.g. remaining step updates) and if craft is not complete, these will be updated by the next StatusEffectList packet, which might arrive with a delay
                     // because of that, we wait until statuses match prediction (or too much time passes) before transitioning to InProgress
-                    if (CurState is not State.WaitAction or State.InProgress)
+                    if (CurState is not State.WaitAction and not State.InProgress)
                     {
                         Svc.Log.Error($"Unexpected state {CurState} when receiving {*payload} message"); //Probably an invalid state, so most data will not be set causing CTD
                         _craftingEventHandlerUpdateHook.Original(self, a2, a3, payload);

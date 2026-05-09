@@ -104,7 +104,7 @@ internal static class CraftingListContextMenu
             subMenu.PrefixChar = 'A';
             subMenu.PrefixColor = 706;
 
-            subMenu.OnClicked += args => OpenArtisanCraftingListSubmenu(args, itemId.Value, recipe.CraftType.RowId, ingredientsSubCraft);
+            subMenu.OnClicked += args => OpenArtisanCraftingListSubmenu(args, itemId!.Value, recipe.CraftType.RowId, ingredientsSubCraft);
 
             args.AddMenuItem(subMenu);
         }

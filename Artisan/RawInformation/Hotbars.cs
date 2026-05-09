@@ -72,7 +72,7 @@ namespace Artisan.RawInformation
         {
             if (rec == Skills.None || Crafting.CurCraft == null) return;
 
-            if (!Simulator.CanUseAction(Crafting.CurCraft, Crafting.CurStep, CraftingProcessor.NextRec.Action))
+            if (!Simulator.CanUseAction(Crafting.CurCraft, Crafting.CurStep!, CraftingProcessor.NextRec.Action))
                 return;
 
             PopulateHotbarDict();

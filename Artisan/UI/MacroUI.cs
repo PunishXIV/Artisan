@@ -23,11 +23,6 @@ namespace Artisan.UI
         private static bool _keyboardFocus;
         private const string MacroNamePopupLabel = "Macro Name";
         private static bool reorderMode = false;
-        private static MacroSolverSettings.Macro? selectedAssignMacro;
-
-        private static int quickAssignLevel = 1;
-        private static int quickAssignDifficulty = 9;
-        private static int quickAssignQuality = 80;
 
         private static List<int> quickAssignPossibleDifficulties = new();
         private static int quickAssignMaxDifficulty => quickAssignPossibleDifficulties.LastOrDefault();
@@ -39,7 +34,6 @@ namespace Artisan.UI
 
         private static bool[] quickAssignJobs = new bool[8];
         private static Dictionary<int, bool> quickAssignDurabilities = new();
-        private static bool quickAssignCannotHQ = false;
 
         internal static void Draw()
         {
@@ -121,10 +115,6 @@ namespace Artisan.UI
 
                     }
                     ImGui.EndChild();
-                }
-                else
-                {
-                    selectedAssignMacro = null;
                 }
             }
             catch { }

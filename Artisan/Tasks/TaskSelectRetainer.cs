@@ -114,106 +114,6 @@ internal unsafe static class RetainerListHandlers
     }
 }
 
-public unsafe class RetainerManager
-{
-    private static StaticRetainerContainer? _address;
-    private static RetainerContainer* _container;
-
-    public RetainerManager(ISigScanner sigScanner)
-    {
-        if (_address != null)
-            return;
-
-        _address ??= new StaticRetainerContainer(sigScanner);
-        _container = (RetainerContainer*)_address.Address;
-    }
-
-    public bool Ready
-        => _container != null && _container->Ready == 1;
-
-    public int Count
-        => Ready ? _container->RetainerCount : 0;
-
-    public SeRetainer Retainer(int which)
-        => which < Count
-            ? ((SeRetainer*)_container->Retainers)[which]
-            : throw new ArgumentOutOfRangeException($"Invalid retainer {which} requested, only {Count} available.");
-    public void* RetainerAddress(int which)
-        => which < Count
-            ? &((SeRetainer*)_container->Retainers)[which]
-            : throw new ArgumentOutOfRangeException($"Invalid retainer {which} requested, only {Count} available.");
-}
-
-public sealed class StaticRetainerContainer : SeAddressBase
-{
-    public StaticRetainerContainer(ISigScanner sigScanner)
-        : base(sigScanner, "48 8B E9 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 74 4E")
-    { }
-}
-
-public class SeAddressBase
-{
-    public readonly IntPtr Address;
-
-    public SeAddressBase(ISigScanner sigScanner, string signature, int offset = 0)
-    {
-        return;
-        Address = sigScanner.GetStaticAddressFromSig(signature);
-        if (Address != IntPtr.Zero)
-            Address += offset;
-        var baseOffset = (ulong)Address.ToInt64() - (ulong)sigScanner.Module.BaseAddress.ToInt64();
-    }
-}
-
-[StructLayout(LayoutKind.Sequential, Size = SeRetainer.Size * 10 + 12)]
-public unsafe struct RetainerContainer
-{
-    public fixed byte Retainers[SeRetainer.Size * 10];
-    public fixed byte DisplayOrder[10];
-    public byte Ready;
-    public byte RetainerCount;
-}
-
-[StructLayout(LayoutKind.Explicit, Size = Size)]
-public unsafe struct SeRetainer
-{
-    public const int Size = 0x48;
-
-    [FieldOffset(0x00)]
-    public ulong RetainerID;
-
-    [FieldOffset(0x08)]
-    private fixed byte _name[0x20];
-
-    [FieldOffset(0x29)]
-    public byte ClassJob;
-
-    [FieldOffset(0x2A)]
-    public byte Level;
-
-    [FieldOffset(0x2C)]
-    public uint Gil;
-
-    [FieldOffset(0x38)]
-    public uint VentureID;
-
-    [FieldOffset(0x3C)]
-    public uint VentureCompleteTimeStamp;
-
-    public bool Available
-        => ClassJob != 0;
-
-    public SeString Name
-    {
-        get
-        {
-            fixed (byte* name = _name)
-            {
-                return MemoryHelper.ReadSeStringNullTerminated((IntPtr)name);
-            }
-        }
-    }
-}
 
 internal unsafe static class RetainerHandlers
 {
@@ -315,7 +215,7 @@ internal unsafe static class RetainerHandlers
         if (TryGetAddonByName<AtkUnitBase>("RetainerItemTransferProgress", out var addon) && IsAddonReady(addon))
         {
             var button = addon->GetComponentButtonById(9);// (AtkComponentButton*)addon->UldManager.NodeList[2]->GetComponent();
-            var nodetext = MemoryHelper.ReadSeString(&button->GetTextNodeById(2)->NodeText).GetText();
+            var nodetext =  button->GetTextNodeById(2)->NodeText.GetText();
             if (nodetext == text && button->AtkResNode->IsVisible() && button->IsEnabled && RetainerInfo.GenericThrottle)
             {
                 button->ClickAddonButton(addon);

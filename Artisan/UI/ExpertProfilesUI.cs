@@ -12,7 +12,6 @@ using PunishLib.ImGuiMethods;
 using System;
 using System.Linq;
 using System.Numerics;
-using System.Reflection.Metadata.Ecma335;
 using static Artisan.CraftingLogic.Solvers.ExpertSolverProfiles;
 
 namespace Artisan.UI
@@ -20,7 +19,6 @@ namespace Artisan.UI
     internal class ExpertProfilesUI
     {
         internal static ExpertProfile selectedProfile = new();
-        public static bool Processing;
         private static readonly ExpertProfileList EPL = new();
 
         internal static void Draw()
@@ -119,15 +117,14 @@ namespace Artisan.UI
             P.Config.ExpertSolverProfiles.ExpertProfiles.RemoveAt(idx);
             P.Config.Save();
 
-            if (!ExpertProfilesUI.Processing)
-                ExpertProfilesUI.selectedProfile = new ExpertProfile();
+            ExpertProfilesUI.selectedProfile = new ExpertProfile();
             return true;
         }
 
         protected override bool OnDraw(int idx, out bool changes)
         {
             changes = false;
-            if (ExpertProfilesUI.Processing && ExpertProfilesUI.selectedProfile.ID == P.Config.ExpertSolverProfiles.ExpertProfiles[idx].ID)
+            if (ExpertProfilesUI.selectedProfile.ID == P.Config.ExpertSolverProfiles.ExpertProfiles[idx].ID)
                 ImGui.BeginDisabled();
 
             using var id = ImRaii.PushId(idx);
@@ -147,28 +144,26 @@ namespace Artisan.UI
                     window.BringToFront();
                 }
 
-                if (!ExpertProfilesUI.Processing)
-                    ExpertProfilesUI.selectedProfile = P.Config.ExpertSolverProfiles.ExpertProfiles[idx];
+                ExpertProfilesUI.selectedProfile = P.Config.ExpertSolverProfiles.ExpertProfiles[idx];
             }
 
-            if (!ExpertProfilesUI.Processing)
+
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
             {
-                if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                if (CurrentIdx == idx)
                 {
-                    if (CurrentIdx == idx)
-                    {
-                        CurrentIdx = -1;
-                        ExpertProfilesUI.selectedProfile = new ExpertProfile();
-                    }
-                    else
-                    {
-                        CurrentIdx = idx;
-                        ExpertProfilesUI.selectedProfile = P.Config.ExpertSolverProfiles.ExpertProfiles[idx];
-                    }
+                    CurrentIdx = -1;
+                    ExpertProfilesUI.selectedProfile = new ExpertProfile();
+                }
+                else
+                {
+                    CurrentIdx = idx;
+                    ExpertProfilesUI.selectedProfile = P.Config.ExpertSolverProfiles.ExpertProfiles[idx];
                 }
             }
 
-            if (ExpertProfilesUI.Processing && ExpertProfilesUI.selectedProfile.ID == P.Config.ExpertSolverProfiles.ExpertProfiles[idx].ID)
+
+            if (ExpertProfilesUI.selectedProfile.ID == P.Config.ExpertSolverProfiles.ExpertProfiles[idx].ID)
                 ImGui.EndDisabled();
 
             return selected;

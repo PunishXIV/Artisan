@@ -46,6 +46,7 @@ namespace Artisan.Universalis
         public static string GetDataCenterName(uint world)
         {
             var dc = GetDataCenterByWorld(world);
+            if (dc is null) return "";
             if (Elemental.ContainsAll(dc))
                 return "Elemental";
             if (Gaia.ContainsAll(dc))

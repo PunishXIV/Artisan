@@ -31,7 +31,6 @@ namespace Artisan
     {
         private static string search = string.Empty;
         private static bool searched = false;
-        private static WindowSystem _windowSystem;
         private static CraftMenuWindowUI? _craftMenuWindowUi = null;
         private static CraftMenuWindowUI? _cosmicCraftMenuWindowUi = null;
 

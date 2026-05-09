@@ -28,7 +28,7 @@ namespace Artisan.Universalis
             return marketBoardFromAPI;
         }
 
-        public MarketboardData? GetRegionData(ulong ItemId, ref MarketboardData output)
+        public MarketboardData? GetRegionData(ulong ItemId, ref MarketboardData? output)
         {
             var world = PlayerWorld;
             if (world == null)
@@ -42,7 +42,7 @@ namespace Artisan.Universalis
             return output = GetMarketBoard(region, ItemId);
         }
 
-        public MarketboardData? GetDCData(ulong ItemId, ref MarketboardData output)
+        public MarketboardData? GetDCData(ulong ItemId, ref MarketboardData? output)
         {
             var world = PlayerWorld;
             if (world == null)

@@ -63,7 +63,7 @@ namespace Artisan.CraftingLogic.Solvers
 
             }
 
-            if ((rec.Action is not Skills.MastersMend or Skills.ImmaculateMend) &&
+            if ((rec.Action is not Skills.MastersMend and not Skills.ImmaculateMend) &&
                 step.Quality < craft.CraftQualityMax &&
                 Simulator.CanUseAction(craft, step, Skills.ByregotsBlessing) &&
                 step.RemainingCP - Simulator.GetCPCost(step, rec.Action) < Simulator.GetCPCost(step, Skills.ByregotsBlessing) &&

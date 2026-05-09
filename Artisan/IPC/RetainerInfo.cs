@@ -41,7 +41,6 @@ namespace Artisan.IPC
         internal static bool GenericThrottle => EzThrottler.Throttle("RetainerInfoThrottler", 100);
         internal static void RethrottleGeneric(int num) => EzThrottler.Throttle("RetainerInfoThrottler", num, true);
         internal static void RethrottleGeneric() => EzThrottler.Throttle("RetainerInfoThrottler", 100, true);
-        internal static Tasks.RetainerManager retainerManager = new(Svc.SigScanner);
 
         public static bool AToolsInstalled
         {
@@ -325,7 +324,7 @@ namespace Artisan.IPC
 
                     return (int)RetainerData.SelectMany(x => x.Value).Where(x => x.Key == ItemId).Sum(x => x.Value.Quantity);
                 }
-                catch (Exception ex)
+                catch
                 {
                     //Svc.Log.Error(ex, "RetainerInfoItemCount");
                     return 0;

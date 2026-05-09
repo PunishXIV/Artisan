@@ -12,7 +12,7 @@ public class IngredientHelpers
 
     public List<Ingredient> HelperList = new List<Ingredient>();
 
-    public async Task<List<Ingredient>> GenerateList(NewCraftingList originList, System.Threading.CancellationTokenSource source)
+    public async Task<List<Ingredient>?> GenerateList(NewCraftingList originList, System.Threading.CancellationTokenSource source)
     {
         var materials = originList.ListMaterials();
         List<Ingredient> output = new();

@@ -789,7 +789,7 @@ namespace Artisan.UI
                 if (P.PluginUi.ExpertSettingsUI.expertIcon is not null)
                 {
                     ImGui.SameLine();
-                    ImGui.Image(P.PluginUi.ExpertSettingsUI.expertIcon.Handle, new(P.PluginUi.ExpertSettingsUI.expertIcon.Width * ImGuiHelpers.GlobalScaleSafe, ImGui.GetItemRectSize().Y), new(0, 0), new Vector2(1, 1), new(0.94f, 0.57f, 0f, 1f));
+                    ImGui.Image(P.PluginUi.ExpertSettingsUI.expertIcon.Handle, new(P.PluginUi.ExpertSettingsUI.expertIcon.Width * ImGuiHelpers.GlobalScale, ImGui.GetItemRectSize().Y), new(0, 0), new Vector2(1, 1), new(0.94f, 0.57f, 0f, 1f));
                 }
                 if (P.PluginUi.ExpertSettingsUI.DrawGlobalSettings(P.Config.ExpertSolverConfig))
                     P.Config.Save();
@@ -799,7 +799,7 @@ namespace Artisan.UI
                 if (P.PluginUi.ExpertSettingsUI.expertIcon is not null)
                 {
                     ImGui.SameLine();
-                    ImGui.Image(P.PluginUi.ExpertSettingsUI.expertIcon.Handle, new(P.PluginUi.ExpertSettingsUI.expertIcon.Width * ImGuiHelpers.GlobalScaleSafe, ImGui.GetItemRectSize().Y), new(0, 0), new Vector2(1, 1), new(0.94f, 0.57f, 0f, 1f));
+                    ImGui.Image(P.PluginUi.ExpertSettingsUI.expertIcon.Handle, new(P.PluginUi.ExpertSettingsUI.expertIcon.Width * ImGuiHelpers.GlobalScale, ImGui.GetItemRectSize().Y), new(0, 0), new Vector2(1, 1), new(0.94f, 0.57f, 0f, 1f));
                 }
             }
 

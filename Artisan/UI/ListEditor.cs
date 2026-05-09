@@ -91,7 +91,6 @@ internal class ListEditor : Window, IDisposable
 
     private bool hqSim = false;
 
-    private int addMoreCount = 0;
     public bool loading;
 
     public ListEditor(int listId)
@@ -185,7 +184,7 @@ internal class ListEditor : Window, IDisposable
         public uint CraftType => LuminaSheets.RecipeSheet[RecID].CraftType.RowId;
 
         public int ListQuantity = 0;
-        public ListItemOptions ops;
+        public ListItemOptions? ops;
     }
 
     public async override void Draw()
@@ -461,7 +460,7 @@ internal class ListEditor : Window, IDisposable
 
         var preview = SelectedRecipe is null
                           ? string.Empty
-                          : $"{SelectedRecipe.Value.ItemResult.Value.Name.ToDalamudString().ToString()} ({LuminaSheets.ClassJobSheet[SelectedRecipe.Value.CraftType.RowId + 8].Abbreviation.ToString()})";
+                          : $"{SelectedRecipe!.Value.ItemResult.Value.Name.ToDalamudString().ToString()} ({LuminaSheets.ClassJobSheet[SelectedRecipe!.Value.CraftType.RowId + 8].Abbreviation.ToString()})";
 
         if (ImGui.BeginCombo("Select Recipe", preview))
         {
@@ -470,11 +469,11 @@ internal class ListEditor : Window, IDisposable
             ImGui.EndCombo();
         }
 
-        if (SelectedRecipe != null)
+        if (SelectedRecipe! != null)
         {
             if (ImGui.CollapsingHeader("Recipe Information")) DrawRecipeOptions();
             if (SelectedRecipeRawIngredients.Count == 0)
-                CraftingListHelpers.AddRecipeIngredientsToList(SelectedRecipe, ref SelectedRecipeRawIngredients);
+                CraftingListHelpers.AddRecipeIngredientsToList(SelectedRecipe!, ref SelectedRecipeRawIngredients);
 
             if (ImGui.CollapsingHeader("Raw Ingredients"))
             {
@@ -494,13 +493,13 @@ internal class ListEditor : Window, IDisposable
 
             if (ImGui.Button("Add to List", new Vector2(ImGui.GetContentRegionAvail().X / 2, 30)))
             {
-                AddToList(SelectedRecipe.Value, false, true);
+                AddToList(SelectedRecipe!.Value, false, true);
             }
 
             ImGui.SameLine();
             if (ImGui.Button("Add to List (with all sub-crafts)", new Vector2(ImGui.GetContentRegionAvail().X, 30)))
             {
-                AddToList(SelectedRecipe.Value, true, true);
+                AddToList(SelectedRecipe!.Value, true, true);
             }
 
             if (timesToAdd < 1)
@@ -748,12 +747,12 @@ internal class ListEditor : Window, IDisposable
     private void DrawRecipeOptions()
     {
         {
-            List<uint> craftingJobs = LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.Name.ToDalamudString().ToString() == SelectedRecipe.Value.ItemResult.Value.Name.ToDalamudString().ToString()).Select(x => x.CraftType.Value.RowId + 8).ToList();
+            List<uint> craftingJobs = LuminaSheets.RecipeSheet.Values.Where(x => x.ItemResult.Value.Name.ToDalamudString().ToString() == SelectedRecipe!.Value.ItemResult.Value.Name.ToDalamudString().ToString()).Select(x => x.CraftType.Value.RowId + 8).ToList();
             string[]? jobstrings = LuminaSheets.ClassJobSheet.Values.Where(x => craftingJobs.Any(y => y == x.RowId)).Select(x => x.Abbreviation.ToString()).ToArray();
             ImGui.Text($"Crafted by: {string.Join(", ", jobstrings)}");
         }
 
-        var ItemsRequired = SelectedRecipe.Value.Ingredients();
+        var ItemsRequired = SelectedRecipe!.Value.Ingredients();
 
         int numRows = RetainerInfo.ATools ? 6 : 5;
         if (ImGui.BeginTable("###RecipeTable", numRows, ImGuiTableFlags.Borders))

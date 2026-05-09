@@ -767,7 +767,7 @@ namespace Artisan.UI.Tables
                         var idx = 0;
                         FilteredItems.Add((item, idx));
                         idx++;
-                        foreach (var ingredient in CraftingListHelpers.GetIngredientRecipe(item.Data.RowId).Value.Ingredients().Where(x => x.Amount > 0))
+                        foreach (var ingredient in CraftingListHelpers.GetIngredientRecipe(item.Data.RowId)!.Value.Ingredients().Where(x => x.Amount > 0))
                         {
                             if (Items.TryGetFirst(x => x.Data.RowId == ingredient.Item.RowId, out var result))
                                 FilteredItems.Add((result, idx));

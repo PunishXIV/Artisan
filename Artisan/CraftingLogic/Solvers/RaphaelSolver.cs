@@ -890,6 +890,6 @@ namespace Artisan.CraftingLogic.Solvers
         public RaphaelSolutionConfig SolutionConfig = new();
 
         public override int GetHashCode() => RaphaelCache.GetKeyForLookups(this).GetHashCode();
-        public override bool Equals(object obj) => obj != null && obj.GetHashCode() == this.GetHashCode();
+        public override bool Equals(object? obj) => obj != null && obj.GetHashCode() == this.GetHashCode();
     }
 }
