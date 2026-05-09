@@ -514,17 +514,26 @@ internal class ListEditor : Window, IDisposable
             "Quick disclaimer: This will treat whatever item you have selected as a \"Final Craft\" and only adjust sub-crafts required for that item, and not anything this item may be used for e.g changing lumber won't update crafts that use that lumber.");
         ImGui.Separator();
 
-        if (ImGui.Button($"Sort Recipes"))
+        if (ImGui.Button($"Sort"))
         {
             SortList();
         }
-
         if (ImGui.IsItemHovered())
         {
             ImGuiEx.Tooltip($"This will sort your list by recipe depth, then difficulty. Recipe depth is defined by how many of the ingredients depend on other recipes on the list.\n\n" +
                 $"For example: {LuminaSheets.RecipeSheet[35508].ItemResult.Value.Name.ToDalamudString()} requires {LuminaSheets.ItemSheet[36186].Name}, which in turn requires {LuminaSheets.ItemSheet[36189].Name}, giving this recipe a depth of 3 if all these items are on the list.\n" +
                 $"Items that do not have other recipe dependencies have a depth of 1, so go to the top of the list, e.g {LuminaSheets.RecipeSheet[5299].ItemResult.Value.Name.ToDalamudString()}\n\n" +
                 $"Finally, this is sorted by the in-game difficulty of the crafts, hopefully grouping together similar crafts.");
+        }
+
+        ImGui.SameLine();
+        if (ImGui.Button($"Toggle"))
+        {
+            ToggleList();
+        }
+        if (ImGui.IsItemHovered())
+        {
+            ImGuiEx.Tooltip("This will toggle all items in this list between being skipped and being enabled.");
         }
 
         Task.Run(() =>
@@ -618,6 +627,17 @@ internal class ListEditor : Window, IDisposable
         SelectedList.Recipes = newList;
         RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
         P.Config.Save();
+    }
+
+    bool toggleLast;
+
+    private void ToggleList()
+    {
+        toggleLast = !toggleLast;
+        foreach (var result in SelectedList.Recipes)
+        {
+            result.ListItemOptions.Skipping = toggleLast;
+        }
     }
 
     TimeSpan listTime;
