@@ -12,5 +12,5 @@
   "RepoUrl": "https://github.com/PunishXIV/Artisan",
   "DalamudApiLevel": 15,
   "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
-  "ChangeLog": "- Update Raphael Cache to be more flexible going forward and with a new UI.\n- A button has been added to list to toggle all items in the list at once for skipping.\n- Fix an issue where manuals could hang crafting."
+  "ChangeLog": "- Add context menus ."
 }

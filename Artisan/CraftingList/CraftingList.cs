@@ -74,6 +74,8 @@ namespace Artisan.CraftingLists
         public bool TidyAfter = true;
 
         public bool OnlyRestockNonCrafted = false;
+
+        public bool Locked = false;
     }
 
     public class ListItem

@@ -39,6 +39,7 @@ internal static class CraftingListContextMenu
     public const int HWDSupplyContextItemId = 0x38C;
     public const int GrandCompanySupplyListContextItemId = 0x54;
     public const int GrandCompanyExchangeContextItemId = 0x54;
+    public const int AgentMiragePrismPrismItemDetailId = 84;
 
 
     public static void Init()
@@ -198,18 +199,21 @@ internal static class CraftingListContextMenu
         args.OpenSubmenu(menuItems);
     }
 
-    private static void CreateOutfitList(string name, List<uint> listOfRecipes, bool withSubCrafts)
+    private async static void CreateOutfitList(string name, List<uint> listOfRecipes, bool withSubCrafts)
     {
         NewCraftingList list = new NewCraftingList();
         list.Name = name;
         list.SetID();
         list.Save(true);
+        list.Locked = true;
         CraftingListUI.selectedList = list;
         foreach (var rec in listOfRecipes)
         {
             var recipe = LuminaSheets.RecipeSheet[rec];
-            AddToList(recipe.ItemResult.RowId, recipe.CraftType.RowId, withSubCrafts);
+            await AddToList(recipe.ItemResult.RowId, recipe.CraftType.RowId, withSubCrafts);
         }
+        CraftingListHelpers.TidyUpList(list);
+        list.Locked = false;
     }
 
     private static unsafe void OpenArtisanCraftingListSubmenu(IMenuItemClickedArgs args, uint ItemId, uint craftTypeIndex, bool ingredientsSubCraft)
@@ -259,27 +263,44 @@ internal static class CraftingListContextMenu
             args.OpenSubmenu(menuItems);
     }
 
-    private static uint? GetGameObjectItemId(IMenuOpenedArgs args)
+    private unsafe static uint? GetGameObjectItemId(IMenuOpenedArgs args)
     {
-        var item = args.AddonName switch
+        Svc.Log.Debug($"{args.AddonName}");
+        uint? item;
+        if (args.AddonName == "MiragePrismPrismBoxCrystallize")
         {
-            null => HandleNulls(),
-            "Shop" => GetObjectItemId("Shop", ShopContextMenuItemId),
-            "GrandCompanySupplyList" => GetObjectItemId("GrandCompanySupplyList", GrandCompanySupplyListContextItemId),
-            "GrandCompanyExchange" => GetObjectItemId("GrandCompanyExchange", GrandCompanyExchangeContextItemId),
-            "ShopExchangeCurrency" => GetObjectItemId("ShopExchangeCurrency", ShopExchangeCurrencyContextItemId),
-            "SubmarinePartsMenu" => GetObjectItemId("SubmarinePartsMenu", SubmarinePartsMenuContextItemId),
-            "ShopExchangeItem" => GetObjectItemId("ShopExchangeItem", ShopExchangeItemContextItemId),
-            "ContentsInfoDetail" => GetObjectItemId("ContentsInfo", ContentsInfoDetailContextItemId),
-            "RecipeNote" => GetObjectItemId("RecipeNote", RecipeNoteContextItemId),
-            "RecipeTree" => GetObjectItemId(AgentById(AgentId.RecipeItemContext), AgentItemContextItemId),
-            "RecipeMaterialList" => GetObjectItemId(AgentById(AgentId.RecipeItemContext), AgentItemContextItemId),
-            "RecipeProductList" => GetObjectItemId(AgentById(AgentId.RecipeItemContext), AgentItemContextItemId),
-            "GatheringNote" => GetObjectItemId("GatheringNote", GatheringNoteContextItemId),
-            "ItemSearch" => GetObjectItemId(args.AgentPtr, ItemSearchContextItemId),
-            "ChatLog" => GetObjectItemId("ChatLog", ChatLogContextItemId),
-            _ => null,
-        };
+            var itemDetail = UIModule.Instance()->GetAgentModule()->GetAgentByInternalId(AgentId.ItemDetail);
+            if (itemDetail != null && itemDetail->IsAgentActive())
+            {
+                AgentItemDetail* agentItemDetail = (AgentItemDetail*)itemDetail;
+                item = agentItemDetail->ItemId;
+            }
+            else
+            {
+                item = GetObjectItemId(AgentById(AgentId.MiragePrismPrismItemDetail), AgentMiragePrismPrismItemDetailId);
+            }
+        }
+        else
+            item = args.AddonName switch
+            {
+                null => HandleNulls(),
+                "Shop" => GetObjectItemId("Shop", ShopContextMenuItemId),
+                "GrandCompanySupplyList" => GetObjectItemId("GrandCompanySupplyList", GrandCompanySupplyListContextItemId),
+                "GrandCompanyExchange" => GetObjectItemId("GrandCompanyExchange", GrandCompanyExchangeContextItemId),
+                "ShopExchangeCurrency" => GetObjectItemId("ShopExchangeCurrency", ShopExchangeCurrencyContextItemId),
+                "SubmarinePartsMenu" => GetObjectItemId("SubmarinePartsMenu", SubmarinePartsMenuContextItemId),
+                "ShopExchangeItem" => GetObjectItemId("ShopExchangeItem", ShopExchangeItemContextItemId),
+                "ContentsInfoDetail" => GetObjectItemId("ContentsInfo", ContentsInfoDetailContextItemId),
+                "RecipeNote" => GetObjectItemId("RecipeNote", RecipeNoteContextItemId),
+                "RecipeTree" => GetObjectItemId(AgentById(AgentId.RecipeItemContext), AgentItemContextItemId),
+                "RecipeMaterialList" => GetObjectItemId(AgentById(AgentId.RecipeItemContext), AgentItemContextItemId),
+                "RecipeProductList" => GetObjectItemId(AgentById(AgentId.RecipeItemContext), AgentItemContextItemId),
+                "GatheringNote" => GetObjectItemId("GatheringNote", GatheringNoteContextItemId),
+                "ItemSearch" => GetObjectItemId(args.AgentPtr, ItemSearchContextItemId),
+                "ChatLog" => GetObjectItemId("ChatLog", ChatLogContextItemId),
+                _ => null,
+            };
+
         if (item == null)
         {
             var guiHoveredItem = Svc.GameGui.HoveredItem;
@@ -368,9 +389,9 @@ internal static class CraftingListContextMenu
         AddToList(ItemId, craftType, withPrecraft);
     }
 
-    private static void AddToList(uint ItemId, uint craftType, bool withPrecraft = false)
+    private static Task AddToList(uint ItemId, uint craftType, bool withPrecraft = false)
     {
-        Task.Run(() =>
+        return Task.Run(() =>
         {
             CraftingListUI.listMaterialsNew.Clear();
             if (!LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.RowId == ItemId && x.CraftType.RowId == craftType, out var recipe))
@@ -389,16 +410,6 @@ internal static class CraftingListContextMenu
             else
             {
                 CraftingListUI.selectedList.Recipes.Add(new ListItem() { ID = recipe.RowId, Quantity = P.Config.ContextMenuLoops, ListItemOptions = new ListItemOptions() { NQOnly = CraftingListUI.selectedList.AddAsQuickSynth } });
-            }
-
-            CraftingListHelpers.TidyUpList(CraftingListUI.selectedList);
-            foreach (var w in P.ws.Windows)
-            {
-                if (w.WindowName == $"List Editor###{CraftingListUI.selectedList.ID}")
-                {
-                    (w as ListEditor).RecipeSelector.Items = CraftingListUI.selectedList.Recipes.ToList();
-                    (w as ListEditor).RefreshTable(null, true);
-                }
             }
 
             P.Config.Save();

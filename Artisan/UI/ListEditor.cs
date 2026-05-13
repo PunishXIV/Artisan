@@ -1624,7 +1624,9 @@ internal class ListFolders : ItemSelector<NewCraftingList>
     protected override bool OnDraw(int idx, out bool changes)
     {
         changes = false;
-        if (CraftingListUI.Processing && CraftingListUI.selectedList.ID == P.Config.NewCraftingLists[idx].ID)
+        var l = P.Config.NewCraftingLists[idx];
+        var disabled = (CraftingListUI.Processing && CraftingListUI.selectedList.ID == P.Config.NewCraftingLists[idx].ID) || l.Locked;
+        if (disabled)
             ImGui.BeginDisabled();
 
         using var id = ImRaii.PushId(idx);
@@ -1665,7 +1667,7 @@ internal class ListFolders : ItemSelector<NewCraftingList>
             }
         }
 
-        if (CraftingListUI.Processing && CraftingListUI.selectedList.ID == P.Config.NewCraftingLists[idx].ID)
+        if (disabled)
             ImGui.EndDisabled();
 
         return selected;
