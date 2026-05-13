@@ -9,6 +9,7 @@ using ECommons;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,7 +30,7 @@ internal static class CraftingListContextMenu
     public const int AgentItemContextItemId = 0x28;
     public const int GatheringNoteContextItemId = 0xA0;
     public const int ItemSearchContextItemId = 6192;
-    public const int ChatLogContextItemId = 0x948;
+    public const int ChatLogContextItemId = 2496;
 
     public const int SubmarinePartsMenuContextItemId = 0x54;
     public const int ShopExchangeItemContextItemId = 0x54;
@@ -75,38 +76,66 @@ internal static class CraftingListContextMenu
 
     private unsafe static void AddMenu(IMenuOpenedArgs args)
     {
-        Svc.Log.Debug($"{args.AddonName}");
         if (P.Config.HideContextMenus) return;
         if (args.AddonName != "RecipeNote")
         {
-            uint? itemId;
-            itemId = GetGameObjectItemId(args);
-            Svc.Log.Debug($"{itemId}");
-            if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.RowId == itemId)) return;
+            uint? id = GetGameObjectItemId(args);
+            if (id == null)
+                return;
 
-            var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.RowId == itemId).RowId;
+            var itemId = id.Value;
+            var item = LuminaSheets.ItemSheet[itemId];
+            Svc.Log.Debug($"{item.Name}");
 
-            var menuItem = new MenuItem();
-            menuItem.Name = "Open Recipe Log";
-            menuItem.PrefixChar = 'A';
-            menuItem.PrefixColor = 706;
-            menuItem.OnClicked += clickedArgs => CraftingListFunctions.OpenRecipeByID(recipeId, true);
+            var recipe = LuminaSheets.RecipeSheet.Values.FirstOrNull(x => x.ItemResult.RowId == itemId);
+            if (recipe != null)
+            {
+                var menuItem = new MenuItem();
+                menuItem.Name = "Open Recipe Log";
+                menuItem.PrefixChar = 'A';
+                menuItem.PrefixColor = 706;
+                menuItem.OnClicked += clickedArgs => CraftingListFunctions.OpenRecipeByID(recipe.Value.RowId, true);
 
-            args.AddMenuItem(menuItem);
+                args.AddMenuItem(menuItem);
 
-            if (!LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.RowId == itemId, out var recipe)) return;
+                bool ingredientsSubCraft = recipe.Value.Ingredients().Any(x => CraftingListHelpers.GetIngredientRecipe(x.Item.RowId) != null);
 
-            bool ingredientsSubCraft = recipe.Ingredients().Any(x => CraftingListHelpers.GetIngredientRecipe(x.Item.RowId) != null);
+                var subMenu = new MenuItem();
+                subMenu.IsSubmenu = true;
+                subMenu.Name = "Artisan Crafting List";
+                subMenu.PrefixChar = 'A';
+                subMenu.PrefixColor = 706;
 
-            var subMenu = new MenuItem();
-            subMenu.IsSubmenu = true;
-            subMenu.Name = "Artisan Crafting List";
-            subMenu.PrefixChar = 'A';
-            subMenu.PrefixColor = 706;
+                subMenu.OnClicked += args => OpenArtisanCraftingListSubmenu(args, itemId, recipe.Value.CraftType.RowId, ingredientsSubCraft);
 
-            subMenu.OnClicked += args => OpenArtisanCraftingListSubmenu(args, itemId!.Value, recipe.CraftType.RowId, ingredientsSubCraft);
+                args.AddMenuItem(subMenu);
+            }
 
-            args.AddMenuItem(subMenu);
+            if (item.ItemUICategory.RowId is 112) //Outfits
+            {
+                var listOfRecipes = new List<uint>();
+                var outfitSet = Svc.Data.GetExcelSheet<MirageStoreSetItem>().GetRow(itemId);
+                foreach (var piece in outfitSet.Items)
+                {
+                    if (piece.RowId != 0 && LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.RowId == piece.RowId, out var rec))
+                    {
+                        Svc.Log.Debug($"This is craftable");
+                        listOfRecipes.Add(rec.RowId);
+                    }
+                }
+
+                if (listOfRecipes.Count > 0)
+                {
+                    var menuItem = new MenuItem();
+                    menuItem.Name = "Create Artisan Crafting List For Outfit";
+                    menuItem.IsSubmenu = true;
+                    menuItem.PrefixChar = 'A';
+                    menuItem.PrefixColor = 706;
+                    menuItem.OnClicked += args => OpenOutfitCraftingListSubmenu(args, item.Name.ToString(), listOfRecipes);
+
+                    args.AddMenuItem(menuItem);
+                }
+            }
         }
 
         if (args.AddonName == "RecipeNote")
@@ -146,25 +175,40 @@ internal static class CraftingListContextMenu
 
             args.AddMenuItem(subMenu);
         }
+    }
 
-        if (args.AddonName == "ChatLog")
+    private static void OpenOutfitCraftingListSubmenu(IMenuItemClickedArgs args, string outfitName, List<uint> listOfRecipes)
+    {
+        var menuItems = new List<MenuItem>();
+
+        var noSubs = new MenuItem();
+        noSubs.Name = "Without Sub-Crafts";
+        noSubs.PrefixChar = 'A';
+        noSubs.PrefixColor = 706;
+        noSubs.OnClicked += clickedArgs => CreateOutfitList(outfitName, listOfRecipes, false);
+        menuItems.Add(noSubs);
+
+        var withSubs = new MenuItem();
+        withSubs.Name = "With Sub-Crafts";
+        withSubs.PrefixChar = 'A';
+        withSubs.PrefixColor = 706;
+        withSubs.OnClicked += clickedArgs => CreateOutfitList(outfitName, listOfRecipes, true);
+        menuItems.Add(withSubs);
+
+        args.OpenSubmenu(menuItems);
+    }
+
+    private static void CreateOutfitList(string name, List<uint> listOfRecipes, bool withSubCrafts)
+    {
+        NewCraftingList list = new NewCraftingList();
+        list.Name = name;
+        list.SetID();
+        list.Save(true);
+        CraftingListUI.selectedList = list;
+        foreach (var rec in listOfRecipes)
         {
-            var ItemId = GetObjectItemId("ChatLog", 0x948);
-            if (ItemId > 500_000)
-                ItemId -= 500_000;
-
-            if (!LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.RowId == ItemId)) return;
-
-            var recipeId = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.RowId == ItemId).RowId;
-
-            var menuItem = new MenuItem();
-            menuItem.Name = "Open Recipe Log";
-            menuItem.PrefixChar = 'A';
-            menuItem.PrefixColor = 706;
-            menuItem.OnClicked += clickedArgs => CraftingListFunctions.OpenRecipeByID(recipeId, true);
-
-            args.AddMenuItem(menuItem);
-
+            var recipe = LuminaSheets.RecipeSheet[rec];
+            AddToList(recipe.ItemResult.RowId, recipe.CraftType.RowId, withSubCrafts);
         }
     }
 

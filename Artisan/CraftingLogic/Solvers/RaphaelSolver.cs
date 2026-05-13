@@ -177,6 +177,7 @@ namespace Artisan.CraftingLogic.Solvers
                                 MinControl = craft.StatControl,
                                 MinCraftsmanship = craft.StatCraftsmanship,
                                 Level = craft.CraftLevel,
+                                StatLevel = craft.StatLevel,
                                 Progress = craft.CraftProgress,
                                 QualityMax = craft.CraftQualityMax,
                                 Durability = craft.CraftDurability,
@@ -299,6 +300,7 @@ namespace Artisan.CraftingLogic.Solvers
                 MinControl = craft.StatControl,
                 MinCP = craft.StatCP,
                 Level = craft.CraftLevel,
+                StatLevel = craft.StatLevel,
                 Progress = craft.CraftProgress,
                 QualityMax = craft.CraftQualityMax,
                 Durability = craft.CraftDurability,
@@ -880,6 +882,7 @@ namespace Artisan.CraftingLogic.Solvers
     public class RaphaelOptions : MacroOptions
     {
         public int Level = 0;
+        public int StatLevel = 0;
         public int Progress = 0;
         public int QualityMax = 0;
         public int Durability = 0;
