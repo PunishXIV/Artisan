@@ -259,8 +259,6 @@ namespace Artisan.RawInformation
             }
         }
 
-        public const int ItemCount = 11;
-
         extension(MirageStoreSetItem row)
         {
             public RowRef<Item> Set => new(row.ExcelPage.Module, row.RowId, row.ExcelPage.Language);
