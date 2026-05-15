@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Ipc;
 using Dalamud.Plugin;
@@ -8,64 +8,107 @@ using ECommons.DalamudServices;
 namespace Artisan.IPC
 {
     //https://git.anna.lgbt/anna/ChatTwo/src/branch/main/ipc.md
+    //HellionChat is a Chat 2 fork (EUPL-1.2) that exposes the same IPC surface under
+    //the "HellionChat." prefix. HellionChat refuses to load while Chat 2 is active,
+    //so at most one provider is ever present. Chat 2 takes priority.
 
     internal class Chat2IPC
     {
+        private const string ChatTwoPrefix = "ChatTwo";
+        private const string HellionChatPrefix = "HellionChat";
+
         public Chat2IPC(IDalamudPluginInterface pi)
         {
-            Register = pi.GetIpcSubscriber<string>("ChatTwo.Register");
-            Unregister = pi.GetIpcSubscriber<string, object?>("ChatTwo.Unregister");
-            Invoke = pi.GetIpcSubscriber<string, PlayerPayload?, ulong, Payload?, SeString?, SeString?, object?>("ChatTwo.Invoke");
-            Available = pi.GetIpcSubscriber<object?>("ChatTwo.Available");
+            ChatTwoRegister = pi.GetIpcSubscriber<string>($"{ChatTwoPrefix}.Register");
+            ChatTwoUnregister = pi.GetIpcSubscriber<string, object?>($"{ChatTwoPrefix}.Unregister");
+            ChatTwoInvoke = pi.GetIpcSubscriber<string, PlayerPayload?, ulong, Payload?, SeString?, SeString?, object?>($"{ChatTwoPrefix}.Invoke");
+            ChatTwoAvailable = pi.GetIpcSubscriber<object?>($"{ChatTwoPrefix}.Available");
+
+            HellionRegister = pi.GetIpcSubscriber<string>($"{HellionChatPrefix}.Register");
+            HellionUnregister = pi.GetIpcSubscriber<string, object?>($"{HellionChatPrefix}.Unregister");
+            HellionInvoke = pi.GetIpcSubscriber<string, PlayerPayload?, ulong, Payload?, SeString?, SeString?, object?>($"{HellionChatPrefix}.Invoke");
+            HellionAvailable = pi.GetIpcSubscriber<object?>($"{HellionChatPrefix}.Available");
         }
 
-        // This is used to register your plugin with the IPC. It will return an ID
-        // that you should save for later.
-        private ICallGateSubscriber<string> Register { get; }
+        // Chat 2 subscribers. Preferred provider, checked first.
+        private ICallGateSubscriber<string> ChatTwoRegister { get; }
+        private ICallGateSubscriber<string, object?> ChatTwoUnregister { get; }
+        private ICallGateSubscriber<object?> ChatTwoAvailable { get; }
+        private ICallGateSubscriber<string, PlayerPayload?, ulong, Payload?, SeString?, SeString?, object?> ChatTwoInvoke { get; }
 
-        // This is used to unregister your plugin from the IPC. You should call this
-        // when your plugin is unloaded.
-        private ICallGateSubscriber<string, object?> Unregister { get; }
-
-        // You should subscribe to this event in order to receive a notification
-        // when Chat 2 is loaded or updated, so you can re-register.
-        private ICallGateSubscriber<object?> Available { get; }
-
-        // Subscribe to this to draw your custom context menu items.
-        private ICallGateSubscriber<string, PlayerPayload?, ulong, Payload?, SeString?, SeString?, object?> Invoke { get; }
+        // HellionChat fallback subscribers. Only used when Chat 2 is absent.
+        private ICallGateSubscriber<string> HellionRegister { get; }
+        private ICallGateSubscriber<string, object?> HellionUnregister { get; }
+        private ICallGateSubscriber<object?> HellionAvailable { get; }
+        private ICallGateSubscriber<string, PlayerPayload?, ulong, Payload?, SeString?, SeString?, object?> HellionInvoke { get; }
 
         private string? _id = string.Empty;
+        private string _activeProvider = string.Empty;
 
         public Action<uint>? OnOpenChatTwoItemContextMenu;
 
         public void Enable()
         {
-            // When Chat 2 becomes available (if it loads after this plugin) or when
-            // Chat 2 is updated, register automatically.
-            Available.Subscribe(RegisterIpc);
-            // Register if Chat 2 is already loaded.
-            RegisterIpc();
+            // Subscribe both Available events upfront so we can react to either
+            // provider loading or reloading after this plugin (hot-swap support).
+            ChatTwoAvailable.Subscribe(RegisterChatTwo);
+            HellionAvailable.Subscribe(RegisterHellion);
 
-            // Listen for context menu events.
-            Invoke.Subscribe(Integration);
+            // Initial probe: Chat 2 takes priority. Only try HellionChat when Chat 2
+            // is absent at startup; if Chat 2 later loads, the subscription above
+            // switches us over.
+            RegisterChatTwo();
+            if (_activeProvider != ChatTwoPrefix)
+            {
+                RegisterHellion();
+            }
+
+            // Listen for context menu events from whichever provider is active.
+            ChatTwoInvoke.Subscribe(Integration);
+            HellionInvoke.Subscribe(Integration);
         }
 
-        private void RegisterIpc()
+        private void RegisterChatTwo()
         {
+            // Drop any existing HellionChat registration first, Chat 2 takes priority.
+            if (_activeProvider == HellionChatPrefix && !string.IsNullOrEmpty(_id))
+            {
+                try { HellionUnregister.InvokeAction(_id); }
+                catch (Dalamud.Plugin.Ipc.Exceptions.IpcNotReadyError) { }
+            }
+
             // Register and save the registration ID.
-            try { _id = Register.InvokeFunc(); }
-            catch (Dalamud.Plugin.Ipc.Exceptions.IpcNotReadyError) { Svc.Log.Debug("Chat2 is not available"); }
+            try { _id = ChatTwoRegister.InvokeFunc(); _activeProvider = ChatTwoPrefix; }
+            catch (Dalamud.Plugin.Ipc.Exceptions.IpcNotReadyError) { Svc.Log.Debug("Chat 2 not available, checking HellionChat fallback"); }
+        }
+
+        private void RegisterHellion()
+        {
+            // HellionChat refuses to load while Chat 2 is active, so if its Available
+            // signal fires, any prior Chat 2 registration is stale by definition.
+            // Drop it and let HellionChat take over.
+            if (_activeProvider == ChatTwoPrefix && !string.IsNullOrEmpty(_id))
+            {
+                try { ChatTwoUnregister.InvokeAction(_id); }
+                catch (Dalamud.Plugin.Ipc.Exceptions.IpcNotReadyError) { }
+            }
+
+            // Register and save the registration ID.
+            try { _id = HellionRegister.InvokeFunc(); _activeProvider = HellionChatPrefix; }
+            catch (Dalamud.Plugin.Ipc.Exceptions.IpcNotReadyError) { Svc.Log.Debug("HellionChat fallback also not available"); }
         }
 
         public void Disable()
         {
             if (!string.IsNullOrEmpty(_id))
             {
-                Unregister.InvokeAction(_id);
+                if (_activeProvider == ChatTwoPrefix) ChatTwoUnregister.InvokeAction(_id);
+                else if (_activeProvider == HellionChatPrefix) HellionUnregister.InvokeAction(_id);
                 _id = null;
             }
 
-            Invoke.Unsubscribe(Integration);
+            ChatTwoInvoke.Unsubscribe(Integration);
+            HellionInvoke.Unsubscribe(Integration);
         }
 
         private void Integration(string id, PlayerPayload? sender, ulong contentId, Payload? payload, SeString? senderString, SeString? content)
