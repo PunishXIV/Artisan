@@ -459,6 +459,7 @@ namespace Artisan.CraftingLogic.Solvers
                             {
                                 Build(craft, curConfig);
                             }
+                            DrawSparkles(ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
                         });
                     }
                     else
@@ -493,6 +494,100 @@ namespace Artisan.CraftingLogic.Solvers
 
                 ImGui.Dummy(new Vector2(0, 2f));
             }
+        }
+
+        // RelativePosition is a fraction of the button (0–1), so the layout scales to any button size. The outward fields nudge each sparkle a few pixels past the edge.
+        private record struct Sparkle(Vector2 RelativePosition, Vector2 OutwardDirection, float OutwardDistance, float TwinklePhase, float SizeScale);
+
+        private static readonly Sparkle[] Sparkles = LayOutSparklesAroundButton();
+
+        private static Sparkle[] LayOutSparklesAroundButton()
+        {
+            var random = new Random(1337);
+            var sparkles = new List<Sparkle>();
+
+            void AddRow(Vector2 edgeStart, Vector2 edgeEnd, Vector2 outwardDirection, int howMany)
+            {
+                for (int i = 0; i < howMany; i++)
+                {
+                    var evenSpacing = (i + 0.5f) / howMany;
+                    var jitter = ((float)random.NextDouble() - 0.5f) * 0.6f / howMany;
+                    var relativePosition = Vector2.Lerp(edgeStart, edgeEnd, evenSpacing + jitter);
+                    var outwardDistance = 3f + (float)random.NextDouble() * 7f;
+                    var twinklePhase = (float)random.NextDouble() * MathF.Tau;
+                    var sizeScale = 0.6f + (float)random.NextDouble() * 0.6f; // 0.6x – 1.2x
+                    sparkles.Add(new Sparkle(relativePosition, outwardDirection, outwardDistance, twinklePhase, sizeScale));
+                }
+            }
+
+            AddRow(new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, -1f), 7); // top edge
+            AddRow(new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0f), 2); // right edge
+            AddRow(new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), 7); // bottom edge
+            AddRow(new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(-1f, 0f), 2); // left edge
+
+            return sparkles.ToArray();
+        }
+
+        private static void DrawSparkles(Vector2 buttonMin, Vector2 buttonMax)
+        {
+            var buttonSize = buttonMax - buttonMin;
+            if (buttonSize.X <= 0f || buttonSize.Y <= 0f)
+                return;
+
+            var drawList = ImGui.GetWindowDrawList();
+            var time = (float)ImGui.GetTime();
+
+            foreach (var sparkle in Sparkles)
+            {
+                var brightness = PulseBrightness(time, sparkle.TwinklePhase);
+                var position = buttonMin + sparkle.RelativePosition * buttonSize + sparkle.OutwardDirection * sparkle.OutwardDistance;
+                DrawTwinklingStar(drawList, position, brightness, sparkle.SizeScale);
+            }
+        }
+
+        // Squaring the sine wave makes brief peaks instead of a slow fade.
+        private static float PulseBrightness(float time, float phaseOffset)
+        {
+            const float pulseSpeed = 1.2f;
+            var wave = 0.5f + 0.5f * MathF.Sin(time * pulseSpeed + phaseOffset);
+            return wave * wave;
+        }
+
+        private static void DrawTwinklingStar(ImDrawListPtr drawList, Vector2 center, float brightness, float sizeScale)
+        {
+            var glowColor = ImGui.GetColorU32(new Vector4(1f, 0.92f, 0.75f, brightness * 0.18f));
+            var coreColor = ImGui.GetColorU32(new Vector4(1f, 0.97f, 0.88f, brightness * 0.85f));
+            var rayColor = ImGui.GetColorU32(new Vector4(1f, 0.95f, 0.8f, brightness * 0.7f));
+
+            // soft outer halo
+            drawList.AddCircleFilled(center, (3f + 4f * brightness) * sizeScale, glowColor);
+
+            // small bright core
+            drawList.AddCircleFilled(center, (1f + 1.2f * brightness) * sizeScale, coreColor);
+
+            var longRayLength = (3f + 5f * brightness) * sizeScale;
+            var longRayWidth = (0.6f + 0.8f * brightness) * sizeScale;
+            var diagonalRayLength = longRayLength * 0.5f;
+            var diagonalRayWidth = longRayWidth * 0.6f;
+
+            DrawDiamondRay(drawList, center, longRayLength, longRayWidth, angleRadians: 0f, rayColor);
+            DrawDiamondRay(drawList, center, longRayLength, longRayWidth, angleRadians: MathF.PI / 2f, rayColor);
+            DrawDiamondRay(drawList, center, diagonalRayLength, diagonalRayWidth, angleRadians: MathF.PI / 4f, rayColor);
+            DrawDiamondRay(drawList, center, diagonalRayLength, diagonalRayWidth, angleRadians: -MathF.PI / 4f, rayColor);
+        }
+
+        // length is measured from the center to the tip, so the full ray is twice this value.
+        private static void DrawDiamondRay(ImDrawListPtr drawList, Vector2 center, float length, float width, float angleRadians, uint color)
+        {
+            var along = new Vector2(MathF.Cos(angleRadians), MathF.Sin(angleRadians));
+            var across = new Vector2(-along.Y, along.X);
+
+            drawList.AddQuadFilled(
+                center + along * length,
+                center + across * width,
+                center - along * length,
+                center - across * width,
+                color);
         }
 
         public static int GetNewID(Configuration? config = null)
