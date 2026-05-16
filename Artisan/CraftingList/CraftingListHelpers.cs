@@ -69,12 +69,12 @@ internal static class CraftingListHelpers
         }
     }
 
-    public static Recipe? GetIngredientRecipe(uint ingredient)
+    public static Recipe? GetIngredientRecipe(uint ingredient, int craftType = -1)
     {
-        if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.Value.RowId == ingredient, out var result))
-            return result;
-
-        return null;
+        if (craftType != -1 && LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Value.RowId == ingredient && x.CraftType.RowId == craftType))
+            return LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Value.RowId == ingredient && x.CraftType.RowId == craftType);
+        else
+            return LuminaSheets.RecipeSheet.Values.FirstOrNull(x => x.ItemResult.Value.RowId == ingredient);
     }
 
     public static void TidyUpList(NewCraftingList list)

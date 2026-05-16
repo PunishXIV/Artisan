@@ -24,6 +24,8 @@ using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina;
 using Lumina.Excel.Sheets;
+using LuminaSupplemental.Excel.Model;
+using LuminaSupplemental.Excel.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -623,6 +625,25 @@ namespace Artisan.UI
                         {
                             Svc.Log.Error($"Error rendering condition table\n{ex}");
                         }
+                    }
+                }
+
+                if (ImGui.CollapsingHeader("Quest Data"))
+                {
+                    var requiredQuests = CsvLoader.LoadResource<QuestRequiredItem>(CsvLoader.QuestRequiredItemResourceName, true, out var failed, out var exceptions, Svc.Data.GameData);
+                    foreach (var questCats in Svc.Data.GetExcelSheet<Quest>().Where(x => x.JournalGenre.RowId is >= 165 and <= 172).GroupBy(x => x.JournalGenre.RowId).OrderBy(x => x.Key))
+                    {
+                        ImGuiEx.TextUnderlined($"{Svc.Data.GetExcelSheet<JournalGenre>().GetRow(questCats.Key).Name}");
+                        foreach (var quest in questCats.OrderBy(x => x.ClassJobLevel.First()))
+                        {
+                            var extQuest = requiredQuests.Where(x => x.QuestId == quest.RowId);
+                            if (!extQuest.Any())
+                                continue;
+                            
+
+                            ImGui.Text($"{quest.Name} - {string.Join(", ", extQuest.Select(x => LuminaSheets.ItemSheet[x.ItemId].Name + $"{(x.IsHq ? " " : "")}" + " x" + x.Quantity.ToString()))}");
+                        }
+                        ImGui.Spacing();
                     }
                 }
 

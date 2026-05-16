@@ -75,7 +75,11 @@ namespace Artisan.CraftingLists
 
         public bool OnlyRestockNonCrafted = false;
 
+        [NonSerialized]
         public bool Locked = false;
+
+        [NonSerialized]
+        public bool IsPremade = false;
     }
 
     public class ListItem
@@ -163,8 +167,11 @@ namespace Artisan.CraftingLists
                 }
             }
 
-            P.Config.NewCraftingLists.Add(list);
-            P.Config.Save();
+            if (!list.IsPremade)
+            {
+                P.Config.NewCraftingLists.Add(list);
+                P.Config.Save();
+            }
             return true;
         }
 

@@ -552,13 +552,14 @@ namespace Artisan.IPC
             if (CraftingListUI.Processing)
                 throw new Exception("Unable to process list while already processing.");
 
-            if (!P.Config.NewCraftingLists.Any(x => x.ID == listId))
+            var list = P.Config.NewCraftingLists.FirstOrDefault(x => x.ID == listId) ?? P.PremadeLists.PremadeCraftingLists.FirstOrDefault(x => x.ID == listId) ?? null;
+            if (list == null)
                 throw new Exception("List ID does not exist.");
 
             if (Endurance.Enable)
                 throw new Exception("Cannot start list while Endurance is active. Please disable Endurance and try again.");
 
-            CraftingListUI.selectedList = P.Config.NewCraftingLists.First(x => x.ID == listId);
+            CraftingListUI.selectedList = list;
             CraftingListUI.StartList();
         }
 

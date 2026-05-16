@@ -43,6 +43,7 @@ public unsafe class Artisan : IDalamudPlugin
     internal TextureCache Icons;
     internal UniversalisClient UniversalsisClient;
     internal NativeCraftAll? NCA;
+    internal PremadeLists PremadeLists;
 
     internal StyleModel Style;
     internal bool StylePushed = false;
@@ -69,6 +70,7 @@ public unsafe class Artisan : IDalamudPlugin
         Icons = new(Svc.Data, Svc.Texture);
         Config = P.Config;
         PluginUi = new();
+        PremadeLists = new();
 
         Svc.Commands.AddHandler(commandName, new CommandInfo(OnCommand)
         {
@@ -296,7 +298,7 @@ public unsafe class Artisan : IDalamudPlugin
                 {
                     if (int.TryParse(subcommands[1], out int id))
                     {
-                        if (P.Config.NewCraftingLists.Any(x => x.ID == id))
+                        if (P.Config.NewCraftingLists.TryGetFirst(x => x.ID == id, out var list))
                         {
                             if (subcommands.Length >= 3 && subcommands[2].ToLower() == "start")
                             {
@@ -309,7 +311,7 @@ public unsafe class Artisan : IDalamudPlugin
                             }
                             else
                             {
-                                ListEditor editor = new(id);
+                                ListEditor editor = new(list);
                                 return;
                             }
                         }
