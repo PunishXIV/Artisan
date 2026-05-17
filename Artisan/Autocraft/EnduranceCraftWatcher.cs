@@ -9,8 +9,6 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using ECommons.DalamudServices;
 using ECommons.Logging;
-using Lumina.Excel.Sheets;
-using Lumina.Excel.Sheets.Experimental;
 using System.Collections.Generic;
 using System.Linq;
 using Item = Lumina.Excel.Sheets.Item;
@@ -29,7 +27,7 @@ namespace Artisan.Autocraft
 
         private static void ScanForHQItems(IHandleableChatMessage handler)
         {
-            if (handler.LogKind == (XivChatType)2242 && Svc.Condition[ConditionFlag.Crafting])
+            if (handler.LogKind == XivChatType.Crafting && handler.SourceKind == XivChatRelationKind.LocalPlayer && Crafting.CurState == Crafting.State.WaitFinish)
             {
                 if (handler.Message.Payloads.Any(x => x.Type == PayloadType.Item))
                 {
