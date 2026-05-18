@@ -313,10 +313,26 @@ namespace Artisan.UI
                 return res;
             }
 
-            foreach (var item in skillIds)
+            for (int i = 0; i < skillIds.Count(); i++)
             {
-                var act  = (Skills)item;
+                var act = (Skills)skillIds.ElementAt(i);
+                var nextAct = (Skills)skillIds.ElementAtOrDefault(i + 1);
+
                 res.Add(new() { Action = act });
+
+                if (act == Skills.GreatStrides && nextAct == Skills.ByregotsBlessing)
+                {
+                    res[i].ExcludeExcellent = true;
+                    res[i].ReplacementAction = Skills.ByregotsBlessing;
+                    res[i].ReplaceOnExclude = true;
+                }
+
+                if (i > 0 && res[i - 1].ExcludeExcellent)
+                {
+                    res[i].ExcludePoor = true;
+                    res[i].ReplacementAction = Skills.Observe;
+                    res[i].ReplaceOnExclude = true;
+                }
             }
 
             return res;
