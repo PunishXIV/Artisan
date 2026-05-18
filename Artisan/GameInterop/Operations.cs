@@ -21,9 +21,9 @@ public static unsafe class Operations
         {
             if (Throttler.Throttle(500))
             {
-                if (GenericHelpers.TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var recipenote))
+                if (GenericHelpers.TryGetAddonByName<AtkUnitBase>("RecipeNotePraticeSetting", out var recipenote))
                 {
-                    Callback.Fire(&recipenote->AtkUnitBase, true, 10);
+                    Callback.Fire(recipenote, true, 0, 0, false);
                 }
             }
         }
