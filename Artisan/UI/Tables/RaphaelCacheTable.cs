@@ -81,7 +81,7 @@ namespace Artisan.UI.Tables
                 _colWidthDurability = TextWidth(_colDurability.Label) / _scale + Table.ArrowWidth;
                 _colWidthCraftsmanship = TextWidth(_colCraftsmanship.Label) / _scale + Table.ArrowWidth;
                 _colWidthControl = TextWidth(_colControl.Label) / _scale + Table.ArrowWidth;
-                _colWidthCP = Items.Max(i => TextWidth(i.MinCP.ToString())) / _scale + Table.ArrowWidth;
+                _colWidthCP = Items.Count == 0 ? 0 : Items.Max(i => TextWidth(i.MinCP.ToString())) / _scale + Table.ArrowWidth;
                 _colWidthIsExpert = TextWidth("Expert") / _scale + Table.ArrowWidth;
                 _colWidthInitialQuality = TextWidth(_colInitialQuality.Label) / _scale + Table.ArrowWidth;
                 _colWidthSpecialist = TextWidth("Yes") / _scale + Table.ArrowWidth;

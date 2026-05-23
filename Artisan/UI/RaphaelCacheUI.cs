@@ -7,6 +7,8 @@ using System.Numerics;
 using Artisan.UI.Tables;
 using ECommons;
 using Artisan.CraftingLogic.Solvers;
+using Dalamud.Interface.Utility.Raii;
+using System;
 
 namespace Artisan.UI
 {
@@ -30,7 +32,7 @@ namespace Artisan.UI
                 ImGui.TextWrapped($"Currently saved macros: {P.Config.RaphaelSolverCacheV6.Keys.Count}");
                 ImGui.Spacing();
 
-                if (ImGui.BeginChild("##selector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 32f.Scale()), true))
+                using (ImRaii.Child("##selector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 32f.Scale()), true))
                 {
                     // todo: search by recipe?
                     if (Table == null)
@@ -40,7 +42,6 @@ namespace Artisan.UI
                     }
                     Table.Draw(ImGui.GetTextLineHeightWithSpacing() - 4f);
                 }
-                ImGui.EndChild();
 
                 var filterActive = Table.FilteredItems.Count != 0 && Table.FilteredItems.Count != P.Config.RaphaelSolverCacheV6.Keys.Count;
                 var filterCount = filterActive ? $"{Table.FilteredItems.Count} " : "";
@@ -66,7 +67,7 @@ namespace Artisan.UI
                     P.Config.Save();
                 }
             }
-            catch { }
+            catch (Exception ex) { ex.Log(); }
         }
     }
 }
