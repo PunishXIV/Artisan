@@ -667,7 +667,9 @@ namespace Artisan.UI
                 Simulator.CraftStatus.SucceededMaxQuality => ImGuiColors.ParsedGreen,
                 Simulator.CraftStatus.SucceededSomeQuality => ImGuiColors.DalamudOrange,
                 Simulator.CraftStatus.SucceededNoQualityReq => ImGuiColors.ParsedGreen,
-                _ => throw new NotImplementedException(),
+                Simulator.CraftStatus.SucceededMetQualityReq => ImGuiColors.ParsedGreen,
+                Simulator.CraftStatus.Count => ImGuiColors.ParsedBlue,
+                _ => ImGuiColors.ParsedBlue
             };
 
             float qualityPercent = _simCurSteps.Last().step.Quality / _selectedCraft.CraftQualityMax;

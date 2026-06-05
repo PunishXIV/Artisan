@@ -84,7 +84,7 @@ public class MacroSolver : Solver, ICraftValidator
                 }
             }
 
-            if (_macro.Options.SkipQualityIfMet && step.Quality >= craft.CraftQualityMin3 && ActionIsQuality(action))
+            if (_macro.Options.SkipQualityIfMet && step.Quality >= (craft.IsCosmic ? craft.CraftQualityMax : craft.CraftQualityMin3) && ActionIsQuality(action))
             {
                 continue;
             }

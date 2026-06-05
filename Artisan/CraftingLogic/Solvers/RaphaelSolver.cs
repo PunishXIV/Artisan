@@ -14,7 +14,6 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -152,7 +151,9 @@ namespace Artisan.CraftingLogic.Solvers
                         if (process.ExitCode != 0)
                         {
                             if (!string.IsNullOrWhiteSpace(error))
-                                DuoLog.Error(error);
+                            {
+                                DuoLog.Error($"Raphael was unable to solve this recipe. Please report this to the Discord with this line:\n\n{process.StartInfo.Arguments}");
+                            }
 
                             info.Succeeded = false;
                             cts.Cancel();
@@ -295,7 +296,7 @@ namespace Artisan.CraftingLogic.Solvers
             config ??= GetRaphConfig(craft);
 
             return new RaphaelOptions()
-            { 
+            {
                 MinCraftsmanship = craft.StatCraftsmanship,
                 MinControl = craft.StatControl,
                 MinCP = craft.StatCP,
@@ -453,24 +454,20 @@ namespace Artisan.CraftingLogic.Solvers
                     if (!inProgress)
                     {
                         string verb = hasSolution ? "Rebuild" : "Build";
-                        ImGuiEx.LineCentered(() =>
+
+                        if (ImGui.Button($"{verb} Raphael Solution", new Vector2(ImGui.GetContentRegionAvail().X, 25f.Scale())))
                         {
-                            if (ImGui.Button($"{verb} Raphael Solution", new Vector2(config.GetLargestName(), 25f.Scale())))
-                            {
-                                Build(craft, curConfig);
-                            }
-                        });
+                            Build(craft, curConfig);
+                        }
+
                     }
                     else
                     {
-                        ImGuiEx.LineCentered(() =>
+                        if (ImGui.Button("Cancel Raphael Generation", new Vector2(ImGui.GetContentRegionAvail().X, 25f.Scale())))
                         {
-                            if (ImGui.Button("Cancel Raphael Generation", new Vector2(config.GetLargestName(), 25f.Scale())))
-                            {
-                                Tasks.TryRemove(opts, out var task);
-                                task.Cancellation.Cancel();
-                            }
-                        });
+                            Tasks.TryRemove(opts, out var task);
+                            task.Cancellation.Cancel();
+                        }
                     }
                 }
 

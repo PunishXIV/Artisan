@@ -235,11 +235,14 @@ public unsafe struct CharacterStats
             return GetBaseStatsEquipped();
         foreach (ref var gs in RaptureGearsetModule.Instance()->Entries)
         {
+            if (!gs.Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists))
+                continue;
+
             try
             {
                 if ((Job)gs.ClassJob == job)
                     return GetBaseStatsGearset(ref gs);
-            }
+                }
             catch (Exception ex) 
             {
                 ex.Log();

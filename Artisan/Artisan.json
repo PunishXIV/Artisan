@@ -12,5 +12,5 @@
   "RepoUrl": "https://github.com/PunishXIV/Artisan",
   "DalamudApiLevel": 15,
   "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
-  "ChangeLog": "- Try and prevent crash when accessing Raphael cache when cache is empty."
+  "ChangeLog": "- Bug fixes and update Raphael dependency."
 }
