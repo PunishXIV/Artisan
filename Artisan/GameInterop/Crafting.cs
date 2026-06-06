@@ -126,6 +126,9 @@ public static unsafe class Crafting
             LevelTable = lt,
         };
 
+        if ((ushort)res.ConditionFlags == 15 && res.CraftExpert)
+            res.CraftExpert = false; // patch for recipes that are marked as expert but have all normal conditions, SE bug
+
         if (res.CraftCollectible)
         {
             switch (res.CollectableMetadataKey)

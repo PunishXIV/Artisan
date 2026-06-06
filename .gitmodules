@@ -10,3 +10,6 @@
 [submodule "KamiToolKit"]
 	path = KamiToolKit
 	url = https://github.com/MidoriKami/KamiToolKit
+[submodule "AutoRetainerAPI"]
+	path = AutoRetainerAPI
+	url = https://github.com/PunishXIV/AutoRetainerAPI/

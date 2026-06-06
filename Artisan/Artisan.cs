@@ -11,6 +11,7 @@ using Artisan.RawInformation.Character;
 using Artisan.UI;
 using Artisan.UI.KTK;
 using Artisan.Universalis;
+using AutoRetainerAPI;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Style;
@@ -44,6 +45,8 @@ public unsafe class Artisan : IDalamudPlugin
     internal UniversalisClient UniversalsisClient;
     internal NativeCraftAll? NCA;
     internal PremadeLists PremadeLists;
+    internal AutoRetainerApi? AutoRetainerAPI;
+    internal AutoRetainerIPC? AutoRetainerIPC;
 
     internal StyleModel Style;
     internal bool StylePushed = false;
@@ -71,6 +74,8 @@ public unsafe class Artisan : IDalamudPlugin
         Config = P.Config;
         PluginUi = new();
         PremadeLists = new();
+        AutoRetainerAPI = new();
+        AutoRetainerIPC = new();
 
         Svc.Commands.AddHandler(commandName, new CommandInfo(OnCommand)
         {
@@ -246,6 +251,9 @@ public unsafe class Artisan : IDalamudPlugin
         ri?.Dispose();
         ws?.RemoveAllWindows();
         ws = null!;
+
+        AutoRetainerIPC?.Dispose();
+        AutoRetainerAPI?.Dispose();
 
         //Config.ScriptSolverConfig?.Dispose();
         EnduranceCraftWatcher.Dispose();
