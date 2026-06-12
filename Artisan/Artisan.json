@@ -12,5 +12,5 @@
   "RepoUrl": "https://github.com/PunishXIV/Artisan",
   "DalamudApiLevel": 15,
   "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
-  "ChangeLog": "- Temporary patch for Experts that use normal conditions (treat as standard recipes until fixed)."
+  "ChangeLog": "- Fix issue with graphical simulator not updating Raphael solutions correctly.\n- Try and prevent adjusting Raphael macros to skip Excellent GS/BB combo when durability would cause a fail."
 }

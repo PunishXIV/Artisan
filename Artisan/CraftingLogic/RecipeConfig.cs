@@ -415,6 +415,11 @@ public class RecipeConfig
 
     public void DrawWarnings(CraftState craft)
     {
+        if (craft.StatLevel >= 65 && !craft.UnlockedManipulation)
+        {
+            ImGuiEx.TextCentered(ImGuiColors.DalamudYellow, "You can now go unlock Manipulation for this job.");
+            ImGuiEx.TextCentered(ImGuiColors.DalamudYellow, "It is highly recommended to do so as it will make crafting much easier.");
+        }
         if (!Crafting.EnoughDelinsForCraft(this, craft, out var req))
         {
             ImGuiEx.TextCentered(ImGuiColors.DalamudRed, $"You do not have enough {Svc.Data.GetExcelSheet<Item>().GetRow(28724).Name} for this solver ({req} required).");

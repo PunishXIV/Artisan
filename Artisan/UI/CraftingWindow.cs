@@ -16,6 +16,7 @@ using ECommons.Logging;
 using Dalamud.Bindings.ImGui;
 using System;
 using ECommons;
+using Lumina.Excel.Sheets;
 
 namespace Artisan.UI
 {
@@ -24,6 +25,8 @@ namespace Artisan.UI
         public bool RepeatTrial;
         private DateTime _estimatedCraftEnd;
         public int _delay;
+        private int _doNextCounter;
+        private int _doNextTotal;
 
         public CraftingWindow() : base("Artisan Crafting Window###MainCraftWindow", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse)
         {
@@ -40,6 +43,8 @@ namespace Artisan.UI
             CraftingProcessor.SolverFailed += OnSolverFailed;
             CraftingProcessor.SolverFinished += OnSolverFinished;
             CraftingProcessor.RecommendationReady += OnRecommendationReady;
+            Crafting.CraftFinished += OnCraftFinished;
+            Crafting.CraftAdvanced += OnCraftAdvanced;
 
             this.TitleBarButtons.Add(new()
             {
@@ -51,12 +56,24 @@ namespace Artisan.UI
             _delay = P.Config.AutoDelay;
         }
 
+        private void OnCraftAdvanced(Recipe? recipe, CraftState craft, StepState step)
+        {
+            _doNextCounter--;
+        }
+
+        private void OnCraftFinished(Recipe? recipe, CraftState craft, StepState finalStep, bool cancelled)
+        {
+            _doNextCounter = 0;
+        }
+
         public void Dispose()
         {
             CraftingProcessor.SolverStarted -= OnSolverStarted;
             CraftingProcessor.SolverFailed -= OnSolverFailed;
             CraftingProcessor.SolverFinished -= OnSolverFinished;
             CraftingProcessor.RecommendationReady -= OnRecommendationReady;
+            Crafting.CraftFinished -= OnCraftFinished;
+            Crafting.CraftAdvanced -= OnCraftAdvanced;
         }
 
         public override bool DrawConditions()
@@ -178,9 +195,38 @@ namespace Artisan.UI
                     var action = CraftingProcessor.NextRec.Action;
                     using var disable = ImRaii.Disabled(action == Skills.None);
 
-                    if (ImGui.Button("Execute recommended action"))
+                    if (P.Config.UseDoNextX)
                     {
-                        ActionManagerEx.UseSkill(action);
+                        if (_doNextCounter <= 0)
+                        {
+                            if (ImGui.Button($"Do Next {P.Config.DoNextXAmount} Actions"))
+                            {
+                                _doNextCounter = P.Config.DoNextXAmount;
+                                _doNextTotal = P.Config.DoNextXAmount;
+                                ActionManagerEx.UseSkill(action);
+                            }
+                        }
+                        else
+                        {
+                            if (ImGui.Button($"Cancel Queue"))
+                            {
+                                _doNextCounter = 0;
+                                _doNextTotal = 0;
+                            }
+                        }
+
+                        if (_doNextCounter > 0) 
+                        {
+                            var remaining = _doNextTotal - _doNextCounter;
+                            ImGuiEx.Text($"Processing action {remaining}/{_doNextTotal}");
+                        }
+                    }
+                    else
+                    {
+                        if (ImGui.Button("Execute recommended action"))
+                        {
+                            ActionManagerEx.UseSkill(action);
+                        }
                     }
                     if (ImGui.Button("Fetch Recommendation"))
                     {
@@ -229,8 +275,9 @@ namespace Artisan.UI
                 return;
             }
             ShowRecommendation(recommendation.Action);
-            if (P.Config.AutoMode || Endurance.IPCOverride)
+            if (P.Config.AutoMode || Endurance.IPCOverride || _doNextCounter > 1)
             {
+                Svc.Log.Debug($"{_doNextCounter} donext");
                 if (!P.Config.ReplicateMacroDelay)
                     P.CTM.DelayNext(P.Config.AutoDelay);
                 P.CTM.Enqueue(() => Crafting.CurState == Crafting.State.InProgress, 3000, true, "WaitForStateToUseAction");

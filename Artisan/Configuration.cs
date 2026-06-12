@@ -98,6 +98,8 @@ namespace Artisan
         public bool RequestToStopDuty = false;
         public bool RequestToResumeDuty = false;
         public int RequestToResumeDelay = 5;
+        public bool UseDoNextX = true;
+        public int DoNextXAmount = 15;
 
         public bool UseConsumablesTrial = false;
         public bool UseConsumablesQuickSynth = false;

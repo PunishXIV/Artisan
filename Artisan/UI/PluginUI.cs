@@ -832,6 +832,17 @@ namespace Artisan.UI
                 changed |= ImGui.Checkbox($"Disable recommendation toasts", ref P.Config.DisableToasts);
                 ImGuiComponents.HelpMarker("These are the pop-ups whenever a new action is recommended.");
 
+                changed |= ImGui.Checkbox($"Use \"Queue Next X\" button instead of \"Execute Recommended Action\" button", ref P.Config.UseDoNextX);
+                ImGuiComponents.HelpMarker("Replaces the button when not using Auto Action Mode to execute the next action to queue up a specified number of actions, similar to macros.");
+
+                if (P.Config.UseDoNextX)
+                {
+                    ImGui.Indent();
+                    ImGui.PushItemWidth(50);
+                    changed |= ImGui.InputInt($"Number of actions to queue up", ref P.Config.DoNextXAmount);
+                    ImGui.Unindent();
+                }
+
                 changed |= ImGui.Checkbox("Disable Custom Theme", ref P.Config.DisableTheme);
                 ImGui.SameLine();
                 if (IconButtons.IconTextButton(FontAwesomeIcon.Clipboard, "Copy Theme"))

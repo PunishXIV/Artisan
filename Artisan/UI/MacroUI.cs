@@ -3,11 +3,11 @@ using Artisan.CraftingLogic.Solvers;
 using Artisan.GameInterop;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Dalamud.Bindings.ImGui;
 using ECommons;
 using ECommons.DalamudServices;
 using ECommons.ImGuiMethods;
 using ECommons.Logging;
-using Dalamud.Bindings.ImGui;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -305,7 +305,7 @@ namespace Artisan.UI
             ImGui.OpenPopup($"{MacroNamePopupLabel}{use}");
         }
 
-        internal static List<MacroSolverSettings.MacroStep> ParseMacro(IEnumerable<int> skillIds)
+        internal static List<MacroSolverSettings.MacroStep> ParseMacro(IEnumerable<int> skillIds, CraftState craft)
         {
             var res = new List<MacroSolverSettings.MacroStep>();
             if (skillIds.Count() == 0)
@@ -313,6 +313,8 @@ namespace Artisan.UI
                 return res;
             }
 
+            var dura = craft.CraftDurability;
+            var step = Simulator.CreateInitial(craft, 0);
             for (int i = 0; i < skillIds.Count(); i++)
             {
                 var secondPrevAct = (Skills)skillIds.ElementAtOrDefault(i - 2);
@@ -320,33 +322,25 @@ namespace Artisan.UI
                 var act = (Skills)skillIds.ElementAt(i);
                 var nextAct = (Skills)skillIds.ElementAtOrDefault(i + 1);
 
+                var nextStep = Simulator.Execute(craft, step, act, 0, 1);
+
                 res.Add(new() { Action = act });
 
-                if (act == Skills.GreatStrides && nextAct == Skills.ByregotsBlessing)
+                if (act == Skills.GreatStrides && nextAct == Skills.ByregotsBlessing && step.Durability > 10)
                 {
                     res[i].ExcludeExcellent = true;
                     res[i].ReplacementAction = Skills.ByregotsBlessing;
                     res[i].ReplaceOnExclude = true;
                 }
 
-                if (i > 0 && res[i - 1].ExcludeExcellent)
+                if (i > 0 && res[i - 1].ExcludeExcellent && act == Skills.ByregotsBlessing)
                 {
                     res[i].ExcludePoor = true;
                     res[i].ReplacementAction = Skills.Observe;
                     res[i].ReplaceOnExclude = true;
                 }
 
-                if (act == Skills.HastyTouch && prevAct == Skills.HastyTouch && secondPrevAct == Skills.SteadyHand)
-                {
-                    Svc.Log.Debug($"Updating a Hasty to Daring");
-                    res[i].Action = Skills.DaringTouch;
-                }
-
-                if (act == Skills.DaringTouch && prevAct == Skills.HastyTouch)
-                {
-                    Svc.Log.Debug($"Updating a Daring to Hasty");
-                    res[i].Action = Skills.HastyTouch;
-                }
+                step = nextStep.Item2;
             }
 
             return res;
