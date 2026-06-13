@@ -21,7 +21,7 @@ public static unsafe class Operations
         {
             if (Throttler.Throttle(500))
             {
-                if (GenericHelpers.TryGetAddonByName<AtkUnitBase>("RecipeNotePraticeSetting", out var recipenote))
+                if (TryGetAddonByName<AtkUnitBase>("RecipeNotePraticeSetting", out var recipenote))
                 {
                     Callback.Fire(recipenote, true, 0, 0, false);
                 }
@@ -44,7 +44,7 @@ public static unsafe class Operations
             if (recipeWindow == nint.Zero)
                 return;
 
-            GenericHelpers.TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon);
+            TryGetAddonByName<AddonRecipeNote>("RecipeNote", out var addon);
 
             if (addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory == null || !int.TryParse(addon->SelectedRecipeQuantityCraftableFromMaterialsInInventory->NodeText.ToString(), out int trueNumberCraftable) || trueNumberCraftable == 0)
             {

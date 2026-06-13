@@ -20,7 +20,7 @@ namespace Artisan.UI.Tables
         {
             if (ImGui.Selectable(this.ToName(key)))
             {
-                var m = P.Config.RaphaelSolverCacheV6[key];
+                var m = RaphaelCache.CurrentCache[key];
                 if (!P.ws.Windows.Any(x => x.WindowName.Contains(m.ID.ToString())))
                 {
                     new MacroEditor(m, true);
@@ -113,7 +113,7 @@ namespace Artisan.UI.Tables
         {
             if (ImGui.Selectable(text))
             {
-                var m = P.Config.RaphaelSolverCacheV6[key];
+                var m = RaphaelCache.CurrentCache[key];
                 if (!P.ws.Windows.Any(x => x.WindowName.Contains(m.ID.ToString())))
                 {
                     new MacroEditor(m, true);
@@ -279,13 +279,13 @@ namespace Artisan.UI.Tables
 
         public sealed class MacroStepColumn : ClickableColumn
         {
-            public override string ToName(RaphaelOptions m) => P.Config.RaphaelSolverCacheV6[m].Steps.Count().ToString();
+            public override string ToName(RaphaelOptions m) => RaphaelCache.CurrentCache[m].Steps.Count().ToString();
 
             public override float Width => _colWidthMacroSteps * ImGuiHelpers.GlobalScale;
 
             public override int Compare(RaphaelOptions lhs, RaphaelOptions rhs)
             {
-                return P.Config.RaphaelSolverCacheV6[lhs].Steps.Count() - P.Config.RaphaelSolverCacheV6[rhs].Steps.Count();
+                return RaphaelCache.CurrentCache[lhs].Steps.Count() - RaphaelCache.CurrentCache[rhs].Steps.Count();
             }
         }
     }

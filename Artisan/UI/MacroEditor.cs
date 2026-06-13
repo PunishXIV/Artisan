@@ -97,11 +97,11 @@ namespace Artisan.UI
                     {
                         if (raphael_cache)
                         {
-                            var copy = P.Config.RaphaelSolverCacheV6.Where(kv => kv.Value == SelectedMacro);
+                            var copy = RaphaelCache.CurrentCache.Where(kv => kv.Value == SelectedMacro);
                             //really should be just one but is it for sure??
                             foreach (var kv in copy)
                             {
-                                P.Config.RaphaelSolverCacheV6.TryRemove(kv);
+                                RaphaelCache.CurrentCache.TryRemove(kv);
                             }
                         }
                         else

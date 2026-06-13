@@ -144,7 +144,7 @@ public static unsafe class Crafting
                  */
                 // HWD Recipes
                 case 2:
-                    var hwdRow = ECommons.GenericHelpers.FindRow<HWDCrafterSupply>(x => x.HWDCrafterSupplyParams.Any(y => y.ItemTradeIn.RowId == recipe.ItemResult.RowId));
+                    var hwdRow = GenericHelpers.FindRow<HWDCrafterSupply>(x => x.HWDCrafterSupplyParams.Any(y => y.ItemTradeIn.RowId == recipe.ItemResult.RowId));
                     if (hwdRow != null)
                     {
                         var index = hwdRow.Value.HWDCrafterSupplyParams.IndexOf(x => x.ItemTradeIn.RowId == recipe.ItemResult.RowId);
@@ -157,7 +157,7 @@ public static unsafe class Crafting
 
                 // Satisfaction Supply Recipes
                 case 3:
-                    var satisfactionRow = ECommons.GenericHelpers.FindSubrow<SatisfactionSupply>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
+                    var satisfactionRow = GenericHelpers.FindSubrow<SatisfactionSupply>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
                     if (satisfactionRow.HasValue)
                     {
                         res.CraftQualityMin1 = satisfactionRow.Value.CollectabilityLow * 10;
@@ -167,7 +167,7 @@ public static unsafe class Crafting
                     break;
                 // Sharlayan
                 case 4:
-                    var sharlayanRow = ECommons.GenericHelpers.FindRow<SharlayanCraftWorksSupply>(x => x.Item.Any(y => y.ItemId.RowId == recipe.ItemResult.RowId));
+                    var sharlayanRow = GenericHelpers.FindRow<SharlayanCraftWorksSupply>(x => x.Item.Any(y => y.ItemId.RowId == recipe.ItemResult.RowId));
                     if (sharlayanRow != null)
                     {
                         var it = sharlayanRow.Value.Item.First(y => y.ItemId.RowId == recipe.ItemResult.RowId);
@@ -177,7 +177,7 @@ public static unsafe class Crafting
                     break;
                 // Wachumeqimeqi
                 case 6:
-                    var bankaRow = ECommons.GenericHelpers.FindRow<BankaCraftWorksSupply>(x => x.Item.Any(y => y.ItemId.RowId == recipe.ItemResult.RowId));
+                    var bankaRow = GenericHelpers.FindRow<BankaCraftWorksSupply>(x => x.Item.Any(y => y.ItemId.RowId == recipe.ItemResult.RowId));
                     if (bankaRow != null)
                     {
                         var it = bankaRow.Value.Item.First(y => y.ItemId.RowId == recipe.ItemResult.RowId);
@@ -198,7 +198,7 @@ public static unsafe class Crafting
                     break;
                 // Check for any other Generic Collectable
                 default:
-                    var genericRow = ECommons.GenericHelpers.FindSubrow<CollectablesShopItem>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
+                    var genericRow = GenericHelpers.FindSubrow<CollectablesShopItem>(x => x.Item.Value.RowId == recipe.ItemResult.RowId);
                     if (genericRow is { CollectablesShopRefine: { } breakpoints })
                     {
                         res.CraftQualityMin1 = breakpoints.Value.LowCollectability * 10;
@@ -591,7 +591,7 @@ public static unsafe class Crafting
         {
             var macro = P.Config.MacroSolverConfig.FindMacro(config.CurrentSolverFlavour);
             numReq = macro.Steps.Count(x => x.Action is Skills.CarefulObservation or Skills.HeartAndSoul or Skills.QuickInnovation);
-            if (numReq > Crafting.DelineationCount())
+            if (numReq > DelineationCount())
                 enoughDelins = false;
         }
         else if (config.CurrentSolverType.Contains("Raphael"))
@@ -599,7 +599,7 @@ public static unsafe class Crafting
             if (RaphaelCache.HasSolution(craft, RaphaelCache.GetRaphConfig(craft, true), out var macro))
             {
                 numReq = macro.Steps.Count(x => x.Action is Skills.CarefulObservation or Skills.HeartAndSoul or Skills.QuickInnovation);
-                if (numReq > Crafting.DelineationCount())
+                if (numReq > DelineationCount())
                     enoughDelins = false;
             }
         }
@@ -623,7 +623,7 @@ public static unsafe class Crafting
         }
         catch (Exception e)
         {
-            ECommons.GenericHelpers.Log(e);
+            GenericHelpers.Log(e);
             return 0;
         }
     }
@@ -645,7 +645,7 @@ public static unsafe class Crafting
         }
         catch (Exception e)
         {
-            ECommons.GenericHelpers.Log(e);
+            GenericHelpers.Log(e);
             return 0;
         }
     }

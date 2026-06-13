@@ -20,6 +20,7 @@ using Dalamud.Plugin;
 using ECommons;
 using ECommons.Automation.LegacyTaskManager;
 using ECommons.DalamudServices;
+using ECommons.GameHelpers.LegacyPlayer;
 using ECommons.Logging;
 using KamiToolKit;
 using OtterGui.Classes;
@@ -118,19 +119,21 @@ public unsafe class Artisan : IDalamudPlugin
         ws.AddWindow(cw);
 
         Svc.Framework.Update += OnFrameworkUpdate;
-        Svc.ClientState.Logout += DisableEndurance;
-        Svc.ClientState.Login += DisableEndurance;
+        Svc.ClientState.Logout += OnLogout;
+        Svc.ClientState.Login += OnLogin;
         Svc.Condition.ConditionChange += Condition_ConditionChange;
 
-        PluginUi.OpenWindow = OpenWindow.Main;
+        PluginUi.OpenWindow = OpenWindow.Main;  
         NCA = new();
         ConvertCraftingLists();
     }
 
-    private void DisableEndurance(int type, int code)
+    private void OnLogout(int type, int code)
     {
         Endurance.ToggleEndurance(false);
         CraftingListUI.Processing = false;
+        RaphaelCache.CurrentCache = [];
+        P.PluginUi.RaphaelCacheUI.Table = null;
     }
 
     private void ConvertCraftingLists()
@@ -194,9 +197,11 @@ public unsafe class Artisan : IDalamudPlugin
         }
     }
 
-    private void DisableEndurance()
+    private void OnLogin()
     {
-        DisableEndurance(0, 0);
+        OnLogout(0, 0);
+        P.TM.Enqueue(() => Player.Available);
+        P.TM.Enqueue(() => RaphaelCache.LoadRaphaelCache(P.Config, false));
     }
 
     private void OnFrameworkUpdate(IFramework framework)
@@ -268,8 +273,8 @@ public unsafe class Artisan : IDalamudPlugin
 
         Svc.Condition.ConditionChange -= Condition_ConditionChange;
         Svc.Framework.Update -= OnFrameworkUpdate;
-        Svc.ClientState.Logout -= DisableEndurance;
-        Svc.ClientState.Login -= DisableEndurance;
+        Svc.ClientState.Logout -= OnLogout;
+        Svc.ClientState.Login -= OnLogin;
         Endurance.Dispose();
         RetainerInfo.Dispose();
         IPC.IPC.Dispose();

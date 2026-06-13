@@ -20,7 +20,7 @@ namespace Artisan.UI
         {
             try
             {
-                ImGui.TextWrapped("This tab shows all of the currently saved Raphael-generated macros.");
+                ImGui.TextWrapped("This tab shows all of the currently saved Raphael-generated macros for the currently logged in character.");
 
                 if (Svc.ClientState.IsLoggedIn && Crafting.CurState is not Crafting.State.IdleNormal and not Crafting.State.IdleBetween)
                 {
@@ -29,7 +29,7 @@ namespace Artisan.UI
                 }
                 ImGui.Spacing();
 
-                ImGui.TextWrapped($"Currently saved macros: {P.Config.RaphaelSolverCacheV6.Keys.Count}");
+                ImGui.TextWrapped($"Currently saved macros: {RaphaelCache.CurrentCache.Keys.Count}");
                 ImGui.Spacing();
 
                 using (ImRaii.Child("##selector", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - 32f.Scale()), true))
@@ -37,13 +37,13 @@ namespace Artisan.UI
                     // todo: search by recipe?
                     if (Table == null)
                     {
-                        var cacheList = P.Config.RaphaelSolverCacheV6.Keys.ToList();
+                        var cacheList = RaphaelCache.CurrentCache.Keys.ToList();
                         Table = new(cacheList);
                     }
                     Table.Draw(ImGui.GetTextLineHeightWithSpacing() - 4f);
                 }
 
-                var filterActive = Table.FilteredItems.Count != 0 && Table.FilteredItems.Count != P.Config.RaphaelSolverCacheV6.Keys.Count;
+                var filterActive = Table.FilteredItems.Count != 0 && Table.FilteredItems.Count != RaphaelCache.CurrentCache.Keys.Count;
                 var filterCount = filterActive ? $"{Table.FilteredItems.Count} " : "";
 
                 if (!filterActive) ImGui.BeginDisabled();
@@ -52,7 +52,7 @@ namespace Artisan.UI
                     var toDelete = Table.FilteredItems.JSONClone();
                     foreach ((RaphaelOptions key, int _) in toDelete)
                     {
-                        P.Config.RaphaelSolverCacheV6.TryRemove(key, out _);
+                        RaphaelCache.CurrentCache.TryRemove(key, out _);
                     }
                     Table.FilteredItems.Clear();
                     P.Config.Save();
@@ -63,7 +63,7 @@ namespace Artisan.UI
 
                 if (ImGuiEx.ButtonCtrl($"Delete Entire Cache", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y)))
                 {
-                    P.Config.RaphaelSolverCacheV6.Clear();
+                    RaphaelCache.CurrentCache.Clear();
                     P.Config.Save();
                 }
             }

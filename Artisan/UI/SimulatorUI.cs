@@ -115,6 +115,8 @@ namespace Artisan.UI
                         ImGui.EndTabItem();
                     }
                 }
+
+                UpdateCraftForRaphael();
             }
             catch { }
 
@@ -605,7 +607,6 @@ namespace Artisan.UI
                         ResetSim();
                         return;
                     }
-                    UpdateCraftForRaphael();
                 }
                 ImGuiEx.SetNextItemFullWidth();
                 if (ImGui.Button($"Run Simulated Solver"))
@@ -922,7 +923,7 @@ namespace Artisan.UI
 
             if (!CustomStatMode)
             {
-                var validGS = RaptureGearsetModule.Instance()->Entries.ToArray().Count(x => RaptureGearsetModule.Instance()->IsValidGearset(x.Id) && x.ClassJob == SelectedRecipe!?.CraftType.RowId + 8);
+                var validGS = Instance()->Entries.ToArray().Count(x => Instance()->IsValidGearset(x.Id) && x.ClassJob == SelectedRecipe!?.CraftType.RowId + 8);
 
                 if (validGS == 0)
                 {
@@ -932,7 +933,7 @@ namespace Artisan.UI
                 }
                 if (validGS == 1)
                 {
-                    var gs = RaptureGearsetModule.Instance()->Entries.ToArray().First(x => RaptureGearsetModule.Instance()->IsValidGearset(x.Id) && x.ClassJob == SelectedRecipe!?.CraftType.RowId + 8);
+                    var gs = Instance()->Entries.ToArray().First(x => Instance()->IsValidGearset(x.Id) && x.ClassJob == SelectedRecipe!?.CraftType.RowId + 8);
                     SimGS = gs;
                     string name = gs.NameString;
                     bool materiaDiff = gs.Items.ToArray().Any(x => x.Flags.HasFlag(GearsetItemFlag.MateriaDiffers));
@@ -956,9 +957,9 @@ namespace Artisan.UI
                     SimGS = null;
                 }
 
-                foreach (var gs in RaptureGearsetModule.Instance()->Entries)
+                foreach (var gs in Instance()->Entries)
                 {
-                    if (!RaptureGearsetModule.Instance()->IsValidGearset(gs.Id)) continue;
+                    if (!Instance()->IsValidGearset(gs.Id)) continue;
                     if (gs.ClassJob != SelectedRecipe!?.CraftType.RowId + 8)
                         continue;
 

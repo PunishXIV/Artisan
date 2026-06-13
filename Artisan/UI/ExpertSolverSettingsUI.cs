@@ -604,7 +604,7 @@ internal class ExpertSolverSettingsUI
 
                 if (s.EnableExpertProfiles)
                 {
-                    if (IconButtons.IconTextButton(Dalamud.Interface.FontAwesomeIcon.ExternalLinkAlt, "Create/Edit Expert Solver Profiles"))
+                    if (IconButtons.IconTextButton(FontAwesomeIcon.ExternalLinkAlt, "Create/Edit Expert Solver Profiles"))
                     {
                         P.PluginUi.OpenWindow = OpenWindow.ExpertProfiles;
                     }

@@ -70,7 +70,7 @@ namespace Artisan.RawInformation
                 .ToDictionary(x => x.RowId, x => x);
 
             // Preprocess the recipe data into a lookup table (ILookup) for faster access.
-            recipeLookup = LuminaSheets.RecipeSheet.Values
+            recipeLookup = RecipeSheet.Values
                 .ToLookup(x => x.ItemResult.Value.Name.ToDalamudString().ToString());
 
             GatheringItemSheet = Svc.Data?.GetExcelSheet<GatheringItem>()?

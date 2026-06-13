@@ -41,7 +41,7 @@ internal unsafe static class RetainerListHandlers
         string retainerName = "";
         for (uint i = 0; i < 10; i++)
         {
-            var retainer = FFXIVClientStructs.FFXIV.Client.Game.RetainerManager.Instance()->GetRetainerBySortedIndex(i);
+            var retainer = RetainerManager.Instance()->GetRetainerBySortedIndex(i);
             if (retainer == null) continue;
 
             if (retainer->RetainerId == id)
