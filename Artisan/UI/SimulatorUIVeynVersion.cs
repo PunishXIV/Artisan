@@ -1,11 +1,12 @@
 ﻿using Artisan.CraftingLogic;
 using Artisan.GameInterop;
 using Artisan.RawInformation.Character;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
-using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
+using Lumina.Excel.Sheets.Experimental;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
+using Recipe = Lumina.Excel.Sheets.Recipe;
 
 namespace Artisan.UI;
 
@@ -416,6 +418,14 @@ internal static class SimulatorUIVeynVersion
         _simNextRec = default;
         if (_simCurSolver != null)
         {
+            if (_simCurSolver.GetType().FullName.Contains("Expert"))
+            {
+                var config = P.Config.RecipeConfigs.GetValueOrDefault(_selectedRecipe!.Value.RowId) ?? new();
+                var expertProfile = P.Config.ExpertSolverProfiles.FindExpertProfile(config.ExpertProfileID) ?? P.Config.ExpertSolverProfiles.GetDefaultProfile();
+                expertProfile.SetPerRecipeSettings(config);
+                _simCurSolver.SetActiveProfile(expertProfile);
+            }
+
             var initial = Simulator.CreateInitial(craft, (int)(craft.CraftQualityMax * _startingQualityPct / 100.0));
             _simCurSteps.Add((initial, ""));
             _simNextRec = _simCurSolver.Solve(craft, initial);

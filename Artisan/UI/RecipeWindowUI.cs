@@ -134,7 +134,7 @@ namespace Artisan
                 uint toVisit = (((uint)Math.Round(jobLevel / 5.0) * 5) / 5);
 
                 var maxLevel = Svc.Data.GetExcelSheet<RecipeLevelTable>().Max(x => x.ClassJobLevel);
-                if (jobLevel == maxLevel)
+                if (jobLevel >= maxLevel - 5)
                     toVisit -= 1;
 
                 foreach (var subNode in n->UldManager.Nodes)

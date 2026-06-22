@@ -612,6 +612,13 @@ namespace Artisan.UI
                 if (ImGui.Button($"Run Simulated Solver"))
                 {
                     _simCurSolver = _selectedSolver?.Clone();
+                    if (_simCurSolver.GetType().FullName.Contains("Expert"))
+                    {
+                        var config = P.Config.RecipeConfigs.GetValueOrDefault(SelectedRecipe!.Value.RowId) ?? new();
+                        var expertProfile = P.Config.ExpertSolverProfiles.FindExpertProfile(config.ExpertProfileID) ?? P.Config.ExpertSolverProfiles.GetDefaultProfile();
+                        expertProfile.SetPerRecipeSettings(config);
+                        _simCurSolver.SetActiveProfile(expertProfile);
+                    }
                     ResetSim();
                     InitDefaultTransitionProbabilities(_selectedCraft, SelectedRecipe!.Value);
                     while (SolveNextSimulator(_selectedCraft)) ;
