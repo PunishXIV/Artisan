@@ -124,7 +124,7 @@ public unsafe class Artisan : IDalamudPlugin
         Svc.Condition.ConditionChange += Condition_ConditionChange;
 
         PluginUi.OpenWindow = OpenWindow.Main;  
-        NCA = new();
+        Svc.Framework.RunOnFrameworkThread(() => NCA = new());
         ConvertCraftingLists();
     }
 
