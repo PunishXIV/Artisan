@@ -76,6 +76,13 @@ namespace Artisan.CraftingLists
                 }
             }
 
+            int premadeCountBefore = PremadeCraftingLists.Count;
+            RelicToolPremadeLists.EnsureBuilt(PremadeCraftingLists);
+            if (PremadeCraftingLists.Count > premadeCountBefore)
+            {
+                needToUpdate = true;
+            }
+
             if (needToUpdate)
             {
                 TryWriteToFile();
