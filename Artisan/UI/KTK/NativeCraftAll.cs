@@ -13,7 +13,7 @@ namespace Artisan.UI.KTK
     {
         AddonController? regularRecipeNoteController;
         AddonController? moonRecipeNoteController;
-        TextButtonNode? SynthesizeAll;
+        TextButtonNodeSynth? SynthesizeAll;
         NumericInputNode? SynthesizeXCounter;
         int val = 0;
         int SynthesizeableCount = 0;
