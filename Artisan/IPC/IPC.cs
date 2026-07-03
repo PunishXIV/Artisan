@@ -68,6 +68,7 @@ namespace Artisan.IPC
 
             Svc.PluginInterface.GetIpcProvider<Dictionary<int, string>>("Artisan.GetLists").RegisterFunc(GetLists);
             Svc.PluginInterface.GetIpcProvider<int, object>("Artisan.StartListById").RegisterAction(StartListById);
+            Svc.PluginInterface.GetIpcProvider<string, int, int>("Artisan.GetRelicToolListId").RegisterFunc(GetRelicToolListId);
 
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertProfileID").RegisterAction(ChangeExpertProfileID);
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertProfileIDBackToNormal").RegisterAction(SetTempExpertProfileIDBackToNormal);
@@ -120,6 +121,7 @@ namespace Artisan.IPC
 
             Svc.PluginInterface.GetIpcProvider<Dictionary<int, string>>("Artisan.GetLists").UnregisterFunc();
             Svc.PluginInterface.GetIpcProvider<int, object>("Artisan.StartListById").UnregisterAction();
+            Svc.PluginInterface.GetIpcProvider<string, int, int>("Artisan.GetRelicToolListId").UnregisterFunc();
 
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertProfileID").UnregisterAction();
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertProfileIDBackToNormal").UnregisterAction();
@@ -544,7 +546,21 @@ namespace Artisan.IPC
         /// </summary>
         public static Dictionary<int, string> GetLists()
         {
-            return P.Config.NewCraftingLists.ToDictionary(x => x.ID, x => x.Name ?? string.Empty);
+            Dictionary<int, string> dict = P.Config.NewCraftingLists.ToDictionary(x => x.ID, x => x.Name ?? string.Empty);
+            foreach (NewCraftingList premade in P.PremadeLists.PremadeCraftingLists)
+            {
+                dict.TryAdd(premade.ID, premade.Name ?? string.Empty);
+            }
+
+            return dict;
+        }
+
+        /// <summary>
+        /// Resolves a relic-tool premade list ID from RelicTracker step name and craft slot (CRP=0 … CUL=7). Returns 0 if unknown.
+        /// </summary>
+        public static int GetRelicToolListId(string stepName, int craftTypeSlot)
+        {
+            return RelicToolPremadeLists.TryGetListId(stepName, craftTypeSlot, out int listId) ? listId : 0;
         }
 
         public static void StartListById(int listId)
