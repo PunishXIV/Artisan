@@ -556,7 +556,7 @@ namespace Artisan.IPC
         }
 
         /// <summary>
-        /// Resolves a relic-tool premade list ID from RelicTracker step name and craft slot (CRP=0 … CUL=7). Returns 0 if unknown.
+        /// Resolves a relic-tool premade list ID.
         /// </summary>
         public static int GetRelicToolListId(string stepName, int craftTypeSlot)
         {

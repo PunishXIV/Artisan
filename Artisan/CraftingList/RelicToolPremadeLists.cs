@@ -7,11 +7,6 @@ using System.Linq;
 
 namespace Artisan.CraftingLists;
 
-/// <summary>
-///     Premade crafting lists for Disciple of the Hand relic tool collectable steps.
-///     List IDs: 900_000 + stepOrdinal * 10 + craftType (CRP=0 … CUL=7). Regenerate definitions via
-///     RelicTracker <c>data/gen_artisan_relic_lists.py</c> when <c>gen_tool_materials.py</c> changes.
-/// </summary>
 internal static partial class RelicToolPremadeLists
 {
     internal const int IdBase = 900_000;
