@@ -1017,6 +1017,54 @@ namespace Artisan.UI
                 ImGui.Dummy(new Vector2(0, 10f));
             }
 
+            if (ImGui.CollapsingHeader("Retainer Deposit Settings"))
+            {
+                ImGui.Dummy(new Vector2(0, 2f));
+                ImGui.Indent();
+
+                changed |= ImGui.Checkbox("Automatically deposit crafted items into a retainer", ref P.Config.AutoDepositCrafts);
+                ImGuiComponents.HelpMarker("When your free inventory slots drop to the threshold below between crafts, Artisan will use the nearest retainer bell to entrust this session's crafted items to the selected retainer, then resume crafting.\n\nRequires a retainer bell within interaction range. If no bell is reachable or the retainer cannot accept items, Artisan will notify you once and keep crafting.\n\nItems still needed as ingredients by the remaining list entries, collectibles, and crystals are never deposited.");
+
+                if (P.Config.AutoDepositCrafts)
+                {
+                    if (!Svc.ClientState.IsLoggedIn)
+                    {
+                        ImGui.TextWrapped("Log in to select a retainer.");
+                    }
+                    else
+                    {
+                        var retainers = AutoDepositManager.GetCharacterRetainers();
+                        P.Config.AutoDepositRetainers.TryGetValue(Svc.PlayerState.ContentId, out var selectedRetainer);
+                        var preview = retainers.FirstOrDefault(x => x.Id == selectedRetainer).Name ?? "";
+
+                        ImGui.PushItemWidth(250);
+                        if (ImGui.BeginCombo("Deposit retainer", preview.Length == 0 ? "Select a retainer..." : preview))
+                        {
+                            foreach (var (id, name) in retainers)
+                            {
+                                if (ImGui.Selectable(name, id == selectedRetainer))
+                                {
+                                    P.Config.AutoDepositRetainers[Svc.PlayerState.ContentId] = id;
+                                    P.Config.Save();
+                                }
+                            }
+                            ImGui.EndCombo();
+                        }
+                    }
+
+                    ImGui.PushItemWidth(250);
+                    if (ImGui.SliderInt("Deposit when free inventory slots reach", ref P.Config.AutoDepositFreeSlotThreshold, 1, 20))
+                    {
+                        if (P.Config.AutoDepositFreeSlotThreshold < 1) P.Config.AutoDepositFreeSlotThreshold = 1;
+                        if (P.Config.AutoDepositFreeSlotThreshold > 20) P.Config.AutoDepositFreeSlotThreshold = 20;
+                        P.Config.Save();
+                    }
+                }
+
+                ImGui.Unindent();
+                ImGui.Dummy(new Vector2(0, 10f));
+            }
+
             if (changed)
             {
                 P.Config.Save();
