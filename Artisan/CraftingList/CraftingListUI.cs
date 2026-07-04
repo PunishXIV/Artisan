@@ -198,6 +198,7 @@ namespace Artisan.CraftingLists
             CraftingListFunctions.ListEndTime = GetListTimer(selectedList);
             Crafting.CraftFinished += UpdateListTimer;
             Processing = true;
+            AutoDepositManager.ResetBackoff();
             Endurance.ToggleEndurance(false);
         }
 

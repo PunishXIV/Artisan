@@ -79,6 +79,7 @@ namespace Artisan.Autocraft
             if (RecipeID > 0 && enable)
             {
                 Enable = enable;
+                AutoDepositManager.ResetBackoff();
             }
             else if (Enable)
             {
@@ -349,6 +350,12 @@ namespace Artisan.Autocraft
                 }
 
                 if (P.Config.Repair && !RepairManager.ProcessRepair())
+                {
+                    PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
+                    return;
+                }
+
+                if (P.Config.AutoDepositCrafts && !AutoDepositManager.ProcessDeposit())
                 {
                     PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
                     return;

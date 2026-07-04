@@ -375,6 +375,12 @@ namespace Artisan.CraftingLists
                 return;
             }
 
+            if (P.Config.AutoDepositCrafts && !AutoDepositManager.ProcessDeposit(selectedList))
+            {
+                PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
+                return;
+            }
+
             if (selectedList.Recipes.First(x => x.ID == CraftingListUI.CurrentProcessedItem).ListItemOptions is null)
             {
                 selectedList.Recipes.First(x => x.ID == CraftingListUI.CurrentProcessedItem).ListItemOptions = new ListItemOptions();
