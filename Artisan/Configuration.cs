@@ -91,6 +91,7 @@ namespace Artisan
         public bool AutoDepositCrafts = false;
         public Dictionary<ulong, ulong> AutoDepositRetainers = new Dictionary<ulong, ulong>();
         public int AutoDepositFreeSlotThreshold = 5;
+        public bool AutoDepositCollectables = true;
 
         [NonSerialized]
         public bool CraftingX = false;

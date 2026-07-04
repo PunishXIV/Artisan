@@ -1023,10 +1023,13 @@ namespace Artisan.UI
                 ImGui.Indent();
 
                 changed |= ImGui.Checkbox("Automatically deposit crafted items into a retainer", ref P.Config.AutoDepositCrafts);
-                ImGuiComponents.HelpMarker("When your free inventory slots drop to the threshold below between crafts, Artisan will use the nearest retainer bell to entrust this session's crafted items to the selected retainer, then resume crafting.\n\nRequires a retainer bell within interaction range. If no bell is reachable or the retainer cannot accept items, Artisan will notify you once and keep crafting.\n\nItems still needed as ingredients by the remaining list entries, collectibles, and crystals are never deposited.");
+                ImGuiComponents.HelpMarker("When your free inventory slots drop to the threshold below between crafts, Artisan will use the nearest retainer bell to entrust this session's crafted items to the selected retainer, then resume crafting.\n\nRequires a retainer bell within interaction range. If no bell is reachable or the retainer cannot accept items, Artisan will notify you once and keep crafting.\n\nItems still needed as ingredients by the remaining list entries and crystals are never deposited.");
 
                 if (P.Config.AutoDepositCrafts)
                 {
+                    changed |= ImGui.Checkbox("Also deposit collectable crafts", ref P.Config.AutoDepositCollectables);
+                    ImGuiComponents.HelpMarker("Collectables don't stack, so they fill your inventory quickly when farming scrip turn-ins. Disable this if you want collectables kept in your bags instead.\n\nCollectables deposit one item per pass, so a full inventory takes a couple of minutes at the bell.");
+
                     if (!Svc.ClientState.IsLoggedIn)
                     {
                         ImGui.TextWrapped("Log in to select a retainer.");

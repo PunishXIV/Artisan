@@ -134,7 +134,7 @@ namespace Artisan.Autocraft
                 outputs.Add(LuminaSheets.RecipeSheet[Endurance.RecipeID].ItemResult.RowId);
             }
 
-            outputs.RemoveWhere(x => x <= 19 || LuminaSheets.ItemSheet[x].IsCollectable);
+            outputs.RemoveWhere(x => x <= 19 || (!P.Config.AutoDepositCollectables && LuminaSheets.ItemSheet[x].IsCollectable));
             outputs.RemoveWhere(x => CraftingListUI.NumberOfIngredient(x) == 0);
             return outputs.ToList();
         }
