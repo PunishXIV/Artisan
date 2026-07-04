@@ -88,6 +88,9 @@ namespace Artisan
 
         public Dictionary<ulong, ulong> RetainerIDs = new Dictionary<ulong, ulong>();
         public HashSet<ulong> UnavailableRetainerIDs = new HashSet<ulong>();
+        public bool AutoDepositCrafts = false;
+        public Dictionary<ulong, ulong> AutoDepositRetainers = new Dictionary<ulong, ulong>();
+        public int AutoDepositFreeSlotThreshold = 5;
 
         [NonSerialized]
         public bool CraftingX = false;
