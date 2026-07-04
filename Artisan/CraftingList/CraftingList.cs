@@ -375,7 +375,7 @@ namespace Artisan.CraftingLists
                 return;
             }
 
-            if (P.Config.AutoDepositCrafts && !AutoDepositManager.ProcessDeposit(selectedList))
+            if (!AutoDepositManager.ProcessDeposit(selectedList))
             {
                 PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
                 return;

@@ -76,6 +76,8 @@ namespace Artisan.Autocraft
 
         internal static void ToggleEndurance(bool enable)
         {
+            AutoDepositManager.RecoverIfAborted();
+
             if (RecipeID > 0 && enable)
             {
                 Enable = enable;
@@ -355,7 +357,7 @@ namespace Artisan.Autocraft
                     return;
                 }
 
-                if (P.Config.AutoDepositCrafts && !AutoDepositManager.ProcessDeposit())
+                if (!AutoDepositManager.ProcessDeposit())
                 {
                     PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromMilliseconds(200)));
                     return;

@@ -56,29 +56,41 @@ namespace Artisan.Autocraft
             return result;
         }
 
-        internal static void ResetBackoff() => DepositFailed = false;
+        internal static void ResetBackoff()
+        {
+            RecoverIfAborted();
+            DepositFailed = false;
+        }
+
+        internal static void RecoverIfAborted()
+        {
+            if (!depositRunning || RetainerInfo.TM.IsBusy) return;
+
+            // The task chain aborted on a timeout before FinishDeposit could run.
+            Svc.Framework.Update -= RetainerInfo.Tick;
+            AutoRetainerIPC.Unsuppress();
+            YesAlready.Unlock();
+            depositRunning = false;
+            Fail("Auto-deposit did not complete (the retainer interaction timed out). Auto-deposit is paused until the next craft session.");
+        }
 
         internal static bool ProcessDeposit(NewCraftingList? list = null)
         {
+            RecoverIfAborted();
+
             if (!P.Config.AutoDepositCrafts || DepositFailed) return true;
-
-            if (depositRunning && !RetainerInfo.TM.IsBusy)
-            {
-                // The task chain aborted on a timeout before FinishDeposit could run.
-                Svc.Framework.Update -= RetainerInfo.Tick;
-                AutoRetainerIPC.Unsuppress();
-                YesAlready.Unlock();
-                depositRunning = false;
-                Fail("Auto-deposit did not complete (the retainer interaction timed out). Auto-deposit is paused until the next craft session.");
-                return true;
-            }
-
             if (depositRunning || RetainerInfo.TM.IsBusy) return !depositRunning;
             if (GetFreeInventorySlots() > P.Config.AutoDepositFreeSlotThreshold) return true;
 
             if (!P.Config.AutoDepositRetainers.TryGetValue(Svc.PlayerState.ContentId, out var retainerId) || retainerId == 0)
             {
                 Fail("Auto-deposit is enabled but no retainer is selected in the Artisan settings. Continuing to craft.");
+                return true;
+            }
+
+            if (!GetCharacterRetainers().Any(x => x.Id == retainerId))
+            {
+                Fail("Auto-deposit: the selected retainer no longer exists on this character. Pick a new retainer in the Artisan settings. Continuing to craft.");
                 return true;
             }
 
@@ -159,23 +171,35 @@ namespace Artisan.Autocraft
             TM.Enqueue(() => FinishDeposit());
         }
 
-        private static bool DepositSingular(uint itemId)
+        private static bool DepositSingular(uint itemId, int previousCount = -1)
         {
             var TM = RetainerInfo.TM;
+            int current = 0;
             TM.DelayNextImmediate("DepositWaitOnInventory", 500);
-            TM.EnqueueImmediate(() => RetainerHandlers.EntrustItem(itemId, out foundQuantity), 300);
+            TM.EnqueueImmediate(() =>
+            {
+                current = CraftingListUI.NumberOfIngredient(itemId);
+                if (previousCount >= 0 && current >= previousCount)
+                {
+                    // Nothing left the player inventory since the previous pass (retainer full or
+                    // item not entrustable) — stop recursing so the chain can finish and back off.
+                    foundQuantity = 0;
+                    return true;
+                }
+                return RetainerHandlers.EntrustItem(itemId, out foundQuantity);
+            }, 300);
             TM.DelayNextImmediate("DepositWaitOnNumericPopup", 200);
             TM.EnqueueImmediate(() =>
             {
                 if (foundQuantity == 0) return true;
                 if (foundQuantity == 1)
                 {
-                    TM.EnqueueImmediate(() => DepositSingular(itemId));
+                    TM.EnqueueImmediate(() => DepositSingular(itemId, current));
                     return true;
                 }
                 if (RetainerHandlers.InputNumericValue(foundQuantity))
                 {
-                    TM.EnqueueImmediate(() => DepositSingular(itemId));
+                    TM.EnqueueImmediate(() => DepositSingular(itemId, current));
                     return true;
                 }
                 return false;
