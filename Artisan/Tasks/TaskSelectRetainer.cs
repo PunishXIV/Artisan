@@ -251,6 +251,7 @@ internal unsafe static class RetainerHandlers
                         }
                         return true;
                     }
+                    return false;
                 }
             }
         }
