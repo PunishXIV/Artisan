@@ -61,6 +61,18 @@ namespace Artisan.Autocraft
         internal static bool ProcessDeposit(NewCraftingList? list = null)
         {
             if (!P.Config.AutoDepositCrafts || DepositFailed) return true;
+
+            if (depositRunning && !RetainerInfo.TM.IsBusy)
+            {
+                // The task chain aborted on a timeout before FinishDeposit could run.
+                Svc.Framework.Update -= RetainerInfo.Tick;
+                AutoRetainerIPC.Unsuppress();
+                YesAlready.Unlock();
+                depositRunning = false;
+                Fail("Auto-deposit did not complete (the retainer interaction timed out). Auto-deposit is paused until the next craft session.");
+                return true;
+            }
+
             if (depositRunning || RetainerInfo.TM.IsBusy) return !depositRunning;
             if (GetFreeInventorySlots() > P.Config.AutoDepositFreeSlotThreshold) return true;
 
