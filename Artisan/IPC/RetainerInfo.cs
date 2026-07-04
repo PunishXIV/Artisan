@@ -498,7 +498,7 @@ namespace Artisan.IPC
             }
         }
 
-        private static unsafe void Tick(IFramework framework)
+        internal static unsafe void Tick(IFramework framework)
         {
             if (Svc.Condition[ConditionFlag.OccupiedSummoningBell])
             {

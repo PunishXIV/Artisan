@@ -197,6 +197,66 @@ internal unsafe static class RetainerHandlers
         return false;
     }
 
+    internal static bool? EntrustItem(uint ItemId, out int quantity)
+    {
+        quantity = 0;
+        var inventories = new List<InventoryType>
+        {
+            InventoryType.Inventory1,
+            InventoryType.Inventory2,
+            InventoryType.Inventory3,
+            InventoryType.Inventory4,
+        };
+
+        foreach (var inv in inventories)
+        {
+            for (int i = 0; i < InventoryManager.Instance()->GetInventoryContainer(inv)->Size; i++)
+            {
+                var item = InventoryManager.Instance()->GetInventoryContainer(inv)->GetInventorySlot(i);
+                if (item->ItemId == ItemId)
+                {
+                    quantity = item->Quantity;
+                    var ag = AgentInventoryContext.Instance();
+                    ag->OpenForItemSlot(inv, i, 0, AgentModule.Instance()->GetAgentByInternalId(AgentId.Retainer)->GetAddonId());
+                    var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu", 1).Address;
+                    var contextAgent = AgentInventoryContext.Instance();
+                    var indexOfEntrust = -1;
+                    var indexOfEntrustQuantity = -1;
+
+                    int looper = 0;
+                    foreach (var contextObj in contextAgent->EventParams)
+                    {
+                        if (contextObj.Type == AtkValueType.String)
+                        {
+                            var label = MemoryHelper.ReadSeStringNullTerminated(new IntPtr(contextObj.String));
+
+                            if (LuminaSheets.AddonSheet[97].Text == label.TextValue) indexOfEntrust = looper;
+                            if (LuminaSheets.AddonSheet[772].Text == label.TextValue) indexOfEntrustQuantity = looper;
+
+                            looper++;
+                        }
+                    }
+
+                    if (contextMenu != null)
+                    {
+                        if (item->Quantity == 1)
+                        {
+                            if (indexOfEntrust == -1) return true;
+                            Callback.Fire(contextMenu, true, 0, indexOfEntrust, 0, 0, 0);
+                        }
+                        else
+                        {
+                            if (indexOfEntrustQuantity == -1) return true;
+                            Callback.Fire(contextMenu, true, 0, indexOfEntrustQuantity, 0, 0, 0);
+                        }
+                        return true;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     internal static bool InputNumericValue(int value)
     {
         var numeric = (AtkUnitBase*)Svc.GameGui.GetAddonByName("InputNumeric", 1).Address;
