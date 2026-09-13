@@ -37,8 +37,7 @@ public unsafe static class PreCrafting
     private delegate void ClickSynthesisButton(void* thisPtr, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* atkEventData);
     private static Hook<ClickSynthesisButton>? _clickButton;
 
-    private delegate Boolean FireCallbackDelegate(AtkUnitBase* atkUnitBase, uint valueCount, AtkValue* atkValues, Boolean updateVisibility);
-    private static Hook<FireCallbackDelegate>? _gearsetCallback;
+    private static Hook<AtkUnitBase.Delegates.FireCallback>? _gearsetCallback;
 
     delegate nint AddonWKSRecipeNote_ReceiveEventDelegate(nint a1, ushort a2, uint a3, nint a4, nint a5);
     private static Hook<AddonWKSRecipeNote_ReceiveEventDelegate>? _cosmicCallback;
@@ -52,7 +51,7 @@ public unsafe static class PreCrafting
         _clickButton = Svc.Hook.HookFromSignature<ClickSynthesisButton>("40 55 53 56 57 41 56 48 8D 6C 24 D1 48 81 EC C0 00 00 00", ClickSynthButtons);
         _clickButton?.Enable();
 
-        _gearsetCallback = Svc.Hook.HookFromSignature<FireCallbackDelegate>("E8 ?? ?? ?? ?? 0F B6 E8 8B 44 24 20", CallbackDetour);
+        _gearsetCallback = Svc.Hook.HookFromAddress<AtkUnitBase.Delegates.FireCallback>(AtkUnitBase.MemberFunctionPointers.FireCallback, CallbackDetour);
 
         _cosmicCallback = Svc.Hook.HookFromSignature<AddonWKSRecipeNote_ReceiveEventDelegate>("4C 8B DC 49 89 6B 20 41 56 48 83 EC 60", ClickCosmicButton);
         _cosmicCallback?.Enable();
