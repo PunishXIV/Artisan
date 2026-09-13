@@ -68,7 +68,7 @@ namespace Artisan.IPC
 
             Svc.PluginInterface.GetIpcProvider<Dictionary<int, string>>("Artisan.GetLists").RegisterFunc(GetLists);
             Svc.PluginInterface.GetIpcProvider<int, object>("Artisan.StartListById").RegisterAction(StartListById);
-            Svc.PluginInterface.GetIpcProvider<int, int, int>("Artisan.GetRelicToolListId").RegisterFunc(GetRelicToolListId);
+            Svc.PluginInterface.GetIpcProvider<int, uint, uint>("Artisan.GetRelicToolListId").RegisterFunc(GetRelicToolListId);
 
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertProfileID").RegisterAction(ChangeExpertProfileID);
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertProfileIDBackToNormal").RegisterAction(SetTempExpertProfileIDBackToNormal);
@@ -559,9 +559,9 @@ namespace Artisan.IPC
             return dict;
         }
 
-        public static int GetRelicToolListId(int stepOrdinal, int craftTypeSlot)
+        public static uint GetRelicToolListId(int stepOrdinal, uint craftTypeSlot)
         {
-            return RelicToolPremadeLists.TryGetListId(stepOrdinal, craftTypeSlot, out int listId) ? listId : 0;
+            return RelicToolPremadeLists.TryGetListId(stepOrdinal, craftTypeSlot, out uint listId) ? listId : 0;
         }
 
         public static void StartListById(int listId)

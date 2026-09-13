@@ -9,7 +9,7 @@ namespace Artisan.CraftingLists;
 
 internal static partial class RelicToolPremadeLists
 {
-    internal const int IdBase = 900_000;
+    internal const uint IdBase = 900_000;
 
     internal enum RelicToolStep
     {
@@ -26,20 +26,21 @@ internal static partial class RelicToolPremadeLists
         Lodestar = 11,
     }
 
-    private readonly record struct RelicToolPremadeEntry(RelicToolStep Step, int Quantity, uint ItemId, int CraftType);
+    private readonly record struct RelicToolPremadeEntry(RelicToolStep Step, int Quantity, uint RecipeId);
 
     public static void EnsureBuilt(List<NewCraftingList> premadeCraftingLists)
     {
         bool added = false;
         foreach (RelicToolPremadeEntry def in Definitions)
         {
-            int id = ToListId(def.Step, def.CraftType);
+            var subStep = LuminaSheets.RecipeSheet[def.RecipeId].CraftType.RowId;
+            uint id = ToListId(def.Step, subStep);
             if (premadeCraftingLists.Any(x => x.ID == id))
                 continue;
 
             if (!TryBuildList(def, id, out NewCraftingList? list) || list is null)
             {
-                Svc.Log.Debug($"[Artisan] Could not build relic premade list {id} (item {def.ItemId}).");
+                Svc.Log.Debug($"[Artisan] Could not build relic premade list {id} (item {def.RecipeId}).");
                 continue;
             }
 
@@ -51,17 +52,17 @@ internal static partial class RelicToolPremadeLists
             Svc.Log.Information("[Artisan] Built relic-tool premade crafting lists.");
     }
 
-    public static bool TryGetListId(int stepOrdinal, int craftTypeSlot, out int listId)
+    public static bool TryGetListId(int stepOrdinal, uint craftTypeSlot, out uint listId)
     {
         listId = 0;
-        if (craftTypeSlot is < 0 or > 7 || !Enum.IsDefined(typeof(RelicToolStep), stepOrdinal))
+        if (craftTypeSlot is > 7 || !Enum.IsDefined(typeof(RelicToolStep), stepOrdinal))
             return false;
 
         listId = ToListId((RelicToolStep)stepOrdinal, craftTypeSlot);
-        return Definitions.Any(d => d.Step == (RelicToolStep)stepOrdinal && d.CraftType == craftTypeSlot);
+        return Definitions.Any(d => d.Step == (RelicToolStep)stepOrdinal && LuminaSheets.RecipeSheet[d.RecipeId].CraftType.RowId == craftTypeSlot);
     }
 
-    private static int ToListId(RelicToolStep step, int craftType) => IdBase + ((int)step * 10) + craftType;
+    private static uint ToListId(RelicToolStep step, uint craftType) => IdBase + ((uint)step * 10) + craftType;
 
     private static string StepLabel(RelicToolStep step) => step switch
     {
@@ -79,21 +80,16 @@ internal static partial class RelicToolPremadeLists
         _ => step.ToString(),
     };
 
-    private static bool TryBuildList(RelicToolPremadeEntry def, int id, out NewCraftingList? list)
+    private static bool TryBuildList(RelicToolPremadeEntry def, uint id, out NewCraftingList? list)
     {
         list = null;
-        if (LuminaSheets.ItemSheet is null || !LuminaSheets.ItemSheet.ContainsKey(def.ItemId))
-            return false;
 
-        Recipe recipe = LuminaSheets.RecipeSheet.Values.FirstOrDefault(x =>
-            x.ItemResult.Value.RowId == def.ItemId && x.CraftType.RowId == def.CraftType);
-        if (recipe.RowId == 0)
-            return false;
+        var recipe = LuminaSheets.RecipeSheet[def.RecipeId];
 
-        string jobName = LuminaSheets.ClassJobSheet[(uint)(def.CraftType + 8)].Name.ToString();
+        string jobName = LuminaSheets.ClassJobSheet[(uint)(recipe.CraftType.RowId + 8)].Name.ToString();
         list = new NewCraftingList
         {
-            ID = id,
+            ID = Convert.ToInt32(id),
             Name = $"Relic Tool — {StepLabel(def.Step)} — {jobName}",
             IsPremade = true,
         };

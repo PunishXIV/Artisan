@@ -532,7 +532,7 @@ namespace Artisan.CraftingLogic.Solvers
             return (lvl, prog, qual, dur, initial, crafts, ctrl, cp, sp, isEx, hands);
         }
 
-        public static void LoadRaphaelCache(Configuration config, bool deleteV5)
+        public static void LoadRaphaelCache(Configuration? config, bool deleteV5)
         {
             // keeping "deletev5" as a param, currently false, so we can delete it in the future to reduce config file size
             // v5 cache won't be loaded after being converted if a v6 cache exists, just keeping it as a backup right now
@@ -543,7 +543,7 @@ namespace Artisan.CraftingLogic.Solvers
             {
                 Svc.Log.Info($"Loaded existing Raphael cache from file ({v6cache.Keys.Count} entries)");
                 CurrentCache = v6cache;
-                P.PluginUi.RaphaelCacheUI.Table = null;
+                P.PluginUi?.RaphaelCacheUI.Table = null;
             }
             else if (!config.RaphaelSolverCacheV5.IsEmpty && !config.RaphaelV5Converted)
             {
@@ -555,9 +555,9 @@ namespace Artisan.CraftingLogic.Solvers
                 config.RaphaelSolverCacheV5.Clear();
         }
 
-        private static ConcurrentDictionary<RaphaelOptions, MacroSolverSettings.Macro> LoadRaphaelCacheFromFile(Configuration config)
+        private static ConcurrentDictionary<RaphaelOptions, MacroSolverSettings.Macro> LoadRaphaelCacheFromFile(Configuration? config)
         {
-            if (!Player.Available)
+            if (!Player.Available || config == null)
                 return [];
 
             var root = Path.Combine(config.ConfigDirectory.FullName, Player.CID.ToString());

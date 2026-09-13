@@ -84,7 +84,7 @@ namespace Artisan.CraftingLists
                 {
                     try
                     {
-                        P.PremadeLists.PremadesUI.Draw(ImGui.GetContentRegionAvail().X);
+                        P.PremadeLists.PremadesUI?.Draw(ImGui.GetContentRegionAvail().X);
                     }
                     catch { }
                     ImGui.EndTabItem();

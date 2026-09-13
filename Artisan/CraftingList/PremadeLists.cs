@@ -1,24 +1,21 @@
-﻿using Artisan.CraftingLists;
-using Artisan.CraftingLogic.Solvers;
-using Artisan.RawInformation;
+﻿using Artisan.RawInformation;
 using Artisan.UI;
 using ECommons.DalamudServices;
 using Lumina.Excel.Sheets;
 using LuminaSupplemental.Excel.Model;
 using LuminaSupplemental.Excel.Services;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Artisan.CraftingLists
 {
     internal class PremadeLists
     {
-        public ListFolders PremadesUI;
+        public ListFolders? PremadesUI;
         public List<QuestRequiredItem> RequiredItems
         {
             get
@@ -31,69 +28,72 @@ namespace Artisan.CraftingLists
 
         public PremadeLists()
         {
-            TryLoadFromFile();
-            bool needToUpdate = false;
-            foreach (var questCats in Svc.Data.GetExcelSheet<Quest>().Where(x => x.JournalGenre.RowId is >= 165 and <= 172).GroupBy(x => x.JournalGenre.RowId).OrderBy(x => x.Key))
+            Task.Run(() =>
             {
-                foreach (var quest in questCats.OrderBy(x => x.ClassJobLevel.First()))
+                TryLoadFromFile();
+                bool needToUpdate = false;
+                foreach (var questCats in Svc.Data.GetExcelSheet<Quest>().Where(x => x.JournalGenre.RowId is >= 165 and <= 172).GroupBy(x => x.JournalGenre.RowId).OrderBy(x => x.Key))
                 {
-                    var reqItems = RequiredItems.Where(x => x.QuestId == quest.RowId);
-                    if (!reqItems.Any())
+                    foreach (var quest in questCats.OrderBy(x => x.ClassJobLevel.First()))
                     {
-                        Svc.Log.Debug($"No required items found for {questCats.First().JournalGenre.Value.Name}, skipping.");
-                        continue;
-                    }
-
-                    if (PremadeCraftingLists.Any(x => x.ID == (int)quest.RowId))
-                    {
-                        Svc.Log.Debug($"Premade list for {questCats.First().JournalGenre.Value.Name} already exists, skipping.");
-                        continue;
-                    }
-
-                    var list = new NewCraftingList();
-                    list.ID = (int)quest.RowId;
-                    list.Locked = true;
-                    list.Name = $"{questCats.First().JournalGenre.Value.Name} - {quest.Name} - Lv.{quest.ClassJobLevel.First().ToString("00")}";
-                    list.IsPremade = true;
-
-                    foreach (var reqItem in reqItems)
-                    {
-                        Svc.Log.Debug($"Adding {reqItem.ItemId} to {list.Name}");
-                        var recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Value.RowId == reqItem.ItemId && x.CraftType.RowId == quest.JournalGenre.RowId - 165);
-                        int actualQuantity = (int)(quest.ClassJobLevel.First() == 5 && quest.RowId != 65791 ? 3 : reqItem.Quantity); //Adjust level 5 quests for all but CUL since source data is wrong.
-                        CraftingListUI.AddAllSubcrafts(recipe, list, actualQuantity);
-                        list.Recipes.Add(new ListItem()
+                        var reqItems = RequiredItems.Where(x => x.QuestId == quest.RowId);
+                        if (!reqItems.Any())
                         {
-                            ID = recipe.RowId,
-                            Quantity = actualQuantity
-                        });
+                            Svc.Log.Debug($"No required items found for {questCats.First().JournalGenre.Value.Name}, skipping.");
+                            continue;
+                        }
+
+                        if (PremadeCraftingLists.Any(x => x.ID == (int)quest.RowId))
+                        {
+                            Svc.Log.Debug($"Premade list for {questCats.First().JournalGenre.Value.Name} already exists, skipping.");
+                            continue;
+                        }
+
+                        var list = new NewCraftingList();
+                        list.ID = (int)quest.RowId;
+                        list.Locked = true;
+                        list.Name = $"{questCats.First().JournalGenre.Value.Name} - {quest.Name} - Lv.{quest.ClassJobLevel.First().ToString("00")}";
+                        list.IsPremade = true;
+
+                        foreach (var reqItem in reqItems)
+                        {
+                            Svc.Log.Debug($"Adding {reqItem.ItemId} to {list.Name}");
+                            var recipe = LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Value.RowId == reqItem.ItemId && x.CraftType.RowId == quest.JournalGenre.RowId - 165);
+                            int actualQuantity = (int)(quest.ClassJobLevel.First() == 5 && quest.RowId != 65791 ? 3 : reqItem.Quantity); //Adjust level 5 quests for all but CUL since source data is wrong.
+                            CraftingListUI.AddAllSubcrafts(recipe, list, actualQuantity);
+                            list.Recipes.Add(new ListItem()
+                            {
+                                ID = recipe.RowId,
+                                Quantity = actualQuantity
+                            });
+                        }
+
+                        list.Locked = false;
+                        list.Save();
+                        needToUpdate = true;
+                        PremadeCraftingLists.Add(list);
                     }
-
-                    list.Locked = false;
-                    list.Save();
-                    needToUpdate = true;
-                    PremadeCraftingLists.Add(list);
                 }
-            }
 
-            int premadeCountBefore = PremadeCraftingLists.Count;
-            RelicToolPremadeLists.EnsureBuilt(PremadeCraftingLists);
-            if (PremadeCraftingLists.Count > premadeCountBefore)
-            {
-                needToUpdate = true;
-            }
+                int premadeCountBefore = PremadeCraftingLists.Count;
+                RelicToolPremadeLists.EnsureBuilt(PremadeCraftingLists);
+                if (PremadeCraftingLists.Count > premadeCountBefore)
+                {
+                    needToUpdate = true;
+                }
 
-            if (needToUpdate)
-            {
-                TryWriteToFile();
-            }
-            Svc.Log.Debug($"Adding {PremadeCraftingLists.Count()} premade lists.");
-            PremadesUI = new(PremadeCraftingLists, true);
+                if (needToUpdate)
+                {
+                    TryWriteToFile();
+                }
+                Svc.Log.Debug($"Adding {PremadeCraftingLists.Count()} premade lists.");
+                PremadesUI = new(PremadeCraftingLists, true);
+            });
         }
 
         private void TryWriteToFile()
         {
-            var file = new FileInfo(Path.Combine(P.Config.ConfigDirectory.FullName, "PremadeCrafts.dat"));
+            var file = new FileInfo(Path.Combine(P.Config.ConfigDirectory.FullName, "PremadeCraftsV2.dat"));
             try
             {
                 var json = JsonSerializer.Serialize(PremadeCraftingLists);
@@ -107,7 +107,7 @@ namespace Artisan.CraftingLists
 
         private void TryLoadFromFile()
         {
-            var file = new FileInfo(Path.Combine(P.Config.ConfigDirectory.FullName, "PremadeCrafts.dat"));
+            var file = new FileInfo(Path.Combine(P.Config.ConfigDirectory.FullName, "PremadeCraftsV2.dat"));
             if (!file.Exists)
                 return;
 

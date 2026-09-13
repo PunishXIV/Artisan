@@ -35,7 +35,7 @@ public unsafe class Artisan : IDalamudPlugin
     public string Name => "Artisan";
     private const string commandName = "/artisan";
     internal static Artisan P = null!;
-    internal PluginUI PluginUi;
+    internal PluginUI? PluginUi;
     internal WindowSystem ws;
     internal Configuration Config;
     internal CraftingWindow cw;
