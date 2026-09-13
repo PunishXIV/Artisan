@@ -6,10 +6,12 @@ using LuminaSupplemental.Excel.Model;
 using LuminaSupplemental.Excel.Services;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using RecipeNotebookList = Lumina.Excel.Sheets.RecipeNotebookList;
 
 namespace Artisan.CraftingLists
 {
@@ -52,7 +54,7 @@ namespace Artisan.CraftingLists
                         var list = new NewCraftingList();
                         list.ID = (int)quest.RowId;
                         list.Locked = true;
-                        list.Name = $"{questCats.First().JournalGenre.Value.Name} - {quest.Name} - Lv.{quest.ClassJobLevel.First().ToString("00")}";
+                        list.Name = $"{questCats.First().JournalGenre.Value.Name} — {quest.Name}  — Lv.{quest.ClassJobLevel.First().ToString("00")}";
                         list.IsPremade = true;
 
                         foreach (var reqItem in reqItems)
@@ -75,6 +77,10 @@ namespace Artisan.CraftingLists
                     }
                 }
 
+                needToUpdate |= BuildOtherClassLists(PremadeCraftingLists, 1321, 1343, "Studium Deliveries");
+                needToUpdate |= BuildOtherClassLists(PremadeCraftingLists, 1113, 1135, "Crystarium Deliveries");
+                needToUpdate |= BuildOtherClassLists(PremadeCraftingLists, 1465, 1487, "Wachu Deliveries");
+
                 int premadeCountBefore = PremadeCraftingLists.Count;
                 RelicToolPremadeLists.EnsureBuilt(PremadeCraftingLists);
                 if (PremadeCraftingLists.Count > premadeCountBefore)
@@ -87,8 +93,64 @@ namespace Artisan.CraftingLists
                     TryWriteToFile();
                 }
                 Svc.Log.Debug($"Adding {PremadeCraftingLists.Count()} premade lists.");
+                var classQuests = PremadeCraftingLists.Where(x => x.ID < 800_000).ToList();
+                var others = PremadeCraftingLists.Where(x => x.ID >= 800_000).OrderBy(x => x.ID).ToList();
+                PremadeCraftingLists.Clear();
+                PremadeCraftingLists.AddRange(classQuests);
+                PremadeCraftingLists.AddRange(others);
                 PremadesUI = new(PremadeCraftingLists, true);
             });
+        }
+
+        private bool BuildOtherClassLists(List<NewCraftingList> premadeCraftingLists, uint minRow, uint maxRow, string label)
+        {
+            uint baseId = 800_000;
+            bool added = false; 
+            for (uint i = minRow; i <= maxRow; i++)
+            {
+                if (premadeCraftingLists.Any(x => x.ID == (int)(baseId + i)))
+                {
+                    Svc.Log.Debug($"Premade list for Studium Quest {i} already exists, skipping.");
+                    continue;
+                }
+
+                var rowFound = Svc.Data.GetExcelSheet<RecipeNotebookList>().TryGetRow(i, out var recipes);
+
+                if (rowFound)
+                {
+                    var crafter = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(LuminaSheets.ClassJobSheet[recipes.Recipe.First().Value.CraftType.RowId + 8].Name.ToString());
+                    var list = new NewCraftingList
+                    {
+                        ID = (int)(baseId + i),
+                        Locked = true,
+                        Name = $"{label} — {crafter}",
+                        IsPremade = true
+                    };
+
+                    var recipesToAdd = new List<ListItem>();
+                    foreach (var recipe in recipes.Recipe.Where(x => x.IsValid && x.RowId != 0))
+                    {
+                        Svc.Log.Debug($"Adding {recipe.Value.ItemResult.Value.Name} to {list.Name}");
+                        CraftingListUI.AddAllSubcrafts(recipe.Value, list, recipe.Value.ItemResult.Value.IsCollectable ? 6 : 1);
+                        recipesToAdd.Add(new ListItem()
+                        {
+                            ID = recipe.RowId,
+                            Quantity = recipe.Value.ItemResult.Value.IsCollectable ? 6 : 1
+                        });
+                    }
+
+                    foreach (var item in recipesToAdd)
+                    {
+                        list.Recipes.Add(item);
+                    }
+
+                    list.Locked = false;
+                    PremadeCraftingLists.Add(list);
+                }
+
+                added = true;
+            }
+            return added;
         }
 
         private void TryWriteToFile()

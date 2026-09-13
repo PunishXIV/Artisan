@@ -3,6 +3,7 @@ using ECommons.DalamudServices;
 using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Artisan.CraftingLists;
@@ -86,7 +87,7 @@ internal static partial class RelicToolPremadeLists
 
         var recipe = LuminaSheets.RecipeSheet[def.RecipeId];
 
-        string jobName = LuminaSheets.ClassJobSheet[(uint)(recipe.CraftType.RowId + 8)].Name.ToString();
+        string jobName = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(LuminaSheets.ClassJobSheet[(uint)(recipe.CraftType.RowId + 8)].Name.ToString());
         list = new NewCraftingList
         {
             ID = Convert.ToInt32(id),

@@ -1,8 +1,8 @@
 ﻿using Artisan.Autocraft;
 using Artisan.GameInterop;
-using Artisan.GameInterop.CSExt;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Artisan.UI;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -22,6 +22,7 @@ using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static Artisan.UI.ListEditor;
 using static ECommons.GenericHelpers;
 
 namespace Artisan.CraftingLists
@@ -74,12 +75,10 @@ namespace Artisan.CraftingLists
         public bool TidyAfter = true;
 
         public bool OnlyRestockNonCrafted = false;
+        public bool IsPremade { get; set; } = false;
 
         [NonSerialized]
         public bool Locked = false;
-
-        [NonSerialized]
-        public bool IsPremade = false;
     }
 
     public class ListItem
@@ -111,6 +110,56 @@ namespace Artisan.CraftingLists
         public static TaskManager CLTM = new();
 
         public static TimeSpan ListEndTime = default(TimeSpan);
+
+        public static void SortList(this NewCraftingList list)
+        {
+            List<ListItem> newList = new();
+            List<ListOrderCheck> order = new();
+            foreach (var item in list.Recipes.Distinct())
+            {
+                var orderCheck = new ListOrderCheck();
+                var r = LuminaSheets.RecipeSheet[item.ID];
+                orderCheck.RecID = r.RowId;
+                int maxDepth = 0;
+                foreach (var ing in r.Ingredients().Where(x => x.Amount > 0).Select(x => x.Item.RowId))
+                {
+                    CheckIngredientRecipe(list, ing, orderCheck);
+                    if (orderCheck.RecipeDepth > maxDepth)
+                    {
+                        maxDepth = orderCheck.RecipeDepth;
+                    }
+                    orderCheck.RecipeDepth = 0;
+                }
+                orderCheck.RecipeDepth = maxDepth;
+                orderCheck.ListQuantity = item.Quantity;
+                orderCheck.ops = item.ListItemOptions ?? new ListItemOptions();
+                order.Add(orderCheck);
+            }
+
+            foreach (var ord in order.OrderBy(x => x.RecipeDepth).ThenBy(x => x.RecipeDiff).ThenBy(x => x.CraftType).ThenBy(x => x.RecID))
+            {
+                newList.Add(new ListItem() { ID = ord.RecID, Quantity = ord.ListQuantity, ListItemOptions = ord.ops });
+            }
+
+            list.Recipes = newList;
+            P.Config.Save();
+        }
+
+        private static void CheckIngredientRecipe(NewCraftingList list, uint ing, ListOrderCheck orderCheck)
+        {
+            foreach (var result in list.Recipes.Distinct().Select(x => LuminaSheets.RecipeSheet[x.ID]))
+            {
+                if (result.ItemResult.RowId == ing)
+                {
+                    orderCheck.RecipeDepth += 1;
+                    foreach (var subIng in result.Ingredients().Where(x => x.Amount > 0).Select(x => x.Item.RowId))
+                    {
+                        CheckIngredientRecipe(list, subIng, orderCheck);
+                    }
+                    return;
+                }
+            }
+        }
 
         public static void SetID(this NewCraftingList list)
         {
@@ -518,7 +567,7 @@ namespace Artisan.CraftingLists
                 if (setIngredients == null || Endurance.IPCOverride)
                 {
                     //TODO: this needs rewrite
-                    for(uint i = 0; i <= 5; i++)
+                    for (uint i = 0; i <= 5; i++)
                     {
                         try
                         {
@@ -541,7 +590,7 @@ namespace Artisan.CraftingLists
                                     PluginLog.Debug("Opening context menu to select ingredient");
 
                                     var contextMenu = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextIconMenu").Address;
-                                    if(contextMenu != null)
+                                    if (contextMenu != null)
                                     {
                                         PluginLog.Debug($"Firing callback for context icon menu");
                                         Callback.Fire(contextMenu, true, 0, 0, 0, ingredient.RowId, Callback.ZeroAtkValue);
@@ -555,7 +604,7 @@ namespace Artisan.CraftingLists
                             }
                             else
                             {
-                                for(int m = 0; m <= 100; m++)
+                                for (int m = 0; m <= 100; m++)
                                 {
                                     new AddonMaster.RecipeNote((IntPtr)addon).Material((uint)i, false);
                                 }
@@ -567,7 +616,7 @@ namespace Artisan.CraftingLists
                             }
 
                         }
-                        catch(Exception e)
+                        catch (Exception e)
                         {
                             e.LogDebug();
                             return false;

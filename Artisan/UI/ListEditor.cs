@@ -517,7 +517,8 @@ internal class ListEditor : Window, IDisposable
 
         if (ImGui.Button($"Sort"))
         {
-            SortList();
+            SelectedList.SortList();
+            RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
         }
         if (ImGui.IsItemHovered())
         {
@@ -595,40 +596,39 @@ internal class ListEditor : Window, IDisposable
         }
     }
 
-    private void SortList()
-    {
-        List<ListItem> newList = new();
-        List<ListOrderCheck> order = new();
-        foreach (var item in SelectedList.Recipes.Distinct())
-        {
-            var orderCheck = new ListOrderCheck();
-            var r = LuminaSheets.RecipeSheet[item.ID];
-            orderCheck.RecID = r.RowId;
-            int maxDepth = 0;
-            foreach (var ing in r.Ingredients().Where(x => x.Amount > 0).Select(x => x.Item.RowId))
-            {
-                CheckIngredientRecipe(ing, orderCheck);
-                if (orderCheck.RecipeDepth > maxDepth)
-                {
-                    maxDepth = orderCheck.RecipeDepth;
-                }
-                orderCheck.RecipeDepth = 0;
-            }
-            orderCheck.RecipeDepth = maxDepth;
-            orderCheck.ListQuantity = item.Quantity;
-            orderCheck.ops = item.ListItemOptions ?? new ListItemOptions();
-            order.Add(orderCheck);
-        }
+    //private void SortList()
+    //{
+    //    List<ListItem> newList = new();
+    //    List<ListOrderCheck> order = new();
+    //    foreach (var item in SelectedList.Recipes.Distinct())
+    //    {
+    //        var orderCheck = new ListOrderCheck();
+    //        var r = LuminaSheets.RecipeSheet[item.ID];
+    //        orderCheck.RecID = r.RowId;
+    //        int maxDepth = 0;
+    //        foreach (var ing in r.Ingredients().Where(x => x.Amount > 0).Select(x => x.Item.RowId))
+    //        {
+    //            CheckIngredientRecipe(ing, orderCheck);
+    //            if (orderCheck.RecipeDepth > maxDepth)
+    //            {
+    //                maxDepth = orderCheck.RecipeDepth;
+    //            }
+    //            orderCheck.RecipeDepth = 0;
+    //        }
+    //        orderCheck.RecipeDepth = maxDepth;
+    //        orderCheck.ListQuantity = item.Quantity;
+    //        orderCheck.ops = item.ListItemOptions ?? new ListItemOptions();
+    //        order.Add(orderCheck);
+    //    }
 
-        foreach (var ord in order.OrderBy(x => x.RecipeDepth).ThenBy(x => x.RecipeDiff).ThenBy(x => x.CraftType))
-        {
-            newList.Add(new ListItem() { ID = ord.RecID, Quantity = ord.ListQuantity, ListItemOptions = ord.ops });
-        }
+    //    foreach (var ord in order.OrderBy(x => x.RecipeDepth).ThenBy(x => x.RecipeDiff).ThenBy(x => x.CraftType))
+    //    {
+    //        newList.Add(new ListItem() { ID = ord.RecID, Quantity = ord.ListQuantity, ListItemOptions = ord.ops });
+    //    }
 
-        SelectedList.Recipes = newList;
-        RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
-        P.Config.Save();
-    }
+    //    SelectedList.Recipes = newList;
+    //    P.Config.Save();
+    //}
 
     bool toggleLast;
 
@@ -643,21 +643,21 @@ internal class ListEditor : Window, IDisposable
 
     TimeSpan listTime;
 
-    private void CheckIngredientRecipe(uint ing, ListOrderCheck orderCheck)
-    {
-        foreach (var result in SelectedList.Recipes.Distinct().Select(x => LuminaSheets.RecipeSheet[x.ID]))
-        {
-            if (result.ItemResult.RowId == ing)
-            {
-                orderCheck.RecipeDepth += 1;
-                foreach (var subIng in result.Ingredients().Where(x => x.Amount > 0).Select(x => x.Item.RowId))
-                {
-                    CheckIngredientRecipe(subIng, orderCheck);
-                }
-                return;
-            }
-        }
-    }
+    //private void CheckIngredientRecipe(uint ing, ListOrderCheck orderCheck)
+    //{
+    //    foreach (var result in SelectedList.Recipes.Distinct().Select(x => LuminaSheets.RecipeSheet[x.ID]))
+    //    {
+    //        if (result.ItemResult.RowId == ing)
+    //        {
+    //            orderCheck.RecipeDepth += 1;
+    //            foreach (var subIng in result.Ingredients().Where(x => x.Amount > 0).Select(x => x.Item.RowId))
+    //            {
+    //                CheckIngredientRecipe(subIng, orderCheck);
+    //            }
+    //            return;
+    //        }
+    //    }
+    //}
 
     private Dictionary<uint, string> RecipeLabels = new Dictionary<uint, string>();
     private void DrawRecipeList()
@@ -1182,7 +1182,8 @@ internal class ListEditor : Window, IDisposable
 
                         CraftingListHelpers.TidyUpList(SelectedList);
 
-                        SortList();
+                        SelectedList.SortList();
+                        RecipeSelector.Items = SelectedList.Recipes.Distinct().ToList();
                         var newIdx = RecipeSelector.Items.IndexOf(x => x.ID == selectedListItem);
                         RecipeSelector.SetCurrent(newIdx);
                     }
