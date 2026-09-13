@@ -68,7 +68,7 @@ namespace Artisan.IPC
 
             Svc.PluginInterface.GetIpcProvider<Dictionary<int, string>>("Artisan.GetLists").RegisterFunc(GetLists);
             Svc.PluginInterface.GetIpcProvider<int, object>("Artisan.StartListById").RegisterAction(StartListById);
-            Svc.PluginInterface.GetIpcProvider<string, int, int>("Artisan.GetRelicToolListId").RegisterFunc(GetRelicToolListId);
+            Svc.PluginInterface.GetIpcProvider<int, int, int>("Artisan.GetRelicToolListId").RegisterFunc(GetRelicToolListId);
 
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertProfileID").RegisterAction(ChangeExpertProfileID);
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertProfileIDBackToNormal").RegisterAction(SetTempExpertProfileIDBackToNormal);
@@ -123,7 +123,7 @@ namespace Artisan.IPC
 
             Svc.PluginInterface.GetIpcProvider<Dictionary<int, string>>("Artisan.GetLists").UnregisterFunc();
             Svc.PluginInterface.GetIpcProvider<int, object>("Artisan.StartListById").UnregisterAction();
-            Svc.PluginInterface.GetIpcProvider<string, int, int>("Artisan.GetRelicToolListId").UnregisterFunc();
+            Svc.PluginInterface.GetIpcProvider<int, int, int>("Artisan.GetRelicToolListId").UnregisterFunc();
 
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertProfileID").UnregisterAction();
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertProfileIDBackToNormal").UnregisterAction();
@@ -559,12 +559,9 @@ namespace Artisan.IPC
             return dict;
         }
 
-        /// <summary>
-        /// Resolves a relic-tool premade list ID.
-        /// </summary>
-        public static int GetRelicToolListId(string stepName, int craftTypeSlot)
+        public static int GetRelicToolListId(int stepOrdinal, int craftTypeSlot)
         {
-            return RelicToolPremadeLists.TryGetListId(stepName, craftTypeSlot, out int listId) ? listId : 0;
+            return RelicToolPremadeLists.TryGetListId(stepOrdinal, craftTypeSlot, out int listId) ? listId : 0;
         }
 
         public static void StartListById(int listId)
