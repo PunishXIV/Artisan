@@ -148,6 +148,7 @@ namespace Artisan.CraftingLists
                     {
                         if (clipboard.TryParseJson<NewCraftingList>(out var import))
                         {
+                            import.IsPremade = false;
                             import.SetID();
                             import.Save(true);
                         }

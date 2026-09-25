@@ -48,12 +48,12 @@ public unsafe static class PreCrafting
 
     static PreCrafting()
     {
-        _clickButton = Svc.Hook.HookFromSignature<ClickSynthesisButton>("40 55 53 56 57 41 56 48 8D 6C 24 D1 48 81 EC C0 00 00 00", ClickSynthButtons);
+        _clickButton ??= Svc.Hook.HookFromSignature<ClickSynthesisButton>("40 55 53 56 57 41 56 48 8D 6C 24 D1 48 81 EC C0 00 00 00", ClickSynthButtons);
         _clickButton?.Enable();
 
-        _gearsetCallback = Svc.Hook.HookFromAddress<AtkUnitBase.Delegates.FireCallback>(AtkUnitBase.MemberFunctionPointers.FireCallback, CallbackDetour);
+        _gearsetCallback ??= Svc.Hook.HookFromAddress<AtkUnitBase.Delegates.FireCallback>(AtkUnitBase.MemberFunctionPointers.FireCallback, CallbackDetour);
 
-        _cosmicCallback = Svc.Hook.HookFromSignature<AddonWKSRecipeNote_ReceiveEventDelegate>("4C 8B DC 49 89 6B 20 41 56 48 83 EC 60", ClickCosmicButton);
+        _cosmicCallback ??= Svc.Hook.HookFromSignature<AddonWKSRecipeNote_ReceiveEventDelegate>("4C 8B DC 49 89 6B 20 41 56 48 83 EC 60", ClickCosmicButton);
         _cosmicCallback?.Enable();
     }
 

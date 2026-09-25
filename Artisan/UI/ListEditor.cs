@@ -209,7 +209,7 @@ internal class ListEditor : Window, IDisposable
 
             if (ImGui.Button("Export List"))
             {
-                ImGui.SetClipboardText(JsonConvert.SerializeObject(P.Config.NewCraftingLists.Where(x => x.ID == SelectedList.ID).First()));
+                ImGui.SetClipboardText(JsonConvert.SerializeObject(this.SelectedList));
                 Notify.Success("List exported to clipboard.");
             }
 
@@ -291,31 +291,56 @@ internal class ListEditor : Window, IDisposable
 
     private void DrawCopyFromList()
     {
-        if (P.Config.NewCraftingLists.Count > 1)
+        ImGuiEx.TextWrapped($"Select List");
+        if (ImGui.BeginTabBar($"##CopyListSelector"))
         {
-            ImGuiEx.TextWrapped($"Select List");
-            ImGuiEx.SetNextItemFullWidth();
-            if (ImGui.BeginCombo("###ListCopyCombo", copyList is null ? "" : copyList.Name))
+            if (ImGui.BeginTabItem("User Lists##SelectorUserLists"))
             {
-                if (ImGui.Selectable($""))
+                ImGuiEx.SetNextItemFullWidth();
+                if (ImGui.BeginCombo("###ListCopyComboUser", copyList is null ? "" : copyList.Name))
                 {
-                    copyList = null;
-                }
-                foreach (var list in P.Config.NewCraftingLists.Where(x => x.ID != SelectedList.ID))
-                {
-                    if (ImGui.Selectable($"{list.Name}###CopyList{list.ID}"))
+                    if (ImGui.Selectable($""))
                     {
-                        copyList = list.JSONClone();
+                        copyList = null;
                     }
+                    foreach (var list in P.Config.NewCraftingLists.Where(x => x.ID != SelectedList.ID))
+                    {
+                        if (ImGui.Selectable($"{list.Name}###CopyListUser{list.ID}"))
+                        {
+                            copyList = list.JSONClone();
+                        }
+                    }
+
+                    ImGui.EndCombo();
                 }
 
-                ImGui.EndCombo();
+                ImGui.EndTabItem();
             }
+            if (ImGui.BeginTabItem("Premade Lists##SelectorPremadeLists"))
+            {
+                ImGuiEx.SetNextItemFullWidth();
+                if (ImGui.BeginCombo("###ListCopyComboPremade", copyList is null ? "" : copyList.Name))
+                {
+                    if (ImGui.Selectable($""))
+                    {
+                        copyList = null;
+                    }
+                    foreach (var list in P.PremadeLists.PremadeCraftingLists.Where(x => x.ID != SelectedList.ID))
+                    {
+                        if (ImGui.Selectable($"{list.Name}###CopyListPremade{list.ID}"))
+                        {
+                            copyList = list.JSONClone();
+                        }
+                    }
+
+                    ImGui.EndCombo();
+                }
+                ImGui.EndTabItem();
+            }
+
+            ImGui.EndTabBar();
         }
-        else
-        {
-            ImGui.Text($"Please add other lists to copy from");
-        }
+        
 
         if (copyList != null)
         {

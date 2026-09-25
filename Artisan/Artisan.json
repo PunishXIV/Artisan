@@ -12,5 +12,5 @@
   "RepoUrl": "https://github.com/PunishXIV/Artisan",
   "DalamudApiLevel": 15,
   "DownloadLinkTesting": "https://love.puni.sh/plugins/Artisan/Testing/latest.zip",
-  "ChangeLog": "- Add premade lists for relic tools.\n- Add IPC for macro information."
+  "ChangeLog": "- Allow copy of premade lists into user lists.\n- Fix export of premade lists."
 }
