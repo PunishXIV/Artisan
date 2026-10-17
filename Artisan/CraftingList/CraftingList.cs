@@ -115,6 +115,13 @@ namespace Artisan.CraftingLists
         {
             List<ListItem> newList = new();
             List<ListOrderCheck> order = new();
+            var listRecipesByResult = new Dictionary<uint, Recipe>();
+            foreach (var item in list.Recipes)
+            {
+                var listRecipe = LuminaSheets.RecipeSheet[item.ID];
+                listRecipesByResult.TryAdd(listRecipe.ItemResult.RowId, listRecipe);
+            }
+
             foreach (var item in list.Recipes.Distinct())
             {
                 var orderCheck = new ListOrderCheck();
@@ -123,7 +130,7 @@ namespace Artisan.CraftingLists
                 int maxDepth = 0;
                 foreach (var ing in r.Ingredients().Where(x => x.Amount > 0).Select(x => x.Item.RowId))
                 {
-                    CheckIngredientRecipe(list, ing, orderCheck);
+                    CheckIngredientRecipe(listRecipesByResult, ing, orderCheck);
                     if (orderCheck.RecipeDepth > maxDepth)
                     {
                         maxDepth = orderCheck.RecipeDepth;
@@ -145,18 +152,14 @@ namespace Artisan.CraftingLists
             P.Config.Save();
         }
 
-        private static void CheckIngredientRecipe(NewCraftingList list, uint ing, ListOrderCheck orderCheck)
+        private static void CheckIngredientRecipe(Dictionary<uint, Recipe> listRecipesByResult, uint ing, ListOrderCheck orderCheck)
         {
-            foreach (var result in list.Recipes.Distinct().Select(x => LuminaSheets.RecipeSheet[x.ID]))
+            if (listRecipesByResult.TryGetValue(ing, out var result))
             {
-                if (result.ItemResult.RowId == ing)
+                orderCheck.RecipeDepth += 1;
+                foreach (var subIng in result.Ingredients().Where(x => x.Amount > 0).Select(x => x.Item.RowId))
                 {
-                    orderCheck.RecipeDepth += 1;
-                    foreach (var subIng in result.Ingredients().Where(x => x.Amount > 0).Select(x => x.Item.RowId))
-                    {
-                        CheckIngredientRecipe(list, subIng, orderCheck);
-                    }
-                    return;
+                    CheckIngredientRecipe(listRecipesByResult, subIng, orderCheck);
                 }
             }
         }
@@ -195,7 +198,7 @@ namespace Artisan.CraftingLists
         {
             if (list.Recipes.Count == 0 && !isNew) return false;
 
-            list.Recipes.RemoveAll(x => LuminaSheets.RecipeSheet?.First(y => y.Value.RowId == x.ID).Value.Number == 0);
+            list.Recipes.RemoveAll(x => LuminaSheets.RecipeSheet?[x.ID].Number == 0);
 
             list.SkipIfEnough = P.Config.DefaultListSkip;
             list.Materia = P.Config.DefaultListMateria;
@@ -345,7 +348,7 @@ namespace Artisan.CraftingLists
             if (selectedList.SkipIfEnough && (preparing || !isCrafting))
             {
                 var ItemId = recipe.ItemResult.RowId;
-                int numMats = Materials.Any(x => x.Key == recipe.ItemResult.RowId) && !selectedList.SkipLiteral ? Materials.First(x => x.Key == recipe.ItemResult.RowId).Value : selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.RowId == ItemId) * recipe.AmountResult;
+                int numMats = !selectedList.SkipLiteral && Materials.TryGetValue(recipe.ItemResult.RowId, out var listMats) ? listMats : selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.RowId == ItemId) * recipe.AmountResult;
                 if (numMats <= CraftingListUI.NumberOfIngredient(recipe.ItemResult.RowId))
                 {
                     DuoLog.Information($"Skipping {recipe.ItemResult.Value.Name.ToDalamudString()} due to having enough in inventory [Skip Items you already have enough of]");
@@ -519,16 +522,29 @@ namespace Artisan.CraftingLists
                 var inventoryitems = CraftingListUI.NumberOfIngredient(recipe.ItemResult.Value.RowId);
                 var expectedNumber = 0;
                 var stillToCraft = 0;
-                var totalToCraft = selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.ToDalamudString().ToString() == recipe.ItemResult.Value.Name.ToDalamudString().ToString()) * recipe.AmountResult;
-                if (Materials!.Count(x => x.Key == recipe.ItemResult.RowId) == 0 || selectedList.SkipLiteral)
+
+                // Count each distinct recipe once and remember where it first appears, instead of rescanning ExpandedList per entry.
+                var recipeCounts = new Dictionary<uint, int>();
+                var firstIndex = new Dictionary<uint, int>();
+                for (int i = 0; i < selectedList.ExpandedList.Count; i++)
+                {
+                    var id = selectedList.ExpandedList[i];
+                    recipeCounts[id] = recipeCounts.GetValueOrDefault(id) + 1;
+                    firstIndex.TryAdd(id, i);
+                }
+
+                var resultName = recipe.ItemResult.Value.Name.ToDalamudString().ToString();
+                var totalToCraft = recipeCounts.Where(x => LuminaSheets.RecipeSheet[x.Key].ItemResult.Value.Name.ToDalamudString().ToString() == resultName).Sum(x => x.Value) * recipe.AmountResult;
+                var currentCount = recipeCounts.GetValueOrDefault(CraftingListUI.CurrentProcessedItem);
+                if (!Materials!.ContainsKey(recipe.ItemResult.RowId) || selectedList.SkipLiteral)
                 {
                     // var previousCrafted = selectedList.Items.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.Value.Name.ToDalamudString().ToString() == recipe.ItemResult.Value.Name.ToDalamudString().ToString() && selectedList.Items.IndexOf(x) < CurrentIndex) * recipe.AmountResult;
-                    stillToCraft = selectedList.ExpandedList.Count(x => LuminaSheets.RecipeSheet[x].ItemResult.RowId == recipe.ItemResult.RowId && selectedList.ExpandedList.IndexOf(x) >= CurrentIndex) * recipe.AmountResult - inventoryitems;
-                    expectedNumber = stillToCraft > 0 ? Math.Min(selectedList.ExpandedList.Count(x => x == CraftingListUI.CurrentProcessedItem) * recipe.AmountResult, stillToCraft) : selectedList.ExpandedList.Count(x => x == CraftingListUI.CurrentProcessedItem);
+                    stillToCraft = recipeCounts.Where(x => LuminaSheets.RecipeSheet[x.Key].ItemResult.RowId == recipe.ItemResult.RowId && firstIndex[x.Key] >= CurrentIndex).Sum(x => x.Value) * recipe.AmountResult - inventoryitems;
+                    expectedNumber = stillToCraft > 0 ? Math.Min(currentCount * recipe.AmountResult, stillToCraft) : currentCount;
                 }
                 else
                 {
-                    expectedNumber = Materials!.First(x => x.Key == recipe.ItemResult.RowId).Value;
+                    expectedNumber = Materials![recipe.ItemResult.RowId];
                 }
 
                 var difference = Math.Min(totalToCraft - inventoryitems, expectedNumber);

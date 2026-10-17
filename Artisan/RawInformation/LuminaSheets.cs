@@ -20,6 +20,24 @@ namespace Artisan.RawInformation
 
         public static ILookup<string, Recipe>? recipeLookup;
 
+        // Recipes keyed by the item they produce, in RecipeSheet order (so First() matches a linear scan of RecipeSheet).
+        public static ILookup<uint, Recipe>? RecipesByResultItem;
+
+        // Recipes keyed by each item they use as an ingredient, in RecipeSheet order.
+        public static ILookup<uint, Recipe>? RecipesByIngredient;
+
+        // Item ID -> first GatheringItem row ID for that item.
+        public static Dictionary<uint, uint>? GatheringItemByItemId;
+
+        public static ILookup<uint, GatheringPointBase>? GatheringPointBasesByGatheringItem;
+
+        // GatheringPointBase row ID -> first GatheringPoint with a named zone.
+        public static Dictionary<uint, GatheringPoint>? GatheringPointByBase;
+
+        public static HashSet<uint>? FishingSpotItemIds;
+
+        public static HashSet<uint>? RetainerVentureItemIds;
+
         public static Dictionary<uint, GatheringItem>? GatheringItemSheet;
 
         public static Dictionary<uint, SpearfishingItem>? SpearfishingItemSheet;
@@ -139,7 +157,42 @@ namespace Artisan.RawInformation
             WorkshopSupplyItemSheet = Svc.Data?.GetExcelSheet<CompanyCraftSupplyItem>()?
                        .ToDictionary(i => i.RowId, i => i);
 
+            BuildLookups();
+
             Svc.Log.Debug("Lumina sheets initialized");
+        }
+
+        private static void BuildLookups()
+        {
+            RecipesByResultItem = RecipeSheet!.Values.ToLookup(x => x.ItemResult.RowId);
+
+            RecipesByIngredient = RecipeSheet.Values
+                .SelectMany(r => r.Ingredients().Select(i => i.Item.RowId).Where(id => id != 0).Distinct().Select(id => (id, r)))
+                .ToLookup(x => x.id, x => x.r);
+
+            GatheringItemByItemId = new();
+            foreach (var gi in GatheringItemSheet!.Values)
+                GatheringItemByItemId.TryAdd(gi.Item.RowId, gi.RowId);
+
+            GatheringPointBasesByGatheringItem = GatheringPointBaseSheet!.Values
+                .SelectMany(b => b.Item.Select(i => i.RowId).Distinct().Select(id => (id, b)))
+                .ToLookup(x => x.id, x => x.b);
+
+            GatheringPointByBase = new();
+            foreach (var gp in Svc.Data.GetExcelSheet<GatheringPoint>())
+            {
+                if (gp.TerritoryType.IsValid && gp.TerritoryType.Value.PlaceName.RowId > 0)
+                    GatheringPointByBase.TryAdd(gp.GatheringPointBase.RowId, gp);
+            }
+
+            FishingSpotItemIds = Svc.Data.GetExcelSheet<FishingSpot>()
+                .SelectMany(x => x.Item.Select(y => y.RowId))
+                .ToHashSet();
+
+            RetainerVentureItemIds = Svc.Data.GetExcelSheet<RetainerTaskNormal>()
+                .Where(x => x.GatheringLog.RowId == 0 && x.FishingLog.RowId == 0)
+                .Select(x => x.Item.RowId)
+                .ToHashSet();
         }
 
         public static void Dispose()

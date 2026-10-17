@@ -90,7 +90,8 @@ namespace Artisan.IPC
 
         private static void LogoutCacheClear(int t, int c)
         {
-            RetainerData.Clear();
+            lock (CacheLock)
+                RetainerData.Clear();
         }
 
         private static void SetupIPC(bool obj)
@@ -112,7 +113,8 @@ namespace Artisan.IPC
             if (onLoad)
             {
                 CraftingListUI.CraftableItems.Clear();
-                RetainerData.Clear();
+                lock (CacheLock)
+                    RetainerData.Clear();
             }
 
             CacheBuilt = false;
@@ -169,6 +171,9 @@ namespace Artisan.IPC
         }
 
         public static Dictionary<ulong, Dictionary<uint, ItemInfo>> RetainerData = new Dictionary<ulong, Dictionary<uint, ItemInfo>>();
+
+        // GetRetainerItemCount fills RetainerData from the UI thread, LoadCache and the ingredient table's background warm-up.
+        private static readonly object CacheLock = new();
         public class ItemInfo
         {
             public uint ItemId { get; set; }
@@ -187,7 +192,8 @@ namespace Artisan.IPC
 
         public static void ClearCache(ulong? RetainerId)
         {
-            RetainerData.Each(x => x.Value.Clear());
+            lock (CacheLock)
+                RetainerData.Each(x => x.Value.Clear());
         }
 
         public static unsafe uint GetRetainerInventoryItem(uint ItemId, ulong retainerId, bool hqonly = false)
@@ -218,6 +224,24 @@ namespace Artisan.IPC
             }
             return 0;
         }
+        // Sums an item's cached counts across retainers via key lookups; false if no retainer has the item cached yet.
+        private static bool TryGetCachedCount(uint itemId, bool hqOnly, out int count)
+        {
+            var found = false;
+            long total = 0;
+            foreach (var retainer in RetainerData.Values)
+            {
+                if (!retainer.TryGetValue(itemId, out var info))
+                    continue;
+
+                found = true;
+                total += hqOnly ? info.HQQuantity : info.Quantity;
+            }
+
+            count = (int)total;
+            return found;
+        }
+
         public static unsafe int GetRetainerItemCount(uint ItemId, bool tryCache = true, bool hqOnly = false)
         {
 
@@ -225,20 +249,11 @@ namespace Artisan.IPC
             {
                 if (!Svc.ClientState.IsLoggedIn || Svc.Condition[ConditionFlag.OnFreeTrial]) return 0;
 
+                lock (CacheLock)
                 try
                 {
-                    if (tryCache)
-                    {
-                        if (RetainerData.SelectMany(x => x.Value).Any(x => x.Key == ItemId))
-                        {
-                            if (hqOnly)
-                            {
-                                return (int)RetainerData.Values.SelectMany(x => x.Values).Where(x => x.ItemId == ItemId).Sum(x => x.HQQuantity);
-                            }
-
-                            return (int)RetainerData.Values.SelectMany(x => x.Values).Where(x => x.ItemId == ItemId).Sum(x => x.Quantity);
-                        }
-                    }
+                    if (tryCache && TryGetCachedCount(ItemId, hqOnly, out var cached))
+                        return cached;
 
                     for (int i = 0; i < 10; i++)
                     {
@@ -317,12 +332,8 @@ namespace Artisan.IPC
                         }
                     }
 
-                    if (hqOnly)
-                    {
-                        return (int)RetainerData.Values.SelectMany(x => x.Values).Where(x => x.ItemId == ItemId).Sum(x => x.HQQuantity);
-                    }
-
-                    return (int)RetainerData.SelectMany(x => x.Value).Where(x => x.Key == ItemId).Sum(x => x.Value.Quantity);
+                    TryGetCachedCount(ItemId, hqOnly, out var count);
+                    return count;
                 }
                 catch
                 {

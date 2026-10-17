@@ -44,23 +44,23 @@ namespace Artisan.RawInformation
 
         public Ingredient(uint ItemId, int required, NewCraftingList originList, Dictionary<uint, int> materials, IngredientHelpers ingredientHelpers)
         {
-            Data = LuminaSheets.ItemSheet.Values.First(x => x.RowId == ItemId);
+            Data = LuminaSheets.ItemSheet[ItemId];
             Icon = P.Icons.TryLoadIconAsync(Data.Icon).Result;
             Required = required;
-            if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.RowId == ItemId, out CraftedRecipe)) { Sources.Add(1); CanBeCrafted = true; }
-            if (LuminaSheets.GatheringItemSheet.Values.Any(x => x.Item.RowId == ItemId)) Sources.Add(2);
-            if (Svc.Data.GetExcelSheet<FishingSpot>()!.Any(x => x.Item.Any(y => y.Value.RowId == ItemId))) Sources.Add(3);
+            if (LuminaSheets.RecipesByResultItem![ItemId].TryGetFirst(x => true, out CraftedRecipe)) { Sources.Add(1); CanBeCrafted = true; }
+            if (LuminaSheets.GatheringItemByItemId!.ContainsKey(ItemId)) Sources.Add(2);
+            if (LuminaSheets.FishingSpotItemIds!.Contains(ItemId)) Sources.Add(3);
             if (ItemVendorLocation.ItemHasVendor(ItemId)) Sources.Add(4);
-            if (Svc.Data.GetExcelSheet<RetainerTaskNormal>()!.Any(x => x.Item.RowId == ItemId && x.GatheringLog.RowId == 0 && x.FishingLog.RowId == 0) || DropSources.Sources!.Any(x => x.ItemId == ItemId)) Sources.Add(5);
+            if (LuminaSheets.RetainerVentureItemIds!.Contains(ItemId) || DropSources.HasDrop(ItemId)) Sources.Add(5);
 
             if (Sources.Count == 0) Sources.Add(-1);
-            GatherZone = Svc.Data.Excel.GetSheet<TerritoryType>()!.First(x => x.RowId == 1);
+            GatherZone = Svc.Data.Excel.GetSheet<TerritoryType>()!.GetRow(1);
             TimedNode = false;
-            if (LuminaSheets.GatheringItemSheet!.TryGetFirst(x => x.Value.Item.RowId == Data.RowId, out var gather))
+            if (LuminaSheets.GatheringItemByItemId.TryGetValue(Data.RowId, out var gatheringItemId))
             {
                 if (HiddenItems.Items.TryGetFirst(x => x.ItemId == Data.RowId, out var hiddenItems))
                 {
-                    if (Svc.Data.Excel.GetSheet<GatheringPoint>()!.TryGetFirst(y => y.GatheringPointBase.RowId == hiddenItems.NodeId && y.TerritoryType.Value.PlaceName.RowId > 0, out var gatherpoint))
+                    if (LuminaSheets.GatheringPointByBase!.TryGetValue(hiddenItems.NodeId, out var gatherpoint))
                     {
                         var transient = Svc.Data.Excel.GetSheet<GatheringPointTransient>().GetRow(gatherpoint.RowId);
                         if (transient.GatheringRarePopTimeTable.RowId > 0)
@@ -72,10 +72,10 @@ namespace Artisan.RawInformation
                 }
                 else
                 {
-                    foreach (var pointBase in LuminaSheets.GatheringPointBaseSheet.Values.Where(x => x.Item.Any(y => y.RowId == gather.Key)))
+                    foreach (var pointBase in LuminaSheets.GatheringPointBasesByGatheringItem![gatheringItemId])
                     {
                         if (GatherZone.RowId != 1) break;
-                        if (Svc.Data.Excel.GetSheet<GatheringPoint>()!.TryGetFirst(y => y.GatheringPointBase.RowId == pointBase.RowId && y.TerritoryType.Value.PlaceName.RowId > 0, out var gatherpoint))
+                        if (LuminaSheets.GatheringPointByBase!.TryGetValue(pointBase.RowId, out var gatherpoint))
                         {
                             var transient = Svc.Data.Excel.GetSheet<GatheringPointTransient>().GetRow(gatherpoint.RowId);
                             if (transient.GatheringRarePopTimeTable.RowId > 0)
@@ -96,15 +96,10 @@ namespace Artisan.RawInformation
                 if (LuminaSheets.RecipeSheet[recipe.ID].Ingredients().Any(x => x.Item.RowId == ItemId) && !UsedInCrafts.Contains(recipe.ID))
                     UsedInCrafts.Add(recipe.ID);
             }
-            UsedInMaterialsList = materials.Where(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.RowId == x.Key && y.Ingredients().Any(z => z.Item.RowId == Data.RowId))).ToDictionary(x => x.Key, x => x.Value);
+            var craftsUsingThis = LuminaSheets.RecipesByIngredient![Data.RowId].Select(x => x.ItemResult.RowId).ToHashSet();
+            UsedInMaterialsList = materials.Where(x => craftsUsingThis.Contains(x.Key)).ToDictionary(x => x.Key, x => x.Value);
             RecipeOnList = originList.Recipes.Any(x => LuminaSheets.RecipeSheet[x.ID].ItemResult.RowId == ItemId);
-            if (P.Config.UseUniversalis && !P.Config.UniversalisOnDemand)
-            {
-                if (P.Config.LimitUnversalisToDC)
-                    Task.Run(() => P.UniversalsisClient.GetDCData(ItemId, ref MarketboardData));
-                else
-                    Task.Run(() => P.UniversalsisClient.GetRegionData(ItemId, ref MarketboardData));
-            }
+            // Market data is fetched in one batch for the whole table by IngredientHelpers.GenerateList.
             IngredientHelper = ingredientHelpers;
         }
 
@@ -137,7 +132,7 @@ namespace Artisan.RawInformation
             {
                 if (DateTime.Now > RetainerCheck)
                 {
-                    retainerCount = Task.Run(() => RetainerInfo.GetRetainerItemCount(Data.RowId)).Result;
+                    retainerCount = RetainerInfo.GetRetainerItemCount(Data.RowId);
                     RetainerCheck = DateTime.Now.AddSeconds(0.5);
                 }
                 return retainerCount;
@@ -157,8 +152,21 @@ namespace Artisan.RawInformation
             }
         }
 
-        public int TotalCraftable => NumberCraftable(Data.RowId);
+        public int TotalCraftable
+        {
+            get
+            {
+                if (DateTime.Now > CraftableCheck)
+                {
+                    totalCraftable = NumberCraftable(Data.RowId);
+                    CraftableCheck = DateTime.Now.AddSeconds(0.5);
+                }
+                return totalCraftable;
+            }
+        }
 
+        private DateTime CraftableCheck;
+        private int totalCraftable;
         private int retainerCount;
         private int retainerCountHQ;
 
@@ -174,9 +182,8 @@ namespace Artisan.RawInformation
                 var owned = RetainerInfo.GetRetainerItemCount(recipe.ItemResult.RowId) + CraftingListUI.NumberOfIngredient(recipe.ItemResult.RowId);
                 var numberUsedInRecipe = recipe.Ingredients().First(x => x.Item.RowId == Data.RowId).Amount;
                 var numberOnList = OriginList.Recipes.First(x => x.ID == craft).Quantity; // * recipe.AmountResult; Did I want to multiply that? Answers on a postcard
-                if (IngredientHelper.HelperList.Any(x => x.Data.RowId == recipe.ItemResult.RowId))
+                if (IngredientHelper.HelperLookup.TryGetValue(recipe.ItemResult.RowId, out var subing))
                 {
-                    var subing = IngredientHelper.HelperList.First(x => x.Data.RowId == recipe.ItemResult.RowId);
                     if (subing.UsedInCrafts.Count > 0)
                     {
                         //output += subing.GetSubCraftCount() * numberUsedInRecipe;
@@ -235,7 +242,7 @@ namespace Artisan.RawInformation
         private int NumberCraftable(uint ItemId)
         {
             List<int> NumberOfUses = new();
-            if (LuminaSheets.RecipeSheet.Values.TryGetFirst(x => x.ItemResult.RowId == ItemId, out var recipe))
+            if (LuminaSheets.RecipesByResultItem![ItemId].TryGetFirst(x => true, out var recipe))
             {
                 foreach (var ingredient in recipe.Ingredients().Where(x => x.Amount > 0))
                 {
