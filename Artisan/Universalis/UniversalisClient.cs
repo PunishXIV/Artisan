@@ -16,11 +16,10 @@ namespace Artisan.Universalis
     internal class UniversalisClient
     {
         private const string Endpoint = "https://universalis.app/api/v2/";
-        // The API accepts 100 IDs per request, but data-center/region-wide queries that large time out at Universalis' gateway.
+ 
         private const int MaxItemsPerRequest = 25;
         private const int MaxParallelRequests = 3;
 
-        // Only the fields ParseMarketboardData reads; trims the response a lot compared to the full item payload.
         private static readonly string[] ParsedFields =
         [
             "lastUploadTime", "averagePriceNQ", "averagePriceHQ", "currentAveragePriceNQ", "currentAveragePriceHQ",
@@ -72,11 +71,7 @@ namespace Artisan.Universalis
 
             return output = GetMarketBoard(region, ItemId);
         }
-
-        /// <summary>
-        /// Fetches market data for many items via Universalis' multi-item endpoint, a few small batches at a time,
-        /// instead of one request per item.
-        /// </summary>
+        
         public IReadOnlyDictionary<ulong, MarketboardData> GetBulkData(IEnumerable<ulong> itemIds, bool dataCenterOnly, CancellationToken token)
         {
             var output = new ConcurrentDictionary<ulong, MarketboardData>();
@@ -107,7 +102,6 @@ namespace Artisan.Universalis
             var json = GetJson(region, string.Join(",", ids), ids.Length > 1 ? MultiItemQuery : SingleItemQuery, retryOnRateLimit: true, out var transientFailure);
             if (json == null)
             {
-                // Server-side timeouts get more likely the more items are asked for at once, so retry as two smaller requests.
                 if (transientFailure && ids.Length > 1)
                 {
                     var half = ids.Length / 2;
@@ -116,8 +110,7 @@ namespace Artisan.Universalis
                 }
                 return;
             }
-
-            // A multi-item response nests each item under "items"; a single ID returns the item object directly.
+            
             if (json["items"] is JObject items)
             {
                 foreach (var id in ids)
@@ -158,7 +151,6 @@ namespace Artisan.Universalis
             }
             catch (Exception ex)
             {
-                // Dropped connections and client-side timeouts; worth retrying with a smaller batch.
                 transientFailure = true;
                 if (itemIds.Contains(','))
                     Svc.Log.Debug($"Universalis request for {itemIds.Count(c => c == ',') + 1} items failed ({ex.GetBaseException().Message}), retrying in smaller batches.");

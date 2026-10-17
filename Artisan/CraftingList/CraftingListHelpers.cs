@@ -10,7 +10,6 @@ using System.Linq;
 
 internal static class CraftingListHelpers
 {
-    // Written by background ingredient-table builds and the UI thread at the same time.
     internal static ConcurrentDictionary<uint, bool> SelectedRecipesCraftable = new();
 
     public static void AddRecipeIngredientsToList(Recipe? recipe, ref Dictionary<uint, int> ingredientList, bool addSublist = true, NewCraftingList? selectedList = null)

@@ -38,9 +38,7 @@ namespace Artisan.UI.Tables
         private static float _gatherItemLocationColumWidth = 0;
         private static float _cheapestColumnWidth = 100;
         private static float _numberForSaleWidth = 100;
-
-        // Base widths above are unscaled pixels (0 = auto-fit to content). Scale them with the UI and never go narrower than
-        // the header, which is a filter box showing the label plus the sort arrow.
+        
         private static float FixedWidth(float baseWidth, string label)
         {
             if (baseWidth <= 0)
@@ -88,7 +86,7 @@ namespace Artisan.UI.Tables
         private bool? isOnList = null;
 
         public IngredientTable(List<Ingredient> ingredientList)
-            : base("IngredientTableV2", ingredientList) // V2: new ID so ImGui drops previously saved (too narrow/too wide) column widths
+            : base("IngredientTableV2", ingredientList) 
         {
             if (P.Config.DefaultHideInventoryColumn) _inventoryColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
             if (P.Config.DefaultHideRetainerColumn) _retainerColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
@@ -121,12 +119,9 @@ namespace Artisan.UI.Tables
                 item.OnRemainingChange += SetFilterDirty;
             }
         }
-
-        // Starts clean: IngredientHelpers.GenerateList already computed every item's sub-craft count in the background.
+        
         private bool subcraftCountsDirty = false;
 
-        // Fired once per item whose Remaining changed, often for every row in the same frame,
-        // so only flag here and recount once per frame in UpdateSubcraftCounts.
         private void SetFilterDirty(object? sender, bool e)
         {
             subcraftCountsDirty = true;

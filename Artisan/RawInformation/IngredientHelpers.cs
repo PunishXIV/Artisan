@@ -10,15 +10,13 @@ using System.Threading.Tasks;
 
 public class IngredientHelpers
 {
-    // Progress over both passes (build each ingredient, then check its inventory/retainer counts), so the bar fills once.
     public int CurrentIngredient = 0;
     public int MaxIngredient = 0;
 
     public List<Ingredient> HelperList = new List<Ingredient>();
 
     public Dictionary<uint, Ingredient> HelperLookup = new();
-
-    // Runs synchronously; callers are expected to invoke this from a background task.
+    
     public List<Ingredient>? GenerateList(NewCraftingList originList, CancellationToken token)
     {
         var timer = Stopwatch.StartNew();
@@ -42,10 +40,7 @@ public class IngredientHelpers
 
         if (P.Config.UseUniversalis && !P.Config.UniversalisOnDemand)
             Task.Run(() => FetchMarketData(output, token));
-
-        // Compute what the table needs on its first frame here, off the UI thread. The first lookup of each item's
-        // retainer count goes through Allagan Tools IPC (one call per retainer inventory page) before it is cached,
-        // which froze the game for seconds on big lists when the first table frame did it.
+        
         foreach (var ingredient in output)
         {
             if (token.IsCancellationRequested) return null;
@@ -58,8 +53,7 @@ public class IngredientHelpers
         Svc.Log.Debug($"[IngredientTable] {originList.Name}: {output.Count} ingredients in {timer.ElapsedMilliseconds} ms (materials {materialsMs} ms, build {buildMs} ms, inventory/retainers {warmMs} ms)");
         return output;
     }
-
-    // One batched Universalis lookup for the whole table; a request per item trips the API's rate limit on big lists.
+    
     private static void FetchMarketData(List<Ingredient> ingredients, CancellationToken token)
     {
         var timer = Stopwatch.StartNew();

@@ -17,67 +17,35 @@ namespace Artisan.RawInformation
     {
 
         public static Dictionary<uint, Recipe>? RecipeSheet;
-
         public static ILookup<string, Recipe>? recipeLookup;
-
-        // Recipes keyed by the item they produce, in RecipeSheet order (so First() matches a linear scan of RecipeSheet).
         public static ILookup<uint, Recipe>? RecipesByResultItem;
-
-        // Recipes keyed by each item they use as an ingredient, in RecipeSheet order.
         public static ILookup<uint, Recipe>? RecipesByIngredient;
-
-        // Item ID -> first GatheringItem row ID for that item.
         public static Dictionary<uint, uint>? GatheringItemByItemId;
-
         public static ILookup<uint, GatheringPointBase>? GatheringPointBasesByGatheringItem;
-
-        // GatheringPointBase row ID -> first GatheringPoint with a named zone.
         public static Dictionary<uint, GatheringPoint>? GatheringPointByBase;
-
         public static HashSet<uint>? FishingSpotItemIds;
-
         public static HashSet<uint>? RetainerVentureItemIds;
-
         public static Dictionary<uint, GatheringItem>? GatheringItemSheet;
-
         public static Dictionary<uint, SpearfishingItem>? SpearfishingItemSheet;
-
         public static Dictionary<uint, GatheringPointBase>? GatheringPointBaseSheet;
-
         public static Dictionary<uint, FishParameter>? FishParameterSheet;
-
         public static Dictionary<uint, ClassJob>? ClassJobSheet;
-
         public static Dictionary<uint, Item>? ItemSheet;
-
         public static Dictionary<uint, Action>? ActionSheet;
-
         public static Dictionary<uint, Status>? StatusSheet;
-
         public static Dictionary<uint, CraftAction>? CraftActions;
-
         public static Dictionary<uint, RecipeLevelTable>? RecipeLevelTableSheet;
-
         public static Dictionary<uint, Addon>? AddonSheet;
-
         public static Dictionary<uint, SpecialShop>? SpecialShopSheet;
-
         public static Dictionary<uint, LogMessage>? LogMessageSheet;
-
         public static Dictionary<uint, ItemFood>? ItemFoodSheet;
-
         public static Dictionary<uint, ENpcResident>? ENPCResidentSheet;
-
         public static Dictionary<uint, Quest>? QuestSheet;
-
         public static Dictionary<uint, CompanyCraftPart>? WorkshopPartSheet;
-
         public static Dictionary<uint, CompanyCraftProcess>? WorkshopProcessSheet;
-
         public static Dictionary<uint, CompanyCraftSequence>? WorkshopSequenceSheet;
-
         public static Dictionary<uint, CompanyCraftSupplyItem>? WorkshopSupplyItemSheet;
-
+       
         public static void Init()
         {
             RecipeSheet = Svc.Data?.GetExcelSheet<Recipe>()?
@@ -86,8 +54,7 @@ namespace Artisan.RawInformation
                 .OrderBy(x => x.RecipeLevelTable.Value.ClassJobLevel)
                 .ThenBy(x => x.ItemResult.Value.Name.ToDalamudString().ToString())
                 .ToDictionary(x => x.RowId, x => x);
-
-            // Preprocess the recipe data into a lookup table (ILookup) for faster access.
+            
             recipeLookup = RecipeSheet.Values
                 .ToLookup(x => x.ItemResult.Value.Name.ToDalamudString().ToString());
 
@@ -288,19 +255,16 @@ namespace Artisan.RawInformation
             {
                 Svc.Data.GameData.Options.PanicOnSheetChecksumMismatch = false;
                 var id = recipe.RowId;
-                //First, find the MissionRecipe with our recipe
+      
                 var missionRec = Svc.Data.GetExcelSheet<WKSMissionRecipe>().FirstOrDefault(missionRec => missionRec.Recipe.Any(recipe => recipe.RowId == id));
-                //Bail if there's no MissionRecipe (this isn't a Cosmic Craft)
+        
                 if (missionRec.RowId == 0)
                     return false;
 
-                //Next, find the MissionUnit that has our MissionRecipe row
                 var missionUnit = Svc.Data.GetExcelSheet<WKSMissionUnit>().First(missionUnit => missionUnit.WKSMissionRecipe.RowId == (ushort)missionRec.RowId);
-
-                //Get the MissionToDo from the MissionUnit
+                
                 var missionToDo = Svc.Data.GetExcelSheet<WKSMissionToDo>().GetRow(missionUnit.MissionToDo[0].RowId);
-
-                //Svc.Log.Verbose($"{id} -> {missionRec.RowId} -> {missionUnit.RowId} -> {missionToDo.RowId} -> {missionToDo.Unknown0}");
+                
                 action = missionToDo.TemporaryAction.RowId;
 
                 return true;

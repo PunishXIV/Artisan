@@ -967,7 +967,6 @@ internal class ListEditor : Window, IDisposable
             ImGui.ProgressBar(progress, new(ImGui.GetContentRegionAvail().X, default), $"{progress * 100:f2}%");
             return;
         }
-        // Reserve exactly what the footer below needs (checkbox row + colour legend rows), so the window itself never has to scroll.
         var legendRows = ColourValidation ? (RetainerInfo.ATools ? 3 : 2) : 0;
         var legendRowHeight = Math.Max(23f, ImGui.GetTextLineHeight()) + ImGui.GetStyle().ItemSpacing.Y;
         var footerHeight = ImGui.GetFrameHeightWithSpacing() + legendRows * legendRowHeight;
@@ -978,8 +977,6 @@ internal class ListEditor : Window, IDisposable
         Table._nameColumn.ShowHQOnly = HQSubcraftsOnly;
         var frameTimer = System.Diagnostics.Stopwatch.StartNew();
         Table.UpdateSubcraftCounts();
-        // The table's list clipper needs the real row height (one text line plus cell padding), or the last rows
-        // fall outside the scrollable area on long lists.
         Table.Draw(ImGui.GetTextLineHeight() + 2 * ImGui.GetStyle().CellPadding.Y);
         if (frameTimer.ElapsedMilliseconds > 50)
             Svc.Log.Debug($"[IngredientTable] Slow frame: {frameTimer.ElapsedMilliseconds} ms for {Table.ListItems.Count} items");
@@ -1276,7 +1273,6 @@ internal class ListEditor : Window, IDisposable
 
         if (disabled)
             ImGui.BeginDisabled();
-        // Retrieve the list of recipes matching the selected recipe name from the preprocessed lookup table.
         var matchingRecipes = LuminaSheets.recipeLookup[selectedListItem.NameOfRecipe()].ToList();
 
         if (matchingRecipes.Count > 1)

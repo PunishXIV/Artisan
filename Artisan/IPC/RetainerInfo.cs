@@ -171,8 +171,7 @@ namespace Artisan.IPC
         }
 
         public static Dictionary<ulong, Dictionary<uint, ItemInfo>> RetainerData = new Dictionary<ulong, Dictionary<uint, ItemInfo>>();
-
-        // GetRetainerItemCount fills RetainerData from the UI thread, LoadCache and the ingredient table's background warm-up.
+        
         private static readonly object CacheLock = new();
         public class ItemInfo
         {
@@ -224,7 +223,6 @@ namespace Artisan.IPC
             }
             return 0;
         }
-        // Sums an item's cached counts across retainers via key lookups; false if no retainer has the item cached yet.
         private static bool TryGetCachedCount(uint itemId, bool hqOnly, out int count)
         {
             var found = false;
@@ -250,14 +248,14 @@ namespace Artisan.IPC
                 if (!Svc.ClientState.IsLoggedIn || Svc.Condition[ConditionFlag.OnFreeTrial]) return 0;
 
                 lock (CacheLock)
-                try
-                {
-                    if (tryCache && TryGetCachedCount(ItemId, hqOnly, out var cached))
-                        return cached;
-
-                    for (int i = 0; i < 10; i++)
+                    try
                     {
-                        ulong retainerId = 0;
+                        if (tryCache && TryGetCachedCount(ItemId, hqOnly, out var cached))
+                            return cached;
+                        
+                        for (int i = 0; i < 10; i++)
+                        {
+                            ulong retainerId = 0;
                         var retainer = RetainerManager.Instance()->GetRetainerBySortedIndex((uint)i);
 
                         if (P.Config.RetainerIDs.Count(x => x.Value == Svc.PlayerState.ContentId) > i)
@@ -462,8 +460,6 @@ namespace Artisan.IPC
                     Svc.Log.Debug($"{material.Key} {diffcheck}");
                     requiredItems.Add((int)material.Key, diffcheck);
                 }
-
-                //Refresh retainer cache if empty
                 GetRetainerItemCount(material.Key);
             }
 
