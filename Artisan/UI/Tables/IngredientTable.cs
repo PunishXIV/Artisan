@@ -694,6 +694,7 @@ namespace Artisan.UI.Tables
             if (!popup)
                 return;
 
+            DrawGatherChill(item);
             DrawGatherItem(item);
             DrawSearchItem(item);
             DrawItemVendorLookup(item);
@@ -860,6 +861,64 @@ namespace Artisan.UI.Tables
                 e.Log();
             }
 
+        }
+
+        private static void DrawGatherChill(Ingredient item)
+        {
+            if (item.Data.RowId == 0 || item.Sources.Contains(1))
+                return;
+
+            if (!GatherChill.IsEnabled() || !GatherChill.CanGather(item.Data.RowId))
+                return;
+
+            var amount = Math.Max(1, item.Remaining);
+
+            if (GatherChill.CanGatherDirectly())
+            {
+                if (GatherChill.IsBusy())
+                {
+                    if (ImGui.Selectable("Stop Gather & Chill"))
+                    {
+                        try
+                        {
+                            GatherChill.Stop();
+                        }
+                        catch (Exception e)
+                        {
+                            e.Log();
+                        }
+                    }
+                }
+                else if (ImGui.Selectable("Gather with Gather & Chill"))
+                {
+                    try
+                    {
+                        if (GatherChill.GatherItem(item.Data.RowId, amount))
+                            Notify.Success($"Gathering {amount}x {item.Data.Name} with Gather & Chill.");
+                        else
+                            Notify.Error($"Gather & Chill could not start gathering {item.Data.Name}.");
+                    }
+                    catch (Exception e)
+                    {
+                        e.Log();
+                    }
+                }
+            }
+
+            if (!ImGui.Selectable("Add to Gather & Chill List"))
+                return;
+
+            try
+            {
+                if (GatherChill.AddToGatherList([(item.Data.RowId, amount)]) > 0)
+                    Notify.Success($"Added {amount}x {item.Data.Name} to Gather & Chill.");
+                else
+                    Notify.Error($"Gather & Chill could not add {item.Data.Name}.");
+            }
+            catch (Exception e)
+            {
+                e.Log();
+            }
         }
 
         private static void DrawGatherItem(Ingredient item)
