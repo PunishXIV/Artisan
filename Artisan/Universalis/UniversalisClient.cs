@@ -1,10 +1,14 @@
 ﻿using ECommons;
 using ECommons.DalamudServices;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Artisan.Universalis
@@ -12,6 +16,19 @@ namespace Artisan.Universalis
     internal class UniversalisClient
     {
         private const string Endpoint = "https://universalis.app/api/v2/";
+ 
+        private const int MaxItemsPerRequest = 25;
+        private const int MaxParallelRequests = 3;
+
+        private static readonly string[] ParsedFields =
+        [
+            "lastUploadTime", "averagePriceNQ", "averagePriceHQ", "currentAveragePriceNQ", "currentAveragePriceHQ",
+            "minPriceNQ", "minPriceHQ", "maxPriceNQ", "maxPriceHQ", "listingsCount", "unitsForSale",
+            "listings.worldName", "listings.quantity", "listings.total", "listings.pricePerUnit",
+        ];
+
+        private static readonly string SingleItemQuery = "?entries=0&fields=" + string.Join(",", ParsedFields);
+        private static readonly string MultiItemQuery = "?entries=0&fields=" + string.Join(",", ParsedFields.Select(x => "items." + x));
         private readonly HttpClient httpClient;
         public uint? PlayerWorld;
         public UniversalisClient()
@@ -54,6 +71,59 @@ namespace Artisan.Universalis
 
             return output = GetMarketBoard(region, ItemId);
         }
+        
+        public IReadOnlyDictionary<ulong, MarketboardData> GetBulkData(IEnumerable<ulong> itemIds, bool dataCenterOnly, CancellationToken token)
+        {
+            var output = new ConcurrentDictionary<ulong, MarketboardData>();
+            var world = PlayerWorld;
+            if (world == null)
+                return output;
+
+            var region = dataCenterOnly ? DataCenters.GetDataCenterName(world.Value) : Regions.GetRegionByWorld(world.Value);
+            if (region == null)
+                return output;
+
+            try
+            {
+                Parallel.ForEach(itemIds.Distinct().Chunk(MaxItemsPerRequest),
+                    new ParallelOptions { MaxDegreeOfParallelism = MaxParallelRequests, CancellationToken = token },
+                    chunk => FetchChunk(region, chunk, output, token));
+            }
+            catch (OperationCanceledException) { }
+
+            return output;
+        }
+
+        private void FetchChunk(string region, ulong[] ids, ConcurrentDictionary<ulong, MarketboardData> output, CancellationToken token)
+        {
+            if (token.IsCancellationRequested)
+                return;
+
+            var json = GetJson(region, string.Join(",", ids), ids.Length > 1 ? MultiItemQuery : SingleItemQuery, retryOnRateLimit: true, out var transientFailure);
+            if (json == null)
+            {
+                if (transientFailure && ids.Length > 1)
+                {
+                    var half = ids.Length / 2;
+                    FetchChunk(region, ids[..half], output, token);
+                    FetchChunk(region, ids[half..], output, token);
+                }
+                return;
+            }
+            
+            if (json["items"] is JObject items)
+            {
+                foreach (var id in ids)
+                {
+                    if (items[id.ToString()] is JObject itemJson && ParseMarketboardData(itemJson, id, region) is { } data)
+                        output[id] = data;
+                }
+            }
+            else if (ids.Length == 1 && ParseMarketboardData(json, ids[0], region) is { } data)
+            {
+                output[ids[0]] = data;
+            }
+        }
 
         public void Dispose()
         {
@@ -62,38 +132,69 @@ namespace Artisan.Universalis
 
         private MarketboardData? GetMarketBoardData(string region, ulong ItemId)
         {
+            var json = GetJson(region, ItemId.ToString(), string.Empty, retryOnRateLimit: false, out _);
+            return json == null ? null : ParseMarketboardData(json, ItemId, region);
+        }
+
+        private JObject? GetJson(string region, string itemIds, string query, bool retryOnRateLimit, out bool transientFailure)
+        {
+            transientFailure = false;
             HttpResponseMessage result;
             try
             {
-                result = this.GetMarketBoardDataAsync(region, ItemId).Result;
+                result = this.GetMarketBoardDataAsync(region, itemIds, query).Result;
+                if (retryOnRateLimit && result.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    Thread.Sleep(1000);
+                    result = this.GetMarketBoardDataAsync(region, itemIds, query).Result;
+                }
             }
             catch (Exception ex)
             {
-                ex.Log();
+                transientFailure = true;
+                if (itemIds.Contains(','))
+                    Svc.Log.Debug($"Universalis request for {itemIds.Count(c => c == ',') + 1} items failed ({ex.GetBaseException().Message}), retrying in smaller batches.");
+                else
+                    ex.Log();
                 return null;
             }
 
+            if (result.StatusCode is HttpStatusCode.GatewayTimeout or HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests)
+            {
+                transientFailure = true;
+                if (itemIds.Contains(','))
+                {
+                    Svc.Log.Debug($"Universalis returned {result.StatusCode} for {itemIds.Count(c => c == ',') + 1} items, retrying in smaller batches.");
+                    return null;
+                }
+            }
 
             if (result.StatusCode != HttpStatusCode.OK)
             {
                 Svc.Log.Error(
                     "Failed to retrieve data from Universalis for ItemId {0} / worldId {1} with HttpStatusCode {2}.",
-                    ItemId,
+                    itemIds,
                     region,
                     result.StatusCode);
                 return null;
             }
 
-            var json = JsonConvert.DeserializeObject<dynamic>(result.Content.ReadAsStringAsync().Result);
+            var json = JsonConvert.DeserializeObject<JObject>(result.Content.ReadAsStringAsync().Result);
             if (json == null)
             {
                 Svc.Log.Error(
                     "Failed to deserialize Universalis response for ItemId {0} / worldId {1}.",
-                    ItemId,
+                    itemIds,
                     region);
                 return null;
             }
 
+            return json;
+        }
+
+        private static MarketboardData? ParseMarketboardData(JObject itemJson, ulong ItemId, string region)
+        {
+            dynamic json = itemJson;
             try
             {
                 var marketBoardData = new MarketboardData
@@ -111,7 +212,7 @@ namespace Artisan.Universalis
                     TotalNumberOfListings = json.listingsCount?.Value,
                     TotalQuantityOfUnits = json.unitsForSale?.Value
                 };
-                if (json.listings.Count > 0)
+                if (json.listings != null && json.listings.Count > 0)
                 {
                     foreach (var item in json.listings)
                     {
@@ -145,9 +246,9 @@ namespace Artisan.Universalis
             }
         }
 
-        private async Task<HttpResponseMessage> GetMarketBoardDataAsync(string? worldId, ulong ItemId)
+        private async Task<HttpResponseMessage> GetMarketBoardDataAsync(string? worldId, string itemIds, string query)
         {
-            var request = Endpoint + worldId + "/" + ItemId;
+            var request = Endpoint + worldId + "/" + itemIds + query;
             Svc.Log.Debug($"universalisRequest={request}");
             return await this.httpClient.GetAsync(new Uri(request));
         }

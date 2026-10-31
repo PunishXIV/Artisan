@@ -33,11 +33,21 @@ namespace Artisan.UI.Tables
         private static float _remainingColumnWidth = 100;
         private static float _canCraftColumnWidth = 100;
         private static float _craftableCountColumnWidth = 100;
-        private static float _craftItemsColumnWidth = 0;
+        private static float _craftItemsColumnWidth = 300;
         private static float _itemCategoryColumnWidth = 0;
         private static float _gatherItemLocationColumWidth = 0;
         private static float _cheapestColumnWidth = 100;
         private static float _numberForSaleWidth = 100;
+        
+        private static float FixedWidth(float baseWidth, string label)
+        {
+            if (baseWidth <= 0)
+                return 0;
+
+            var style = ImGui.GetStyle();
+            var headerWidth = ImGui.CalcTextSize(label).X + style.FramePadding.X * 2 + style.ItemSpacing.X + Table.ArrowWidth * ImGuiHelpers.GlobalScale;
+            return Math.Max(baseWidth * ImGuiHelpers.GlobalScale, headerWidth);
+        }
 
         public readonly IdColumn _idColumn = new() { Label = "ID" };
         public readonly NameColumn _nameColumn = new() { Label = "Item Name" };
@@ -76,7 +86,7 @@ namespace Artisan.UI.Tables
         private bool? isOnList = null;
 
         public IngredientTable(List<Ingredient> ingredientList)
-            : base("IngredientTable", ingredientList)
+            : base("IngredientTableV2", ingredientList) 
         {
             if (P.Config.DefaultHideInventoryColumn) _inventoryColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
             if (P.Config.DefaultHideRetainerColumn) _retainerColumn.Flags |= ImGuiTableColumnFlags.DefaultHide;
@@ -109,14 +119,24 @@ namespace Artisan.UI.Tables
                 item.OnRemainingChange += SetFilterDirty;
             }
         }
+        
+        private bool subcraftCountsDirty = false;
 
         private void SetFilterDirty(object? sender, bool e)
         {
+            subcraftCountsDirty = true;
+            this.FilterDirty = true;
+        }
+
+        public void UpdateSubcraftCounts()
+        {
+            if (!subcraftCountsDirty) return;
+            subcraftCountsDirty = false;
+
             foreach (var item in Items)
             {
                 item.AmountUsedForSubcrafts = item.GetSubCraftCount();
             }
-            this.FilterDirty = true;
         }
 
         public void Dispose()
@@ -165,7 +185,7 @@ namespace Artisan.UI.Tables
                         ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.ColorConvertFloat4ToU32(color));
                     }
 
-                    if (invAmount >= item.Required - (item.OriginList.SkipIfEnough && item.OriginList.SkipLiteral ? 0 : item.GetSubCraftCount()))
+                    if (invAmount >= item.Required - (item.OriginList.SkipIfEnough && item.OriginList.SkipLiteral ? 0 : item.AmountUsedForSubcrafts))
                     {
                         var color = ImGuiColors.HealerGreen;
                         color.W -= 0.3f;
@@ -206,7 +226,7 @@ namespace Artisan.UI.Tables
         public sealed class RequiredColumn : ColumnString<Ingredient>
         {
             public override float Width
-                => _requiredColumnWidth;
+                => FixedWidth(_requiredColumnWidth, Label);
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
                 => lhs.Required.CompareTo(rhs.Required);
@@ -225,7 +245,7 @@ namespace Artisan.UI.Tables
         public sealed class IdColumn : ColumnString<Ingredient>
         {
             public override float Width
-                => _idColumnWidth;
+                => FixedWidth(_idColumnWidth, Label);
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
                 => lhs.Data.RowId.CompareTo(rhs.Data.RowId);
@@ -239,7 +259,7 @@ namespace Artisan.UI.Tables
         public sealed class InventoryCountColumn : ColumnString<Ingredient>
         {
             public override float Width
-                => _inventoryColumnWidth;
+                => FixedWidth(_inventoryColumnWidth, Label);
 
             public bool HQOnlyCrafts = false;
 
@@ -264,7 +284,7 @@ namespace Artisan.UI.Tables
         public sealed class RetainerCountColumn : ColumnString<Ingredient>
         {
             public override float Width
-                => _retainerColumnWidth;
+                => FixedWidth(_retainerColumnWidth, Label);
 
             public bool HQOnlyCrafts = false;
 
@@ -287,7 +307,7 @@ namespace Artisan.UI.Tables
         public sealed class CraftableCountColumn : ColumnString<Ingredient>
         {
             public override float Width
-                => _craftableCountColumnWidth;
+                => FixedWidth(_craftableCountColumnWidth, Label);
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
                 => lhs.TotalCraftable.CompareTo(rhs.TotalCraftable);
@@ -305,7 +325,7 @@ namespace Artisan.UI.Tables
         public sealed class CraftItemsColumn : ColumnString<Ingredient>
         {
             public override float Width
-                => _craftItemsColumnWidth;
+                => FixedWidth(_craftItemsColumnWidth, Label);
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
                 => lhs.UsedInCrafts.First().CompareTo(rhs.UsedInCrafts.First());
@@ -317,14 +337,24 @@ namespace Artisan.UI.Tables
 
             public override void DrawColumn(Ingredient item, int _)
             {
-                ImGui.Text(ToName(item));
+                var text = ToName(item);
+                var truncated = ImGui.CalcTextSize(text).X > ImGui.GetContentRegionAvail().X;
+                ImGui.TextUnformatted(text);
+
+                if (truncated && ImGui.IsItemHovered())
+                {
+                    ImGui.BeginTooltip();
+                    foreach (var craft in item.UsedInCrafts)
+                        ImGui.TextUnformatted(craft.NameOfRecipe());
+                    ImGui.EndTooltip();
+                }
             }
 
         }
 
         public sealed class CheapestServerColumn : ColumnString<Ingredient>
         {
-            public override float Width => _cheapestColumnWidth;
+            public override float Width => FixedWidth(_cheapestColumnWidth, Label);
             public Dictionary<uint, (string World, double Qty, double Cost)> CheapestListings = new();
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
@@ -370,9 +400,12 @@ namespace Artisan.UI.Tables
                         }
                     }
 
-                    CheapestListings.TryAdd(item.Data.RowId, new(currentWorld, currentWorldQty, currentWorldCost));
+                    if (currentWorldQty > 0)
+                    {
+                        CheapestListings.TryAdd(item.Data.RowId, new(currentWorld, currentWorldQty, currentWorldCost));
 
-                    item.MarketboardData.LowestWorld = currentWorld;
+                        item.MarketboardData.LowestWorld = currentWorld;
+                    }
                 }
 
                 if (CheapestListings.ContainsKey(item.Data.RowId))
@@ -383,7 +416,7 @@ namespace Artisan.UI.Tables
 
                 }
 
-                return "ERROR - No Listings (Possible Universalis Connection Issue)";
+                return "No Listings Found";
             }
 
             public override void DrawColumn(Ingredient item, int _)
@@ -430,7 +463,7 @@ namespace Artisan.UI.Tables
 
         public sealed class NumberForSaleColumn : ColumnString<Ingredient>
         {
-            public override float Width => _numberForSaleWidth;
+            public override float Width => FixedWidth(_numberForSaleWidth, Label);
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
             {
@@ -472,7 +505,7 @@ namespace Artisan.UI.Tables
 
             }
             public override float Width
-                => _gatherItemLocationColumWidth;
+                => FixedWidth(_gatherItemLocationColumWidth, Label);
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
                 => lhs.GatherZone.PlaceName.Value.Name.ToString().CompareTo(rhs.GatherZone.PlaceName.Value.Name.ToString());
@@ -511,7 +544,7 @@ namespace Artisan.UI.Tables
 
 
             public override float Width
-                => _itemCategoryColumnWidth;
+                => FixedWidth(_itemCategoryColumnWidth, Label);
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
                 => lhs.Category.CompareTo(rhs.Category);
@@ -581,7 +614,7 @@ namespace Artisan.UI.Tables
             }
 
             public override float Width
-                => _remainingColumnWidth;
+                => FixedWidth(_remainingColumnWidth, Label);
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
                 => lhs.Remaining.CompareTo(rhs.Remaining);
@@ -652,7 +685,7 @@ namespace Artisan.UI.Tables
 
 
             public override float Width
-                => _canCraftColumnWidth;
+                => FixedWidth(_canCraftColumnWidth, Label);
 
             public override int Compare(Ingredient lhs, Ingredient rhs)
                 => string.Join(", ", lhs.Sources).CompareTo(string.Join(", ", rhs.Sources));
@@ -757,7 +790,7 @@ namespace Artisan.UI.Tables
             {
                 if (isOnList == null)
                 {
-                    isOnList = item.OriginList.Recipes.Any(x => LuminaSheets.RecipeSheet.Values.Any(y => y.ItemResult.RowId == item.Data.RowId && y.RowId == x.ID));
+                    isOnList = item.RecipeOnList;
                 }
 
                 if (item.Sources.Contains(1) && isOnList.Value)

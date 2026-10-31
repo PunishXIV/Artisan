@@ -4,12 +4,13 @@ using ECommons;
 using ECommons.DalamudServices;
 using Lumina.Excel.Sheets;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
 internal static class CraftingListHelpers
 {
-    internal static Dictionary<uint, bool> SelectedRecipesCraftable = new();
+    internal static ConcurrentDictionary<uint, bool> SelectedRecipesCraftable = new();
 
     public static void AddRecipeIngredientsToList(Recipe? recipe, ref Dictionary<uint, int> ingredientList, bool addSublist = true, NewCraftingList? selectedList = null)
     {
@@ -19,23 +20,24 @@ internal static class CraftingListHelpers
 
             if (selectedList != null)
             {
+                var quantity = selectedList.Recipes.First(x => x.ID == recipe.Value.RowId).Quantity;
                 foreach (var ing in recipe.Value.Ingredients().Where(x => x.Amount > 0 && x.Item.RowId != 0))
                 {
                     if (ingredientList.ContainsKey(ing.Item.RowId))
                     {
-                        ingredientList[ing.Item.RowId] += ing.Amount * selectedList.Recipes.First(x => x.ID == recipe.Value.RowId).Quantity;
+                        ingredientList[ing.Item.RowId] += ing.Amount * quantity;
                     }
                     else
                     {
-                        ingredientList.TryAdd(ing.Item.RowId, ing.Amount * selectedList.Recipes.First(x => x.ID == recipe.Value.RowId).Quantity);
+                        ingredientList.TryAdd(ing.Item.RowId, ing.Amount * quantity);
                     }
 
                     var name = LuminaSheets.ItemSheet[ing.Item.RowId].Name.ToString();
-                    SelectedRecipesCraftable[ing.Item.RowId] = LuminaSheets.RecipeSheet!.Any(x => x.Value.ItemResult.Value.Name.ToDalamudString().ToString() == name);
+                    SelectedRecipesCraftable[ing.Item.RowId] = LuminaSheets.recipeLookup!.Contains(name);
 
-                    if (GetIngredientRecipe(ing.Item.RowId) != null && addSublist)
+                    if (addSublist && GetIngredientRecipe(ing.Item.RowId) is { } subRecipe)
                     {
-                        AddRecipeIngredientsToList(GetIngredientRecipe(ing.Item.RowId), ref ingredientList);
+                        AddRecipeIngredientsToList(subRecipe, ref ingredientList);
                     }
 
                 }
@@ -54,11 +56,11 @@ internal static class CraftingListHelpers
                     }
 
                     var name = LuminaSheets.ItemSheet[ing.Item.RowId].Name.ToString();
-                    SelectedRecipesCraftable[ing.Item.RowId] = LuminaSheets.RecipeSheet!.Any(x => x.Value.ItemResult.Value.Name.ToDalamudString().ToString() == name);
+                    SelectedRecipesCraftable[ing.Item.RowId] = LuminaSheets.recipeLookup!.Contains(name);
 
-                    if (GetIngredientRecipe(ing.Item.RowId) != null && addSublist)
+                    if (addSublist && GetIngredientRecipe(ing.Item.RowId) is { } subRecipe)
                     {
-                        AddRecipeIngredientsToList(GetIngredientRecipe(ing.Item.RowId), ref ingredientList);
+                        AddRecipeIngredientsToList(subRecipe, ref ingredientList);
                     }
                 }
             }
@@ -71,10 +73,11 @@ internal static class CraftingListHelpers
 
     public static Recipe? GetIngredientRecipe(uint ingredient, int craftType = -1)
     {
-        if (craftType != -1 && LuminaSheets.RecipeSheet.Values.Any(x => x.ItemResult.Value.RowId == ingredient && x.CraftType.RowId == craftType))
-            return LuminaSheets.RecipeSheet.Values.First(x => x.ItemResult.Value.RowId == ingredient && x.CraftType.RowId == craftType);
+        var recipes = LuminaSheets.RecipesByResultItem![ingredient];
+        if (craftType != -1 && recipes.TryGetFirst(x => x.CraftType.RowId == craftType, out var byType))
+            return byType;
         else
-            return LuminaSheets.RecipeSheet.Values.FirstOrNull(x => x.ItemResult.Value.RowId == ingredient);
+            return recipes.FirstOrNull(x => true);
     }
 
     public static void TidyUpList(NewCraftingList list)

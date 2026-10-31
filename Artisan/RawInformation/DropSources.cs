@@ -13,6 +13,11 @@ namespace Artisan.RawInformation
     {
         public static List<DropSources>? Sources = DropList()?.ToList();
 
+        private static HashSet<uint>? itemIds;
+
+        public static bool HasDrop(uint itemId)
+            => (itemIds ??= Sources?.Select(x => x.ItemId).ToHashSet() ?? new()).Contains(itemId);
+
         public DropSources(uint Item, List<uint> monsterId)
         {
             ItemId = Item;

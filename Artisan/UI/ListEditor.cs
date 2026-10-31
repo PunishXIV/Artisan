@@ -111,11 +111,11 @@ internal class ListEditor : Window, IDisposable
         if (P.Config.DefaultColourValidation) ColourValidation = true;
     }
 
-    public async Task GenerateTableAsync(CancellationTokenSource source)
+    public void GenerateTable(CancellationTokenSource source)
     {
         Table?.Dispose();
-        var list = await IngredientHelper.GenerateList(SelectedList, source);
-        if (list is null)
+        var list = IngredientHelper.GenerateList(SelectedList, source.Token);
+        if (list is null || source.IsCancellationRequested)
         {
             Svc.Log.Debug($"Table list empty, aborting.");
             return;
@@ -131,7 +131,7 @@ internal class ListEditor : Window, IDisposable
         if (RegenerateTask == null || RegenerateTask.IsCompleted)
         {
             Svc.Log.Debug($"Starting regeneration");
-            RegenerateTask = Task.Run(() => GenerateTableAsync(source), token);
+            RegenerateTask = Task.Run(() => GenerateTable(source), token);
         }
         else
         {
@@ -141,7 +141,7 @@ internal class ListEditor : Window, IDisposable
 
             source = new();
             token = source.Token;
-            RegenerateTask = Task.Run(() => GenerateTableAsync(source), token);
+            RegenerateTask = Task.Run(() => GenerateTable(source), token);
         }
     }
 
@@ -963,15 +963,23 @@ internal class ListEditor : Window, IDisposable
             ImGui.TextUnformatted($"Ingredient table is still populating. Please wait.");
             var a = IngredientHelper.CurrentIngredient;
             var b = IngredientHelper.MaxIngredient;
-            ImGui.ProgressBar((float)a / b, new(ImGui.GetContentRegionAvail().X, default), $"{a * 100.0f / b:f2}% ({a}/{b})");
+            var progress = b == 0 ? 0 : (float)a / b;
+            ImGui.ProgressBar(progress, new(ImGui.GetContentRegionAvail().X, default), $"{progress * 100:f2}%");
             return;
         }
-        ImGui.BeginChild("###IngredientsListTable", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - (ColourValidation ? (RetainerInfo.ATools ? 90f.Scale() : 60f.Scale()) : 30f.Scale())));
+        var legendRows = ColourValidation ? (RetainerInfo.ATools ? 3 : 2) : 0;
+        var legendRowHeight = Math.Max(23f, ImGui.GetTextLineHeight()) + ImGui.GetStyle().ItemSpacing.Y;
+        var footerHeight = ImGui.GetFrameHeightWithSpacing() + legendRows * legendRowHeight;
+        ImGui.BeginChild("###IngredientsListTable", new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetContentRegionAvail().Y - footerHeight));
         Table._nameColumn.ShowColour = ColourValidation;
         Table._inventoryColumn.HQOnlyCrafts = HQSubcraftsOnly;
         Table._retainerColumn.HQOnlyCrafts = HQSubcraftsOnly;
         Table._nameColumn.ShowHQOnly = HQSubcraftsOnly;
-        Table.Draw(ImGui.GetTextLineHeightWithSpacing());
+        var frameTimer = System.Diagnostics.Stopwatch.StartNew();
+        Table.UpdateSubcraftCounts();
+        Table.Draw(ImGui.GetTextLineHeight() + 2 * ImGui.GetStyle().CellPadding.Y);
+        if (frameTimer.ElapsedMilliseconds > 50)
+            Svc.Log.Debug($"[IngredientTable] Slow frame: {frameTimer.ElapsedMilliseconds} ms for {Table.ListItems.Count} items");
         ImGui.EndChild();
 
         ImGui.Checkbox($"Only show HQ crafts", ref HQSubcraftsOnly);
@@ -1291,7 +1299,6 @@ internal class ListEditor : Window, IDisposable
 
         if (disabled)
             ImGui.BeginDisabled();
-        // Retrieve the list of recipes matching the selected recipe name from the preprocessed lookup table.
         var matchingRecipes = LuminaSheets.recipeLookup[selectedListItem.NameOfRecipe()].ToList();
 
         if (matchingRecipes.Count > 1)
