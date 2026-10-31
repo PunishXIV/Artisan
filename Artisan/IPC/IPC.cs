@@ -123,7 +123,7 @@ namespace Artisan.IPC
 
             Svc.PluginInterface.GetIpcProvider<Dictionary<int, string>>("Artisan.GetLists").UnregisterFunc();
             Svc.PluginInterface.GetIpcProvider<int, object>("Artisan.StartListById").UnregisterAction();
-            Svc.PluginInterface.GetIpcProvider<int, int, int>("Artisan.GetRelicToolListId").UnregisterFunc();
+            Svc.PluginInterface.GetIpcProvider<int, uint, uint>("Artisan.GetRelicToolListId").UnregisterFunc();
 
             Svc.PluginInterface.GetIpcProvider<uint, uint, bool, object>("Artisan.ChangeExpertProfileID").UnregisterAction();
             Svc.PluginInterface.GetIpcProvider<uint, object>("Artisan.SetTempExpertProfileIDBackToNormal").UnregisterAction();
