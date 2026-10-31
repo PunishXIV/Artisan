@@ -63,9 +63,6 @@ namespace Artisan.UI.Tables
         public readonly CheapestServerColumn _cheapestServerColumn = new() { Label = "Optimal World For Buying" };
         public readonly NumberForSaleColumn _numberForSaleColumn = new() { Label = "Quantity For Sale (All Worlds)" };
 
-        private static bool GatherBuddy =>
-            DalamudReflector.TryGetDalamudPlugin("GatherBuddy", out var _, false, true);
-
         private static bool ItemVendor =>
             DalamudReflector.TryGetDalamudPlugin("ItemVendorLocation", out var _, false, true);
 
@@ -727,7 +724,8 @@ namespace Artisan.UI.Tables
             if (!popup)
                 return;
 
-            DrawGatherItem(item);
+            DrawGatherChill(item);
+            DrawFeesh(item);
             DrawSearchItem(item);
             DrawItemVendorLookup(item);
             DrawMonsterLootLookup(item);
@@ -895,31 +893,103 @@ namespace Artisan.UI.Tables
 
         }
 
-        private static void DrawGatherItem(Ingredient item)
+        private static void DrawGatherChill(Ingredient item)
         {
             if (item.Data.RowId == 0 || item.Sources.Contains(1))
                 return;
 
-            if (GatherBuddy)
+            if (!GatherChill.IsEnabled() || !GatherChill.CanGather(item.Data.RowId))
+                return;
+
+            var amount = Math.Max(1, item.Remaining);
+
+            if (GatherChill.CanGatherDirectly())
             {
-                if (!ImGui.Selectable("Gather Item"))
+                if (GatherChill.IsBusy())
+                {
+                    if (ImGui.Selectable("Stop Gather & Chill"))
+                    {
+                        try
+                        {
+                            GatherChill.Stop();
+                        }
+                        catch (Exception e)
+                        {
+                            e.Log();
+                        }
+                    }
+                }
+                else if (ImGui.Selectable("Gather with Gather & Chill"))
+                {
+                    try
+                    {
+                        if (GatherChill.GatherItem(item.Data.RowId, amount))
+                            Notify.Success($"Gathering {amount}x {item.Data.Name} with Gather & Chill.");
+                        else
+                            Notify.Error($"Gather & Chill could not start gathering {item.Data.Name}.");
+                    }
+                    catch (Exception e)
+                    {
+                        e.Log();
+                    }
+                }
+            }
+
+            if (!ImGui.Selectable("Add to Gather & Chill List"))
+                return;
+
+            try
+            {
+                if (GatherChill.AddToGatherList([(item.Data.RowId, amount)]) > 0)
+                    Notify.Success($"Added {amount}x {item.Data.Name} to Gather & Chill.");
+                else
+                    Notify.Error($"Gather & Chill could not add {item.Data.Name}.");
+            }
+            catch (Exception e)
+            {
+                e.Log();
+            }
+        }
+
+        // Fish that Gather & Chill can't gather go to Feesh
+        private static void DrawFeesh(Ingredient item)
+        {
+            if (item.Data.RowId == 0 || item.Sources.Contains(1))
+                return;
+
+            if (GatherChill.CanGather(item.Data.RowId) || !Feesh.CanFish(item.Data.RowId))
+                return;
+
+            if (Feesh.IsBusy())
+            {
+                if (!ImGui.Selectable("Stop Feesh"))
                     return;
 
                 try
                 {
-                    if (LuminaSheets.GatheringItemSheet!.Any(x => x.Value.Item.RowId == item.Data.RowId))
-                        Chat.SendMessage($"/gather {item.Data.Name.ToString()}");
-                    else
-                        Chat.SendMessage($"/gatherfish {item.Data.Name.ToString()}");
+                    Feesh.Stop();
                 }
                 catch (Exception e)
                 {
                     e.Log();
                 }
+
+                return;
             }
-            else
+
+            if (!ImGui.Selectable("Fish with Feesh"))
+                return;
+
+            try
             {
-                ImGui.TextDisabled("Gather Item (Please install Gatherbuddy)");
+                if (Feesh.FishFor(item.Data.RowId))
+                    Notify.Success($"Fishing for {item.Data.Name} with Feesh.");
+                else
+                    Notify.Error($"Feesh could not start fishing for {item.Data.Name}.");
+            }
+            catch (Exception e)
+            {
+                e.Log();
             }
         }
     }
