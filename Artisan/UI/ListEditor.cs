@@ -163,9 +163,6 @@ internal class ListEditor : Window, IDisposable
         }
     }
 
-    private static bool GatherBuddy =>
-        DalamudReflector.TryGetDalamudPlugin("GatherBuddy", out var gb, false, true);
-
     private static bool ItemVendor =>
         DalamudReflector.TryGetDalamudPlugin("Item Vendor Location", out var ivl, false, true);
 
@@ -1122,7 +1119,7 @@ internal class ListEditor : Window, IDisposable
         ImGui.BulletText($"Right clicking on an ingredient name opens a context menu with further options.");
         ImGui.BulletText($"Clicking and dragging on the space on the headers between columns (as shown by it lighting up) allows you to re-order the columns.");
         ImGui.BulletText($"Don't see any items? Check the table headers for a red heading. This indicates this column is being filtered on. Right clicking the header will clear the filter.");
-        ImGui.BulletText($"You can extend the functionality of the table by installing the following plugins:\n- Allagan Tools (Enables all retainer features)\n- Item Vendor Lookup\n- Gatherbuddy\n- Gather & Chill (Gather items or add them to its gather list)\n- Monster Loot Hunter");
+        ImGui.BulletText($"You can extend the functionality of the table by installing the following plugins:\n- Allagan Tools (Enables all retainer features)\n- Item Vendor Lookup\n- Gather & Chill (Gather items or add them to its gather list)\n- WahTools (Fish with Feesh)\n- Monster Loot Hunter");
         ImGui.BulletText($"Tip: Filter on \"Remaining Needed\" and \"Sources\" when gathering to help filter on items missing, along with sorting by gathered zone\nto help reduce travel times.");
 
         ImGui.SetCursorPosY(windowSize.Y - ImGui.GetFrameHeight() - ImGui.GetStyle().WindowPadding.Y);
