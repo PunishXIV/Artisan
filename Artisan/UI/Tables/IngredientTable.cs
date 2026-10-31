@@ -400,9 +400,12 @@ namespace Artisan.UI.Tables
                         }
                     }
 
-                    CheapestListings.TryAdd(item.Data.RowId, new(currentWorld, currentWorldQty, currentWorldCost));
+                    if (currentWorldQty > 0)
+                    {
+                        CheapestListings.TryAdd(item.Data.RowId, new(currentWorld, currentWorldQty, currentWorldCost));
 
-                    item.MarketboardData.LowestWorld = currentWorld;
+                        item.MarketboardData.LowestWorld = currentWorld;
+                    }
                 }
 
                 if (CheapestListings.ContainsKey(item.Data.RowId))
@@ -413,7 +416,7 @@ namespace Artisan.UI.Tables
 
                 }
 
-                return "ERROR - No Listings (Possible Universalis Connection Issue)";
+                return "No Listings Found";
             }
 
             public override void DrawColumn(Ingredient item, int _)
