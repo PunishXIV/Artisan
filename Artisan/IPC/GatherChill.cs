@@ -57,5 +57,18 @@ namespace Artisan.IPC
             if (!CanGatherDirectly()) return;
             Svc.PluginInterface.GetIpcSubscriber<object>("GatherChill.Stop").InvokeAction();
         }
+        
+        internal static void OpenWindow()
+        {
+            if (ApiVersion() < 4) return;
+
+            try
+            {
+                Svc.PluginInterface.GetIpcSubscriber<object>("GatherChill.OpenWindow").InvokeAction();
+            }
+            catch
+            {
+            }
+        }
     }
 }

@@ -941,7 +941,10 @@ namespace Artisan.UI.Tables
             try
             {
                 if (GatherChill.AddToGatherList([(item.Data.RowId, amount)]) > 0)
+                {
                     Notify.Success($"Added {amount}x {item.Data.Name} to Gather & Chill.");
+                    GatherChill.OpenWindow();
+                }
                 else
                     Notify.Error($"Gather & Chill could not add {item.Data.Name}.");
             }

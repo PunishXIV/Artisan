@@ -1051,6 +1051,8 @@ internal class ListEditor : Window, IDisposable
                 {
                     var added = GatherChill.AddToGatherList(items);
                     Notify.Success($"Sent {added} items to Gather & Chill.");
+                    if (added > 0)
+                        GatherChill.OpenWindow();
                 }
                 else
                 {
