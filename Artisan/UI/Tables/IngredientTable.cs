@@ -898,7 +898,7 @@ namespace Artisan.UI.Tables
             if (item.Data.RowId == 0 || item.Sources.Contains(1))
                 return;
 
-            if (!GatherChill.IsEnabled() || !GatherChill.CanGather(item.Data.RowId))
+            if (Feesh.IsFish(item.Data.RowId) || !GatherChill.IsEnabled() || !GatherChill.CanGather(item.Data.RowId))
                 return;
 
             var amount = Math.Max(1, item.Remaining);
@@ -954,13 +954,12 @@ namespace Artisan.UI.Tables
             }
         }
 
-        // Fish that Gather & Chill can't gather go to Feesh
         private static void DrawFeesh(Ingredient item)
         {
             if (item.Data.RowId == 0 || item.Sources.Contains(1))
                 return;
 
-            if (GatherChill.CanGather(item.Data.RowId) || !Feesh.CanFish(item.Data.RowId))
+            if (!Feesh.CanFish(item.Data.RowId))
                 return;
 
             if (Feesh.IsBusy())
@@ -970,7 +969,8 @@ namespace Artisan.UI.Tables
 
                 try
                 {
-                    Feesh.Stop();
+                    if (!Feesh.CancelCatch())
+                        Feesh.Stop();
                 }
                 catch (Exception e)
                 {
@@ -980,15 +980,17 @@ namespace Artisan.UI.Tables
                 return;
             }
 
-            if (!ImGui.Selectable("Fish with Feesh"))
+            if (!ImGui.Selectable("Catch with Feesh"))
                 return;
+
+            var amount = Math.Max(1, item.Remaining);
 
             try
             {
-                if (Feesh.FishFor(item.Data.RowId))
-                    Notify.Success($"Fishing for {item.Data.Name} with Feesh.");
+                if (Feesh.Catch(item.Data.RowId, amount))
+                    Notify.Success($"Catching {amount}x {item.Data.Name} with Feesh.");
                 else
-                    Notify.Error($"Feesh could not start fishing for {item.Data.Name}.");
+                    Notify.Error($"Feesh could not start catching {item.Data.Name}. Its log says why.");
             }
             catch (Exception e)
             {

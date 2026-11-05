@@ -291,6 +291,7 @@ namespace Artisan.CraftingLists
                 Svc.Log.Verbose("End of Index");
                 CurrentIndex = 0;
                 CraftingListUI.Processing = false;
+                IPC.Feesh.ReleaseAll();
                 Operations.CloseQuickSynthWindow();
                 PreCrafting.Tasks.Add((() => PreCrafting.TaskExitCraft(), TimeSpan.FromSeconds(5)));
 

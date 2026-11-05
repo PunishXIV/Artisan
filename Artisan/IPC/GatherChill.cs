@@ -38,8 +38,7 @@ namespace Artisan.IPC
             if (!IsEnabled()) return false;
             return Svc.PluginInterface.GetIpcSubscriber<uint, bool>("GatherChill.CanGather").InvokeFunc(itemId);
         }
-
-        // Amount is how many more to gather; items already on the list keep the larger amount
+        
         internal static int AddToGatherList((uint ItemId, int Amount)[] items)
         {
             if (!IsEnabled()) return 0;
