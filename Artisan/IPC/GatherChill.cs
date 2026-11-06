@@ -22,10 +22,7 @@ namespace Artisan.IPC
             return 0;
         }
 
-        internal static bool IsEnabled() => ApiVersion() >= 1;
-
-        // GatherItem and Stop were added in v2
-        internal static bool CanGatherDirectly() => ApiVersion() >= 2;
+        internal static bool IsEnabled() => ApiVersion() >= 4;
 
         internal static bool IsBusy()
         {
@@ -38,7 +35,7 @@ namespace Artisan.IPC
             if (!IsEnabled()) return false;
             return Svc.PluginInterface.GetIpcSubscriber<uint, bool>("GatherChill.CanGather").InvokeFunc(itemId);
         }
-        
+
         internal static int AddToGatherList((uint ItemId, int Amount)[] items)
         {
             if (!IsEnabled()) return 0;
@@ -47,25 +44,25 @@ namespace Artisan.IPC
 
         internal static int OverwriteGatherList((uint ItemId, int Amount)[] items)
         {
-            if (ApiVersion() < 4) return AddToGatherList(items);
+            if (!IsEnabled()) return 0;
             return Svc.PluginInterface.GetIpcSubscriber<(uint ItemId, int Amount)[], int>("GatherChill.OverwriteGatherList").InvokeFunc(items);
         }
 
         internal static bool GatherItem(uint itemId, int amount)
         {
-            if (!CanGatherDirectly()) return false;
+            if (!IsEnabled()) return false;
             return Svc.PluginInterface.GetIpcSubscriber<uint, int, bool>("GatherChill.GatherItem").InvokeFunc(itemId, amount);
         }
 
         internal static void Stop()
         {
-            if (!CanGatherDirectly()) return;
+            if (!IsEnabled()) return;
             Svc.PluginInterface.GetIpcSubscriber<object>("GatherChill.Stop").InvokeAction();
         }
-        
+
         internal static void OpenWindow()
         {
-            if (ApiVersion() < 4) return;
+            if (!IsEnabled()) return;
 
             try
             {
@@ -78,7 +75,7 @@ namespace Artisan.IPC
 
         internal static void OpenOverlay()
         {
-            if (ApiVersion() < 4) return;
+            if (!IsEnabled()) return;
 
             try
             {
