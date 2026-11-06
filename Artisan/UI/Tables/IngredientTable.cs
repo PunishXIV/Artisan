@@ -924,7 +924,10 @@ namespace Artisan.UI.Tables
                     try
                     {
                         if (GatherChill.GatherItem(item.Data.RowId, amount))
+                        {
                             Notify.Success($"Gathering {amount}x {item.Data.Name} with Gather & Chill.");
+                            GatherChill.OpenOverlay();
+                        }
                         else
                             Notify.Error($"Gather & Chill could not start gathering {item.Data.Name}.");
                     }

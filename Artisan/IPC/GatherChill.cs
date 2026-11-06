@@ -45,6 +45,12 @@ namespace Artisan.IPC
             return Svc.PluginInterface.GetIpcSubscriber<(uint ItemId, int Amount)[], int>("GatherChill.AddToGatherList").InvokeFunc(items);
         }
 
+        internal static int OverwriteGatherList((uint ItemId, int Amount)[] items)
+        {
+            if (ApiVersion() < 4) return AddToGatherList(items);
+            return Svc.PluginInterface.GetIpcSubscriber<(uint ItemId, int Amount)[], int>("GatherChill.OverwriteGatherList").InvokeFunc(items);
+        }
+
         internal static bool GatherItem(uint itemId, int amount)
         {
             if (!CanGatherDirectly()) return false;
@@ -64,6 +70,19 @@ namespace Artisan.IPC
             try
             {
                 Svc.PluginInterface.GetIpcSubscriber<object>("GatherChill.OpenWindow").InvokeAction();
+            }
+            catch
+            {
+            }
+        }
+
+        internal static void OpenOverlay()
+        {
+            if (ApiVersion() < 4) return;
+
+            try
+            {
+                Svc.PluginInterface.GetIpcSubscriber<object>("GatherChill.OpenOverlay").InvokeAction();
             }
             catch
             {

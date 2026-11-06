@@ -1049,7 +1049,7 @@ internal class ListEditor : Window, IDisposable
 
                 if (items.Length > 0)
                 {
-                    var added = GatherChill.AddToGatherList(items);
+                    var added = GatherChill.OverwriteGatherList(items);
                     Notify.Success($"Sent {added} items to Gather & Chill.");
                     if (added > 0)
                         GatherChill.OpenWindow();
@@ -1062,7 +1062,7 @@ internal class ListEditor : Window, IDisposable
 
             if (ImGui.IsItemHovered())
             {
-                ImGuiEx.Tooltip($"Adds all remaining gatherable ingredients to Gather & Chill's gather list.");
+                ImGuiEx.Tooltip($"Replaces Gather & Chill's gather list with all remaining gatherable ingredients.");
             }
         }
 
