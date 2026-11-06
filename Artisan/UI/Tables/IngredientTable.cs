@@ -903,38 +903,35 @@ namespace Artisan.UI.Tables
 
             var amount = Math.Max(1, item.Remaining);
 
-            if (GatherChill.CanGatherDirectly())
+            if (GatherChill.IsBusy())
             {
-                if (GatherChill.IsBusy())
-                {
-                    if (ImGui.Selectable("Stop Gather & Chill"))
-                    {
-                        try
-                        {
-                            GatherChill.Stop();
-                        }
-                        catch (Exception e)
-                        {
-                            e.Log();
-                        }
-                    }
-                }
-                else if (ImGui.Selectable("Gather with Gather & Chill"))
+                if (ImGui.Selectable("Stop Gather & Chill"))
                 {
                     try
                     {
-                        if (GatherChill.GatherItem(item.Data.RowId, amount))
-                        {
-                            Notify.Success($"Gathering {amount}x {item.Data.Name} with Gather & Chill.");
-                            GatherChill.OpenOverlay();
-                        }
-                        else
-                            Notify.Error($"Gather & Chill could not start gathering {item.Data.Name}.");
+                        GatherChill.Stop();
                     }
                     catch (Exception e)
                     {
                         e.Log();
                     }
+                }
+            }
+            else if (ImGui.Selectable("Gather with Gather & Chill"))
+            {
+                try
+                {
+                    if (GatherChill.GatherItem(item.Data.RowId, amount))
+                    {
+                        Notify.Success($"Gathering {amount}x {item.Data.Name} with Gather & Chill.");
+                        GatherChill.OpenOverlay();
+                    }
+                    else
+                        Notify.Error($"Gather & Chill could not start gathering {item.Data.Name}.");
+                }
+                catch (Exception e)
+                {
+                    e.Log();
                 }
             }
 
