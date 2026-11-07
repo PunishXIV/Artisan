@@ -63,6 +63,9 @@ namespace Artisan.UI.Tables
         public readonly CheapestServerColumn _cheapestServerColumn = new() { Label = "Optimal World For Buying" };
         public readonly NumberForSaleColumn _numberForSaleColumn = new() { Label = "Quantity For Sale (All Worlds)" };
 
+        private static bool GatherBuddy =>
+            DalamudReflector.TryGetDalamudPlugin("GatherBuddy", out var _, false, true);
+
         private static bool ItemVendor =>
             DalamudReflector.TryGetDalamudPlugin("ItemVendorLocation", out var _, false, true);
 
@@ -725,6 +728,7 @@ namespace Artisan.UI.Tables
                 return;
 
             DrawGatherChill(item);
+            DrawGatherItem(item);
             DrawFeesh(item);
             DrawSearchItem(item);
             DrawItemVendorLookup(item);
@@ -951,6 +955,34 @@ namespace Artisan.UI.Tables
             catch (Exception e)
             {
                 e.Log();
+            }
+        }
+
+        private static void DrawGatherItem(Ingredient item)
+        {
+            if (item.Data.RowId == 0 || !(item.Sources.Contains(2) || item.Sources.Contains(3)))
+                return;
+
+            if (GatherBuddy)
+            {
+                if (!ImGui.Selectable("Gather with Gatherbuddy"))
+                    return;
+
+                try
+                {
+                    if (LuminaSheets.GatheringItemSheet!.Any(x => x.Value.Item.RowId == item.Data.RowId))
+                        Chat.SendMessage($"/gather {item.Data.Name.ToString()}");
+                    else
+                        Chat.SendMessage($"/gatherfish {item.Data.Name.ToString()}");
+                }
+                catch (Exception e)
+                {
+                    e.Log();
+                }
+            }
+            else
+            {
+                ImGui.TextDisabled("Gather with Gatherbuddy (Please install Gatherbuddy)");
             }
         }
 
