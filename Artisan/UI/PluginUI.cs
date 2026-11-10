@@ -1007,7 +1007,6 @@ namespace Artisan.UI
                     changed |= ImGui.Checkbox($"Fetch prices from Universalis", ref P.Config.UseUniversalis);
                     if (P.Config.UseUniversalis)
                     {
-                        changed |= ImGui.Checkbox($"Limit Universalis to current data center", ref P.Config.LimitUnversalisToDC);
                         changed |= ImGui.Checkbox($"Only fetch prices when requested", ref P.Config.UniversalisOnDemand);
                         ImGuiComponents.HelpMarker("If enabled, you will have to click a button for each item to fetch its price.");
                     }

@@ -57,7 +57,7 @@ public class IngredientHelpers
     private static void FetchMarketData(List<Ingredient> ingredients, CancellationToken token)
     {
         var timer = Stopwatch.StartNew();
-        var results = P.UniversalsisClient.GetBulkData(ingredients.Select(x => (ulong)x.Data.RowId), P.Config.LimitUnversalisToDC, token);
+        var results = P.UniversalsisClient.GetBulkData(ingredients.Select(x => (ulong)x.Data.RowId), token);
         foreach (var ingredient in ingredients)
         {
             if (results.TryGetValue(ingredient.Data.RowId, out var data))

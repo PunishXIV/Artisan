@@ -72,14 +72,14 @@ namespace Artisan.Universalis
             return output = GetMarketBoard(region, ItemId);
         }
         
-        public IReadOnlyDictionary<ulong, MarketboardData> GetBulkData(IEnumerable<ulong> itemIds, bool dataCenterOnly, CancellationToken token)
+        public IReadOnlyDictionary<ulong, MarketboardData> GetBulkData(IEnumerable<ulong> itemIds, CancellationToken token)
         {
             var output = new ConcurrentDictionary<ulong, MarketboardData>();
             var world = PlayerWorld;
             if (world == null)
                 return output;
 
-            var region = dataCenterOnly ? DataCenters.GetDataCenterName(world.Value) : Regions.GetRegionByWorld(world.Value);
+            var region = Regions.GetRegionByWorld(world.Value);
             if (region == null)
                 return output;
 
