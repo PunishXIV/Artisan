@@ -9,7 +9,7 @@
 	url = https://github.com/KonaeAkira/raphael-rs
 [submodule "KamiToolKit"]
 	path = KamiToolKit
-	url = https://github.com/MidoriKami/KamiToolKit
+	url = https://github.com/Taurenkey/KamiToolKit
 [submodule "AutoRetainerAPI"]
 	path = AutoRetainerAPI
 	url = https://github.com/PunishXIV/AutoRetainerAPI/
