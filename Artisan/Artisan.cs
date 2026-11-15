@@ -56,7 +56,7 @@ public unsafe class Artisan : IDalamudPlugin
     {
         ECommonsMain.Init(pluginInterface, this, Module.DalamudReflector);
         PunishLibMain.Init(pluginInterface, "Artisan", new AboutPlugin() { Sponsor = "https://ko-fi.com/taurenkey" });
-        KamiToolKitLibrary.Initialize(pluginInterface);
+        KamiToolKitLibrary.InitializeAsync(pluginInterface);
         P = this;
 
         LuminaSheets.Init();

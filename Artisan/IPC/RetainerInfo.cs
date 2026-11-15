@@ -9,6 +9,7 @@ using ECommons;
 using ECommons.Automation.LegacyTaskManager;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices.TerritoryEnumeration;
+using ECommons.Logging;
 using ECommons.Reflection;
 using ECommons.Throttlers;
 using ECommons.UIHelpers.AddonMasterImplementations;
@@ -347,8 +348,8 @@ namespace Artisan.IPC
         {
             if (RetainerData.SelectMany(x => x.Value).Any(x => x.Value.ItemId == ItemId && x.Value.Quantity > 0))
             {
-                TM.Enqueue(() => Svc.Framework.Update += Tick);
-                TM.Enqueue(() => AutoRetainerIPC.Suppress());
+                TM.Enqueue(() => Svc.Framework.Update += Tick, "AddTick");
+                TM.Enqueue(() => AutoRetainerIPC.Suppress(), "AutoRetainerSuppress");
                 TM.EnqueueBell();
                 TM.DelayNext("BellInteracted", 200);
 
@@ -359,7 +360,7 @@ namespace Artisan.IPC
                 {
                     TM.Enqueue(() => RetainerListHandlers.SelectRetainerByID(retainer.Key), 5000, true, "SelectRetainer");
                     TM.DelayNext("WaitToSelectEntrust", 200);
-                    TM.Enqueue(() => RetainerHandlers.SelectEntrustItems());
+                    TM.Enqueue(() => RetainerHandlers.SelectEntrustItems(), "SelectEntrustItems");
                     TM.DelayNext("EntrustSelected", 200);
                     TM.Enqueue(() =>
                     {
@@ -367,29 +368,104 @@ namespace Artisan.IPC
                     }, "ExtractSingularEntry");
 
                     TM.DelayNext("CloseRetainer", 200);
-                    TM.Enqueue(() => RetainerHandlers.CloseAgentRetainer());
+                    TM.Enqueue(() => RetainerHandlers.CloseAgentRetainer(), "CloseRetainer");
                     TM.DelayNext("ClickQuit", 200);
-                    TM.Enqueue(() => RetainerHandlers.SelectQuit());
+                    TM.Enqueue(() => RetainerHandlers.SelectQuit(), "SelectQuit");
                     TM.Enqueue(() =>
                     {
                         if (CraftingListUI.NumberOfIngredient(ItemId) >= howManyToGet)
                         {
                             TM.DelayNextImmediate("CloseRetainerList", 200);
-                            TM.EnqueueImmediate(() => RetainerListHandlers.CloseRetainerList());
-                            TM.EnqueueImmediate(() => YesAlready.Unlock());
-                            TM.EnqueueImmediate(() => AutoRetainerIPC.Unsuppress());
-                            TM.EnqueueImmediate(() => Svc.Framework.Update -= Tick);
-                            TM.EnqueueImmediate(() => TM.Abort());
+                            TM.EnqueueImmediate(() => RetainerListHandlers.CloseRetainerList(), "CloseRetainerListEarly");
+                            TM.EnqueueImmediate(() => YesAlready.Unlock(), "YesAlreadyUnlockEarly");
+                            TM.EnqueueImmediate(() => AutoRetainerIPC.Unsuppress(), "AutoRetainerUnsuppressEarly");
+                            TM.EnqueueImmediate(() => Svc.Framework.Update -= Tick, "RemoveTickEarly");
+                            TM.EnqueueImmediate(() => TM.Abort(), "AbortRestockEarly");
                         }
-                    });
+                    }, "CheckRestockComplete");
                 }
 
                 TM.DelayNext("CloseRetainerList", 200);
-                TM.Enqueue(() => RetainerListHandlers.CloseRetainerList());
-                TM.Enqueue(() => YesAlready.Unlock());
-                TM.Enqueue(() => AutoRetainerIPC.Unsuppress());
-                TM.Enqueue(() => Svc.Framework.Update -= Tick);
+                TM.Enqueue(() => RetainerListHandlers.CloseRetainerList(), "CloseRetainerList");
+                TM.Enqueue(() => YesAlready.Unlock(), "YesAlreadyUnlock");
+                TM.Enqueue(() => AutoRetainerIPC.Unsuppress(), "AutoRetainerUnsuppress");
+                TM.Enqueue(() => Svc.Framework.Update -= Tick, "RemoveTick");
             }
+        }
+
+        public static void RestockFromRetainers(List<(uint itemId, int amount)> ingredients)
+        {
+            var requests = ingredients
+                .Where(x => x.itemId != 0 && x.amount > 0)
+                .GroupBy(x => x.itemId)
+                .Select(x => (ItemId: x.Key, Amount: x.Sum(y => (long)y.amount)))
+                .ToList();
+
+            foreach (var request in requests)
+            {
+                if (GetRetainerItemCount(request.ItemId, false) <= 0)
+                    Svc.Log.Warning($"No retainer stock available for item {request.ItemId}.");
+            }
+
+            var visits = new List<(uint ItemId, long TargetQuantity, ulong RetainerId)>();
+            lock (CacheLock)
+            {
+                foreach (var request in requests)
+                {
+                    var targetQuantity = (long)CraftingListUI.NumberOfIngredient(request.ItemId) + request.Amount;
+                    var retainers = RetainerData
+                        .Where(x => x.Value.TryGetValue(request.ItemId, out var item) && item.Quantity > 0)
+                        .OrderByDescending(x => x.Value[request.ItemId].HQQuantity > 0);
+                    foreach (var retainer in retainers)
+                        visits.Add((request.ItemId, targetQuantity, retainer.Key));
+                }
+            }
+
+            if (visits.Count == 0)
+            {
+                Svc.Log.Debug("No requested items are available from retainers.");
+                return;
+            }
+
+            TM.Enqueue(() => Svc.Framework.Update += Tick, "AddTick");
+            TM.Enqueue(() => AutoRetainerIPC.Suppress(), "AutoRetainerSuppress");
+            TM.EnqueueBell();
+            TM.DelayNext("BellInteracted", 200);
+
+            foreach (var visit in visits)
+            {
+                var shouldVisit = false;
+                TM.Enqueue(() =>
+                {
+                    shouldVisit = CraftingListUI.NumberOfIngredient(visit.ItemId) < visit.TargetQuantity;
+                }, "CheckItemRestockNeeded");
+                TM.Enqueue(() => !shouldVisit ? true : RetainerListHandlers.SelectRetainerByID(visit.RetainerId), 5000, true, "SelectRetainer");
+                TM.DelayNext("WaitToSelectEntrust", 200);
+                TM.Enqueue(() => !shouldVisit ? true : RetainerHandlers.SelectEntrustItems(), "SelectEntrustItems");
+                TM.DelayNext("EntrustSelected", 200);
+                TM.Enqueue(() =>
+                {
+                    if (!shouldVisit) return;
+                    GetRetainerItemCount(visit.ItemId, false);
+                    if (RetainerData.TryGetValue(visit.RetainerId, out var items) &&
+                        items.TryGetValue(visit.ItemId, out var item) && item.Quantity > 0)
+                    {
+                        var remaining = visit.TargetQuantity - CraftingListUI.NumberOfIngredient(visit.ItemId);
+                        if (remaining > 0)
+                            ExtractSingular(visit.ItemId, (int)Math.Min(Math.Min(remaining, item.Quantity), int.MaxValue), visit.RetainerId);
+                    }
+                }, "ExtractIngredientEntry");
+                TM.DelayNext("CloseRetainer", 200);
+                TM.Enqueue(() => !shouldVisit ? true : RetainerHandlers.CloseAgentRetainer(), "CloseRetainer");
+                TM.DelayNext("ClickQuit", 200);
+                TM.Enqueue(() => !shouldVisit ? true : RetainerHandlers.SelectQuit(), "SelectQuit");
+            }
+
+            TM.DelayNext("CloseRetainerList", 200);
+            TM.Enqueue(() => RetainerListHandlers.CloseRetainerList(), "CloseRetainerList");
+            TM.Enqueue(() => YesAlready.Unlock(), "YesAlreadyUnlock");
+            TM.Enqueue(() => AutoRetainerIPC.Unsuppress(), "AutoRetainerUnsuppress");
+            TM.Enqueue(() => Svc.Framework.Update -= Tick, "RemoveTick");
         }
 
         public static bool ExtractSingular(uint ItemId, int howManyToGet, ulong retainerKey)

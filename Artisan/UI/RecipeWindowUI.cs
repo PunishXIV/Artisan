@@ -933,7 +933,7 @@ namespace Artisan
                 if (craftableCount == 0) return;
 
                 ImGuiHelpers.ForceNextWindowMainViewport();
-                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + (4f * scale.X) - 40f, position.Y - 16f - (17f * scale.Y)));
+                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + (4f * scale.X) - 40f, position.Y + 16f + (17f * scale.Y)));
 
                 //Svc.Log.Debug($"Length: {size.Length()}, Width: {node->Width}, Scale: {scale.Y}");
 

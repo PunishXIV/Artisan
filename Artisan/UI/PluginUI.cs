@@ -4,6 +4,7 @@ using Artisan.CraftingLogic;
 using Artisan.FCWorkshops;
 using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
+using Artisan.UI.KTK;
 using Artisan.UI.Tables;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;

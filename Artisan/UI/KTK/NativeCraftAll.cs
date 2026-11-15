@@ -1,10 +1,15 @@
 ﻿using Artisan.Autocraft;
+using Artisan.IPC;
 using Artisan.RawInformation;
+using ECommons;
+using ECommons.ImGuiMethods;
+using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Controllers;
 using KamiToolKit.Enums;
 using KamiToolKit.Nodes;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace Artisan.UI.KTK
@@ -15,9 +20,16 @@ namespace Artisan.UI.KTK
         AddonController? moonRecipeNoteController;
         TextButtonNodeSynth? SynthesizeAll;
         NumericInputNode? SynthesizeXCounter;
-        int val = 0;
+        NumericInputNode? RestockXCounter;
+
+        TextButtonNode? RestockButton;
+
+        int synthVal = 0;
+        int restockVal = 0;
         int SynthesizeableCount = 0;
-        bool setup = false;
+        bool resized = false;
+
+        float scaleSize = 64f;
 
         public NativeCraftAll()
         {
@@ -37,7 +49,6 @@ namespace Artisan.UI.KTK
                 OnSetup = MoonOnSetup,
                 OnRefresh = OnRefresh,
                 OnFinalize = OnFinalize,
-                OnUpdate = OnUpdate
             };
             moonRecipeNoteController?.Enable();
         }
@@ -46,15 +57,47 @@ namespace Artisan.UI.KTK
         {
             if (!P.Config.UseNativeButtons)
             {
-                OnFinalize(addon);
+                DisposeButtons();
             }
-            else if (!setup)
+            else
             {
-                if (addon->NameString == "RecipeNote")
-                    RegularOnSetup(addon);
-                else
-                    MoonOnSetup(addon);
+                if (SynthesizeAll is null || SynthesizeXCounter is null)
+                {
+                    if (addon->NameString == "RecipeNote")
+                        RegularOnSetup(addon);
+                    else if (addon->NameString == "WKSRecipeNotebook")
+                        MoonOnSetup(addon);
+                }
+
+                if (RestockButton is not null)
+                {
+                    if (RetainerInfo.GetReachableRetainerBell() == null || !RetainerInfo.AToolsEnabled)
+                    {
+                        RestockButton.IsEnabled = false;
+                        RestockXCounter.IsEnabled = false;
+                    }
+                    else
+                    {
+                        RestockButton.IsEnabled = true;
+                        RestockXCounter.IsEnabled = true;
+                    }
+                }
             }
+        }
+
+        private void DisposeButtons()
+        {
+            SynthesizeAll?.Dispose();
+            SynthesizeAll = null;
+
+            SynthesizeXCounter?.Dispose();
+            SynthesizeXCounter = null;
+
+            RestockXCounter?.Dispose();
+            RestockXCounter = null;
+
+            RestockButton?.Dispose();
+            RestockButton = null;
         }
 
         private void MoonOnSetup(AtkUnitBase* addon)
@@ -93,8 +136,8 @@ namespace Artisan.UI.KTK
                 Size = new Vector2(90, 28),
                 OnValueUpdate = (t) =>
                 {
-                    val = t;
-                    SynthesizeAll?.String = val == 0 ? $"Craft All ({SynthesizeableCount})" : $"Craft {t}";
+                    synthVal = t;
+                    SynthesizeAll?.String = synthVal == 0 ? $"Craft All ({SynthesizeableCount})" : $"Craft {t}";
                 },
                 NodeFlags = synthButton->NodeFlags,
                 Max = SynthesizeableCount,
@@ -103,22 +146,13 @@ namespace Artisan.UI.KTK
             };
 
             SynthesizeXCounter.AttachNode(SynthesizeAll, NodePosition.AfterTarget);
-            setup = true;
         }
 
         private void OnFinalize(AtkUnitBase* addon)
         {
-            if (addon is null) return;
-            if (addon->RootNode is null) return;
-            if (SynthesizeAll is null || SynthesizeXCounter is null) return;
+            resized = false;
 
-            SynthesizeAll?.Dispose();
-            SynthesizeAll = null;
-
-            SynthesizeXCounter?.Dispose();
-            SynthesizeXCounter = null;
-
-            setup = false;
+            DisposeButtons();
         }
 
         private void OnRefresh(AtkUnitBase* addon)
@@ -145,14 +179,15 @@ namespace Artisan.UI.KTK
                 SynthesizeAll.IsEnabled = true;
             }
 
-            val = Math.Min(SynthesizeableCount, val);
-            SynthesizeXCounter.Value = val;
-            if (val == 0)
+            synthVal = Math.Min(SynthesizeableCount, synthVal);
+            SynthesizeXCounter.Value = synthVal;
+            if (synthVal == 0)
                 SynthesizeAll.String = $"Craft All ({SynthesizeableCount})";
         }
 
         private void RegularOnSetup(AtkUnitBase* addon)
         {
+            IncreaseAddonSize(addon);
             if (!P.Config.UseNativeButtons) return;
             if (addon->RootNode is null) return;
 
@@ -162,7 +197,7 @@ namespace Artisan.UI.KTK
             var synthBg = synthButton->GetAsAtkComponentButton()->ButtonBGNode->GetAsAtkNineGridNode();
             if (synthBg is null) return;
 
-            var buttonY = synthButton->Y - 32;
+            var buttonY = synthButton->Y + (scaleSize.Scale() / 2f);
             var buttonX = synthButton->X;
 
             var textNode = addon->GetTextNodeById(78);
@@ -191,8 +226,8 @@ namespace Artisan.UI.KTK
                 Step = 1,
                 OnValueUpdate = (t) =>
                 {
-                    val = t;
-                    SynthesizeAll?.String = val == 0 ? $"Craft All ({SynthesizeableCount})" : $"Craft {t}";
+                    synthVal = t;
+                    SynthesizeAll?.String = synthVal == 0 ? $"Craft All ({SynthesizeableCount})" : $"Craft {t}";
                 },
                 Max = SynthesizeableCount,
                 IsEnabled = SynthesizeableCount > 0,
@@ -200,12 +235,101 @@ namespace Artisan.UI.KTK
             };
 
             SynthesizeXCounter.AttachNode(SynthesizeAll, NodePosition.AfterTarget);
-            setup = true;
+
+            if (RetainerInfo.AToolsEnabled)
+            {
+                RestockButton = new()
+                {
+                    Position = new Vector2(SynthesizeAll.X, buttonY + 32f.Scale()),
+                    Size = new Vector2(140, 36),
+                    String = "Restock",
+                    OnClick = () => RestockX(),
+                    IsEnabled = true,
+                    TextTooltip = "Button added by Artisan.",
+                    NodeId = 100002
+                };
+
+                RestockButton.AttachNode(SynthesizeXCounter, NodePosition.AfterTarget);
+
+                RestockXCounter = new()
+                {
+                    Position = new Vector2(RestockButton.X - RestockButton.Width, RestockButton.Y),
+                    Size = new Vector2(140, 28),
+                    Step = 1,
+                    OnValueUpdate = (t) =>
+                    {
+                        restockVal = t;
+                        RestockButton?.String = restockVal == 0 ? $"Restock" : $"Restock {t}";
+                    },
+                    Max = 999,
+                    IsEnabled = true,
+                    NodeId = 100003
+                };
+
+                RestockXCounter.AttachNode(RestockButton, NodePosition.AfterTarget);
+            }
+        }
+
+        private void RestockX()
+        {
+            var recipe = LuminaSheets.RecipeSheet.TryGetValue(Endurance.RecipeID, out var rec);
+            if (!recipe) return;
+
+            List<(uint itemId, int amount)> ingredients = new();
+            foreach (var ingredient in rec.Ingredients())
+            {
+                if (ingredient.Item.RowId == 0) continue;
+                if (RetainerInfo.GetRetainerItemCount(ingredient.Item.RowId) < ingredient.Amount * restockVal)
+                {
+                    DuoLog.Warning($"Not enough stock for {ingredient.Item.Name} in retainers. Needed: {ingredient.Amount * restockVal}, Available: {RetainerInfo.GetRetainerItemCount(ingredient.Item.RowId)}");
+                    continue;
+                }
+                var amountToWithdraw = ingredient.Amount * restockVal;
+
+                ingredients.Add((ingredient.Item.RowId, amountToWithdraw));
+            }
+
+            RetainerInfo.RestockFromRetainers(ingredients);
+        }
+
+        private void IncreaseAddonSize(AtkUnitBase* addon)
+        {
+            try
+            {
+                if (addon->RootNode is null || resized) return;
+                var height = addon->RootNode->Height;
+                var width = addon->RootNode->Width;
+                var treeList = addon->GetNodeById(39);
+                var lineLeft = addon->GetNodeById(105);
+                var lineRight = addon->GetNodeById(108);
+                if (treeList is not null)
+                {
+                    var newHeight = treeList->Height + scaleSize.Scale();
+                    treeList->SetHeight((ushort)(newHeight));
+                }
+                if (lineLeft is not null)
+                {
+                    lineLeft->SetWidth((ushort)(lineLeft->Width + scaleSize.Scale()));
+                    lineLeft->SetYFloat(lineLeft->Y + (ushort)scaleSize.Scale());
+                }
+                if (lineRight is not null)
+                {
+                    lineRight->SetWidth((ushort)(lineRight->Width + scaleSize.Scale()));
+                    lineRight->SetYFloat(lineRight->Y + (ushort)scaleSize.Scale());
+                }
+
+                addon->SetSize(width, (ushort)(height + scaleSize.Scale()));
+                resized = true;
+            }
+            catch (Exception ex)
+            {
+                ex.Log($"Failed to increase addon size");
+            }
         }
 
         private void SynthesizeX()
         {
-            P.Config.CraftX = val == 0 ? SynthesizeableCount : val;
+            P.Config.CraftX = synthVal == 0 ? SynthesizeableCount : synthVal;
             P.Config.CraftingX = true;
             Endurance.ToggleEndurance(true);
         }

@@ -7,7 +7,7 @@ using Condition = Artisan.CraftingLogic.CraftData.Condition;
 
 namespace Artisan.RawInformation
 {
-    internal static class HelperExtensions
+    public static class HelperExtensions
     {
         public static int FindClosestIndex(this List<int> list, int valueToFind)
         {
@@ -62,26 +62,26 @@ namespace Artisan.RawInformation
             return success;
         }
 
-        internal record IngredientExtension()
+        public record IngredientExtension()
         {
             public required Item Item { get; init; }
             public required int Amount { get; init; }
         }
 
-        internal record SupplyItemExtension()
+        public record SupplyItemExtension()
         {
             public required CompanyCraftSupplyItem SupplyItem { get; init; }
             public required int SetsRequired { get; init; }
             public required int SetQuantity { get;init; }
         }
 
-        internal record BaseParamExtension()
+        public record BaseParamExtension()
         {
             public required BaseParam BaseParam { get; init; }
             public required short BaseParamValue { get; init; } 
         }
 
-        internal record BaseParamSpecialExtension()
+        public record BaseParamSpecialExtension()
         {
             public required BaseParam BaseParamSpecial { get; init; }
             public required short BaseParamValueSpecial { get; init; }

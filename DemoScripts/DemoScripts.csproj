@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ECommons" Version="3.2.1.17" />
+    <PackageReference Include="ECommons" Version="3.2.1.26" />
   </ItemGroup>
 
   <ItemGroup>

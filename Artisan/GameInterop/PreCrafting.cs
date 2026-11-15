@@ -6,12 +6,10 @@ using Artisan.RawInformation;
 using Artisan.RawInformation.Character;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
-using Dalamud.Interface.Colors;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
-using ECommons.ImGuiMethods;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -46,15 +44,29 @@ public unsafe static class PreCrafting
     public static List<(Func<TaskResult> task, TimeSpan retryDelay)> Tasks = new();
     private static DateTime _nextRetry;
 
+    private static bool ReloadedShitItself = false;
+
     static PreCrafting()
     {
-        _clickButton ??= Svc.Hook.HookFromSignature<ClickSynthesisButton>("40 55 53 56 57 41 56 48 8D 6C 24 D1 48 81 EC C0 00 00 00", ClickSynthButtons);
-        _clickButton?.Enable();
+        if (!ReloadedShitItself && Svc.ClientState.IsLoggedIn)
+        {
+            try
+            {
+                _clickButton ??= Svc.Hook.HookFromSignature<ClickSynthesisButton>("40 55 53 56 57 41 56 48 8D 6C 24 D1 48 81 EC C0 00 00 00", ClickSynthButtons);
+                _clickButton?.Enable();
 
-        _gearsetCallback ??= Svc.Hook.HookFromAddress<AtkUnitBase.Delegates.FireCallback>(AtkUnitBase.MemberFunctionPointers.FireCallback, CallbackDetour);
+                _gearsetCallback ??= Svc.Hook.HookFromAddress<AtkUnitBase.Delegates.FireCallback>(AtkUnitBase.MemberFunctionPointers.FireCallback, CallbackDetour);
 
-        _cosmicCallback ??= Svc.Hook.HookFromSignature<AddonWKSRecipeNote_ReceiveEventDelegate>("4C 8B DC 49 89 6B 20 41 56 48 83 EC 60", ClickCosmicButton);
-        _cosmicCallback?.Enable();
+                _cosmicCallback ??= Svc.Hook.HookFromSignature<AddonWKSRecipeNote_ReceiveEventDelegate>("4C 8B DC 49 89 6B 20 41 56 48 83 EC 60", ClickCosmicButton);
+                _cosmicCallback?.Enable();
+
+            }
+            catch (Exception ex)
+            {
+                ReloadedShitItself = true;
+                Svc.Framework.RunOnTick(() => DuoLog.Error("Artisan has failed to initialise a memory hook due to a bug in a third party library. Some functionality may not work correctly. Please restart your game to try and resolve."), TimeSpan.FromSeconds(3));
+            }
+        }
     }
 
     private static nint ClickCosmicButton(nint a1, ushort a2, uint a3, nint a4, nint a5)

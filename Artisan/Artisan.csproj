@@ -97,15 +97,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="13.1.0" />
-    <PackageReference Include="Discord.Net.Webhook" Version="3.20.1" />
-    <PackageReference Include="ECommons" Version="3.2.1.17" />
+    <PackageReference Include="DalamudPackager" Version="15.0.0" />
+    <PackageReference Include="Discord.Net.Webhook" Version="3.20.2" />
+    <PackageReference Include="ECommons" Version="3.2.1.26" />
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
-    <PackageReference Include="LuminaSupplemental.Excel" Version="4.3.3" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.10.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" />
-    <PackageReference Include="NAudio" Version="2.2.1" />
-    <PackageReference Include="Reloaded.Memory" Version="9.4.3" />
+    <PackageReference Include="LuminaSupplemental.Excel" Version="7.0.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="5.12.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.12.0" />
+    <PackageReference Include="NAudio" Version="3.3.0" />
     <PackageReference Include="SharpDX.Direct2D1" Version="4.2.0" />
     <ProjectReference Include="..\AutoRetainerAPI\AutoRetainerAPI\AutoRetainerAPI.csproj" />
     <ProjectReference Include="..\KamiToolKit\KamiToolKit.csproj" />
