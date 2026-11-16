@@ -282,7 +282,7 @@ public unsafe class Artisan : IDalamudPlugin
         Feesh.Dispose();
 
         ECommonsMain.Dispose();
-        NCA?.Dispose();
+        NCA?.Dispose(true);
         KamiToolKitLibrary.Dispose();
         P = null!;
     }

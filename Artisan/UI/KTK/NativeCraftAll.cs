@@ -1,4 +1,5 @@
 ﻿using Artisan.Autocraft;
+using Artisan.GameInterop;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using ECommons;
@@ -8,8 +9,10 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Controllers;
 using KamiToolKit.Enums;
 using KamiToolKit.Nodes;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Artisan.UI.KTK
@@ -21,15 +24,44 @@ namespace Artisan.UI.KTK
         TextButtonNodeSynth? SynthesizeAll;
         NumericInputNode? SynthesizeXCounter;
         NumericInputNode? RestockXCounter;
-
+        LabelTextNode? RestockLabel;
         TextButtonNode? RestockButton;
+
+        LabelTextNode? Crystal1Label;
+        LabelTextNode? Crystal2Label;
+
+        LabelTextNode? Ingredient1Restock;
+        LabelTextNode? Ingredient2Restock;
+        LabelTextNode? Ingredient3Restock;
+        LabelTextNode? Ingredient4Restock;
+        LabelTextNode? Ingredient5Restock;
+        LabelTextNode? Ingredient6Restock;
+
+        LabelTextNode? AToolsLabel;
 
         int synthVal = 0;
         int restockVal = 0;
         int SynthesizeableCount = 0;
         bool resized = false;
 
-        float scaleSize = 64f;
+        static float scaleSize = 64f;
+
+        static float horizontalScale = scaleSize * 1.2f;
+        static float verticalScale = scaleSize;
+
+        static Recipe? CurrentRecipe => Operations.GetSelectedRecipeEntry() is not null ? LuminaSheets.RecipeSheet[Operations.GetSelectedRecipeEntry()->RecipeId] : null;
+
+        static int numberOfCrystals => CurrentRecipe?.Ingredients().Count(i => i.Item.RowId >= 2 && i.Item.RowId <= 19) ?? 0;
+        static uint firstCrystalId => CurrentRecipe?.Ingredients().FirstOrDefault(i => i.Item.RowId >= 2 && i.Item.RowId <= 19).Item.RowId ?? 0;
+        static uint secondCrystalId => CurrentRecipe?.Ingredients().LastOrDefault(i => i.Item.RowId >= 2 && i.Item.RowId <= 19).Item.RowId ?? 0;
+
+        static int numberOfIngredients => CurrentRecipe?.Ingredients().Count(i => i.Item.RowId > 19) ?? 0;
+        static uint firstIngredientId => CurrentRecipe?.Ingredients().FirstOrDefault(i => i.Item.RowId > 19).Item.RowId ?? 0;
+        static uint secondIngredientId => CurrentRecipe?.Ingredients().Skip(1).FirstOrDefault(i => i.Item.RowId > 19).Item.RowId ?? 0;
+        static uint thirdIngredientId => CurrentRecipe?.Ingredients().Skip(2).FirstOrDefault(i => i.Item.RowId > 19).Item.RowId ?? 0;
+        static uint fourthIngredientId => CurrentRecipe?.Ingredients().Skip(3).FirstOrDefault(i => i.Item.RowId > 19).Item.RowId ?? 0;
+        static uint fifthIngredientId => CurrentRecipe?.Ingredients().Skip(4).FirstOrDefault(i => i.Item.RowId > 19).Item.RowId ?? 0;
+        static uint sixthIngredientId => CurrentRecipe?.Ingredients().Skip(5).FirstOrDefault(i => i.Item.RowId > 19).Item.RowId ?? 0;
 
         public NativeCraftAll()
         {
@@ -53,56 +85,63 @@ namespace Artisan.UI.KTK
             moonRecipeNoteController?.Enable();
         }
 
-        private void OnUpdate(AtkUnitBase* addon)
+        private static string FormatRetainerItemCount(uint itemId)
         {
-            if (!P.Config.UseNativeButtons)
-            {
-                DisposeButtons();
-            }
-            else
-            {
-                if (SynthesizeAll is null || SynthesizeXCounter is null)
-                {
-                    if (addon->NameString == "RecipeNote")
-                        RegularOnSetup(addon);
-                    else if (addon->NameString == "WKSRecipeNotebook")
-                        MoonOnSetup(addon);
-                }
-
-                if (RestockButton is not null)
-                {
-                    if (RetainerInfo.GetReachableRetainerBell() == null || !RetainerInfo.AToolsEnabled)
-                    {
-                        RestockButton.IsEnabled = false;
-                        RestockXCounter.IsEnabled = false;
-                    }
-                    else
-                    {
-                        RestockButton.IsEnabled = true;
-                        RestockXCounter.IsEnabled = true;
-                    }
-                }
-            }
+            var count = RetainerInfo.GetRetainerItemCount(itemId);
+            return count >= 1000 ? "999+" : count.ToString();
         }
 
-        private void DisposeButtons()
+        private void OnUpdate(AtkUnitBase* addon)
         {
-            SynthesizeAll?.Dispose();
-            SynthesizeAll = null;
+            //if (!P.Config.UseNativeButtons)
+            //{
+            //    Dispose(false);
+            //}
+            //else
+            //{
+            if (SynthesizeAll is null || SynthesizeXCounter is null)
+            {
+                if (addon->NameString == "RecipeNote")
+                    RegularOnSetup(addon);
+                else if (addon->NameString == "WKSRecipeNotebook")
+                    MoonOnSetup(addon);
+            }
 
-            SynthesizeXCounter?.Dispose();
-            SynthesizeXCounter = null;
+            if (RestockButton is not null)
+            {
+                if (RetainerInfo.GetReachableRetainerBell() == null || !RetainerInfo.AToolsEnabled)
+                {
+                    RestockButton.IsEnabled = false;
+                    RestockXCounter.IsEnabled = false;
+                }
+                else
+                {
+                    RestockButton.IsEnabled = true;
+                    RestockXCounter.IsEnabled = true;
+                }
 
-            RestockXCounter?.Dispose();
-            RestockXCounter = null;
-
-            RestockButton?.Dispose();
-            RestockButton = null;
+                Crystal2Label.IsVisible = numberOfCrystals == 2;
+                Crystal1Label.String = $"Crystal 1 Restock: {RetainerInfo.GetRetainerItemCount(firstCrystalId)}";
+                Crystal2Label.String = $"Crystal 2 Restock: {RetainerInfo.GetRetainerItemCount(secondCrystalId)}";
+                Ingredient1Restock.IsVisible = numberOfIngredients >= 1;
+                Ingredient2Restock.IsVisible = numberOfIngredients >= 2;
+                Ingredient3Restock.IsVisible = numberOfIngredients >= 3;
+                Ingredient4Restock.IsVisible = numberOfIngredients >= 4;
+                Ingredient5Restock.IsVisible = numberOfIngredients >= 5;
+                Ingredient6Restock.IsVisible = numberOfIngredients >= 6;
+                Ingredient1Restock.String = $"Restock: {FormatRetainerItemCount(firstIngredientId)}";
+                Ingredient2Restock.String = $"Restock: {FormatRetainerItemCount(secondIngredientId)}";
+                Ingredient3Restock.String = $"Restock: {FormatRetainerItemCount(thirdIngredientId)}";
+                Ingredient4Restock.String = $"Restock: {FormatRetainerItemCount(fourthIngredientId)}";
+                Ingredient5Restock.String = $"Restock: {FormatRetainerItemCount(fifthIngredientId)}";
+                Ingredient6Restock.String = $"Restock: {FormatRetainerItemCount(sixthIngredientId)}";
+            }
+            //}
         }
 
         private void MoonOnSetup(AtkUnitBase* addon)
         {
-            if (!P.Config.UseNativeButtons) return;
+            //if (!P.Config.UseNativeButtons) return;
             if (addon->RootNode is null) return;
 
             var synthButton = addon->GetNodeById(50);
@@ -152,12 +191,12 @@ namespace Artisan.UI.KTK
         {
             resized = false;
 
-            DisposeButtons();
+            Dispose(false);
         }
 
         private void OnRefresh(AtkUnitBase* addon)
         {
-            if (!P.Config.UseNativeButtons) return;
+            //if (!P.Config.UseNativeButtons) return;
             if (SynthesizeAll is null) return;
             if (SynthesizeXCounter is null) return;
 
@@ -183,19 +222,41 @@ namespace Artisan.UI.KTK
             SynthesizeXCounter.Value = synthVal;
             if (synthVal == 0)
                 SynthesizeAll.String = $"Craft All ({SynthesizeableCount})";
+
+            int restockable = GetRestockableAmount();
+            if (RestockLabel is not null)
+            {
+                RestockLabel.String = $"Fully Restockable: {restockable}";
+            }
+
+            if (RestockButton is not null)
+            {
+                if (restockable == 0)
+                {
+                    RestockButton.IsEnabled = false;
+                    RestockXCounter.IsEnabled = false;
+                }
+                else
+                {
+                    RestockButton.IsEnabled = true;
+                    RestockXCounter.IsEnabled = true;
+                }
+            }
         }
 
         private void RegularOnSetup(AtkUnitBase* addon)
         {
-            IncreaseAddonSize(addon);
-            if (!P.Config.UseNativeButtons) return;
             if (addon->RootNode is null) return;
+            IncreaseAddonSize(addon);
+            //if (!P.Config.UseNativeButtons) return;
 
             var synthButton = addon->GetNodeById(104);
             if (synthButton is null) return;
 
             var synthBg = synthButton->GetAsAtkComponentButton()->ButtonBGNode->GetAsAtkNineGridNode();
             if (synthBg is null) return;
+
+            synthBg->SetWidth((ushort)(synthButton->Width));
 
             var buttonY = synthButton->Y + (scaleSize.Scale() / 2f);
             var buttonX = synthButton->X;
@@ -253,8 +314,8 @@ namespace Artisan.UI.KTK
 
                 RestockXCounter = new()
                 {
-                    Position = new Vector2(RestockButton.X - RestockButton.Width, RestockButton.Y),
-                    Size = new Vector2(140, 28),
+                    Position = new Vector2(RestockButton.X - RestockButton.Width + 40, RestockButton.Y),
+                    Size = new Vector2(100, 28),
                     Step = 1,
                     OnValueUpdate = (t) =>
                     {
@@ -267,12 +328,157 @@ namespace Artisan.UI.KTK
                 };
 
                 RestockXCounter.AttachNode(RestockButton, NodePosition.AfterTarget);
+
+                RestockLabel = new()
+                {
+                    Position = new Vector2(RestockXCounter.X - 145, RestockXCounter.Y),
+                    Size = new Vector2(140, 28),
+                    FontSize = 12,
+                    String = $"Fully Restockable: {GetRestockableAmount()}",
+                    NodeId = 100004
+                };
+
+                RestockLabel.AttachNode(RestockXCounter, NodePosition.AfterTarget);
+
+                var secondCrystal = addon->GetNodeById(83);
+
+                Crystal1Label = new()
+                {
+                    Position = new Vector2(secondCrystal->X + 120, 138),
+                    Size = new Vector2(140, 28),
+                    FontSize = 12,
+                    String = $"Crystal 1 Restock:",
+                    NodeId = 100005
+                };
+
+                Crystal1Label.AttachNode(RestockLabel, NodePosition.AfterTarget);
+
+                Crystal2Label = new()
+                {
+                    Position = new Vector2(Crystal1Label.X, 152),
+                    Size = new Vector2(140, 28),
+                    FontSize = 12,
+                    String = $"Crystal 2 Restock:",
+                    NodeId = 100006,
+                    IsVisible = numberOfCrystals == 2
+                };
+
+                Crystal2Label.AttachNode(Crystal1Label, NodePosition.AfterTarget);
+
+                var ing1Base = addon->GetNodeById(89);
+                var ing2Base = addon->GetNodeById(90);
+                var ing3Base = addon->GetNodeById(91);
+                var ing4Base = addon->GetNodeById(92);
+                var ing5Base = addon->GetNodeById(93);
+                var ing6Base = addon->GetNodeById(94);
+
+                Ingredient1Restock = new()
+                {
+                    Position = new Vector2(ing1Base->X + ing1Base->Width - 10, ing1Base->Y + 14),
+                    Size = new Vector2(162, 38),
+                    FontSize = 12,
+                    String = $"Restock:",
+                    NodeId = 100007,
+                    IsVisible = numberOfIngredients >= 1
+                };
+
+                Ingredient1Restock.AttachNode(ing1Base, NodePosition.AfterTarget);
+
+                Ingredient2Restock = new()
+                {
+                    Position = new Vector2(ing2Base->X + ing2Base->Width - 10, ing2Base->Y + 14),
+                    Size = Ingredient1Restock.Size,
+                    FontSize = Ingredient1Restock.FontSize,
+                    String = $"Restock:",
+                    NodeId = 100008,
+                    IsVisible = numberOfIngredients >= 2
+                };
+
+                Ingredient2Restock.AttachNode(ing2Base, NodePosition.AfterTarget);
+
+                Ingredient3Restock = new()
+                {
+                    Position = new Vector2(ing3Base->X + ing3Base->Width - 10, ing3Base->Y + 14),
+                    Size = Ingredient1Restock.Size,
+                    FontSize = Ingredient1Restock.FontSize,
+                    String = $"Restock:",
+                    NodeId = 100009,
+                    IsVisible = numberOfIngredients >= 3
+                };
+
+                Ingredient3Restock.AttachNode(ing3Base, NodePosition.AfterTarget);
+
+                Ingredient4Restock = new()
+                {
+                    Position = new Vector2(ing4Base->X + ing4Base->Width - 10, ing4Base->Y + 14),
+                    Size = Ingredient1Restock.Size,
+                    FontSize = Ingredient1Restock.FontSize,
+                    String = $"Restock:",
+                    NodeId = 100010,
+                    IsVisible = numberOfIngredients >= 4
+                };
+
+                Ingredient4Restock.AttachNode(ing4Base, NodePosition.AfterTarget);
+
+                Ingredient5Restock = new()
+                {
+                    Position = new Vector2(ing5Base->X + ing5Base->Width - 10, ing5Base->Y + 14),
+                    Size = Ingredient1Restock.Size,
+                    FontSize = Ingredient1Restock.FontSize,
+                    String = $"Restock:",
+                    NodeId = 100011,
+                    IsVisible = numberOfIngredients >= 5
+                };
+
+                Ingredient5Restock.AttachNode(ing5Base, NodePosition.AfterTarget);
+
+                Ingredient6Restock = new()
+                {
+                    Position = new Vector2(ing6Base->X + ing6Base->Width - 10, ing6Base->Y + 14),
+                    Size = Ingredient1Restock.Size,
+                    FontSize = Ingredient1Restock.FontSize,
+                    String = $"Restock:",
+                    NodeId = 100012,
+                    IsVisible = numberOfIngredients >= 6
+                };
+
+                Ingredient6Restock.AttachNode(ing6Base, NodePosition.AfterTarget);
             }
+            else
+            {
+                AToolsLabel = new()
+                {
+                    Position = new Vector2(12, SynthesizeXCounter.Y + 32f.Scale()),
+                    Size = new Vector2(140, 36),
+                    String = "Please install and enable Allagan Tools for retainer restock features.",
+                    FontSize = 12,
+                    NodeId = 100013
+                };
+                AToolsLabel.AttachNode(SynthesizeXCounter, NodePosition.AfterTarget);
+            }
+        }
+
+        private int GetRestockableAmount()
+        {
+            var recipe = LuminaSheets.RecipeSheet.TryGetValue(Operations.GetSelectedRecipeEntry()->RecipeId, out var rec);
+            if (!recipe) return 0;
+
+            int? maxRestockable = null;
+            foreach (var ingredient in rec.Ingredients())
+            {
+                if (ingredient.Item.RowId == 0 || ingredient.Amount == 0) continue;
+
+                int inRetainer = RetainerInfo.GetRetainerItemCount(ingredient.Item.RowId);
+                int amountForCraft = inRetainer / ingredient.Amount;
+                maxRestockable = Math.Min(maxRestockable ?? amountForCraft, amountForCraft);
+            }
+
+            return maxRestockable ?? 0;
         }
 
         private void RestockX()
         {
-            var recipe = LuminaSheets.RecipeSheet.TryGetValue(Endurance.RecipeID, out var rec);
+            var recipe = LuminaSheets.RecipeSheet.TryGetValue(Operations.GetSelectedRecipeEntry()->RecipeId, out var rec);
             if (!recipe) return;
 
             List<(uint itemId, int amount)> ingredients = new();
@@ -297,28 +503,62 @@ namespace Artisan.UI.KTK
             try
             {
                 if (addon->RootNode is null || resized) return;
+
                 var height = addon->RootNode->Height;
                 var width = addon->RootNode->Width;
+
+                if (height > 650 && width > 900) return;
                 var treeList = addon->GetNodeById(39);
                 var lineLeft = addon->GetNodeById(105);
                 var lineRight = addon->GetNodeById(108);
+                var lineBotton = addon->GetNodeById(107);
+                var lineTop = addon->GetNodeById(106);
+                var ingGrayBox = addon->GetNodeById(81);
+                var regularSynthButton = addon->GetNodeById(104);
+                var regularQuickSynthButton = addon->GetNodeById(103);
+                var regularTrialButton = addon->GetNodeById(102);
+
                 if (treeList is not null)
                 {
-                    var newHeight = treeList->Height + scaleSize.Scale();
+                    var newHeight = treeList->Height + verticalScale;
                     treeList->SetHeight((ushort)(newHeight));
                 }
+
+                addon->SetSize((ushort)(width + horizontalScale), (ushort)(height + verticalScale));
+
                 if (lineLeft is not null)
                 {
-                    lineLeft->SetWidth((ushort)(lineLeft->Width + scaleSize.Scale()));
-                    lineLeft->SetYFloat(lineLeft->Y + (ushort)scaleSize.Scale());
+                    lineLeft->SetWidth((ushort)(addon->RootNode->Height - 96));
+                    lineLeft->SetYFloat(addon->RootNode->Height - 19);
                 }
                 if (lineRight is not null)
                 {
-                    lineRight->SetWidth((ushort)(lineRight->Width + scaleSize.Scale()));
-                    lineRight->SetYFloat(lineRight->Y + (ushort)scaleSize.Scale());
+                    lineRight->SetWidth((ushort)(addon->RootNode->Height - 96));
+                    lineRight->SetYFloat(addon->RootNode->Height - 19);
                 }
 
-                addon->SetSize(width, (ushort)(height + scaleSize.Scale()));
+                if (lineBotton is not null)
+                {
+                    lineBotton->SetWidth(335);
+                }
+
+                for (uint i = 3; i <= 10; i++)
+                {
+                    var line = addon->GetNodeById(i);
+                    if (line is not null)
+                    {
+                        line->SetXFloat(line->X + (ushort)horizontalScale);
+                    }
+                }
+                if (ingGrayBox is not null)
+                {
+                    ingGrayBox->SetWidth((ushort)(ingGrayBox->Width + horizontalScale));
+                }
+
+                regularQuickSynthButton->SetXFloat(regularQuickSynthButton->X + horizontalScale);
+                regularSynthButton->SetXFloat(regularSynthButton->X + horizontalScale);
+                regularTrialButton->SetXFloat(regularTrialButton->X + horizontalScale);
+
                 resized = true;
             }
             catch (Exception ex)
@@ -334,16 +574,57 @@ namespace Artisan.UI.KTK
             Endurance.ToggleEndurance(true);
         }
 
-        public void Dispose()
+        public void Dispose(bool onPluginShutdown)
         {
-            regularRecipeNoteController?.Dispose();
-            regularRecipeNoteController = null;
+            if (onPluginShutdown)
+            {
+                regularRecipeNoteController?.Dispose();
+                regularRecipeNoteController = null;
+                moonRecipeNoteController?.Dispose();
+                moonRecipeNoteController = null;
+            }
 
-            moonRecipeNoteController?.Dispose();
-            moonRecipeNoteController = null;
+            SynthesizeAll?.Dispose();
+            SynthesizeAll = null;
 
             SynthesizeXCounter?.Dispose();
-            SynthesizeAll?.Dispose();
+            SynthesizeXCounter = null;
+
+            RestockXCounter?.Dispose();
+            RestockXCounter = null;
+
+            RestockButton?.Dispose();
+            RestockButton = null;
+
+            RestockLabel?.Dispose();
+            RestockLabel = null;
+
+            Crystal1Label?.Dispose();
+            Crystal1Label = null;
+
+            Crystal2Label?.Dispose();
+            Crystal2Label = null;
+
+            Ingredient1Restock?.Dispose();
+            Ingredient1Restock = null;
+
+            Ingredient2Restock?.Dispose();
+            Ingredient2Restock = null;
+
+            Ingredient3Restock?.Dispose();
+            Ingredient3Restock = null;
+
+            Ingredient4Restock?.Dispose();
+            Ingredient4Restock = null;
+
+            Ingredient5Restock?.Dispose();
+            Ingredient5Restock = null;
+
+            Ingredient6Restock?.Dispose();
+            Ingredient6Restock = null;
+
+            AToolsLabel?.Dispose();
+            AToolsLabel = null;
         }
     }
 }

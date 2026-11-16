@@ -83,11 +83,11 @@ namespace Artisan
 
                 DrawSearchReplace();
 
-                if (!P.Config.UseNativeButtons)
-                {
-                    DrawEnduranceCounter();
-                    DrawCosmicEnduranceCounter();
-                }
+                //if (!P.Config.UseNativeButtons)
+                //{
+                //    DrawEnduranceCounter();
+                //    DrawCosmicEnduranceCounter();
+                //}
 
                 DrawWorkshopOverlay();
 
