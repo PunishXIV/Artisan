@@ -485,12 +485,11 @@ namespace Artisan.UI.KTK
             foreach (var ingredient in rec.Ingredients())
             {
                 if (ingredient.Item.RowId == 0) continue;
-                if (RetainerInfo.GetRetainerItemCount(ingredient.Item.RowId) < ingredient.Amount * restockVal)
-                {
-                    DuoLog.Warning($"Not enough stock for {ingredient.Item.Name} in retainers. Needed: {ingredient.Amount * restockVal}, Available: {RetainerInfo.GetRetainerItemCount(ingredient.Item.RowId)}");
-                    continue;
-                }
                 var amountToWithdraw = ingredient.Amount * restockVal;
+                if (RetainerInfo.GetRetainerItemCount(ingredient.Item.RowId) < amountToWithdraw)
+                {
+                    DuoLog.Warning($"Not enough stock for {ingredient.Item.Name} in retainers.\nNeeded: {amountToWithdraw}, Available: {RetainerInfo.GetRetainerItemCount(ingredient.Item.RowId)}. Will withdraw what is available.");
+                }
 
                 ingredients.Add((ingredient.Item.RowId, amountToWithdraw));
             }
