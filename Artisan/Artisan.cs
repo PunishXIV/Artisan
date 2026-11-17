@@ -45,6 +45,7 @@ public unsafe class Artisan : IDalamudPlugin
     internal TextureCache Icons;
     internal UniversalisClient UniversalsisClient;
     internal NativeCraftAll? NCA;
+    internal NativeListButtons? NLB;
     internal PremadeLists PremadeLists;
     internal AutoRetainerApi? AutoRetainerAPI;
     internal AutoRetainerIPC? AutoRetainerIPC;
@@ -125,7 +126,7 @@ public unsafe class Artisan : IDalamudPlugin
         Svc.Condition.ConditionChange += Condition_ConditionChange;
 
         PluginUi.OpenWindow = OpenWindow.Main;  
-        Svc.Framework.RunOnFrameworkThread(() => NCA = new());
+        Svc.Framework.RunOnFrameworkThread(() => { NCA = new(); NLB = new(); });
         ConvertCraftingLists();
     }
 
@@ -283,6 +284,7 @@ public unsafe class Artisan : IDalamudPlugin
 
         ECommonsMain.Dispose();
         NCA?.Dispose(true);
+        NLB?.Dispose();
         KamiToolKitLibrary.Dispose();
         P = null!;
     }
