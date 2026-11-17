@@ -86,8 +86,6 @@ namespace Artisan
 
                 DrawOptions();
                 DrawSearchReplace();
-                DrawWorkshopOverlay();
-                DrawSupplyMissionOverlay();
                 DrawCosmicWindowOptions();
                 DrawRecipeCompletion();
             }
@@ -339,192 +337,7 @@ namespace Artisan
             }
         }
 
-        private unsafe void DrawSupplyMissionOverlay()
-        {
-            if (TryGetAddonByName<AddonGrandCompanySupplyList>("GrandCompanySupplyList", out var addon))
-            {
-                try
-                {
-                    var subcontext = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu").Address;
-                    if (subcontext != null && subcontext->IsVisible)
-                        return;
-
-                    if (addon->SupplyRadioButton is null)
-                        return;
-
-                    if (addon->SupplyRadioButton->UldManager.NodeList[1] != null && addon->SupplyRadioButton->UldManager.NodeList[1]->IsVisible())
-                        return;
-
-                    var timerWindow = Svc.GameGui.GetAddonByName("GrandCompanySupplyList");
-                    if (timerWindow == IntPtr.Zero)
-                        return;
-
-                    var atkUnitBase = (AtkUnitBase*)timerWindow.Address;
-                    var node = atkUnitBase->GetNodeById(27);
-
-                    if (node->IsVisible())
-                        node->ToggleVisibility(false);
-
-                    var position = AtkResNodeFunctions.GetNodePosition(node);
-                    var scale = AtkResNodeFunctions.GetNodeScale(node);
-                    var size = new Vector2(node->Width, node->Height) * scale;
-
-                    ImGuiHelpers.ForceNextWindowMainViewport();
-                    ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y - 6f.Scale()));
-
-                    ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
-                    ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
-                    ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0f, 2f * scale.Y));
-                    ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f * scale.X, 3f * scale.Y));
-                    ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
-                    ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
-
-                    ImGui.Begin($"###SupplyTimerWindow", ImGuiWindowFlags.NoNavFocus | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings
-                        | ImGuiWindowFlags.AlwaysAutoResize);
-
-                    if (ImGui.GetIO().KeyShift)
-                    {
-                        if (ImGui.Button($"Create Crafting List (Star only)", new Vector2(size.X / 2, 0)))
-                        {
-                            CreateGCListAgent(atkUnitBase, false, true);
-                            P.PluginUi.IsOpen = true;
-                            P.PluginUi.OpenWindow = OpenWindow.Lists;
-                        }
-                        ImGui.SameLine();
-                        if (ImGui.Button($"Create Crafting List (with subcrafts) (Star only)", new Vector2(size.X / 2, 0)))
-                        {
-                            CreateGCListAgent(atkUnitBase, true, true);
-                            P.PluginUi.IsOpen = true;
-                            P.PluginUi.OpenWindow = OpenWindow.Lists;
-                        }
-                    }
-                    else
-                    {
-                        if (ImGui.Button($"Create Crafting List", new Vector2(size.X / 2, 0)))
-                        {
-                            CreateGCListAgent(atkUnitBase, false, false);
-                            P.PluginUi.IsOpen = true;
-                            P.PluginUi.OpenWindow = OpenWindow.Lists;
-                        }
-                        ImGui.SameLine();
-                        if (ImGui.Button($"Create Crafting List (with subcrafts)", new Vector2(size.X / 2, 0)))
-                        {
-                            CreateGCListAgent(atkUnitBase, true, false);
-                            P.PluginUi.IsOpen = true;
-                            P.PluginUi.OpenWindow = OpenWindow.Lists;
-                        }
-                    }
-                    ImGui.End();
-                    ImGui.PopStyleVar(5);
-                    ImGui.PopStyleColor();
-
-
-                }
-                catch (Exception ex)
-                {
-                    ex.Log();
-                }
-            }
-            else
-            {
-                try
-                {
-                    var subcontext = (AtkUnitBase*)Svc.GameGui.GetAddonByName("AddonContextSub").Address;
-
-                    if (subcontext != null && subcontext->IsVisible)
-                        return;
-
-                    subcontext = (AtkUnitBase*)Svc.GameGui.GetAddonByName("ContextMenu").Address;
-                    if (subcontext != null && subcontext->IsVisible)
-                        return;
-
-                    var timerWindow = Svc.GameGui.GetAddonByName("ContentsInfoDetail");
-                    if (timerWindow == IntPtr.Zero)
-                        return;
-
-                    var atkUnitBase = (AtkUnitBase*)timerWindow.Address;
-
-                    if (atkUnitBase->AtkValues[233].Type != AtkValueType.Int)
-                        return;
-
-                    var node = atkUnitBase->GetNodeById(15);//->UldManager.NodeList[97];
-
-                    if (!node->IsVisible())
-                        return;
-
-                    var position = AtkResNodeFunctions.GetNodePosition(node);
-                    var scale = AtkResNodeFunctions.GetNodeScale(node);
-                    var size = new Vector2(node->Width, node->Height) * scale;
-
-                    var textSize = ImGui.CalcTextSize("Create Crafting List");
-
-                    ImGuiHelpers.ForceNextWindowMainViewport();
-                    ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X, position.Y - (textSize.Y * scale.Y) - (5f * scale.Y)));
-
-                    ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
-                    ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
-                    ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(0f, 2f * scale.Y));
-                    ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f * scale.X, 3f * scale.Y));
-                    ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
-                    ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
-
-                    ImGui.Begin($"###SupplyTimerWindow", ImGuiWindowFlags.NoNavFocus | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings
-                        | ImGuiWindowFlags.AlwaysAutoResize);
-
-                    if (ImGui.GetIO().KeyShift)
-                    {
-                        if (ImGui.Button($"Create Crafting List (Star only)", new Vector2(size.X / 2, 0)))
-                        {
-                            CreateGCList(atkUnitBase, false, true);
-                            P.PluginUi.IsOpen = true;
-                            P.PluginUi.OpenWindow = OpenWindow.Lists;
-                        }
-                        var s = ImGui.GetItemRectSize();
-                        ImGui.SameLine();
-                        var oldScale = ImGui.GetIO().FontGlobalScale;
-                        ImGui.GetIO().FontGlobalScale = 0.80f * scale.X;
-                        using (ImRaii.PushFont(ImGui.GetFont()))
-                        {
-                            if (ImGui.Button($"Create Crafting List (with subcrafts) (Star only)", new Vector2(size.X / 2, s.Y)))
-                            {
-                                CreateGCList(atkUnitBase, true, true);
-                                P.PluginUi.IsOpen = true;
-                                P.PluginUi.OpenWindow = OpenWindow.Lists;
-                            }
-                        }
-                        ImGui.GetIO().FontGlobalScale = oldScale;
-                    }
-                    else
-                    {
-                        if (ImGui.Button($"Create Crafting List", new Vector2(size.X / 2, 0)))
-                        {
-                            CreateGCList(atkUnitBase, false, false);
-                            P.PluginUi.IsOpen = true;
-                            P.PluginUi.OpenWindow = OpenWindow.Lists;
-                        }
-                        ImGui.SameLine();
-                        if (ImGui.Button($"Create Crafting List (with subcrafts)", new Vector2(size.X / 2, 0)))
-                        {
-                            CreateGCList(atkUnitBase, true, false);
-                            P.PluginUi.IsOpen = true;
-                            P.PluginUi.OpenWindow = OpenWindow.Lists;
-                        }
-                    }
-
-                    ImGui.End();
-                    ImGui.PopStyleVar(5);
-                    ImGui.PopStyleColor();
-
-
-                }
-                catch (Exception ex)
-                {
-                    ex.Log();
-                }
-            }
-        }
-
-        private static unsafe void CreateGCListAgent(AtkUnitBase* atkUnitBase, bool withSubcrafts, bool boostedCraftsOnly)
+        internal static unsafe void CreateGCListAgent(AtkUnitBase* atkUnitBase, bool withSubcrafts, bool boostedCraftsOnly)
         {
             CreateGCList(atkUnitBase, withSubcrafts, boostedCraftsOnly, 425, 432, -40, -360, -400);
         }
@@ -545,7 +358,7 @@ namespace Artisan
             };
         }
 
-        private static unsafe void CreateGCList(AtkUnitBase* atkUnitBase, bool withSubcrafts, bool boostedCraftOnly)
+        internal static unsafe void CreateGCList(AtkUnitBase* atkUnitBase, bool withSubcrafts, bool boostedCraftOnly)
         {
             CreateGCList(atkUnitBase, withSubcrafts, boostedCraftOnly, 233, 240, 16, 8, 40);
         }
@@ -589,66 +402,7 @@ namespace Artisan
             Notify.Success("Crafting List Created");
         }
 
-        private unsafe void DrawWorkshopOverlay()
-        {
-            try
-            {
-                var subWindow = Svc.GameGui.GetAddonByName("SubmarinePartsMenu", 1);
-                if (subWindow == IntPtr.Zero)
-                    return;
-
-                var addonPtr = (AtkUnitBase*)subWindow.Address;
-                if (addonPtr == null)
-                    return;
-
-                if (addonPtr->UldManager.NodeListCount < 38)
-                    return;
-
-                var node = addonPtr->UldManager.NodeList[2];
-
-                if (!node->IsVisible())
-                    return;
-
-                var position = AtkResNodeFunctions.GetNodePosition(node);
-                var scale = AtkResNodeFunctions.GetNodeScale(node);
-                var size = new Vector2(node->Width, node->Height) * scale;
-                var textSize = ImGui.CalcTextSize("Create crafting list for this phase");
-
-                ImGuiHelpers.ForceNextWindowMainViewport();
-                ImGuiHelpers.SetNextWindowPosRelativeMainViewport(new Vector2(position.X + (4f * scale.X), position.Y + size.Y - textSize.Y - (34f * scale.Y)));
-
-                ImGui.PushStyleColor(ImGuiCol.WindowBg, 0);
-                float oldSize = ImGui.GetFont().Scale;
-                ImGui.GetFont().Scale *= scale.X;
-                ImGui.PushFont(ImGui.GetFont());
-                ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 0f);
-                ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(10f, 5f));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(3f, 3f));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(0f, 0f));
-                ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
-                ImGui.Begin($"###WorkshopButton{node->NodeId}", ImGuiWindowFlags.NoScrollbar
-                    | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoNavFocus
-                    | ImGuiWindowFlags.AlwaysUseWindowPadding | ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoSavedSettings);
-
-
-
-                if (ImGui.Button("Create crafting list for this phase"))
-                    CreateWorkshopPhaseList(addonPtr, false);
-
-                if (ImGui.Button("Create crafting list for this phase (including precrafts)"))
-                    CreateWorkshopPhaseList(addonPtr, true);
-
-                ImGui.End();
-                ImGui.PopStyleVar(5);
-                ImGui.GetFont().Scale = oldSize;
-                ImGui.PopFont();
-                ImGui.PopStyleColor();
-
-            }
-            catch { }
-        }
-
-        private static unsafe void CreateWorkshopPhaseList(AtkUnitBase* addonPtr, bool includePrecrafts)
+        internal static unsafe void CreateWorkshopPhaseList(AtkUnitBase* addonPtr, bool includePrecrafts)
         {
             var itemName1 = addonPtr->GetTextNodeById(4)->NodeText.GetText();
             var itemName2 = addonPtr->GetTextNodeById(6)->NodeText.GetText();
