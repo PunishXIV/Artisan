@@ -57,7 +57,6 @@ namespace Artisan.UI.KTK
             timersController.Enable();
         }
 
-        // ScreenX/Y are 0 until the first draw and stale after a move, so sum the parent chain instead (ignores scaled intermediate nodes)
         static Vector2 LocalPosition(AtkUnitBase* addon, AtkResNode* node)
         {
             var pos = Vector2.Zero;
@@ -131,7 +130,6 @@ namespace Artisan.UI.KTK
             var radioNode = gcAddon->SupplyRadioButton->UldManager.NodeList[1];
             var onSupplyTab = radioNode is null || !radioNode->IsVisible();
 
-            // node 27 sits where the buttons go
             if (onSupplyTab && node->IsVisible())
                 node->ToggleVisibility(false);
 
@@ -147,7 +145,6 @@ namespace Artisan.UI.KTK
             if (node is null)
                 return;
 
-            // ContentsInfoDetail is shared with other timers; only the GC supply page has an item id here
             var isSupply = addon->AtkValuesCount > 233 && addon->AtkValues[233].Type == AtkValueType.Int;
 
             if (isSupply && !timersResized)
@@ -168,7 +165,6 @@ namespace Artisan.UI.KTK
                     node->SetYFloat(node->Y + TimersGrowBy);
                 timersResized = true;
 
-                // created after the move loop on purpose: creating them before it misplaced them in game
                 var size = new Vector2(node->Width, TimersButtonHeight);
                 timersList = MakeButton(addon, pos, size, 100120, () => { RecipeWindowUI.CreateGCList(addon, false, Shift); OpenLists(); });
                 timersListSubcrafts = MakeButton(addon, pos + new Vector2(0, TimersButtonHeight + 2), size, 100121, () => { RecipeWindowUI.CreateGCList(addon, true, Shift); OpenLists(); });
