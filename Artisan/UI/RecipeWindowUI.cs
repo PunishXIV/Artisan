@@ -77,6 +77,9 @@ namespace Artisan
         {
             try
             {
+                DrawWorkshopOverlay();
+                DrawSupplyMissionOverlay();
+
                 if (!WindowVisible() || !GenericHelpers.IsScreenReady())
                 {
                     HideCraftingMenuWindow();
@@ -86,8 +89,6 @@ namespace Artisan
 
                 DrawOptions();
                 DrawSearchReplace();
-                DrawWorkshopOverlay();
-                DrawSupplyMissionOverlay();
                 DrawCosmicWindowOptions();
                 DrawRecipeCompletion();
             }
