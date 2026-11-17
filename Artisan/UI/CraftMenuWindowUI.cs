@@ -22,7 +22,6 @@ namespace Artisan.UI
 {
     internal class CraftMenuWindowUI : Window
     {
-        public bool EnableMacroOptions { get; set; }
         public ExpertSolverSettingsUI ExpertSettingsUI = new();
 
         public CraftMenuWindowUI(string windowName, ImGuiWindowFlags flags) : base(windowName, flags)
@@ -248,28 +247,26 @@ namespace Artisan.UI
                     }
                 }
 
-                if (EnableMacroOptions)
+                ImGui.Spacing();
+
+                if (SimpleTweaks.IsFocusTweakEnabled())
                 {
-                    ImGui.Spacing();
-
-                    if (SimpleTweaks.IsFocusTweakEnabled())
-                    {
-                        ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, $@"Warning: You have the ""Auto Focus Recipe Search"" SimpleTweak enabled. This is highly incompatible with Artisan and is recommended to disable it.");
-                    }
-
-                    if (Endurance.RecipeID == 0)
-                    {
-                        return;
-                    }
-
-                    changed |= config.Draw(Endurance.RecipeID);
-
-                    if (changed)
-                    {
-                        P.Config.RecipeConfigs[Endurance.RecipeID] = config;
-                        P.Config.Save();
-                    }
+                    ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, $@"Warning: You have the ""Auto Focus Recipe Search"" SimpleTweak enabled. This is highly incompatible with Artisan and is recommended to disable it.");
                 }
+
+                if (Endurance.RecipeID == 0)
+                {
+                    return;
+                }
+
+                changed |= config.Draw(Endurance.RecipeID);
+
+                if (changed)
+                {
+                    P.Config.RecipeConfigs[Endurance.RecipeID] = config;
+                    P.Config.Save();
+                }
+
             }
             catch { }
         }

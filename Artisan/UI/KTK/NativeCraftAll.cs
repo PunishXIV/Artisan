@@ -46,7 +46,7 @@ namespace Artisan.UI.KTK
 
         static float scaleSize = 64f;
 
-        static float horizontalScale = scaleSize * 1.2f;
+        static float horizontalScale = scaleSize * 1.25f;
         static float verticalScale = scaleSize;
 
         static Recipe? CurrentRecipe => Operations.GetSelectedRecipeEntry() is not null ? LuminaSheets.RecipeSheet[Operations.GetSelectedRecipeEntry()->RecipeId] : null;
@@ -56,12 +56,12 @@ namespace Artisan.UI.KTK
         static uint secondCrystalId => CurrentRecipe?.Ingredients().LastOrDefault(i => i.Item.RowId >= 2 && i.Item.RowId <= 19).Item.RowId ?? 0;
 
         static int numberOfIngredients => CurrentRecipe?.Ingredients().Count(i => i.Item.RowId > 19) ?? 0;
-        static uint firstIngredientId => CurrentRecipe?.Ingredients().FirstOrDefault(i => i.Item.RowId > 19).Item.RowId ?? 0;
-        static uint secondIngredientId => CurrentRecipe?.Ingredients().Skip(1).FirstOrDefault(i => i.Item.RowId > 19).Item.RowId ?? 0;
-        static uint thirdIngredientId => CurrentRecipe?.Ingredients().Skip(2).FirstOrDefault(i => i.Item.RowId > 19).Item.RowId ?? 0;
-        static uint fourthIngredientId => CurrentRecipe?.Ingredients().Skip(3).FirstOrDefault(i => i.Item.RowId > 19).Item.RowId ?? 0;
-        static uint fifthIngredientId => CurrentRecipe?.Ingredients().Skip(4).FirstOrDefault(i => i.Item.RowId > 19).Item.RowId ?? 0;
-        static uint sixthIngredientId => CurrentRecipe?.Ingredients().Skip(5).FirstOrDefault(i => i.Item.RowId > 19).Item.RowId ?? 0;
+        static uint? firstIngredientId => CurrentRecipe?.Ingredients()?.FirstOrDefault(i => i.Item.RowId > 19)?.Item.RowId ?? 0;
+        static uint? secondIngredientId => CurrentRecipe?.Ingredients()?.Skip(1)?.FirstOrDefault(i => i.Item.RowId > 19)?.Item.RowId ?? 0;
+        static uint? thirdIngredientId => CurrentRecipe?.Ingredients()?.Skip(2)?.FirstOrDefault(i => i.Item.RowId > 19)?.Item.RowId ?? 0;
+        static uint? fourthIngredientId => CurrentRecipe?.Ingredients()?.Skip(3)?.FirstOrDefault(i => i.Item.RowId > 19)?.Item.RowId ?? 0;
+        static uint? fifthIngredientId => CurrentRecipe?.Ingredients()?.Skip(4)?.FirstOrDefault(i => i.Item.RowId > 19)?.Item.RowId ?? 0;
+        static uint? sixthIngredientId => CurrentRecipe?.Ingredients()?.Skip(5)?.FirstOrDefault(i => i.Item.RowId > 19)?.Item.RowId ?? 0;
 
         public NativeCraftAll()
         {
@@ -85,9 +85,12 @@ namespace Artisan.UI.KTK
             moonRecipeNoteController?.Enable();
         }
 
-        private static string FormatRetainerItemCount(uint itemId)
+        private static string FormatRetainerItemCount(uint? itemId)
         {
-            var count = RetainerInfo.GetRetainerItemCount(itemId);
+            if (itemId == null)
+                return "0";
+
+            var count = RetainerInfo.GetRetainerItemCount(itemId.Value);
             return count >= 1000 ? "999+" : count.ToString();
         }
 
@@ -112,12 +115,12 @@ namespace Artisan.UI.KTK
                 if (RetainerInfo.GetReachableRetainerBell() == null || !RetainerInfo.AToolsEnabled)
                 {
                     RestockButton.IsEnabled = false;
-                    RestockXCounter.IsEnabled = false;
+                    //RestockXCounter.IsEnabled = false;
                 }
                 else
                 {
                     RestockButton.IsEnabled = true;
-                    RestockXCounter.IsEnabled = true;
+                    //RestockXCounter.IsEnabled = true;
                 }
 
                 Crystal2Label.IsVisible = numberOfCrystals == 2;
@@ -223,24 +226,10 @@ namespace Artisan.UI.KTK
             if (synthVal == 0)
                 SynthesizeAll.String = $"Craft All ({SynthesizeableCount})";
 
-            int restockable = GetRestockableAmount();
+            var restockable = GetRestockableAmount();
             if (RestockLabel is not null)
             {
-                RestockLabel.String = $"Fully Restockable: {restockable}";
-            }
-
-            if (RestockButton is not null)
-            {
-                if (restockable == 0)
-                {
-                    RestockButton.IsEnabled = false;
-                    RestockXCounter.IsEnabled = false;
-                }
-                else
-                {
-                    RestockButton.IsEnabled = true;
-                    RestockXCounter.IsEnabled = true;
-                }
+                RestockLabel.String = $"Restock: {restockable.AllIngredients} (Excl. Crystals: {restockable.ExcludingCrystals})";
             }
         }
 
@@ -328,13 +317,14 @@ namespace Artisan.UI.KTK
                 };
 
                 RestockXCounter.AttachNode(RestockButton, NodePosition.AfterTarget);
+                var restockable = GetRestockableAmount();
 
                 RestockLabel = new()
                 {
-                    Position = new Vector2(RestockXCounter.X - 145, RestockXCounter.Y),
+                    Position = new Vector2(0, RestockXCounter.Y),
                     Size = new Vector2(140, 28),
                     FontSize = 12,
-                    String = $"Fully Restockable: {GetRestockableAmount()}",
+                    String = $"Restock: {restockable.AllIngredients} (Excl. Crystals: {restockable.ExcludingCrystals})",
                     NodeId = 100004
                 };
 
@@ -458,12 +448,13 @@ namespace Artisan.UI.KTK
             }
         }
 
-        private int GetRestockableAmount()
+        private (int AllIngredients, int ExcludingCrystals) GetRestockableAmount()
         {
             var recipe = LuminaSheets.RecipeSheet.TryGetValue(Operations.GetSelectedRecipeEntry()->RecipeId, out var rec);
-            if (!recipe) return 0;
+            if (!recipe) return (0, 0);
 
             int? maxRestockable = null;
+            int? maxRestockableWithoutCrystals = null;
             foreach (var ingredient in rec.Ingredients())
             {
                 if (ingredient.Item.RowId == 0 || ingredient.Amount == 0) continue;
@@ -471,9 +462,11 @@ namespace Artisan.UI.KTK
                 int inRetainer = RetainerInfo.GetRetainerItemCount(ingredient.Item.RowId);
                 int amountForCraft = inRetainer / ingredient.Amount;
                 maxRestockable = Math.Min(maxRestockable ?? amountForCraft, amountForCraft);
+                if (ingredient.Item.RowId > 19)
+                    maxRestockableWithoutCrystals = Math.Min(maxRestockableWithoutCrystals ?? amountForCraft, amountForCraft);
             }
 
-            return maxRestockable ?? 0;
+            return (maxRestockable ?? 0, maxRestockableWithoutCrystals ?? 0);
         }
 
         private void RestockX()
