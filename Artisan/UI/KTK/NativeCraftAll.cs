@@ -3,12 +3,13 @@ using Artisan.GameInterop;
 using Artisan.IPC;
 using Artisan.RawInformation;
 using ECommons;
-using ECommons.ImGuiMethods;
+using ECommons.DalamudServices;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Controllers;
 using KamiToolKit.Enums;
 using KamiToolKit.Nodes;
+using KamiToolKit.Nodes.Simplified;
 using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
@@ -36,6 +37,13 @@ namespace Artisan.UI.KTK
         LabelTextNode? Ingredient4Restock;
         LabelTextNode? Ingredient5Restock;
         LabelTextNode? Ingredient6Restock;
+
+        SimpleImageNode? Ingredient1RestockSeperator;
+        SimpleImageNode? Ingredient2RestockSeperator;
+        SimpleImageNode? Ingredient3RestockSeperator;
+        SimpleImageNode? Ingredient4RestockSeperator;
+        SimpleImageNode? Ingredient5RestockSeperator;
+        SimpleImageNode? Ingredient6RestockSeperator;
 
         LabelTextNode? AToolsLabel;
 
@@ -132,6 +140,12 @@ namespace Artisan.UI.KTK
                 Ingredient4Restock.IsVisible = numberOfIngredients >= 4;
                 Ingredient5Restock.IsVisible = numberOfIngredients >= 5;
                 Ingredient6Restock.IsVisible = numberOfIngredients >= 6;
+                Ingredient1RestockSeperator.IsVisible = numberOfIngredients >= 1;
+                Ingredient2RestockSeperator.IsVisible = numberOfIngredients >= 2;
+                Ingredient3RestockSeperator.IsVisible = numberOfIngredients >= 3;
+                Ingredient4RestockSeperator.IsVisible = numberOfIngredients >= 4;
+                Ingredient5RestockSeperator.IsVisible = numberOfIngredients >= 5;
+                Ingredient6RestockSeperator.IsVisible = numberOfIngredients >= 6;
                 Ingredient1Restock.String = $"Restock: {FormatRetainerItemCount(firstIngredientId)}";
                 Ingredient2Restock.String = $"Restock: {FormatRetainerItemCount(secondIngredientId)}";
                 Ingredient3Restock.String = $"Restock: {FormatRetainerItemCount(thirdIngredientId)}";
@@ -364,8 +378,8 @@ namespace Artisan.UI.KTK
 
                 Ingredient1Restock = new()
                 {
-                    Position = new Vector2(ing1Base->X + ing1Base->Width - 10, ing1Base->Y + 14),
-                    Size = new Vector2(162, 38),
+                    Position = new Vector2(ing1Base->X + ing1Base->Width + 8, ing1Base->Y),
+                    Size = new Vector2(162, ing1Base->Height),
                     FontSize = 12,
                     String = $"Restock:",
                     NodeId = 100007,
@@ -376,7 +390,7 @@ namespace Artisan.UI.KTK
 
                 Ingredient2Restock = new()
                 {
-                    Position = new Vector2(ing2Base->X + ing2Base->Width - 10, ing2Base->Y + 14),
+                    Position = new Vector2(ing2Base->X + ing2Base->Width + 8, ing2Base->Y),
                     Size = Ingredient1Restock.Size,
                     FontSize = Ingredient1Restock.FontSize,
                     String = $"Restock:",
@@ -388,7 +402,7 @@ namespace Artisan.UI.KTK
 
                 Ingredient3Restock = new()
                 {
-                    Position = new Vector2(ing3Base->X + ing3Base->Width - 10, ing3Base->Y + 14),
+                    Position = new Vector2(ing3Base->X + ing3Base->Width + 8, ing3Base->Y),
                     Size = Ingredient1Restock.Size,
                     FontSize = Ingredient1Restock.FontSize,
                     String = $"Restock:",
@@ -400,7 +414,7 @@ namespace Artisan.UI.KTK
 
                 Ingredient4Restock = new()
                 {
-                    Position = new Vector2(ing4Base->X + ing4Base->Width - 10, ing4Base->Y + 14),
+                    Position = new Vector2(ing4Base->X + ing4Base->Width + 8, ing4Base->Y),
                     Size = Ingredient1Restock.Size,
                     FontSize = Ingredient1Restock.FontSize,
                     String = $"Restock:",
@@ -412,7 +426,7 @@ namespace Artisan.UI.KTK
 
                 Ingredient5Restock = new()
                 {
-                    Position = new Vector2(ing5Base->X + ing5Base->Width - 10, ing5Base->Y + 14),
+                    Position = new Vector2(ing5Base->X + ing5Base->Width + 8, ing5Base->Y),
                     Size = Ingredient1Restock.Size,
                     FontSize = Ingredient1Restock.FontSize,
                     String = $"Restock:",
@@ -424,7 +438,7 @@ namespace Artisan.UI.KTK
 
                 Ingredient6Restock = new()
                 {
-                    Position = new Vector2(ing6Base->X + ing6Base->Width - 10, ing6Base->Y + 14),
+                    Position = new Vector2(ing6Base->X + ing6Base->Width + 8, ing6Base->Y),
                     Size = Ingredient1Restock.Size,
                     FontSize = Ingredient1Restock.FontSize,
                     String = $"Restock:",
@@ -433,6 +447,78 @@ namespace Artisan.UI.KTK
                 };
 
                 Ingredient6Restock.AttachNode(ing6Base, NodePosition.AfterTarget);
+
+                var ingredientSeperator = ing1Base->GetAsAtkComponentNode()->Component->GetNodeById(16)->GetAsAtkImageNode();
+
+                Ingredient1RestockSeperator = new()
+                {
+                    Position = new Vector2(Ingredient1Restock.X - 8, Ingredient1Restock.Y + 12),
+                    Size = new Vector2(6, 36),
+                    NodeId = 100014,
+                    IsVisible = numberOfIngredients >= 1,
+                    TexturePath = "ui/uld/img02/RecipeNoteBook_hr1.tex",
+                    TextureSize = new Vector2(16, 72) / 2,
+                    TextureCoordinates = new Vector2(104, 0) / 2
+                };
+
+                Ingredient1RestockSeperator.AttachNode(ing1Base, NodePosition.AfterTarget);
+
+                Ingredient2RestockSeperator = new()
+                {
+                    Position = new Vector2(Ingredient2Restock.X - 8, Ingredient2Restock.Y + 12),
+                    Size = new Vector2(6, 36),
+                    NodeId = 100015,
+                    IsVisible = numberOfIngredients >= 2,
+                    TexturePath = "ui/uld/img02/RecipeNoteBook_hr1.tex",
+                    TextureSize = new Vector2(16, 72) / 2,
+                    TextureCoordinates = new Vector2(104, 0) / 2
+                };
+                Ingredient2RestockSeperator.AttachNode(ing2Base, NodePosition.AfterTarget);
+                Ingredient3RestockSeperator = new()
+                {
+                    Position = new Vector2(Ingredient3Restock.X - 8, Ingredient3Restock.Y + 12),
+                    Size = new Vector2(6, 36),
+                    NodeId = 100016,
+                    IsVisible = numberOfIngredients >= 3,
+                    TexturePath = "ui/uld/img02/RecipeNoteBook_hr1.tex",
+                    TextureSize = new Vector2(16, 72) / 2,
+                    TextureCoordinates = new Vector2(104, 0) / 2
+                };
+                Ingredient3RestockSeperator.AttachNode(ing3Base, NodePosition.AfterTarget);
+                Ingredient4RestockSeperator = new()
+                {
+                    Position = new Vector2(Ingredient4Restock.X - 8, Ingredient4Restock.Y + 12),
+                    Size = new Vector2(6, 36),
+                    NodeId = 100017,
+                    IsVisible = numberOfIngredients >= 4,
+                    TexturePath = "ui/uld/img02/RecipeNoteBook_hr1.tex",
+                    TextureSize = new Vector2(16, 72) / 2,
+                    TextureCoordinates = new Vector2(104, 0) / 2
+                };
+                Ingredient4RestockSeperator.AttachNode(ing4Base, NodePosition.AfterTarget);
+                Ingredient5RestockSeperator = new()
+                {
+                    Position = new Vector2(Ingredient5Restock.X - 8, Ingredient5Restock.Y + 12),
+                    Size = new Vector2(6, 36),
+                    NodeId = 100018,
+                    IsVisible = numberOfIngredients >= 5,
+                    TexturePath = "ui/uld/img02/RecipeNoteBook_hr1.tex",
+                    TextureSize = new Vector2(16, 72) / 2,
+                    TextureCoordinates = new Vector2(104, 0) / 2
+                };
+                Ingredient5RestockSeperator.AttachNode(ing5Base, NodePosition.AfterTarget);
+                Ingredient6RestockSeperator = new()
+                {
+                    Position = new Vector2(Ingredient6Restock.X - 8, Ingredient6Restock.Y + 12),
+                    Size = new Vector2(6, 36),
+                    NodeId = 100019,
+                    IsVisible = numberOfIngredients >= 6,
+                    TexturePath = "ui/uld/img02/RecipeNoteBook_hr1.tex",
+                    TextureSize = new Vector2(16, 72) / 2,
+                    TextureCoordinates = new Vector2(104, 0) / 2
+                };
+                Ingredient6RestockSeperator.AttachNode(ing6Base, NodePosition.AfterTarget);
+
             }
             else
             {
@@ -516,7 +602,7 @@ namespace Artisan.UI.KTK
                     treeList->SetHeight((ushort)(newHeight));
                 }
 
-                addon->SetSize((ushort)(width + horizontalScale), (ushort)(height + verticalScale));
+                addon->SetSize((ushort)(width + horizontalScale + 16), (ushort)(height + verticalScale));
 
                 if (lineLeft is not null)
                 {
@@ -539,17 +625,17 @@ namespace Artisan.UI.KTK
                     var line = addon->GetNodeById(i);
                     if (line is not null)
                     {
-                        line->SetXFloat(line->X + (ushort)horizontalScale);
+                        line->SetXFloat(line->X + (ushort)horizontalScale + 16);
                     }
                 }
                 if (ingGrayBox is not null)
                 {
-                    ingGrayBox->SetWidth((ushort)(ingGrayBox->Width + horizontalScale));
+                    ingGrayBox->SetWidth((ushort)(ingGrayBox->Width + horizontalScale + 16));
                 }
 
-                regularQuickSynthButton->SetXFloat(regularQuickSynthButton->X + horizontalScale);
-                regularSynthButton->SetXFloat(regularSynthButton->X + horizontalScale);
-                regularTrialButton->SetXFloat(regularTrialButton->X + horizontalScale);
+                regularQuickSynthButton->SetXFloat(regularQuickSynthButton->X + horizontalScale + 16);
+                regularSynthButton->SetXFloat(regularSynthButton->X + horizontalScale + 16);
+                regularTrialButton->SetXFloat(regularQuickSynthButton->X - regularTrialButton->Width);
 
                 resized = true;
             }
@@ -614,6 +700,24 @@ namespace Artisan.UI.KTK
 
             Ingredient6Restock?.Dispose();
             Ingredient6Restock = null;
+
+            Ingredient1RestockSeperator?.Dispose();
+            Ingredient1RestockSeperator = null;
+
+            Ingredient2RestockSeperator?.Dispose();
+            Ingredient2RestockSeperator = null;
+
+            Ingredient3RestockSeperator?.Dispose();
+            Ingredient3RestockSeperator = null;
+
+            Ingredient4RestockSeperator?.Dispose();
+            Ingredient4RestockSeperator = null;
+
+            Ingredient5RestockSeperator?.Dispose();
+            Ingredient5RestockSeperator = null;
+
+            Ingredient6RestockSeperator?.Dispose();
+            Ingredient6RestockSeperator = null;
 
             AToolsLabel?.Dispose();
             AToolsLabel = null;
