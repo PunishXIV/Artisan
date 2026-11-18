@@ -247,7 +247,7 @@ namespace Artisan.UI.KTK
 
             synthBg->SetWidth((ushort)(synthButton->Width));
 
-            var buttonY = synthButton->Y + (scaleSize.Scale() / 2f);
+            var buttonY = synthButton->Y + synthButton->Height;
             var buttonX = synthButton->X;
 
             var textNode = addon->GetTextNodeById(78);
@@ -290,7 +290,7 @@ namespace Artisan.UI.KTK
             {
                 RestockButton = new()
                 {
-                    Position = new Vector2(SynthesizeAll.X, buttonY + 32f.Scale()),
+                    Position = new Vector2(SynthesizeAll.X, SynthesizeAll.Y + SynthesizeAll.Height),
                     Size = new Vector2(140, 36),
                     String = "Restock",
                     OnClick = () => RestockX(),
@@ -438,7 +438,7 @@ namespace Artisan.UI.KTK
             {
                 AToolsLabel = new()
                 {
-                    Position = new Vector2(12, SynthesizeXCounter.Y + 32f.Scale()),
+                    Position = new Vector2(12, SynthesizeXCounter.Y + SynthesizeXCounter.Height),
                     Size = new Vector2(140, 36),
                     String = "Please install and enable Allagan Tools for retainer restock features.",
                     FontSize = 12,
