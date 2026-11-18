@@ -136,6 +136,9 @@ public unsafe class Artisan : IDalamudPlugin
         CraftingListUI.Processing = false;
         RaphaelCache.CurrentCache = [];
         P.PluginUi.RaphaelCacheUI.Table = null;
+        Crafting.CurState = Crafting.State.InvalidState;
+
+        Svc.Log.Debug($"Cleared out states due to logging in/out. Type: {type}, Code: {code}");
     }
 
     private void ConvertCraftingLists()

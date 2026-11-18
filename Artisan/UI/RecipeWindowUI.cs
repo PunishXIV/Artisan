@@ -77,9 +77,6 @@ namespace Artisan
         {
             try
             {
-                DrawWorkshopOverlay();
-                DrawSupplyMissionOverlay();
-
                 if (!WindowVisible() || !GenericHelpers.IsScreenReady())
                 {
                     HideCraftingMenuWindow();
