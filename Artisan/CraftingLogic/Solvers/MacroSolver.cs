@@ -93,7 +93,18 @@ public class MacroSolver : Solver, ICraftValidator
             {
                 continue;
             }
-
+            
+            if (action is Skills.PrudentTouch or Skills.PrudentSynthesis &&
+                step.WasteNotLeft > 0)
+            {
+                action = action switch
+                {
+                    Skills.PrudentTouch => Skills.BasicTouch,
+                    Skills.PrudentSynthesis => Skills.CarefulSynthesis,
+                    _ => action,
+                };
+            }
+            
             if (P.Config.SkipMacroStepIfUnable && !Simulator.CanUseAction(craft, step, action))
             {
                 continue;
