@@ -1,10 +1,11 @@
-﻿using Artisan.CraftingLists;
+using Artisan.CraftingLists;
 using ECommons.DalamudServices;
 using SharpDX.DirectWrite;
 using System.Collections.Generic;
 using System.Linq;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 using Skills = Artisan.RawInformation.Character.Skills;
+
 
 namespace Artisan.CraftingLogic.Solvers;
 
@@ -94,16 +95,7 @@ public class MacroSolver : Solver, ICraftValidator
                 continue;
             }
             
-            if (action is Skills.PrudentTouch or Skills.PrudentSynthesis &&
-                step.WasteNotLeft > 0)
-            {
-                action = action switch
-                {
-                    Skills.PrudentTouch => Skills.BasicTouch,
-                    Skills.PrudentSynthesis => Skills.CarefulSynthesis,
-                    _ => action,
-                };
-            }
+            action = PrudentSwapWasteNot(action, step);
             
             if (P.Config.SkipMacroStepIfUnable && !Simulator.CanUseAction(craft, step, action))
             {
@@ -155,7 +147,21 @@ public class MacroSolver : Solver, ICraftValidator
 
     private static bool ActionIsUpgradeableQuality(Skills skill) => skill is Skills.HastyTouch or Skills.PreparatoryTouch or Skills.AdvancedTouch or Skills.StandardTouch or Skills.BasicTouch;
     private static bool ActionIsUpgradeableProgress(Skills skill) => skill is Skills.Groundwork or Skills.PrudentSynthesis or Skills.CarefulSynthesis or Skills.BasicSynthesis;
+    private static Skills PrudentSwapWasteNot(Skills action, StepState step)
+    {
+        if (action is not (Skills.PrudentTouch or Skills.PrudentSynthesis))
+            return action;
 
+        if (step.WasteNotLeft <= 0)
+            return action;
+
+        return action switch
+        {
+            Skills.PrudentTouch => Skills.BasicTouch,
+            Skills.PrudentSynthesis => Skills.CarefulSynthesis,
+            _ => action,
+        };
+    }
     public bool Validate(CraftState craft)
     {
         if(_macro.Options.ExactCraftsmanship != 0)
