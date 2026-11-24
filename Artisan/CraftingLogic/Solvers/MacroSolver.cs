@@ -6,7 +6,6 @@ using System.Linq;
 using Condition = Artisan.CraftingLogic.CraftData.Condition;
 using Skills = Artisan.RawInformation.Character.Skills;
 
-
 namespace Artisan.CraftingLogic.Solvers;
 
 public class MacroSolverDefinition : ISolverDefinition
@@ -95,7 +94,7 @@ public class MacroSolver : Solver, ICraftValidator
                 continue;
             }
             
-            action = PrudentSwapWasteNot(action, step);
+            action = PrudentSwapWasteNot(craft, step, action);
             
             if (P.Config.SkipMacroStepIfUnable && !Simulator.CanUseAction(craft, step, action))
             {
@@ -147,20 +146,26 @@ public class MacroSolver : Solver, ICraftValidator
 
     private static bool ActionIsUpgradeableQuality(Skills skill) => skill is Skills.HastyTouch or Skills.PreparatoryTouch or Skills.AdvancedTouch or Skills.StandardTouch or Skills.BasicTouch;
     private static bool ActionIsUpgradeableProgress(Skills skill) => skill is Skills.Groundwork or Skills.PrudentSynthesis or Skills.CarefulSynthesis or Skills.BasicSynthesis;
-    private static Skills PrudentSwapWasteNot(Skills action, StepState step)
+    private static Skills PrudentSwapWasteNot(CraftState craft,StepState step,Skills action)
     {
-        if (action is not (Skills.PrudentTouch or Skills.PrudentSynthesis))
+        if (!craft.CraftExpert ||
+            action is not (Skills.PrudentTouch or Skills.PrudentSynthesis) ||
+            step.WasteNotLeft <= 0)
+        {
             return action;
+        }
 
-        if (step.WasteNotLeft <= 0)
-            return action;
-
-        return action switch
+        var replacement = action switch
         {
             Skills.PrudentTouch => Skills.BasicTouch,
             Skills.PrudentSynthesis => Skills.CarefulSynthesis,
             _ => action,
         };
+
+        Svc.Log.Debug(
+            $"Replacing {action} with {replacement}: Waste Not has {step.WasteNotLeft} turn(s) remaining.");
+
+        return replacement;
     }
     public bool Validate(CraftState craft)
     {
