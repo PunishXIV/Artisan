@@ -99,7 +99,12 @@ namespace Artisan.UI.KTK
                 return "0";
 
             var count = RetainerInfo.GetRetainerItemCount(itemId.Value);
-            return count >= 1000 ? "999+" : count.ToString();
+            return FormatNumber(count);
+        }
+
+        private static string FormatNumber(int number)
+        {
+            return number >= 1000 ? "999+" : number.ToString();
         }
 
         private void OnUpdate(AtkUnitBase* addon)
@@ -243,7 +248,7 @@ namespace Artisan.UI.KTK
             var restockable = GetRestockableAmount();
             if (RestockLabel is not null)
             {
-                RestockLabel.String = $"Restock: {restockable.AllIngredients} (Excl. Crystals: {restockable.ExcludingCrystals})";
+                RestockLabel.String = $"Restock: {FormatNumber(restockable.AllIngredients)} (Excl. Crystals: {FormatNumber(restockable.ExcludingCrystals)})";
             }
         }
 
@@ -336,9 +341,9 @@ namespace Artisan.UI.KTK
                 RestockLabel = new()
                 {
                     Position = new Vector2(0, RestockXCounter.Y),
-                    Size = new Vector2(140, 28),
+                    Size = new Vector2(RestockXCounter.X - 16, 28),
                     FontSize = 12,
-                    String = $"Restock: {restockable.AllIngredients} (Excl. Crystals: {restockable.ExcludingCrystals})",
+                    String = $"Restock: {FormatNumber(restockable.AllIngredients)} (Excl. Crystals: {FormatNumber(restockable.ExcludingCrystals)})",
                     NodeId = 100004
                 };
 
